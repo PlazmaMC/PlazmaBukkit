@@ -1,5 +1,3 @@
-<img src=".github/assets/logo.png" align="left" id="header" width="128px"></img>
-
 # Plazma
 [![License](https://img.shields.io/github/license/PlazmaMC/Plazma?style=flat-square)](LICENSE.md)
 [![Build](https://img.shields.io/github/actions/workflow/status/PlazmaMC/Plazma/build.yml?branch=ver/1.19.3&logo=github&style=flat-square)](https://github.com/PlazmaMC/Plazma/actions/workflows/build.yml?query=branch:ver/1.19.3)
