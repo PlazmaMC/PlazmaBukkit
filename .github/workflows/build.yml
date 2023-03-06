@@ -1,0 +1,105 @@
+name: Build Magellan (Paper/Purpur)
+
+on:
+  push:
+    branch: [ "paper/purpur/1.19.3" ]
+  workflow_dispatch:
+
+# env:
+#   ORG_NAME: TeamEarendel
+
+#   MC_VERSION: 1.19.3
+#   MAIN_BRANCH: ver/1.19.3
+#   DEBUG: 'false'
+
+jobs:
+  release:
+    strategy:
+      matrix:
+        jdk: [19.0.1]
+        java: ['temurin']
+        os: [ubuntu-20.04]
+
+    if: "!startsWith(github.event.commits[0].message, '[CI-Skip]')"
+    runs-on: ${{ matrix.os }}
+    steps:
+      - name: Checkout action
+        uses: actions/checkout@v3
+
+      # - name: Checkout pages
+      #   uses: actions/checkout@v3
+      #   with:
+      #     path: javadoc
+      #     ref: gh-pages
+
+      - name: Validate Gradle Wrapper
+        uses: gradle/wrapper-validation-action@v1
+
+      - name: Set up JDK ${{ matrix.java }} ${{ matrix.jdk }}
+        uses: actions/setup-java@v3
+        with:
+          distribution: ${{ matrix.java }}
+          java-version: ${{ matrix.jdk }}
+          cache: 'gradle'
+
+      - name: Configure Git
+        run: |
+          git config --global user.email "41898282+github-actions[bot]@users.noreply.github.com" && git config --global user.name "github-actions[bot]"
+          echo "workflow=$GITHUB_RUN_NUMBER" >> $GITHUB_ENV
+
+      - name: Apply Patches
+        run: ./gradlew applyPatches --stacktrace
+
+      - name: Build
+        run: ./gradlew build --stacktrace
+
+      - name: Create Reobf Jar
+        run: ./gradlew createReobfPaperclipJar --stacktrace
+
+      - name: Create Mojmap Jar
+        run: ./gradlew createMojmapPaperclipJar --stacktrace
+
+      # - name: Update Javadoc
+      #   continue-on-error: true
+      #   if: github.ref_name == env.MAIN_BRANCH
+      #   run: |
+      #     (cd Magellan-API/build/docs/javadoc && tar c .) | (cd javadoc && tar xf -)
+      #     cd javadoc
+      #     git add . && git commit -m "[CI-Skip] Update Javadocs"
+      #     git push
+
+      # - name: Publish Packages
+      #   if: github.ref_name == env.MAIN_BRANCH
+      #   run: |
+      #     export GITHUB_USERNAME=${{ env.ORG_NAME }}
+      #     export GITHUB_TOKEN=${{ secrets.GH_PAT }}
+      #     ./gradlew publish --stacktrace
+
+      - name: Upload Artifacts
+        # if: env.DEBUG == 'true' || github.ref_name != env.MAIN_BRANCH
+        uses: actions/upload-artifact@v3
+        with:
+          name: Artifacts
+          path: |
+            build/libs
+            Magellan-API/build/docs/javadoc
+
+      # - name: Release Artifacts
+      #   if: github.ref_name == env.MAIN_BRANCH
+      #   uses: marvinpinto/action-automatic-releases@latest
+      #   with:
+      #     title: "Release #${{ env.workflow }}"
+      #     automatic_release_tag: release-${{ env.workflow }}
+      #     repo_token: "${{ secrets.GH_PAT }}"
+      #     files: build/libs/*.jar
+      #     prerelease: false
+          
+      # - name: Release Artifacts (Latest)
+      #   if: github.ref_name == env.MAIN_BRANCH
+      #   uses: marvinpinto/action-automatic-releases@latest
+      #   with:
+      #     title: "Release #${{ env.workflow }}"
+      #     automatic_release_tag: latest-${{ env.MC_VERSION }}
+      #     repo_token: "${{ secrets.GH_PAT }}"
+      #     files: build/libs/*.jar
+      #     prerelease: false

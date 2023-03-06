@@ -1,0 +1,54 @@
+name: Test Pull Request (Paper/Purpur)
+on:
+  pull_request:
+    branches: [ "paper/purpur/1.19.3" ]
+  workflow_dispatch:
+
+jobs:
+  release:
+    strategy:
+      matrix:
+        jdk: [19.0.1]
+        java: ['temurin']
+        os: [ubuntu-20.04]
+
+    if: contains(github.event.pull_request.labels.*.name, 'build') && !startsWith(github.event.commits[0].message, '[CI-Skip]')
+    runs-on: ${{ matrix.os }}
+    steps:
+      - name: Checkout action
+        uses: actions/checkout@v3
+
+      - name: Validate Gradle Wrapper
+        uses: gradle/wrapper-validation-action@v1
+
+      - name: Set up JDK ${{ matrix.java }} ${{ matrix.jdk }}
+        uses: actions/setup-java@v3
+        with:
+          distribution: ${{ matrix.java }}
+          java-version: ${{ matrix.jdk }}
+          cache: 'gradle'
+
+      - name: Configure Git
+        run: |
+          git config --global user.email "41898282+github-actions[bot]@users.noreply.github.com" && git config --global user.name "github-actions[bot]"
+
+      - name: Apply Patches
+        run: ./gradlew applyPatches --stacktrace
+
+      - name: Build
+        run: ./gradlew build --stacktrace
+
+      - name: Create Reobf Jar
+        run: ./gradlew createReobfPaperclipJar --stacktrace
+
+      - name: Create Mojmap Jar
+        run: ./gradlew createMojmapPaperclipJar --stacktrace
+
+      - name: Upload Artifacts
+        if: contains(github.event.pull_request.labels.*.name, 'upload_artifact')
+        uses: actions/upload-artifact@v3
+        with:
+          name: Artifacts
+          path: |
+            build/libs
+            Magellan-API/build/docs/javadoc
