@@ -1,0 +1,376 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: AlphaKR93 <alphakr93@outlook.com>
+Date: Wed, 21 Dec 2022 19:31:24 +0900
+Subject: [PATCH] Rebrand
+
+
+diff --git a/build.gradle.kts b/build.gradle.kts
+index b6fde7181a58037a2e2a6fd23daac9766127fc0e..4a75fb8eb264cc34bb9fadfaa1b0cd62eef9d247 100644
+--- a/build.gradle.kts
++++ b/build.gradle.kts
+@@ -7,7 +7,7 @@ plugins {
+ }
+ 
+ dependencies {
+-    implementation(project(":purpur-api")) // Purpur
++    implementation(project(":plazma-api")) // Pufferfish // Purpur // Plazma
+     // Pufferfish start
+     implementation("io.papermc.paper:paper-mojangapi:1.19.3-R0.1-SNAPSHOT") {
+         exclude("io.papermc.paper", "paper-api")
+@@ -84,7 +84,7 @@ tasks.jar {
+         attributes(
+             "Main-Class" to "org.bukkit.craftbukkit.Main",
+             "Implementation-Title" to "CraftBukkit",
+-            "Implementation-Version" to "git-Purpur-$implementationVersion", // Purpur
++            "Implementation-Version" to "git-Plazma-$implementationVersion", // Pufferfish // Purpur // Plazma
+             "Implementation-Vendor" to date, // Paper
+             "Specification-Title" to "Bukkit",
+             "Specification-Version" to project.version,
+diff --git a/src/main/java/com/destroystokyo/paper/Metrics.java b/src/main/java/com/destroystokyo/paper/Metrics.java
+index 9713263c3bd34ab8a3bfc0a8797ba0b1b88ed733..9d9c9bcbd9bd86915e084f2438eae2a732eadd33 100644
+--- a/src/main/java/com/destroystokyo/paper/Metrics.java
++++ b/src/main/java/com/destroystokyo/paper/Metrics.java
+@@ -593,7 +593,7 @@ public class Metrics {
+             boolean logFailedRequests = config.getBoolean("logFailedRequests", false);
+             // Only start Metrics, if it's enabled in the config
+             if (config.getBoolean("enabled", true)) {
+-                Metrics metrics = new Metrics("Purpur", serverUUID, logFailedRequests, Bukkit.getLogger()); // Purpur
++                Metrics metrics = new Metrics("Plazma", serverUUID, logFailedRequests, Bukkit.getLogger()); // Purpur // Plazma
+ 
+                 metrics.addCustomChart(new Metrics.SimplePie("minecraft_version", () -> {
+                     String minecraftVersion = Bukkit.getVersion();
+@@ -603,7 +603,7 @@ public class Metrics {
+ 
+                 metrics.addCustomChart(new Metrics.SingleLineChart("players", () -> Bukkit.getOnlinePlayers().size()));
+                 metrics.addCustomChart(new Metrics.SimplePie("online_mode", () -> Bukkit.getOnlineMode() ? "online" : (io.papermc.paper.configuration.GlobalConfiguration.get().proxies.isProxyOnlineMode() ? "bungee" : "offline"))); // Purpur
+-                metrics.addCustomChart(new Metrics.SimplePie("purpur_version", () -> (org.bukkit.craftbukkit.Main.class.getPackage().getImplementationVersion() != null) ? org.bukkit.craftbukkit.Main.class.getPackage().getImplementationVersion() : "unknown")); // Purpur
++                metrics.addCustomChart(new Metrics.SimplePie("plazma_version", () -> (org.bukkit.craftbukkit.Main.class.getPackage().getImplementationVersion() != null) ? org.bukkit.craftbukkit.Main.class.getPackage().getImplementationVersion() : "unknown")); // Purpur // Plazma
+ 
+                 metrics.addCustomChart(new Metrics.DrilldownPie("java_version", () -> {
+                     Map<String, Map<String, Integer>> map = new HashMap<>();
+diff --git a/src/main/java/com/destroystokyo/paper/PaperVersionFetcher.java b/src/main/java/com/destroystokyo/paper/PaperVersionFetcher.java
+index fba5dbdb7bcbb55400ef18342c9b54612972a718..abd9b2bb9b2079b1eef20e3b1ab1c5c24cc91e65 100644
+--- a/src/main/java/com/destroystokyo/paper/PaperVersionFetcher.java
++++ b/src/main/java/com/destroystokyo/paper/PaperVersionFetcher.java
+@@ -20,7 +20,7 @@ import java.util.stream.StreamSupport;
+ public class PaperVersionFetcher implements VersionFetcher {
+     private static final java.util.regex.Pattern VER_PATTERN = java.util.regex.Pattern.compile("^([0-9\\.]*)\\-.*R"); // R is an anchor, will always give '-R' at end
+     // Purpur start
+-    private static final String DOWNLOAD_PAGE = "https://purpurmc.org/downloads";
++    private static final String DOWNLOAD_PAGE = "https://github.com/PlazmaMC/Plazma/releases"; // Plazma
+     private static int distance = -2; public int distance() { return distance; }
+     // Purpur end
+     private static @Nullable String mcVer;
+@@ -33,8 +33,8 @@ public class PaperVersionFetcher implements VersionFetcher {
+     @Nonnull
+     @Override
+     public Component getVersionMessage(@Nonnull String serverVersion) {
+-        String[] parts = serverVersion.substring("git-Purpur-".length()).split("[-\\s]"); // Purpur
+-        final Component updateMessage = getUpdateStatusMessage("PurpurMC/Purpur", "ver/" + getMinecraftVersion(), parts[0]); // Purpur
++        String[] parts = serverVersion.substring("git-Plazma-".length()).split("[-\\s]"); // Purpur // Plazma
++        final Component updateMessage = getUpdateStatusMessage("PlazmaMC/Plazma", "ver/" + getMinecraftVersion(), parts[0]); // Purpur // Plazma
+         final Component history = getHistory();
+ 
+         return history != null ? Component.join(net.kyori.adventure.text.JoinConfiguration.separator(Component.newline()), history, updateMessage) : updateMessage; // Purpur
+@@ -47,7 +47,7 @@ public class PaperVersionFetcher implements VersionFetcher {
+                 String result = matcher.group();
+                 mcVer = result.substring(0, result.length() - 2); // strip 'R' anchor and trailing '-'
+             } else {
+-                org.bukkit.Bukkit.getLogger().warning("Unable to match version to pattern! Report to Purpur!"); // Purpur
++                org.bukkit.Bukkit.getLogger().warning("Unable to match version to pattern! Report to Plazma!"); // Purpur // Plazma
+                 org.bukkit.Bukkit.getLogger().warning("Pattern: " + VER_PATTERN.toString());
+                 org.bukkit.Bukkit.getLogger().warning("Version: " + org.bukkit.Bukkit.getBukkitVersion());
+             }
+@@ -57,6 +57,7 @@ public class PaperVersionFetcher implements VersionFetcher {
+     }
+ 
+     private static Component getUpdateStatusMessage(@Nonnull String repo, @Nonnull String branch, @Nonnull String versionInfo) {
++        /* // Plazma - Disalbe CI Checking
+         //int distance; // Purpur - use field
+         try {
+             int jenkinsBuild = Integer.parseInt(versionInfo);
+@@ -65,6 +66,9 @@ public class PaperVersionFetcher implements VersionFetcher {
+             versionInfo = versionInfo.replace("\"", "");
+             distance = fetchDistanceFromGitHub(repo, branch, versionInfo);
+         }
++         */ // Plazma - Disable CI Checking
++        versionInfo = versionInfo.replace("\"", ""); // Plazma
++        distance = fetchDistanceFromGitHub(repo, branch, versionInfo); // Plazma
+ 
+         switch (distance) {
+             case -1:
+@@ -83,6 +87,7 @@ public class PaperVersionFetcher implements VersionFetcher {
+         }
+     }
+ 
++    /* // Plazma - Disalbe CI Checking
+     private static int fetchDistanceFromSiteApi(int jenkinsBuild, @Nullable String siteApiVersion) {
+         if (siteApiVersion == null) { return -1; }
+         try {
+@@ -102,6 +107,7 @@ public class PaperVersionFetcher implements VersionFetcher {
+             return -1;
+         }
+     }
++     */ // Plazma - Disalbe CI Checking
+ 
+     // Contributed by Techcable <Techcable@outlook.com> in GH-65
+     private static int fetchDistanceFromGitHub(@Nonnull String repo, @Nonnull String branch, @Nonnull String hash) {
+diff --git a/src/main/java/com/destroystokyo/paper/console/PaperConsole.java b/src/main/java/com/destroystokyo/paper/console/PaperConsole.java
+index 3cb56595822799926a8141e60a42f5d1edfc6de5..76eb52435d80a71e8247ecdb8301a64d7078464e 100644
+--- a/src/main/java/com/destroystokyo/paper/console/PaperConsole.java
++++ b/src/main/java/com/destroystokyo/paper/console/PaperConsole.java
+@@ -17,7 +17,7 @@ public final class PaperConsole extends SimpleTerminalConsole {
+     @Override
+     protected LineReader buildReader(LineReaderBuilder builder) {
+         builder
+-                .appName("Purpur") // Purpur
++                .appName("Plazma") // Purpur // Plazma
+                 .variable(LineReader.HISTORY_FILE, java.nio.file.Paths.get(".console_history"))
+                 .completer(new ConsoleCommandCompleter(this.server))
+                 .option(LineReader.Option.COMPLETE_IN_WORD, true);
+diff --git a/src/main/java/net/minecraft/CrashReport.java b/src/main/java/net/minecraft/CrashReport.java
+index b5b6657e52e4f7a630229bd3ba433438af293e22..703b2cb51940ff8625d022e884258ff46a628efa 100644
+--- a/src/main/java/net/minecraft/CrashReport.java
++++ b/src/main/java/net/minecraft/CrashReport.java
+@@ -35,7 +35,7 @@ public class CrashReport {
+         io.papermc.paper.util.StacktraceDeobfuscator.INSTANCE.deobfuscateThrowable(cause); // Paper
+         this.title = message;
+         this.exception = cause;
+-        this.systemReport.setDetail("CraftBukkit Information", new org.bukkit.craftbukkit.CraftCrashReport()); // CraftBukkit
++        this.systemReport.setDetail("Plazma Information", new org.bukkit.craftbukkit.CraftCrashReport()); // CraftBukkit // Plazma
+     }
+ 
+     public String getTitle() {
+@@ -125,7 +125,7 @@ public class CrashReport {
+         stringbuilder.append("---- Minecraft Crash Report ----\n");
+         // Purpur start
+         stringbuilder.append("// ");
+-        stringbuilder.append("// DO NOT REPORT THIS TO PAPER! REPORT TO PURPUR INSTEAD!");
++        stringbuilder.append("// DO NOT REPORT THIS TO PAPER! REPORT TO PLAZMA INSTEAD!"); // Plazma
+         // Purpur end
+         stringbuilder.append("// ");
+         stringbuilder.append(CrashReport.getErrorComment());
+diff --git a/src/main/java/net/minecraft/server/Main.java b/src/main/java/net/minecraft/server/Main.java
+index 781b72fd88149642c9fceaecfbfe7546273fb749..a1f2a4f2f239e4addd0cda1c247c63f67bd9f0f5 100644
+--- a/src/main/java/net/minecraft/server/Main.java
++++ b/src/main/java/net/minecraft/server/Main.java
+@@ -76,6 +76,20 @@ public class Main {
+ 
+     @DontObfuscate
+     public static void main(final OptionSet optionset) { // CraftBukkit - replaces main(String[] astring)
++        // Plazma start - Branding
++        LOGGER.warn("PLAZMA IS VERY UNSTABLE, SO DO NOT USE IT IN PRODUCTION SERVER!");
++        System.out.println("""
++                
++                  /$$$$$$  /$$   /$$ /$$$$$$$  /$$$$$$$   /$$$$$$  /$$      /$$ /$$$$$$$$ /$$$$$$$   /$$$$$$\s
++                 /$$__  $$| $$$ | $$| $$__  $$| $$__  $$ /$$__  $$| $$$    /$$$| $$_____/| $$__  $$ /$$__  $$
++                | $$  \\ $$| $$$$| $$| $$  \\ $$| $$  \\ $$| $$  \\ $$| $$$$  /$$$$| $$      | $$  \\ $$| $$  \\ $$
++                | $$$$$$$$| $$ $$ $$| $$  | $$| $$$$$$$/| $$  | $$| $$ $$/$$ $$| $$$$$   | $$  | $$| $$$$$$$$
++                | $$__  $$| $$  $$$$| $$  | $$| $$__  $$| $$  | $$| $$  $$$| $$| $$__/   | $$  | $$| $$__  $$
++                | $$  | $$| $$\\  $$$| $$  | $$| $$  \\ $$| $$  | $$| $$\\  $ | $$| $$      | $$  | $$| $$  | $$
++                | $$  | $$| $$ \\  $$| $$$$$$$/| $$  | $$|  $$$$$$/| $$ \\/  | $$| $$$$$$$$| $$$$$$$/| $$  | $$
++                |__/  |__/|__/  \\__/|_______/ |__/  |__/ \\______/ |__/     |__/|________/|_______/ |__/  |__/
++                """);
++        // Plazma end
+         SharedConstants.tryDetectVersion();
+         /* CraftBukkit start - Replace everything
+         OptionParser optionparser = new OptionParser();
+diff --git a/src/main/java/net/minecraft/server/MinecraftServer.java b/src/main/java/net/minecraft/server/MinecraftServer.java
+index 1772800c123353207e3563a7e2c2b70431aec097..85b19d19e5614c2e21802452e7e5aa35493dcffb 100644
+--- a/src/main/java/net/minecraft/server/MinecraftServer.java
++++ b/src/main/java/net/minecraft/server/MinecraftServer.java
+@@ -927,7 +927,7 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
+         shutdownThread = Thread.currentThread();
+         org.spigotmc.WatchdogThread.doStop(); // Paper
+         if (!isSameThread()) {
+-            MinecraftServer.LOGGER.info("Stopping main thread (Ignore any thread death message you see! - DO NOT REPORT THREAD DEATH TO PURPUR)"); // Purpur
++            MinecraftServer.LOGGER.info("Stopping main thread (Ignore any thread death message you see! - DO NOT REPORT THREAD DEATH TO PLAZMA)"); // Purpur // Plazma
+             while (this.getRunningThread().isAlive()) {
+                 this.getRunningThread().stop();
+                 try {
+diff --git a/src/main/java/net/minecraft/server/gui/MinecraftServerGui.java b/src/main/java/net/minecraft/server/gui/MinecraftServerGui.java
+index c07918aa1ed2469ad7a76a0add60ab648ff7f421..3a98106f8b26a55d17681f94e365f1340b1d3449 100644
+--- a/src/main/java/net/minecraft/server/gui/MinecraftServerGui.java
++++ b/src/main/java/net/minecraft/server/gui/MinecraftServerGui.java
+@@ -51,7 +51,7 @@ public class MinecraftServerGui extends JComponent {
+             ;
+         }
+ 
+-        final JFrame jframe = new JFrame("Minecraft server");
++        final JFrame jframe = new JFrame("Plazma"); // Plazma
+         final MinecraftServerGui servergui = new MinecraftServerGui(server);
+ 
+         jframe.setDefaultCloseOperation(2);
+@@ -59,7 +59,7 @@ public class MinecraftServerGui extends JComponent {
+         jframe.pack();
+         jframe.setLocationRelativeTo((Component) null);
+         jframe.setVisible(true);
+-        jframe.setName("Minecraft server"); // Paper
++        jframe.setName("Plazma"); // Paper // Plazma
+ 
+         // Paper start - Add logo as frame image
+         try {
+@@ -71,7 +71,7 @@ public class MinecraftServerGui extends JComponent {
+         jframe.addWindowListener(new WindowAdapter() {
+             public void windowClosing(WindowEvent windowevent) {
+                 if (!servergui.isClosing.getAndSet(true)) {
+-                    jframe.setTitle("Minecraft server - shutting down!");
++                    jframe.setTitle("Plazma - shutting down"); // Plazma
+                     server.halt(true);
+                     servergui.runFinalizers();
+                 }
+diff --git a/src/main/java/net/minecraft/world/level/Level.java b/src/main/java/net/minecraft/world/level/Level.java
+index fef709fce7309795b6d62d33a220a2be2399efd3..c174d6f4b4c0d6015f852d7505846a6d28c69137 100644
+--- a/src/main/java/net/minecraft/world/level/Level.java
++++ b/src/main/java/net/minecraft/world/level/Level.java
+@@ -1036,7 +1036,7 @@ public abstract class Level implements LevelAccessor, AutoCloseable {
+             TickingBlockEntity tickingblockentity = (TickingBlockEntity) this.blockEntityTickers.get(tileTickPosition);
+             // Spigot start
+             if (tickingblockentity == null) {
+-                this.getCraftServer().getLogger().severe("Spigot has detected a null entity and has removed it, preventing a crash");
++                this.getCraftServer().getLogger().severe("Plazma has detected a null entity and has removed it, preventing a crash"); // Plazma
+                 tilesThisCycle--;
+                 continue;
+             }
+diff --git a/src/main/java/net/minecraft/world/level/chunk/storage/RegionFileStorage.java b/src/main/java/net/minecraft/world/level/chunk/storage/RegionFileStorage.java
+index bd502ca721de0cab438d995efa00ad0554c0d2fe..b009b06dd6390def2ef58a6a9c2e3d029ad4293d 100644
+--- a/src/main/java/net/minecraft/world/level/chunk/storage/RegionFileStorage.java
++++ b/src/main/java/net/minecraft/world/level/chunk/storage/RegionFileStorage.java
+@@ -113,7 +113,7 @@ public class RegionFileStorage implements AutoCloseable {
+ 
+     // Paper start
+     private static void printOversizedLog(String msg, Path file, int x, int z) {
+-        org.apache.logging.log4j.LogManager.getLogger().fatal(msg + " (" + file.toString().replaceAll(".+[\\\\/]", "") + " - " + x + "," + z + ") Go clean it up to remove this message. /minecraft:tp " + (x<<4)+" 128 "+(z<<4) + " - DO NOT REPORT THIS TO PAPER - You may ask for help on Discord, but do not file an issue. These error messages can not be removed.");
++        org.apache.logging.log4j.LogManager.getLogger().fatal(msg + " (" + file.toString().replaceAll(".+[\\\\/]", "") + " - " + x + "," + z + ") Go clean it up to remove this message. /minecraft:tp " + (x<<4)+" 128 "+(z<<4) + " - DO NOT REPORT THIS TO PLAZMA - You may ask for help on Discord, but do not file an issue. These error messages can not be removed."); // Plazma
+     }
+ 
+     private static final int DEFAULT_SIZE_THRESHOLD = 1024 * 8;
+diff --git a/src/main/java/org/bukkit/craftbukkit/CraftServer.java b/src/main/java/org/bukkit/craftbukkit/CraftServer.java
+index 584596c8849b4dd7f955216f313eefb3229b375c..afdf0310df3edc38701889975acd6993420da023 100644
+--- a/src/main/java/org/bukkit/craftbukkit/CraftServer.java
++++ b/src/main/java/org/bukkit/craftbukkit/CraftServer.java
+@@ -261,7 +261,7 @@ import javax.annotation.Nullable; // Paper
+ import javax.annotation.Nonnull; // Paper
+ 
+ public final class CraftServer implements Server {
+-    private final String serverName = "Purpur"; // Paper // Purpur
++    private final String serverName = "Plazma"; // Paper // Purpur // Plazma
+     private final String serverVersion;
+     private final String bukkitVersion = Versioning.getBukkitVersion();
+     private final Logger logger = Logger.getLogger("Minecraft");
+diff --git a/src/main/java/org/bukkit/craftbukkit/entity/CraftLivingEntity.java b/src/main/java/org/bukkit/craftbukkit/entity/CraftLivingEntity.java
+index 78ac748859e21a61140e9bff67e4527a8d35b4b6..abeed9f5d3b37dab6ab5df8a150a47b7545fa69f 100644
+--- a/src/main/java/org/bukkit/craftbukkit/entity/CraftLivingEntity.java
++++ b/src/main/java/org/bukkit/craftbukkit/entity/CraftLivingEntity.java
+@@ -883,7 +883,7 @@ public class CraftLivingEntity extends CraftEntity implements LivingEntity {
+             return EntityCategory.WATER;
+         }
+ 
+-        throw new UnsupportedOperationException("Unsupported monster type: " + type + ". This is a bug, report this to Purpur."); // Purpur
++        throw new UnsupportedOperationException("Unsupported monster type: " + type + ". This is a bug, report this to Plazma."); // Purpur // Plazma
+     }
+ 
+     @Override
+diff --git a/src/main/java/org/bukkit/craftbukkit/scheduler/CraftScheduler.java b/src/main/java/org/bukkit/craftbukkit/scheduler/CraftScheduler.java
+index 5402098dce0d64d3dceea51f248d7d366850a74f..cd08c91adc2b388377ff9a47f1708e2cd86f38e7 100644
+--- a/src/main/java/org/bukkit/craftbukkit/scheduler/CraftScheduler.java
++++ b/src/main/java/org/bukkit/craftbukkit/scheduler/CraftScheduler.java
+@@ -504,7 +504,7 @@ public class CraftScheduler implements BukkitScheduler {
+                 this.parsePending();
+             } else {
+                 //this.debugTail = this.debugTail.setNext(new CraftAsyncDebugger(currentTick + CraftScheduler.RECENT_TICKS, task.getOwner(), task.getTaskClass())); // Paper
+-                task.getOwner().getLogger().log(Level.SEVERE, "Unexpected Async Task in the Sync Scheduler. Report this to Purpur"); // Paper // Purpur
++                task.getOwner().getLogger().log(Level.SEVERE, "Unexpected Async Task in the Sync Scheduler. Report this to Plazma"); // Paper // Purpur // Plazma
+                 // We don't need to parse pending
+                 // (async tasks must live with race-conditions if they attempt to cancel between these few lines of code)
+             }
+diff --git a/src/main/java/org/bukkit/craftbukkit/util/Versioning.java b/src/main/java/org/bukkit/craftbukkit/util/Versioning.java
+index fb87620c742ff7912f5e8ccd2a7930dd605576d9..dddea464dcae91def0ac56c8ff0477f51a8c0784 100644
+--- a/src/main/java/org/bukkit/craftbukkit/util/Versioning.java
++++ b/src/main/java/org/bukkit/craftbukkit/util/Versioning.java
+@@ -11,7 +11,7 @@ public final class Versioning {
+     public static String getBukkitVersion() {
+         String result = "Unknown-Version";
+ 
+-        InputStream stream = Bukkit.class.getClassLoader().getResourceAsStream("META-INF/maven/org.purpurmc.purpur/purpur-api/pom.properties"); // Purpur
++        InputStream stream = Bukkit.class.getClassLoader().getResourceAsStream("META-INF/maven/org.plazmamc.plazma/plazma-api/pom.properties"); // Purpur // Plazma
+         Properties properties = new Properties();
+ 
+         if (stream != null) {
+@@ -20,7 +20,7 @@ public final class Versioning {
+ 
+                 result = properties.getProperty("version");
+             } catch (IOException ex) {
+-                Logger.getLogger(Versioning.class.getName()).log(Level.SEVERE, "Could not get Bukkit version!", ex);
++                Logger.getLogger(Versioning.class.getName()).log(Level.SEVERE, "Could not get Plazma version!", ex); // Plazma
+             }
+         }
+ 
+diff --git a/src/main/java/org/purpurmc/purpur/PurpurConfig.java b/src/main/java/org/purpurmc/purpur/PurpurConfig.java
+index c7c0ed8dfe58c841faf684a1fe228eeda6cd57b7..c27036fd4df69e5d0257d48a2a6efda8c609c81f 100644
+--- a/src/main/java/org/purpurmc/purpur/PurpurConfig.java
++++ b/src/main/java/org/purpurmc/purpur/PurpurConfig.java
+@@ -227,7 +227,7 @@ public class PurpurConfig {
+         deathMessageOnlyBroadcastToAffectedPlayer = getBoolean("settings.broadcasts.death.only-broadcast-to-affected-player", deathMessageOnlyBroadcastToAffectedPlayer);
+     }
+ 
+-    public static String serverModName = "Purpur";
++    public static String serverModName = "Plazma"; // Plazma
+     private static void serverModName() {
+         serverModName = getString("settings.server-mod-name", serverModName);
+     }
+diff --git a/src/main/java/org/spigotmc/WatchdogThread.java b/src/main/java/org/spigotmc/WatchdogThread.java
+index a810bfd3b8d6bd4d8f2ef8797e4281ae4fe8a67f..db77c2a0bb2321eeb75cff563491364c3d54021d 100644
+--- a/src/main/java/org/spigotmc/WatchdogThread.java
++++ b/src/main/java/org/spigotmc/WatchdogThread.java
+@@ -96,7 +96,7 @@ public final class WatchdogThread extends io.papermc.paper.util.TickThread // Pa
+ 
+     private WatchdogThread(long timeoutTime, boolean restart)
+     {
+-        super( "Watchdog Thread" ); // Purpur - use a generic name
++        super( "Plazma Watchdog Thread" ); // Purpur - use a generic name // Plazma
+         this.timeoutTime = timeoutTime;
+         this.restart = restart;
+         earlyWarningEvery = Math.min(io.papermc.paper.configuration.GlobalConfiguration.get().watchdog.earlyWarningEvery, timeoutTime); // Paper
+@@ -155,14 +155,14 @@ public final class WatchdogThread extends io.papermc.paper.util.TickThread // Pa
+                 if (isLongTimeout) {
+                 // Paper end
+                 log.log( Level.SEVERE, "------------------------------" );
+-                log.log( Level.SEVERE, "The server has stopped responding! This is (probably) not a Purpur bug." ); // Paper // Purpur
++                log.log( Level.SEVERE, "The server has stopped responding! This is (probably) not a Plazma bug." ); // Paper // Purpur // Plazma
+                 log.log( Level.SEVERE, "If you see a plugin in the Server thread dump below, then please report it to that author" );
+                 log.log( Level.SEVERE, "\t *Especially* if it looks like HTTP or MySQL operations are occurring" );
+                 log.log( Level.SEVERE, "If you see a world save or edit, then it means you did far more than your server can handle at once" );
+                 log.log( Level.SEVERE, "\t If this is the case, consider increasing timeout-time in spigot.yml but note that this will replace the crash with LARGE lag spikes" );
+-                log.log( Level.SEVERE, "If you are unsure or still think this is a Purpur bug, please report this to https://github.com/PurpurMC/Purpur/issues" ); // Purpur
++                log.log( Level.SEVERE, "If you are unsure or still think this is a Plazma bug, please report this to https://github.com/PlazmaMC/Plazma/issues" ); // Purpur // Plazma
+                 log.log( Level.SEVERE, "Be sure to include ALL relevant console errors and Minecraft crash reports" );
+-                log.log( Level.SEVERE, "Purpur version: " + Bukkit.getServer().getVersion() ); // Purpur
++                log.log( Level.SEVERE, "Plazma version: " + Bukkit.getServer().getVersion() ); // Purpur
+                 //
+                 if ( net.minecraft.world.level.Level.lastPhysicsProblem != null )
+                 {
+@@ -185,12 +185,12 @@ public final class WatchdogThread extends io.papermc.paper.util.TickThread // Pa
+                 // Paper end
+                 } else
+                 {
+-                    log.log(Level.SEVERE, "--- DO NOT REPORT THIS TO PURPUR - THIS IS NOT A BUG OR A CRASH  - " + Bukkit.getServer().getVersion() + " ---"); // Purpur
++                    log.log(Level.SEVERE, "--- DO NOT REPORT THIS TO PLAZMA - THIS IS NOT A BUG OR A CRASH  - " + Bukkit.getServer().getVersion() + " ---"); // Purpur // Plazma
+                     log.log(Level.SEVERE, "The server has not responded for " + (currentTime - lastTick) / 1000 + " seconds! Creating thread dump");
+                 }
+                 // Paper end - Different message for short timeout
+                 log.log( Level.SEVERE, "------------------------------" );
+-                log.log( Level.SEVERE, "Server thread dump (Look for plugins here before reporting to Purpur!):" ); // Paper // Purpur
++                log.log( Level.SEVERE, "Server thread dump (Look for plugins here before reporting to Plazma!):" ); // Paper // Purpur // Plazma
+                 io.papermc.paper.chunk.system.scheduling.ChunkTaskScheduler.dumpAllChunkLoadInfo(isLongTimeout); // Paper // Paper - rewrite chunk system
+                 this.dumpTickingInfo(); // Paper - log detailed tick information
+                 WatchdogThread.dumpThread( ManagementFactory.getThreadMXBean().getThreadInfo( MinecraftServer.getServer().serverThread.getId(), Integer.MAX_VALUE ), log );
+@@ -206,7 +206,7 @@ public final class WatchdogThread extends io.papermc.paper.util.TickThread // Pa
+                     WatchdogThread.dumpThread( thread, log );
+                 }
+                 } else {
+-                    log.log(Level.SEVERE, "--- DO NOT REPORT THIS TO PURPUR - THIS IS NOT A BUG OR A CRASH ---"); // Purpur
++                    log.log(Level.SEVERE, "--- DO NOT REPORT THIS TO PLAZMA - THIS IS NOT A BUG OR A CRASH ---"); // Purpur // Plazma
+                 }
+ 
+                 log.log( Level.SEVERE, "------------------------------" );
