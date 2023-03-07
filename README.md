@@ -4,7 +4,7 @@
 
 ![Status](https://img.shields.io/badge/Work%20In%20Progress-red?style=for-the-badge)
 
-## A Server Platform for Minecraft: Java Edition based on [Paper](https://github.com/PaperMC/Paper)
+### A Server Platform for Minecraft: Java Edition based on [Paper](https://github.com/PaperMC/Paper)
 
 [![Build Status](https://img.shields.io/github/actions/workflow/status/PlazmaMC/Plazma/build.yml?branch=ver/1.19.3&logo=GoogleAnalytics&style=for-the-badge&logoColor=ffffff)](https://github.com/PlazmaMC/Plazma/actions/workflows/build.yml?query=branch:ver/1.19.3)
 [![License](https://img.shields.io/github/license/PlazmaMC/Plazma?logo=github&style=for-the-badge&logoColor=ffffff)](LICENSE)
@@ -31,4 +31,4 @@
 - NOTE: If you don't know about Mojmap or Bundler, download `plazma-paperclip-*-reobf.jar`
 
 ## ⚖️ License
-- This project and all patches are licensed under the [MIT license](LICENSE) unless otherwise noted in the patch headers.
+- This project and all patches are licensed under the [MIT license](LICENSE.md) unless otherwise noted in the patch headers.
