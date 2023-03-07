@@ -4,8 +4,8 @@
 
 ![Status](https://img.shields.io/badge/Work%20In%20Progress-red?style=for-the-badge)
 
-<h3>A Server Platform for Minecraft: Java Edition based on [Paper](https://github.com/PaperMC/Paper)
-</h3>
+## A Server Platform for Minecraft: Java Edition based on [Paper](https://github.com/PaperMC/Paper)
+
 [![Build Status](https://img.shields.io/github/actions/workflow/status/PlazmaMC/Plazma/build.yml?branch=ver/1.19.3&logo=GoogleAnalytics&style=for-the-badge&logoColor=ffffff)](https://github.com/PlazmaMC/Plazma/actions/workflows/build.yml?query=branch:ver/1.19.3)
 [![License](https://img.shields.io/github/license/PlazmaMC/Plazma?logo=github&style=for-the-badge&logoColor=ffffff)](LICENSE)
 [![MC Version](https://img.shields.io/badge/MC-1.19.3-6047ff?&logo=Webpack&style=for-the-badge&logoColor=ffffff)](https://github.com/PlazmaMC/Plazma/releases/download/latest-1.19.3)
