@@ -1,5 +1,5 @@
 @echo off
-cd Andromeda-Server >> NUL
+cd Plazma-Server >> NUL
 git add . >> NUL
 git commit -m "fixup" >> NUL
 git format-patch -1 >> NUL
