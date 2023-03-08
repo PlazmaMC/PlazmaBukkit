@@ -16,7 +16,7 @@ jobs:
     strategy:
       matrix:
         jdk: [19.0.1]
-        java: ['temurin']
+        java: ['GraalVM']
         os: [ubuntu-20.04]
 
     if: "!startsWith(github.event.commits[0].message, '[CI-Skip]')"
@@ -35,10 +35,11 @@ jobs:
         uses: gradle/wrapper-validation-action@v1
 
       - name: Set up JDK ${{ matrix.java }} ${{ matrix.jdk }}
-        uses: actions/setup-java@v3
+        uses: graalvm/setup-graalvm@v1
         with:
-          distribution: ${{ matrix.java }}
           java-version: ${{ matrix.jdk }}
+          github-token: ${{ secrets.GH_PAT }}
+          version: 'latest'
           cache: 'gradle'
 
       - name: Configure Git
