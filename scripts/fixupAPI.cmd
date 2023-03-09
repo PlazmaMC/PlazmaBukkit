@@ -1,5 +1,5 @@
 @echo off
-cd Andromeda-API >> NUL
+cd Plazma-API >> NUL
 git add . >> NUL
 git commit -m "fixup" >> NUL
 git format-patch -1 >> NUL
