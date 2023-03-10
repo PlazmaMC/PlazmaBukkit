@@ -1,6 +1,6 @@
 <div align="center">
 
-<h1 style="line-height:0.8">Plazma</h1>
+![image](https://user-images.githubusercontent.com/80433772/224326500-1ece46c0-9ae7-4e67-aba6-e9467aceb4d1.png)
 
 ### A Server Platform for Minecraft: Java Edition based on [Paper](https://github.com/PaperMC/Paper)
 
