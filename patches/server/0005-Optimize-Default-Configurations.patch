@@ -1,13 +1,13 @@
 From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
 From: IPECTER <ipectert@gmail.com>
 Date: Tue, 7 Mar 2023 12:28:34 +0900
-Subject: [PATCH] Plazma Optimize Default Configurations
+Subject: [PATCH] Optimize Default Configurations
 
 Original: YouHaveTrouble/minecraft-optimization, AkiraDevelopment/SimplyMC
 Copyright (C) 2023 YouHaveTrouble, AkiraDevelopment
 
 diff --git a/src/main/java/gg/pufferfish/pufferfish/PufferfishConfig.java b/src/main/java/gg/pufferfish/pufferfish/PufferfishConfig.java
-index 47e77541e558e18758ae0fcc2aa4e47261e928b6..526a0e767567098d61eea6d9928206cdbd30c7c4 100644
+index 47e77541e558e18758ae0fcc2aa4e47261e928b6..c5ed36156ec6be863cc7828a98b9ca720b6e7efc 100644
 --- a/src/main/java/gg/pufferfish/pufferfish/PufferfishConfig.java
 +++ b/src/main/java/gg/pufferfish/pufferfish/PufferfishConfig.java
 @@ -212,7 +212,7 @@ public class PufferfishConfig {
@@ -37,7 +37,7 @@ index 47e77541e558e18758ae0fcc2aa4e47261e928b6..526a0e767567098d61eea6d9928206cd
                  "This value defines how much distance modifies an entity's",
                  "tick frequency. freq = (distanceToPlayer^2) / (2^value)",
                  "If you want further away entities to tick less often, use 7.",
-@@ -269,7 +269,7 @@ public class PufferfishConfig {
+@@ -269,16 +269,16 @@ public class PufferfishConfig {
      
      public static boolean throttleInactiveGoalSelectorTick;
  	private static void inactiveGoalSelectorThrottle() {
@@ -46,6 +46,17 @@ index 47e77541e558e18758ae0fcc2aa4e47261e928b6..526a0e767567098d61eea6d9928206cd
  				"Throttles the AI goal selector in entity inactive ticks.",
  				"This can improve performance by a few percent, but has minor gameplay implications.");
  	}
+ 
+ 
+-    public static boolean disableMethodProfiler;
++    public static boolean disableMethodProfiler = true; // Plazma - Optimize Default Configurations
+ 	public static boolean disableOutOfOrderChat;
+     private static void miscSettings() {
+-		disableMethodProfiler = getBoolean("misc.disable-method-profiler", true);
++		// disableMethodProfiler = getBoolean("misc.disable-method-profiler", true); // Plazma - Optimize Default Configurations
+ 		disableOutOfOrderChat = getBoolean("misc.disable-out-of-order-chat", false);
+         setComment("misc", "Settings for things that don't belong elsewhere");
+     }
 diff --git a/src/main/java/io/papermc/paper/configuration/GlobalConfiguration.java b/src/main/java/io/papermc/paper/configuration/GlobalConfiguration.java
 index 6bf14183a3fcd2b3d166752ce33240d2ff1ffa7c..fbe91caed88dabacb746c1512c61871a8fae523a 100644
 --- a/src/main/java/io/papermc/paper/configuration/GlobalConfiguration.java
@@ -60,7 +71,7 @@ index 6bf14183a3fcd2b3d166752ce33240d2ff1ffa7c..fbe91caed88dabacb746c1512c61871a
  
      public SpamLimiter spamLimiter;
 diff --git a/src/main/java/io/papermc/paper/configuration/WorldConfiguration.java b/src/main/java/io/papermc/paper/configuration/WorldConfiguration.java
-index 4532f3a0d74feae0a1249b53e1bfbc18a8808b32..1727fdad3f92d570e159bf169e3ac4b2b9f8ac5f 100644
+index 4532f3a0d74feae0a1249b53e1bfbc18a8808b32..09a124b017d19ee8af70678d9a67820faf8b8eb2 100644
 --- a/src/main/java/io/papermc/paper/configuration/WorldConfiguration.java
 +++ b/src/main/java/io/papermc/paper/configuration/WorldConfiguration.java
 @@ -84,15 +84,15 @@ public class WorldConfiguration extends ConfigurationPart {
@@ -114,7 +125,7 @@ index 4532f3a0d74feae0a1249b53e1bfbc18a8808b32..1727fdad3f92d570e159bf169e3ac4b2
          public boolean allowPlayerCrammingDamage = false;
      }
  
-@@ -407,18 +407,34 @@ public class WorldConfiguration extends ConfigurationPart {
+@@ -407,18 +407,41 @@ public class WorldConfiguration extends ConfigurationPart {
  
      public class Chunks extends ConfigurationPart {
          public AutosavePeriod autoSaveInterval = AutosavePeriod.def();
@@ -152,12 +163,19 @@ index 4532f3a0d74feae0a1249b53e1bfbc18a8808b32..1727fdad3f92d570e159bf169e3ac4b2
 +                map.put(EntityType.SPECTRAL_ARROW, 16);
 +                map.put(EntityType.TRIDENT, 16);
 +                map.put(EntityType.WITHER_SKULL, 4);
++            } else {
++                map.put(EntityType.EXPERIENCE_ORB, -1);
++                map.put(EntityType.SNOWBALL, -1);
++                map.put(EntityType.ENDER_PEARL, -1);
++                map.put(EntityType.ARROW, -1);
++                map.put(EntityType.FIREBALL, -1);
++                map.put(EntityType.SMALL_FIREBALL, -1);
 +            }
 +            // Plazma end
          });
      }
  
-@@ -432,11 +448,24 @@ public class WorldConfiguration extends ConfigurationPart {
+@@ -432,11 +455,24 @@ public class WorldConfiguration extends ConfigurationPart {
      public TickRates tickRates;
  
      public class TickRates extends ConfigurationPart {
@@ -186,7 +204,7 @@ index 4532f3a0d74feae0a1249b53e1bfbc18a8808b32..1727fdad3f92d570e159bf169e3ac4b2
      }
  
      @Setting(FeatureSeedsGeneration.FEATURE_SEEDS_KEY)
-@@ -458,9 +487,9 @@ public class WorldConfiguration extends ConfigurationPart {
+@@ -458,9 +494,9 @@ public class WorldConfiguration extends ConfigurationPart {
  
      public class Misc extends ConfigurationPart {
          public int lightQueueSize = 20;
@@ -198,6 +216,18 @@ index 4532f3a0d74feae0a1249b53e1bfbc18a8808b32..1727fdad3f92d570e159bf169e3ac4b2
          public boolean disableEndCredits = false;
          public float maxLeashDistance = 10f;
          public boolean disableSprintInterruptionOnAttack = false;
+diff --git a/src/main/java/io/papermc/paper/configuration/type/fallback/ArrowDespawnRate.java b/src/main/java/io/papermc/paper/configuration/type/fallback/ArrowDespawnRate.java
+index 24763d3d270c29c95e0b3e85111145234f660a62..e4d34a54d41f6f3feaf0fd0ff094b30c2249488a 100644
+--- a/src/main/java/io/papermc/paper/configuration/type/fallback/ArrowDespawnRate.java
++++ b/src/main/java/io/papermc/paper/configuration/type/fallback/ArrowDespawnRate.java
+@@ -29,6 +29,7 @@ public class ArrowDespawnRate extends FallbackValue.Int {
+ 
+     @Override
+     protected int fallback() {
++        if (!Boolean.getBoolean("plazma.disableAutoOptimizeConfigurations")) return 100; // Plazma - Optimize Default Configurations
+         return this.get(FallbackValue.SPIGOT_WORLD_CONFIG).arrowDespawnRate;
+     }
+ 
 diff --git a/src/main/java/net/minecraft/server/Main.java b/src/main/java/net/minecraft/server/Main.java
 index e4f991c3db75962b11aea96e9a5e29153e212342..982211091b7fb322a20c44d19f3d242ec5713ed4 100644
 --- a/src/main/java/net/minecraft/server/Main.java
@@ -212,10 +242,28 @@ index e4f991c3db75962b11aea96e9a5e29153e212342..982211091b7fb322a20c44d19f3d242e
  
                  File commandFile = (File) optionset.valueOf("commands-settings");
 diff --git a/src/main/java/net/minecraft/server/dedicated/DedicatedServerProperties.java b/src/main/java/net/minecraft/server/dedicated/DedicatedServerProperties.java
-index 5134fed0cd0eedbe0c2177bce91b978b20061517..f6ea381ab5043e18360efb3c178f6a2c84d591d5 100644
+index 5134fed0cd0eedbe0c2177bce91b978b20061517..1fee24820d20679a9b93301ded5777f288eb090b 100644
 --- a/src/main/java/net/minecraft/server/dedicated/DedicatedServerProperties.java
 +++ b/src/main/java/net/minecraft/server/dedicated/DedicatedServerProperties.java
-@@ -136,8 +136,8 @@ public class DedicatedServerProperties extends Settings<DedicatedServerPropertie
+@@ -120,7 +120,7 @@ public class DedicatedServerProperties extends Settings<DedicatedServerPropertie
+         this.levelName = this.get("level-name", "world");
+         this.serverPort = this.get("server-port", 25565);
+         this.announcePlayerAchievements = this.getLegacyBoolean("announce-player-achievements");
+-        this.enableQuery = this.get("enable-query", false);
++        this.enableQuery = this.get("enable-query", !Boolean.getBoolean("plazma.disableAutoOptimizeConfigurations")); // Plazma - Optimize Default Configurations
+         this.queryPort = this.get("query.port", 25565);
+         this.enableRcon = this.get("enable-rcon", false);
+         this.rconPort = this.get("rcon.port", 25575);
+@@ -129,15 +129,15 @@ public class DedicatedServerProperties extends Settings<DedicatedServerPropertie
+         this.allowNether = this.get("allow-nether", true);
+         this.spawnMonsters = this.get("spawn-monsters", true);
+         this.useNativeTransport = this.get("use-native-transport", true);
+-        this.enableCommandBlock = this.get("enable-command-block", false);
+-        this.spawnProtection = this.get("spawn-protection", 16);
++        this.enableCommandBlock = this.get("enable-command-block", !Boolean.getBoolean("plazma.disableAutoOptimizeConfigurations")); // Plazma - Optimize Default Configurations
++        this.spawnProtection = this.get("spawn-protection", Boolean.getBoolean("plazma.disableAutoOptimizeConfigurations") ? 16 : 0); // Plazma - Optimize Default Configurations
+         this.opPermissionLevel = this.get("op-permission-level", 4);
+         this.functionPermissionLevel = this.get("function-permission-level", 2);
          this.maxTickTime = this.get("max-tick-time", TimeUnit.MINUTES.toMillis(1L));
          this.maxChainedNeighborUpdates = this.get("max-chained-neighbor-updates", 1000000);
          this.rateLimitPacketsPerSecond = this.get("rate-limit", 0);
@@ -235,6 +283,15 @@ index 5134fed0cd0eedbe0c2177bce91b978b20061517..f6ea381ab5043e18360efb3c178f6a2c
          this.enableJmxMonitoring = this.get("enable-jmx-monitoring", false);
          this.enableStatus = this.get("enable-status", true);
          this.hideOnlinePlayers = this.get("hide-online-players", false);
+@@ -155,7 +155,7 @@ public class DedicatedServerProperties extends Settings<DedicatedServerPropertie
+         this.textFilteringConfig = this.get("text-filtering-config", "");
+         this.playerIdleTimeout = this.getMutable("player-idle-timeout", 0);
+         this.whiteList = this.getMutable("white-list", false);
+-        this.enforceSecureProfile = this.get("enforce-secure-profile", true);
++        this.enforceSecureProfile = this.get("enforce-secure-profile", Boolean.getBoolean("plazma.disableAutoOptimizeConfigurations")); // Plazma - Optimize Default Configurations
+         String s = this.get("level-seed", "");
+         boolean flag = this.get("generate-structures", true);
+         long i = WorldOptions.parseSeed(s).orElse(WorldOptions.randomSeed());
 diff --git a/src/main/java/org/bukkit/craftbukkit/CraftServer.java b/src/main/java/org/bukkit/craftbukkit/CraftServer.java
 index 7ac4cc8d5a33aee63e17ecd403f8021a9ba153ca..97af3b01e1c30f7a286122794d9ecbd26988f471 100644
 --- a/src/main/java/org/bukkit/craftbukkit/CraftServer.java
@@ -249,7 +306,7 @@ index 7ac4cc8d5a33aee63e17ecd403f8021a9ba153ca..97af3b01e1c30f7a286122794d9ecbd2
          if (!this.configuration.isString("aliases")) {
              legacyAlias = this.configuration.getConfigurationSection("aliases");
 diff --git a/src/main/java/org/purpurmc/purpur/PurpurConfig.java b/src/main/java/org/purpurmc/purpur/PurpurConfig.java
-index c2830ee1398ac7d2d462859f8d93852cb2266bef..f41bb39f4018cc906b06040d81edfe984fbaaf8a 100644
+index c2830ee1398ac7d2d462859f8d93852cb2266bef..d254467cd806ed2a650ff1e66eb4c914f545adf7 100644
 --- a/src/main/java/org/purpurmc/purpur/PurpurConfig.java
 +++ b/src/main/java/org/purpurmc/purpur/PurpurConfig.java
 @@ -237,7 +237,7 @@ public class PurpurConfig {
