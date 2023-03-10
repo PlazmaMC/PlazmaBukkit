@@ -36,3 +36,5 @@
 
 ## ⚖️ License
 - This project and all patches are licensed under the [MIT license](LICENSE.md) unless otherwise noted in the patch headers.
+
+## 🌀 Sponsorship - Minecraft Development Dictionary (KOREAN) 
