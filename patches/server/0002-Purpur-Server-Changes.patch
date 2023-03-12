@@ -1,6 +1,6 @@
 From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
 From: AlphaKR93 <dev@alpha93.kr>
-Date: Fri, 10 Mar 2023 11:36:23 +0000
+Date: Sun, 12 Mar 2023 05:33:30 +0000
 Subject: [PATCH] Purpur Server Changes
 
 Original: PurpurMC
@@ -25,7 +25,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 
 diff --git a/build.gradle.kts b/build.gradle.kts
-index af8a561e4d59d98ebb6d7a8fbcb072e361b10058..b6fde7181a58037a2e2a6fd23daac9766127fc0e 100644
+index 8d8c5a8bd2a53ac6d9b36e0330a7be6725aa407c..70d512c0c70d2470eaca295b6e35bb3be2f3f6a3 100644
 --- a/build.gradle.kts
 +++ b/build.gradle.kts
 @@ -7,9 +7,9 @@ plugins {
@@ -69,7 +69,7 @@ index af8a561e4d59d98ebb6d7a8fbcb072e361b10058..b6fde7181a58037a2e2a6fd23daac976
      standardInput = System.`in`
      workingDir = rootProject.layout.projectDirectory
 diff --git a/src/main/java/com/destroystokyo/paper/Metrics.java b/src/main/java/com/destroystokyo/paper/Metrics.java
-index 061716934ba0a1f01e4d85d664034f72b3c7a765..9713263c3bd34ab8a3bfc0a8797ba0b1b88ed733 100644
+index 692c962193cf9fcc6801fc93f3220bdc673d527b..9713263c3bd34ab8a3bfc0a8797ba0b1b88ed733 100644
 --- a/src/main/java/com/destroystokyo/paper/Metrics.java
 +++ b/src/main/java/com/destroystokyo/paper/Metrics.java
 @@ -593,7 +593,7 @@ public class Metrics {
@@ -81,12 +81,20 @@ index 061716934ba0a1f01e4d85d664034f72b3c7a765..9713263c3bd34ab8a3bfc0a8797ba0b1
  
                  metrics.addCustomChart(new Metrics.SimplePie("minecraft_version", () -> {
                      String minecraftVersion = Bukkit.getVersion();
-@@ -602,8 +602,8 @@ public class Metrics {
+@@ -602,16 +602,8 @@ public class Metrics {
                  }));
  
                  metrics.addCustomChart(new Metrics.SingleLineChart("players", () -> Bukkit.getOnlinePlayers().size()));
 -                metrics.addCustomChart(new Metrics.SimplePie("online_mode", () -> Bukkit.getOnlineMode() ? "online" : "offline"));
--                metrics.addCustomChart(new Metrics.SimplePie("pufferfish_version", () -> (Metrics.class.getPackage().getImplementationVersion() != null) ? Metrics.class.getPackage().getImplementationVersion() : "unknown"));
+-                final String paperVersion;
+-                final String implVersion = org.bukkit.craftbukkit.Main.class.getPackage().getImplementationVersion();
+-                if (implVersion != null) {
+-                    final String buildOrHash = implVersion.substring(implVersion.lastIndexOf('-') + 1);
+-                    paperVersion = "git-Pufferfish-%s-%s".formatted(Bukkit.getServer().getMinecraftVersion(), buildOrHash); // Pufferfish
+-                } else {
+-                    paperVersion = "unknown";
+-                }
+-                metrics.addCustomChart(new Metrics.SimplePie("pufferfish_version", () -> paperVersion)); // Pufferfish
 +                metrics.addCustomChart(new Metrics.SimplePie("online_mode", () -> Bukkit.getOnlineMode() ? "online" : (io.papermc.paper.configuration.GlobalConfiguration.get().proxies.isProxyOnlineMode() ? "bungee" : "offline"))); // Purpur
 +                metrics.addCustomChart(new Metrics.SimplePie("purpur_version", () -> (org.bukkit.craftbukkit.Main.class.getPackage().getImplementationVersion() != null) ? org.bukkit.craftbukkit.Main.class.getPackage().getImplementationVersion() : "unknown")); // Purpur
  
@@ -3014,7 +3022,7 @@ index 877498729c66de9aa6a27c9148f7494d7895615c..acd7468ee3c86d3456e96e4ec3d7e6a4
              Util.logAndPauseIfInIde("Detected setBlock in a far chunk [" + i + ", " + j + "], pos: " + pos + ", status: " + this.generatingStatus + (this.currentlyGenerating == null ? "" : ", currently generating: " + (String) this.currentlyGenerating.get()));
              hasSetFarWarned = true;
 diff --git a/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java b/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
-index c6a1bde35274bdd0e008a6ca5af006a5d7bcd8bb..69463c7ca9995c02968bc2688adbe7131d91aa8b 100644
+index 2ca19bbe3a71091843fc7175d726c70321d1fee3..6f5b98ecae60a34284d9679e95bb2ff85567b5bc 100644
 --- a/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
 +++ b/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
 @@ -259,6 +259,7 @@ public class ServerGamePacketListenerImpl implements ServerPlayerConnection, Tic
@@ -17193,7 +17201,7 @@ index 3b959f42d958bf0f426853aee56753d6c455fcdb..d17abb283ea818244df0379d6b57fc63
                  if (range < 0.0D || d < range * range) {
                      return true;
 diff --git a/src/main/java/net/minecraft/world/level/Explosion.java b/src/main/java/net/minecraft/world/level/Explosion.java
-index a213f4098859858a73ddd601bbe8c7511972e0d5..cd63170e56b402fbf8bbd904270979fa51330e26 100644
+index 5ef6b5ad4dd69a57595914c7af8422ee2f6ad054..0b572fab7b282676233e4f61aa357f1bfcfcfad1 100644
 --- a/src/main/java/net/minecraft/world/level/Explosion.java
 +++ b/src/main/java/net/minecraft/world/level/Explosion.java
 @@ -86,7 +86,7 @@ public class Explosion {
@@ -17234,7 +17242,7 @@ index a213f4098859858a73ddd601bbe8c7511972e0d5..cd63170e56b402fbf8bbd904270979fa
          this.level.gameEvent(this.source, GameEvent.EXPLODE, new Vec3(this.x, this.y, this.z));
          Set<BlockPos> set = Sets.newHashSet();
          boolean flag = true;
-@@ -360,7 +377,7 @@ public class Explosion {
+@@ -363,7 +380,7 @@ public class Explosion {
                  if (!iblockdata.isAir() && iblockdata.isDestroyable()) { // Paper
                      BlockPos blockposition1 = blockposition.immutable();
  
@@ -17243,7 +17251,7 @@ index a213f4098859858a73ddd601bbe8c7511972e0d5..cd63170e56b402fbf8bbd904270979fa
                      if (block.dropFromExplosion(this)) {
                          Level world = this.level;
  
-@@ -382,7 +399,7 @@ public class Explosion {
+@@ -385,7 +402,7 @@ public class Explosion {
  
                      this.level.setBlock(blockposition, Blocks.AIR.defaultBlockState(), 3);
                      block.wasExploded(this.level, blockposition, this);
@@ -20366,7 +20374,7 @@ index c91bac6f3f1d60c950b93d157531cd8f7500e8d8..6a327616cd590b70170f8441c003a210
      public PersistentDataContainer getPersistentDataContainer() {
          return this.persistentDataContainer;
 diff --git a/src/main/java/org/bukkit/craftbukkit/Main.java b/src/main/java/org/bukkit/craftbukkit/Main.java
-index 190e17eb28d166aedee06e9578561ba402d1b6d2..576cd8e20982bb20d10213b6c7a229428eec1c2f 100644
+index f30621be24c6c3a4f173436fce1ad1c13507c84f..8a4c8701122edf2f29edbe97e4fa199da2744e9e 100644
 --- a/src/main/java/org/bukkit/craftbukkit/Main.java
 +++ b/src/main/java/org/bukkit/craftbukkit/Main.java
 @@ -166,6 +166,20 @@ public class Main {
@@ -20728,7 +20736,7 @@ index 4d7a2c4c1001aefe9fcd4be8dbcb414f721bfff9..2c7716a9d65ebda209a144b82c2126b6
 +    // Purpur end
  }
 diff --git a/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java b/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java
-index c5078b9e4f1853126546c802ae29766e7dd4d151..33483f88a8c53f5ad29dcff0faa1a27995601474 100644
+index c546a465a2f85e1b0e785074af15546637619e8f..08649f51adb40fa69d45b95c2d13aa918fff41bf 100644
 --- a/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java
 +++ b/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java
 @@ -524,10 +524,15 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
@@ -20748,7 +20756,7 @@ index c5078b9e4f1853126546c802ae29766e7dd4d151..33483f88a8c53f5ad29dcff0faa1a279
          for (ServerPlayer player : (List<ServerPlayer>) server.getHandle().players) {
              if (player.getBukkitEntity().canSee(this)) {
                  player.connection.send(new ClientboundPlayerInfoUpdatePacket(ClientboundPlayerInfoUpdatePacket.Action.UPDATE_DISPLAY_NAME, this.getHandle()));
-@@ -1307,6 +1312,10 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
+@@ -1313,6 +1318,10 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
          }
  
          if (entity.isVehicle() && !ignorePassengers) { // Paper - Teleport API
@@ -20759,7 +20767,7 @@ index c5078b9e4f1853126546c802ae29766e7dd4d151..33483f88a8c53f5ad29dcff0faa1a279
              return false;
          }
  
-@@ -2284,6 +2293,28 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
+@@ -2288,6 +2297,28 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
          return this.getHandle().getAbilities().walkingSpeed * 2f;
      }
  
@@ -20788,7 +20796,7 @@ index c5078b9e4f1853126546c802ae29766e7dd4d151..33483f88a8c53f5ad29dcff0faa1a279
      private void validateSpeed(float value) {
          if (value < 0) {
              if (value < -1f) {
-@@ -3077,4 +3108,97 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
+@@ -3081,4 +3112,97 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
          return this.spigot;
      }
      // Spigot end
@@ -21112,7 +21120,7 @@ index 88d3ca586ff6905f18a8ab9f0e229f440ed44088..27dd4eb4781a3c75772860c11db886e1
 +    // Purpur end
  }
 diff --git a/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaPotion.java b/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaPotion.java
-index 298326115f048bb79e3c949861c187134eb5efb8..9b060070ddbbade4c1b6830b9b861f462d60b138 100644
+index 0d4348ce1c4ec9bb779eaebf8606ea578f17d2cb..486768894f130cd23905cc7a8be16ce705667bbb 100644
 --- a/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaPotion.java
 +++ b/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaPotion.java
 @@ -13,6 +13,7 @@ import net.minecraft.nbt.ListTag;
@@ -21133,8 +21141,8 @@ index 298326115f048bb79e3c949861c187134eb5efb8..9b060070ddbbade4c1b6830b9b861f46
      // is treated as the empty form of the meta because it represents an empty potion with no effect
 @@ -92,7 +94,13 @@ class CraftMetaPotion extends CraftMetaItem implements PotionMeta {
                  boolean ambient = effect.getBoolean(AMBIENT.NBT);
-                 boolean particles = tag.contains(SHOW_PARTICLES.NBT, CraftMagicNumbers.NBT.TAG_BYTE) ? effect.getBoolean(SHOW_PARTICLES.NBT) : true;
-                 boolean icon = tag.contains(SHOW_ICON.NBT, CraftMagicNumbers.NBT.TAG_BYTE) ? effect.getBoolean(SHOW_ICON.NBT) : particles;
+                 boolean particles = effect.contains(SHOW_PARTICLES.NBT, CraftMagicNumbers.NBT.TAG_BYTE) ? effect.getBoolean(SHOW_PARTICLES.NBT) : true;
+                 boolean icon = effect.contains(SHOW_ICON.NBT, CraftMagicNumbers.NBT.TAG_BYTE) ? effect.getBoolean(SHOW_ICON.NBT) : particles;
 -                this.customEffects.add(new PotionEffect(type, duration, amp, ambient, particles, icon));
 +                // Purpur start
 +                NamespacedKey key = null;
@@ -21300,10 +21308,10 @@ index 138407c2d4b0bc55ddb9aac5d2aa3edadda090fb..a6e9e503a496c18e2501b03ec84f4600
          // Paper end - add timings for scoreboard search
      }
 diff --git a/src/main/java/org/bukkit/craftbukkit/util/CraftMagicNumbers.java b/src/main/java/org/bukkit/craftbukkit/util/CraftMagicNumbers.java
-index 6aa2121e286dd6d43201a38722ea0cdd205baaa7..aa65fb409f52cf79b2f532e5cd1fb11bef753180 100644
+index 0ccde7fe2a852f7da72f0b3f5a53cb48d28d1840..2d53d30d603a4627ad96dfff659ad04012aaf7f9 100644
 --- a/src/main/java/org/bukkit/craftbukkit/util/CraftMagicNumbers.java
 +++ b/src/main/java/org/bukkit/craftbukkit/util/CraftMagicNumbers.java
-@@ -468,7 +468,7 @@ public final class CraftMagicNumbers implements UnsafeValues {
+@@ -464,7 +464,7 @@ public final class CraftMagicNumbers implements UnsafeValues {
  
      @Override
      public com.destroystokyo.paper.util.VersionFetcher getVersionFetcher() {
