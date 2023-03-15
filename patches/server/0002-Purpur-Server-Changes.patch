@@ -1,6 +1,6 @@
 From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
 From: AlphaKR93 <dev@alpha93.kr>
-Date: Tue, 14 Mar 2023 20:51:38 +0000
+Date: Wed, 15 Mar 2023 04:26:22 +0000
 Subject: [PATCH] Purpur Server Changes
 
 Original: PurpurMC
@@ -25,7 +25,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 
 diff --git a/build.gradle.kts b/build.gradle.kts
-index 8d8c5a8bd2a53ac6d9b36e0330a7be6725aa407c..70d512c0c70d2470eaca295b6e35bb3be2f3f6a3 100644
+index 8d8c5a8bd2a53ac6d9b36e0330a7be6725aa407c..0435c1eb5c1fa6f9180ee8dc36a61afbac0f952e 100644
 --- a/build.gradle.kts
 +++ b/build.gradle.kts
 @@ -7,9 +7,9 @@ plugins {
@@ -40,17 +40,18 @@ index 8d8c5a8bd2a53ac6d9b36e0330a7be6725aa407c..70d512c0c70d2470eaca295b6e35bb3b
          exclude("io.papermc.paper", "paper-api")
      }
      // Pufferfish end
-@@ -42,6 +42,9 @@ dependencies {
+@@ -42,6 +42,10 @@ dependencies {
      runtimeOnly("mysql:mysql-connector-java:8.0.29")
      runtimeOnly("com.lmax:disruptor:3.4.4") // Paper
  
-+    implementation("cat.inspiracio:rhino-js-engine:1.7.7.1") // Purpur
++    implementation("org.mozilla:rhino-runtime:1.7.14") // Purpur
++    implementation("org.mozilla:rhino-engine:1.7.14") // Purpur
 +    implementation("dev.omega24:upnp4j:1.0") // Purpur
 +
      runtimeOnly("org.apache.maven:maven-resolver-provider:3.8.5")
      runtimeOnly("org.apache.maven.resolver:maven-resolver-connector-basic:1.7.3")
      runtimeOnly("org.apache.maven.resolver:maven-resolver-transport-http:1.7.3")
-@@ -81,7 +84,7 @@ tasks.jar {
+@@ -81,7 +85,7 @@ tasks.jar {
          attributes(
              "Main-Class" to "org.bukkit.craftbukkit.Main",
              "Implementation-Title" to "CraftBukkit",
@@ -59,7 +60,7 @@ index 8d8c5a8bd2a53ac6d9b36e0330a7be6725aa407c..70d512c0c70d2470eaca295b6e35bb3b
              "Implementation-Vendor" to date, // Paper
              "Specification-Title" to "Bukkit",
              "Specification-Version" to project.version,
-@@ -153,7 +156,7 @@ fun TaskContainer.registerRunTask(
+@@ -153,7 +157,7 @@ fun TaskContainer.registerRunTask(
      name: String,
      block: JavaExec.() -> Unit
  ): TaskProvider<JavaExec> = register<JavaExec>(name) {
@@ -963,7 +964,7 @@ index 38c09c65dfa4a7a0c80d36f726c1fd028cbe05f8..52c7f83f525d150ce30e33f220d879d1
          }
          // Paper end
 diff --git a/src/main/java/net/minecraft/network/FriendlyByteBuf.java b/src/main/java/net/minecraft/network/FriendlyByteBuf.java
-index 32ee4ed11aefd82dca2e3e78b3108f041fdc3695..314318a21b6fa9e827945d8996c6ed0f9679a4eb 100644
+index 32ee4ed11aefd82dca2e3e78b3108f041fdc3695..bbbb6a15c9351c4276ef8df85508fd263f40c610 100644
 --- a/src/main/java/net/minecraft/network/FriendlyByteBuf.java
 +++ b/src/main/java/net/minecraft/network/FriendlyByteBuf.java
 @@ -89,6 +89,8 @@ public class FriendlyByteBuf extends ByteBuf {
@@ -975,7 +976,7 @@ index 32ee4ed11aefd82dca2e3e78b3108f041fdc3695..314318a21b6fa9e827945d8996c6ed0f
      public FriendlyByteBuf(ByteBuf parent) {
          this.source = parent;
      }
-@@ -632,6 +634,13 @@ public class FriendlyByteBuf extends ByteBuf {
+@@ -632,6 +634,17 @@ public class FriendlyByteBuf extends ByteBuf {
              this.writeBoolean(false);
          } else {
              this.writeBoolean(true);
@@ -983,7 +984,11 @@ index 32ee4ed11aefd82dca2e3e78b3108f041fdc3695..314318a21b6fa9e827945d8996c6ed0f
 +            if (hasItemSerializeEvent) {
 +                var event = new org.purpurmc.purpur.event.packet.NetworkItemSerializeEvent(stack.asBukkitCopy());
 +                event.callEvent();
-+                stack = ItemStack.fromBukkitCopy(event.getItemStack());
++                ItemStack newStack = ItemStack.fromBukkitCopy(event.getItemStack());
++                if (org.purpurmc.purpur.PurpurConfig.fixNetworkSerializedItemsInCreative && !ItemStack.matches(stack, newStack)) {
++                    stack.save(newStack.getOrCreateTagElement("Purpur.OriginalItem"));
++                }
++                stack = newStack;
 +            }
 +            // Purpur end
              Item item = stack.getItem();
@@ -3022,7 +3027,7 @@ index 877498729c66de9aa6a27c9148f7494d7895615c..acd7468ee3c86d3456e96e4ec3d7e6a4
              Util.logAndPauseIfInIde("Detected setBlock in a far chunk [" + i + ", " + j + "], pos: " + pos + ", status: " + this.generatingStatus + (this.currentlyGenerating == null ? "" : ", currently generating: " + (String) this.currentlyGenerating.get()));
              hasSetFarWarned = true;
 diff --git a/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java b/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
-index 2ca19bbe3a71091843fc7175d726c70321d1fee3..6f5b98ecae60a34284d9679e95bb2ff85567b5bc 100644
+index 2ca19bbe3a71091843fc7175d726c70321d1fee3..f5e1361c04d44ae7f82376aff6e5f01aaf45cfdd 100644
 --- a/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
 +++ b/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
 @@ -259,6 +259,7 @@ public class ServerGamePacketListenerImpl implements ServerPlayerConnection, Tic
@@ -3364,7 +3369,20 @@ index 2ca19bbe3a71091843fc7175d726c70321d1fee3..6f5b98ecae60a34284d9679e95bb2ff8
                              // Entity in bucket - SPIGOT-4048 and SPIGOT-6859a
                              if ((entity instanceof Bucketable && entity instanceof LivingEntity && origItem != null && origItem.asItem() == Items.WATER_BUCKET) && (event.isCancelled() || ServerGamePacketListenerImpl.this.player.getInventory().getSelected() == null || ServerGamePacketListenerImpl.this.player.getInventory().getSelected().getItem() != origItem)) {
                                  entity.getEntityData().resendPossiblyDesyncedEntity(player); // Paper - The entire mob gets deleted, so resend it.
-@@ -3435,11 +3528,17 @@ public class ServerGamePacketListenerImpl implements ServerPlayerConnection, Tic
+@@ -3329,6 +3422,12 @@ public class ServerGamePacketListenerImpl implements ServerPlayerConnection, Tic
+                     }
+                 }
+             }
++            // Purpur start
++            if (org.purpurmc.purpur.PurpurConfig.fixNetworkSerializedItemsInCreative) {
++                var tag = itemstack.getTagElement("Purpur.OriginalItem");
++                if (tag != null) itemstack = ItemStack.of(tag);
++            }
++            // Purpur end
+ 
+             boolean flag1 = packet.getSlotNum() >= 1 && packet.getSlotNum() <= 45;
+             boolean flag2 = itemstack.isEmpty() || itemstack.getDamageValue() >= 0 && itemstack.getCount() <= 64 && !itemstack.isEmpty();
+@@ -3435,11 +3534,17 @@ public class ServerGamePacketListenerImpl implements ServerPlayerConnection, Tic
              for (int i = 0; i < signText.size(); ++i) {
                  FilteredText filteredtext = (FilteredText) signText.get(i);
  
@@ -3385,7 +3403,7 @@ index 2ca19bbe3a71091843fc7175d726c70321d1fee3..6f5b98ecae60a34284d9679e95bb2ff8
              }
              SignChangeEvent event = new SignChangeEvent((org.bukkit.craftbukkit.block.CraftBlock) player.getWorld().getBlockAt(x, y, z), this.player.getBukkitEntity(), lines);
              this.cserver.getPluginManager().callEvent(event);
-@@ -3461,6 +3560,16 @@ public class ServerGamePacketListenerImpl implements ServerPlayerConnection, Tic
+@@ -3461,6 +3566,16 @@ public class ServerGamePacketListenerImpl implements ServerPlayerConnection, Tic
  
      @Override
      public void handleKeepAlive(ServerboundKeepAlivePacket packet) {
@@ -3402,7 +3420,7 @@ index 2ca19bbe3a71091843fc7175d726c70321d1fee3..6f5b98ecae60a34284d9679e95bb2ff8
          //PacketUtils.ensureRunningOnSameThread(packet, this, this.player.getLevel()); // CraftBukkit // Paper - This shouldn't be on the main thread
          if (this.keepAlivePending && packet.getId() == this.keepAliveChallenge) {
              int i = (int) (Util.getMillis() - this.keepAliveTime);
-@@ -3511,6 +3620,7 @@ public class ServerGamePacketListenerImpl implements ServerPlayerConnection, Tic
+@@ -3511,6 +3626,7 @@ public class ServerGamePacketListenerImpl implements ServerPlayerConnection, Tic
      private static final ResourceLocation CUSTOM_UNREGISTER = new ResourceLocation("unregister");
  
      private static final ResourceLocation MINECRAFT_BRAND = new ResourceLocation("brand"); // Paper - Brand support
@@ -3410,7 +3428,7 @@ index 2ca19bbe3a71091843fc7175d726c70321d1fee3..6f5b98ecae60a34284d9679e95bb2ff8
  
      @Override
      public void handleCustomPayload(ServerboundCustomPayloadPacket packet) {
-@@ -3535,6 +3645,13 @@ public class ServerGamePacketListenerImpl implements ServerPlayerConnection, Tic
+@@ -3535,6 +3651,13 @@ public class ServerGamePacketListenerImpl implements ServerPlayerConnection, Tic
                  ServerGamePacketListenerImpl.LOGGER.error("Couldn\'t unregister custom payload", ex);
                  this.disconnect("Invalid payload UNREGISTER!", org.bukkit.event.player.PlayerKickEvent.Cause.INVALID_PAYLOAD); // Paper - kick event cause
              }
@@ -21356,10 +21374,10 @@ index 0f8c5fad3c999da15c5c22b4baed275cf396a5d2..31ef9cd39ce5d9f0a6cec261dfbc4ff3
          DefaultPermissions.registerPermission(CommandPermissions.PREFIX + "seed", "Allows the user to view the seed of the world", PermissionDefault.OP, commands);
 diff --git a/src/main/java/org/purpurmc/purpur/PurpurConfig.java b/src/main/java/org/purpurmc/purpur/PurpurConfig.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..c7c0ed8dfe58c841faf684a1fe228eeda6cd57b7
+index 0000000000000000000000000000000000000000..3e6d3b71931a18263eff11841cb4e916ba44e1b8
 --- /dev/null
 +++ b/src/main/java/org/purpurmc/purpur/PurpurConfig.java
-@@ -0,0 +1,633 @@
+@@ -0,0 +1,638 @@
 +package org.purpurmc.purpur;
 +
 +import co.aikar.timings.TimingsManager;
@@ -21917,6 +21935,11 @@ index 0000000000000000000000000000000000000000..c7c0ed8dfe58c841faf684a1fe228eed
 +        });
 +    }
 +
++    public static boolean fixNetworkSerializedItemsInCreative = false;
++    private static void fixNetworkSerializedCreativeItems() {
++        fixNetworkSerializedItemsInCreative = getBoolean("settings.fix-network-serialized-items-in-creative", fixNetworkSerializedItemsInCreative);
++    }
++
 +    public static boolean fixProjectileLootingTransfer = false;
 +    private static void fixProjectileLootingTransfer() {
 +        fixProjectileLootingTransfer = getBoolean("settings.fix-projectile-looting-transfer", fixProjectileLootingTransfer);
@@ -21995,10 +22018,10 @@ index 0000000000000000000000000000000000000000..c7c0ed8dfe58c841faf684a1fe228eed
 +}
 diff --git a/src/main/java/org/purpurmc/purpur/PurpurWorldConfig.java b/src/main/java/org/purpurmc/purpur/PurpurWorldConfig.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..c0c4742027217d5ae27843989ad18be93608496a
+index 0000000000000000000000000000000000000000..b6a9485912e5ca6a65dde62cc4d9fe033b3c55b7
 --- /dev/null
 +++ b/src/main/java/org/purpurmc/purpur/PurpurWorldConfig.java
-@@ -0,0 +1,3179 @@
+@@ -0,0 +1,3189 @@
 +package org.purpurmc.purpur;
 +
 +//import gg.pufferfish.pufferfish.PufferfishConfig;
@@ -24467,12 +24490,22 @@ index 0000000000000000000000000000000000000000..c0c4742027217d5ae27843989ad18be9
 +        skeletonAlwaysDropExp = getBoolean("mobs.skeleton.always-drop-exp", skeletonAlwaysDropExp);
 +        skeletonHeadVisibilityPercent = getDouble("mobs.skeleton.head-visibility-percent", skeletonHeadVisibilityPercent);
 +        skeletonFeedWitherRoses = getInt("mobs.skeleton.feed-wither-roses", skeletonFeedWitherRoses);
++        final String defaultSkeletonBowAccuracy = skeletonBowAccuracy;
 +        skeletonBowAccuracy = getString("mobs.skeleton.bow-accuracy", skeletonBowAccuracy);
 +        for (int i = 1; i < 4; i++) {
-+            float divergence;
++            final float divergence;
 +            try {
 +                Entity.scriptEngine.eval("difficulty = " + i);
-+                divergence = ((Double)Entity.scriptEngine.eval(skeletonBowAccuracy)).floatValue();
++                final Object result = Entity.scriptEngine.eval(skeletonBowAccuracy);
++                if (result instanceof Long) {
++                    divergence = ((Long) result).floatValue();
++                } else if (result instanceof Double) {
++                    divergence = ((Double) result).floatValue();
++                } else {
++                    set("mobs.skeleton.bow-accuracy", defaultSkeletonBowAccuracy);
++                    skeletonBowAccuracy = defaultSkeletonBowAccuracy;
++                    divergence = ((Long) Entity.scriptEngine.eval(skeletonBowAccuracy)).floatValue();
++                }
 +            } catch (Exception e) {
 +                e.printStackTrace();
 +                continue;
