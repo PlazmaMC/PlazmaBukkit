@@ -5,7 +5,7 @@ Subject: [PATCH] Rebrand
 
 
 diff --git a/build.gradle.kts b/build.gradle.kts
-index 0435c1eb5c1fa6f9180ee8dc36a61afbac0f952e..0041d19a476ce01cc7c5a718c9ea7982258207b7 100644
+index 6c5b3f6a2c4f7b20e3388b63c36b7c4bc4cf179f..e4de94641d33b3deadc44bbb5f23f666d79737ea 100644
 --- a/build.gradle.kts
 +++ b/build.gradle.kts
 @@ -7,7 +7,7 @@ plugins {
@@ -13,29 +13,29 @@ index 0435c1eb5c1fa6f9180ee8dc36a61afbac0f952e..0041d19a476ce01cc7c5a718c9ea7982
  
  dependencies {
 -    implementation(project(":purpur-api")) // Purpur
-+    implementation(project(":plazma-api")) // Pufferfish // Purpur // Plazma
-     // Pufferfish start
-     implementation("io.papermc.paper:paper-mojangapi:1.19.3-R0.1-SNAPSHOT") {
-         exclude("io.papermc.paper", "paper-api")
-@@ -85,7 +85,7 @@ tasks.jar {
++    implementation(project(":plazma-api")) // Purpur
+     implementation("io.papermc.paper:paper-mojangapi:1.19.4-R0.1-SNAPSHOT") // Purpur
+     // Paper start
+     implementation("org.jline:jline-terminal-jansi:3.21.0")
+@@ -82,7 +82,7 @@ tasks.jar {
          attributes(
              "Main-Class" to "org.bukkit.craftbukkit.Main",
              "Implementation-Title" to "CraftBukkit",
--            "Implementation-Version" to "git-Purpur-$implementationVersion", // Purpur
+-            "Implementation-Version" to "git-Purpur-$implementationVersion", // Pufferfish // Purpur
 +            "Implementation-Version" to "git-Plazma-$implementationVersion", // Pufferfish // Purpur // Plazma
              "Implementation-Vendor" to date, // Paper
              "Specification-Title" to "Bukkit",
              "Specification-Version" to project.version,
 diff --git a/src/main/java/com/destroystokyo/paper/Metrics.java b/src/main/java/com/destroystokyo/paper/Metrics.java
-index 9713263c3bd34ab8a3bfc0a8797ba0b1b88ed733..f66b7a84ee3bb433dd286175c2e74a6ccaceeaa9 100644
+index 8cde30544e14f8fc2dac32966ae3c21f8cf3a551..7d80d2cf5d607d6051e99e4b08bc1b76098a79da 100644
 --- a/src/main/java/com/destroystokyo/paper/Metrics.java
 +++ b/src/main/java/com/destroystokyo/paper/Metrics.java
 @@ -593,7 +593,7 @@ public class Metrics {
              boolean logFailedRequests = config.getBoolean("logFailedRequests", false);
              // Only start Metrics, if it's enabled in the config
              if (config.getBoolean("enabled", true)) {
--                Metrics metrics = new Metrics("Purpur", serverUUID, logFailedRequests, Bukkit.getLogger()); // Purpur
-+                Metrics metrics = new Metrics("Plazma", serverUUID, logFailedRequests, Bukkit.getLogger()); // Purpur // Plazma
+-                Metrics metrics = new Metrics("Purpur", serverUUID, logFailedRequests, Bukkit.getLogger()); // Pufferfish // Purpur
++                Metrics metrics = new Metrics("Plazma", serverUUID, logFailedRequests, Bukkit.getLogger()); // Pufferfish // Purpur // Plazma
  
                  metrics.addCustomChart(new Metrics.SimplePie("minecraft_version", () -> {
                      String minecraftVersion = Bukkit.getVersion();
@@ -49,7 +49,7 @@ index 9713263c3bd34ab8a3bfc0a8797ba0b1b88ed733..f66b7a84ee3bb433dd286175c2e74a6c
                  metrics.addCustomChart(new Metrics.DrilldownPie("java_version", () -> {
                      Map<String, Map<String, Integer>> map = new HashMap<>();
 diff --git a/src/main/java/com/destroystokyo/paper/PaperVersionFetcher.java b/src/main/java/com/destroystokyo/paper/PaperVersionFetcher.java
-index fba5dbdb7bcbb55400ef18342c9b54612972a718..95c4bc1a58aa7e447f62d5553111d9967cbd3cba 100644
+index 462a6eed350fd660ddaf25d567bb6e97b77d0b2b..fec95437c1ad602f64c4d4d02c276199f27babbd 100644
 --- a/src/main/java/com/destroystokyo/paper/PaperVersionFetcher.java
 +++ b/src/main/java/com/destroystokyo/paper/PaperVersionFetcher.java
 @@ -20,7 +20,7 @@ import java.util.stream.StreamSupport;
@@ -85,33 +85,35 @@ index fba5dbdb7bcbb55400ef18342c9b54612972a718..95c4bc1a58aa7e447f62d5553111d996
      }
  
      private static Component getUpdateStatusMessage(@Nonnull String repo, @Nonnull String branch, @Nonnull String versionInfo) {
-+        /* // Plazma - Disalbe CI Checking
++        /* // Plazma - Disable CI Checking
          //int distance; // Purpur - use field
          try {
              int jenkinsBuild = Integer.parseInt(versionInfo);
-@@ -65,6 +66,9 @@ public class PaperVersionFetcher implements VersionFetcher {
+@@ -65,6 +66,11 @@ public class PaperVersionFetcher implements VersionFetcher {
              versionInfo = versionInfo.replace("\"", "");
              distance = fetchDistanceFromGitHub(repo, branch, versionInfo);
          }
-+         */ // Plazma - Disable CI Checking
++        // Plazma start - Disable CI Checking
++         */
 +        versionInfo = versionInfo.replace("\"", ""); // Plazma
 +        distance = fetchDistanceFromGitHub(repo, branch, versionInfo); // Plazma
++        // Plazma end
  
          switch (distance) {
              case -1:
-@@ -83,6 +87,7 @@ public class PaperVersionFetcher implements VersionFetcher {
+@@ -83,6 +89,7 @@ public class PaperVersionFetcher implements VersionFetcher {
          }
      }
  
-+    /* // Plazma - Disalbe CI Checking
++    /* // Plazma - Disable CI Checking
      private static int fetchDistanceFromSiteApi(int jenkinsBuild, @Nullable String siteApiVersion) {
          if (siteApiVersion == null) { return -1; }
          try {
-@@ -102,6 +107,7 @@ public class PaperVersionFetcher implements VersionFetcher {
+@@ -102,6 +109,7 @@ public class PaperVersionFetcher implements VersionFetcher {
              return -1;
          }
      }
-+     */ // Plazma - Disalbe CI Checking
++     */ // Plazma - Disable CI Checking
  
      // Contributed by Techcable <Techcable@outlook.com> in GH-65
      private static int fetchDistanceFromGitHub(@Nonnull String repo, @Nonnull String branch, @Nonnull String hash) {
@@ -129,7 +131,7 @@ index 3cb56595822799926a8141e60a42f5d1edfc6de5..19d1d136fc28d6c114f6bc44c6450d2d
                  .completer(new ConsoleCommandCompleter(this.server))
                  .option(LineReader.Option.COMPLETE_IN_WORD, true);
 diff --git a/src/main/java/net/minecraft/CrashReport.java b/src/main/java/net/minecraft/CrashReport.java
-index b5b6657e52e4f7a630229bd3ba433438af293e22..b370d01794c9e47970e70b06c0f5781c3f57fa4b 100644
+index b5b6657e52e4f7a630229bd3ba433438af293e22..c468733f44ccb3ff4ba3c20921a4ec52658f0689 100644
 --- a/src/main/java/net/minecraft/CrashReport.java
 +++ b/src/main/java/net/minecraft/CrashReport.java
 @@ -35,7 +35,7 @@ public class CrashReport {
@@ -146,15 +148,15 @@ index b5b6657e52e4f7a630229bd3ba433438af293e22..b370d01794c9e47970e70b06c0f5781c
          // Purpur start
          stringbuilder.append("// ");
 -        stringbuilder.append("// DO NOT REPORT THIS TO PAPER! REPORT TO PURPUR INSTEAD!");
-+        stringbuilder.append("// DO NOT REPORT THIS TO PAPER! REPORT TO PLAZMA INSTEAD!"); // Plazma
++        stringbuilder.append("// DO NOT REPORT THIS TO PAPER OR PURPUR! REPORT TO PLAZMA INSTEAD!"); // Plazma
          // Purpur end
          stringbuilder.append("// ");
          stringbuilder.append(CrashReport.getErrorComment());
 diff --git a/src/main/java/net/minecraft/server/Main.java b/src/main/java/net/minecraft/server/Main.java
-index 781b72fd88149642c9fceaecfbfe7546273fb749..a3c79863717d7eef1261f475d797ae9dda251bcb 100644
+index c6fa6bcd66d61359124a8426b919493c6ec43f06..e0eaa847526431ac58d00f18f0fca6b1ef9a79cd 100644
 --- a/src/main/java/net/minecraft/server/Main.java
 +++ b/src/main/java/net/minecraft/server/Main.java
-@@ -76,6 +76,17 @@ public class Main {
+@@ -81,6 +81,17 @@ public class Main {
  
      @DontObfuscate
      public static void main(final OptionSet optionset) { // CraftBukkit - replaces main(String[] astring)
@@ -173,10 +175,10 @@ index 781b72fd88149642c9fceaecfbfe7546273fb749..a3c79863717d7eef1261f475d797ae9d
          /* CraftBukkit start - Replace everything
          OptionParser optionparser = new OptionParser();
 diff --git a/src/main/java/net/minecraft/server/MinecraftServer.java b/src/main/java/net/minecraft/server/MinecraftServer.java
-index 1772800c123353207e3563a7e2c2b70431aec097..ba6d5d63d6de5db581c8bc94155d8a3acf8f67c3 100644
+index 5416b64c3000c9b17a78991218e068bf5ef33db7..180ea5edb002856f975c074e319998b68b67a7af 100644
 --- a/src/main/java/net/minecraft/server/MinecraftServer.java
 +++ b/src/main/java/net/minecraft/server/MinecraftServer.java
-@@ -927,7 +927,7 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
+@@ -929,7 +929,7 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
          shutdownThread = Thread.currentThread();
          org.spigotmc.WatchdogThread.doStop(); // Paper
          if (!isSameThread()) {
@@ -217,10 +219,10 @@ index c07918aa1ed2469ad7a76a0add60ab648ff7f421..d14e42612752ef1d5c37c492b62ed4a6
                      servergui.runFinalizers();
                  }
 diff --git a/src/main/java/net/minecraft/world/level/Level.java b/src/main/java/net/minecraft/world/level/Level.java
-index fef709fce7309795b6d62d33a220a2be2399efd3..8b37fa386a43fac8144a2094681ed49a38546efb 100644
+index b8001bca2a33ec1e60566948a651400418a6e9e7..92b440b24c6b083f81837611d08fbd6773a2a6e6 100644
 --- a/src/main/java/net/minecraft/world/level/Level.java
 +++ b/src/main/java/net/minecraft/world/level/Level.java
-@@ -1036,7 +1036,7 @@ public abstract class Level implements LevelAccessor, AutoCloseable {
+@@ -1041,7 +1041,7 @@ public abstract class Level implements LevelAccessor, AutoCloseable {
              TickingBlockEntity tickingblockentity = (TickingBlockEntity) this.blockEntityTickers.get(tileTickPosition);
              // Spigot start
              if (tickingblockentity == null) {
@@ -243,20 +245,20 @@ index bd502ca721de0cab438d995efa00ad0554c0d2fe..d72f61f545c3929825e628607b85e0d2
  
      private static final int DEFAULT_SIZE_THRESHOLD = 1024 * 8;
 diff --git a/src/main/java/org/bukkit/craftbukkit/CraftServer.java b/src/main/java/org/bukkit/craftbukkit/CraftServer.java
-index 584596c8849b4dd7f955216f313eefb3229b375c..416c43e9a18cac4be52553020ba0af7a9a653d3b 100644
+index bc1a2df0a7ddaf030917e4723994464d77e55d02..4b359f91cda9b5d58c96e04d56551a640fb58ea4 100644
 --- a/src/main/java/org/bukkit/craftbukkit/CraftServer.java
 +++ b/src/main/java/org/bukkit/craftbukkit/CraftServer.java
-@@ -261,7 +261,7 @@ import javax.annotation.Nullable; // Paper
+@@ -256,7 +256,7 @@ import javax.annotation.Nullable; // Paper
  import javax.annotation.Nonnull; // Paper
  
  public final class CraftServer implements Server {
--    private final String serverName = "Purpur"; // Paper // Purpur
-+    private final String serverName = "Plazma"; // Paper // Purpur // Plazma
+-    private final String serverName = "Purpur"; // Paper // Pufferfish // Purpur
++    private final String serverName = "Pufferfish"; // Paper // Pufferfish // Purpur // Plazma
      private final String serverVersion;
      private final String bukkitVersion = Versioning.getBukkitVersion();
      private final Logger logger = Logger.getLogger("Minecraft");
 diff --git a/src/main/java/org/bukkit/craftbukkit/entity/CraftLivingEntity.java b/src/main/java/org/bukkit/craftbukkit/entity/CraftLivingEntity.java
-index 78ac748859e21a61140e9bff67e4527a8d35b4b6..8e4bebad7907858a413fda2652a8c0a701973e8b 100644
+index cf7ba8724ab68f6955b5ebfa1ba46c4397da32b3..54cbe906619a30b5f7b5dbb344eebf3452e1b200 100644
 --- a/src/main/java/org/bukkit/craftbukkit/entity/CraftLivingEntity.java
 +++ b/src/main/java/org/bukkit/craftbukkit/entity/CraftLivingEntity.java
 @@ -883,7 +883,7 @@ public class CraftLivingEntity extends CraftEntity implements LivingEntity {
@@ -282,29 +284,44 @@ index 5402098dce0d64d3dceea51f248d7d366850a74f..c49bed43a34549936b5751678f2389c2
                  // (async tasks must live with race-conditions if they attempt to cancel between these few lines of code)
              }
 diff --git a/src/main/java/org/bukkit/craftbukkit/util/Versioning.java b/src/main/java/org/bukkit/craftbukkit/util/Versioning.java
-index fb87620c742ff7912f5e8ccd2a7930dd605576d9..af74e9162bca478e3831e633cc6618301b7f84f2 100644
+index 99597258e8e88cd9e2c901c4ac3ff7faeeabee2b..0e695ea608c4e4770f5491d54ad47616d4e857c6 100644
 --- a/src/main/java/org/bukkit/craftbukkit/util/Versioning.java
 +++ b/src/main/java/org/bukkit/craftbukkit/util/Versioning.java
-@@ -11,7 +11,7 @@ public final class Versioning {
-     public static String getBukkitVersion() {
-         String result = "Unknown-Version";
+@@ -8,22 +8,25 @@ import java.util.logging.Logger;
+ import org.bukkit.Bukkit;
  
--        InputStream stream = Bukkit.class.getClassLoader().getResourceAsStream("META-INF/maven/org.purpurmc.purpur/purpur-api/pom.properties"); // Purpur
-+        InputStream stream = Bukkit.class.getClassLoader().getResourceAsStream("META-INF/maven/org.plazmamc.plazma/plazma-api/pom.properties"); // Purpur // Plazma
+ public final class Versioning {
+-    public static String getBukkitVersion() {
+-        String result = "Unknown-Version";
+-
+-        InputStream stream = Bukkit.class.getClassLoader().getResourceAsStream("META-INF/maven/org.purpurmc.purpur/purpur-api/pom.properties"); // Pufferfish // Purpur
++    // Plazma start
++    public static String version = "Unknown-Version";
++    static {
++        InputStream stream = Bukkit.class.getClassLoader().getResourceAsStream("META-INF/maven/org.plazmamc.plazma/plazma-api/pom.properties");
          Properties properties = new Properties();
  
          if (stream != null) {
-@@ -20,7 +20,7 @@ public final class Versioning {
+             try {
+                 properties.load(stream);
  
-                 result = properties.getProperty("version");
+-                result = properties.getProperty("version");
++                version = properties.getProperty("version");
              } catch (IOException ex) {
 -                Logger.getLogger(Versioning.class.getName()).log(Level.SEVERE, "Could not get Bukkit version!", ex);
-+                Logger.getLogger(Versioning.class.getName()).log(Level.SEVERE, "Could not get Plazma version!", ex); // Plazma
++                Logger.getLogger(Versioning.class.getName()).log(Level.SEVERE, "Could not get Plazma version!", ex);
              }
          }
++    }
  
+-        return result;
++    public static String getBukkitVersion() {
++        return version;
+     }
++    // Plazma end
+ }
 diff --git a/src/main/java/org/purpurmc/purpur/PurpurConfig.java b/src/main/java/org/purpurmc/purpur/PurpurConfig.java
-index 3e6d3b71931a18263eff11841cb4e916ba44e1b8..f509c9b9d72710360046679fa26eb594eeffca92 100644
+index 0bcbe1f07ff8e552d2abd6e432af5710005acc04..ac238eeea791180b66677870401c0b756f0db07b 100644
 --- a/src/main/java/org/purpurmc/purpur/PurpurConfig.java
 +++ b/src/main/java/org/purpurmc/purpur/PurpurConfig.java
 @@ -227,7 +227,7 @@ public class PurpurConfig {
