@@ -1,0 +1,42 @@
+name: Test build with Normal JDK
+
+on:
+  push:
+    branches: [ "ver/*", "feat/*", "dev/*", "expr/*" ]
+  workflow_dispatch:
+
+env:
+  ORG_NAME: PlazmaMC
+  MC_VERSION: 1.19.4
+  MAIN_BRANCH: ver/1.19.4
+  DEBUG: 'false'
+
+jobs:
+  release:
+    strategy:
+      matrix:
+        jdk: [19.0.2+7]
+        java: ['temurin']
+        os: [ubuntu-22.04]
+
+    if: "!startsWith(github.event.commits[0].message, '[CI-Skip]')"
+    runs-on: ${{ matrix.os }}
+    steps:
+      - name: Checkout action
+        uses: actions/checkout@v3
+
+      - name: Validate Gradle Wrapper
+        uses: gradle/wrapper-validation-action@v1
+
+      - name: Set up JDK ${{ matrix.java }} ${{ matrix.jdk }}
+        uses: actions/setup-java@v3
+        with:
+          distribution: ${{ matrix.java }}
+          java-version: ${{ matrix.jdk }}
+          cache: 'gradle'
+
+      - name: Test build
+        run: |
+          git config --global user.email "41898282+github-actions[bot]@users.noreply.github.com" && git config --global user.name "github-actions[bot]"
+          ./gradlew applyPatches --stacktrace
+          ./gradlew build --stacktrace
