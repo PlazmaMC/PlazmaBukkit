@@ -1,0 +1,1002 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: AlphaKR93 <dev@alpha93.kr>
+Date: Thu, 23 Mar 2023 20:14:37 +0900
+Subject: [PATCH] Linear region file support
+
+
+diff --git a/build.gradle.kts b/build.gradle.kts
+index e4de94641d33b3deadc44bbb5f23f666d79737ea..592a845b95504c336908f48a26e6a9e0459c9eae 100644
+--- a/build.gradle.kts
++++ b/build.gradle.kts
+@@ -59,6 +59,11 @@ dependencies {
+     testImplementation("org.hamcrest:hamcrest-library:1.3")
+ 
+     implementation("io.netty:netty-all:4.1.87.Final"); // Paper - Bump netty
++
++    // Plazma start
++    implementation("com.github.luben:zstd-jni:1.5.4-1")
++    implementation("org.lz4:lz4-java:1.8.0")
++    // Plazma end
+ }
+ 
+ val craftbukkitPackageVersion = "1_19_R3" // Paper
+diff --git a/src/main/java/io/papermc/paper/chunk/system/io/RegionFileIOThread.java b/src/main/java/io/papermc/paper/chunk/system/io/RegionFileIOThread.java
+index a08cde4eefe879adcee7c4118bc38f98c5097ed0..83212a80af6e82c7c5e4c420be9ba469acbe0e10 100644
+--- a/src/main/java/io/papermc/paper/chunk/system/io/RegionFileIOThread.java
++++ b/src/main/java/io/papermc/paper/chunk/system/io/RegionFileIOThread.java
+@@ -811,7 +811,7 @@ public final class RegionFileIOThread extends PrioritisedQueueExecutorThread {
+                                                final ChunkDataController taskController) {
+         final ChunkPos chunkPos = new ChunkPos(chunkX, chunkZ);
+         if (intendingToBlock) {
+-            return taskController.computeForRegionFile(chunkX, chunkZ, true, (final RegionFile file) -> {
++            return taskController.computeForRegionFile(chunkX, chunkZ, true, (final org.plazmamc.plazma.level.AbstractRegionFile file) -> { // Plazma
+                 if (file == null) { // null if no regionfile exists
+                     return Boolean.FALSE;
+                 }
+@@ -819,7 +819,7 @@ public final class RegionFileIOThread extends PrioritisedQueueExecutorThread {
+                 return file.hasChunk(chunkPos) ? Boolean.TRUE : Boolean.FALSE;
+             });
+         } else {
+-            return taskController.computeForRegionFileIfLoaded(chunkX, chunkZ, (final RegionFile file) -> {
++            return taskController.computeForRegionFileIfLoaded(chunkX, chunkZ, (final org.plazmamc.plazma.level.AbstractRegionFile file) -> { // Plazma
+                 if (file == null) { // null if not loaded
+                     return Boolean.TRUE;
+                 }
+@@ -1116,9 +1116,9 @@ public final class RegionFileIOThread extends PrioritisedQueueExecutorThread {
+             return !this.tasks.isEmpty();
+         }
+ 
+-        public <T> T computeForRegionFile(final int chunkX, final int chunkZ, final boolean existingOnly, final Function<RegionFile, T> function) {
++        public <T> T computeForRegionFile(final int chunkX, final int chunkZ, final boolean existingOnly, final Function<org.plazmamc.plazma.level.AbstractRegionFile, T> function) { // Plazma
+             final RegionFileStorage cache = this.getCache();
+-            final RegionFile regionFile;
++            final org.plazmamc.plazma.level.AbstractRegionFile regionFile; // Plazma
+             synchronized (cache) {
+                 try {
+                     regionFile = cache.getRegionFile(new ChunkPos(chunkX, chunkZ), existingOnly, true);
+@@ -1131,19 +1131,19 @@ public final class RegionFileIOThread extends PrioritisedQueueExecutorThread {
+                 return function.apply(regionFile);
+             } finally {
+                 if (regionFile != null) {
+-                    regionFile.fileLock.unlock();
++                    regionFile.getFileLock().unlock(); // Plazma
+                 }
+             }
+         }
+ 
+-        public <T> T computeForRegionFileIfLoaded(final int chunkX, final int chunkZ, final Function<RegionFile, T> function) {
++        public <T> T computeForRegionFileIfLoaded(final int chunkX, final int chunkZ, final Function<org.plazmamc.plazma.level.AbstractRegionFile, T> function) { // Plazma
+             final RegionFileStorage cache = this.getCache();
+-            final RegionFile regionFile;
++            final org.plazmamc.plazma.level.AbstractRegionFile regionFile; // Plazma
+ 
+             synchronized (cache) {
+                 regionFile = cache.getRegionFileIfLoaded(new ChunkPos(chunkX, chunkZ));
+                 if (regionFile != null) {
+-                    regionFile.fileLock.lock();
++                    regionFile.getFileLock().lock(); // Plazma
+                 }
+             }
+ 
+@@ -1151,7 +1151,7 @@ public final class RegionFileIOThread extends PrioritisedQueueExecutorThread {
+                 return function.apply(regionFile);
+             } finally {
+                 if (regionFile != null) {
+-                    regionFile.fileLock.unlock();
++                    regionFile.getFileLock().unlock(); // Plazma
+                 }
+             }
+         }
+diff --git a/src/main/java/io/papermc/paper/world/ThreadedWorldUpgrader.java b/src/main/java/io/papermc/paper/world/ThreadedWorldUpgrader.java
+index 513833c2ea23df5b079d157bc5cb89d5c9754c0b..1afcba3a81fa8d85c337422d573559ae50bd4346 100644
+--- a/src/main/java/io/papermc/paper/world/ThreadedWorldUpgrader.java
++++ b/src/main/java/io/papermc/paper/world/ThreadedWorldUpgrader.java
+@@ -84,8 +84,17 @@ public class ThreadedWorldUpgrader {
+         LOGGER.info("Found " + regionFiles.length + " regionfiles to convert");
+         LOGGER.info("Starting conversion now for world " + this.worldName);
+ 
++        // Plazma start - Support Linear region file format
++        org.plazmamc.plazma.configurations.LevelConfigurations levelConfigurations = ((org.bukkit.craftbukkit.CraftWorld) org.bukkit.Bukkit.getWorld(worldName)).getHandle().plazmaLevelConfiguration();
++        org.plazmamc.plazma.level.RegionFileFormat regionFormat = levelConfigurations.misc.regionFile.format;
++        int linearCompressionLevel = levelConfigurations.misc.regionFile.linearCompressionLevel;
++        if (regionFormat == org.plazmamc.plazma.level.RegionFileFormat.LINEAR)
++            LOGGER.info("Using " + regionFormat.name() + " region file format with compression level " + linearCompressionLevel);
++        else
++            LOGGER.info("Using " + regionFormat.name() + " region file format");
+         final WorldInfo info = new WorldInfo(() -> worldPersistentData,
+-                new ChunkStorage(regionFolder.toPath(), this.dataFixer, false), this.removeCaches, this.dimensionType, this.generatorKey);
++                new ChunkStorage(regionFormat, linearCompressionLevel, regionFolder.toPath(), this.dataFixer, false), this.removeCaches, this.dimensionType, this.generatorKey);
++        // Plazma end
+ 
+         long expectedChunks = (long)regionFiles.length * (32L * 32L);
+ 
+diff --git a/src/main/java/net/minecraft/server/MinecraftServer.java b/src/main/java/net/minecraft/server/MinecraftServer.java
+index 6d2d1d99977d33fdd8c9a34b65bbca189852d1c0..2db2958397c5cb4d8eb8b9b1f5bff04b82ff230a 100644
+--- a/src/main/java/net/minecraft/server/MinecraftServer.java
++++ b/src/main/java/net/minecraft/server/MinecraftServer.java
+@@ -859,7 +859,7 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
+             // Paper start - rewrite chunk system
+             worldserver.save((ProgressListener) null, flush, worldserver.noSave && !force, close);
+             if (flush) {
+-                MinecraftServer.LOGGER.info("ThreadedAnvilChunkStorage ({}): All chunks are saved", worldserver.getChunkSource().chunkMap.getStorageName());
++                MinecraftServer.LOGGER.info("Threaded{}ChunkStorage ({}): All chunks are saved", worldserver.plazmaLevelConfiguration().misc.regionFile.format.getName(), worldserver.getChunkSource().chunkMap.getStorageName()); // Plazma
+             }
+             // Paper end - rewrite chunk system
+         }
+@@ -883,7 +883,7 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
+                 //MinecraftServer.LOGGER.info("ThreadedAnvilChunkStorage ({}): All chunks are saved", worldserver2.getChunkSource().chunkMap.getStorageName()); // Paper - move up
+             }
+ 
+-            MinecraftServer.LOGGER.info("ThreadedAnvilChunkStorage: All dimensions are saved");
++            MinecraftServer.LOGGER.info("Threaded{}ChunkStorage: All dimensions are saved", this.overworld().plazmaLevelConfiguration().misc.regionFile.format.getName()); // Plazma
+         }
+ 
+         return flag3;
+diff --git a/src/main/java/net/minecraft/server/level/ChunkMap.java b/src/main/java/net/minecraft/server/level/ChunkMap.java
+index 57fdef8b16e1ed9a4693356144b4685bbcea285c..6566750e383e2ef612b254b4274aa4b233653e7b 100644
+--- a/src/main/java/net/minecraft/server/level/ChunkMap.java
++++ b/src/main/java/net/minecraft/server/level/ChunkMap.java
+@@ -294,7 +294,7 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
+     // Paper end
+ 
+     public ChunkMap(ServerLevel world, LevelStorageSource.LevelStorageAccess session, DataFixer dataFixer, StructureTemplateManager structureTemplateManager, Executor executor, BlockableEventLoop<Runnable> mainThreadExecutor, LightChunkGetter chunkProvider, ChunkGenerator chunkGenerator, ChunkProgressListener worldGenerationProgressListener, ChunkStatusUpdateListener chunkStatusChangeListener, Supplier<DimensionDataStorage> persistentStateManagerFactory, int viewDistance, boolean dsync) {
+-        super(session.getDimensionPath(world.dimension()).resolve("region"), dataFixer, dsync);
++        super(world.getLevel().plazmaLevelConfiguration().misc.regionFile.format, world.getLevel().plazmaLevelConfiguration().misc.regionFile.linearCompressionLevel, session.getDimensionPath(world.dimension()).resolve("region"), dataFixer, dsync); // Plazma
+         // Paper - rewrite chunk system
+         this.tickingGenerated = new AtomicInteger();
+         this.playerMap = new PlayerMap();
+@@ -339,7 +339,7 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
+         this.lightEngine = new ThreadedLevelLightEngine(chunkProvider, this, this.level.dimensionType().hasSkyLight(), null, null); // Paper - rewrite chunk system
+         this.distanceManager = new ChunkMap.ChunkDistanceManager(executor, mainThreadExecutor);
+         this.overworldDataStorage = persistentStateManagerFactory;
+-        this.poiManager = new PoiManager(path.resolve("poi"), dataFixer, dsync, iregistrycustom, world);
++        this.poiManager = new PoiManager(world.getLevel().plazmaLevelConfiguration().misc.regionFile.format, world.getLevel().plazmaLevelConfiguration().misc.regionFile.linearCompressionLevel, path.resolve("poi"), dataFixer, dsync, iregistrycustom, world); // Plazma
+         this.setViewDistance(viewDistance);
+         // Paper start
+         this.dataRegionManager = new io.papermc.paper.chunk.SingleThreadChunkRegionManager(this.level, 2, (1.0 / 3.0), 1, 6, "Data", DataRegionData::new, DataRegionSectionData::new);
+@@ -953,13 +953,13 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
+ 
+     // Paper start - chunk status cache "api"
+     public ChunkStatus getChunkStatusOnDiskIfCached(ChunkPos chunkPos) {
+-        net.minecraft.world.level.chunk.storage.RegionFile regionFile = regionFileCache.getRegionFileIfLoaded(chunkPos);
++        org.plazmamc.plazma.level.AbstractRegionFile regionFile = regionFileCache.getRegionFileIfLoaded(chunkPos); // Plazma
+ 
+         return regionFile == null ? null : regionFile.getStatusIfCached(chunkPos.x, chunkPos.z);
+     }
+ 
+     public ChunkStatus getChunkStatusOnDisk(ChunkPos chunkPos) throws IOException {
+-        net.minecraft.world.level.chunk.storage.RegionFile regionFile = regionFileCache.getRegionFile(chunkPos, true);
++        org.plazmamc.plazma.level.AbstractRegionFile regionFile = regionFileCache.getRegionFile(chunkPos, true); // Plazma
+ 
+         if (regionFile == null || !regionFileCache.chunkExists(chunkPos)) {
+             return null;
+@@ -977,7 +977,7 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
+     }
+ 
+     public void updateChunkStatusOnDisk(ChunkPos chunkPos, @Nullable CompoundTag compound) throws IOException {
+-        net.minecraft.world.level.chunk.storage.RegionFile regionFile = regionFileCache.getRegionFile(chunkPos, false);
++        org.plazmamc.plazma.level.AbstractRegionFile regionFile = regionFileCache.getRegionFile(chunkPos, false); // Plazma
+ 
+         regionFile.setStatus(chunkPos.x, chunkPos.z, ChunkSerializer.getStatus(compound));
+     }
+diff --git a/src/main/java/net/minecraft/server/level/ServerLevel.java b/src/main/java/net/minecraft/server/level/ServerLevel.java
+index 341f3f060bfe196afe805a7cf11d21a556e18ad0..ddfa37bf3388e0699a0d8da3153967d07cb55f87 100644
+--- a/src/main/java/net/minecraft/server/level/ServerLevel.java
++++ b/src/main/java/net/minecraft/server/level/ServerLevel.java
+@@ -389,8 +389,8 @@ public class ServerLevel extends Level implements WorldGenLevel {
+ 
+     private static final class EntityRegionFileStorage extends net.minecraft.world.level.chunk.storage.RegionFileStorage {
+ 
+-        public EntityRegionFileStorage(Path directory, boolean dsync) {
+-            super(directory, dsync);
++        public EntityRegionFileStorage(org.plazmamc.plazma.level.RegionFileFormat format, int linearCompressionLevel, Path directory, boolean dsync) { // Plazma
++            super(format, linearCompressionLevel, directory, dsync); // Plazma
+         }
+ 
+         protected void write(ChunkPos pos, net.minecraft.nbt.CompoundTag nbt) throws IOException {
+@@ -583,7 +583,7 @@ public class ServerLevel extends Level implements WorldGenLevel {
+         // CraftBukkit end
+         boolean flag2 = minecraftserver.forceSynchronousWrites();
+         DataFixer datafixer = minecraftserver.getFixerUpper();
+-        this.entityStorage = new EntityRegionFileStorage(convertable_conversionsession.getDimensionPath(resourcekey).resolve("entities"), flag2); // Paper - rewrite chunk system  //EntityPersistentStorage<Entity> entitypersistentstorage = new EntityStorage(this, convertable_conversionsession.getDimensionPath(resourcekey).resolve("entities"), datafixer, flag2, minecraftserver);
++        this.entityStorage = new EntityRegionFileStorage(this.getLevel().plazmaLevelConfiguration().misc.regionFile.format, this.getLevel().plazmaLevelConfiguration().misc.regionFile.linearCompressionLevel, convertable_conversionsession.getDimensionPath(resourcekey).resolve("entities"), flag2); // Paper - rewrite chunk system  //EntityPersistentStorage<Entity> entitypersistentstorage = new EntityStorage(this, convertable_conversionsession.getDimensionPath(resourcekey).resolve("entities"), datafixer, flag2, minecraftserver); // Plazma
+ 
+         // this.entityManager = new PersistentEntitySectionManager<>(Entity.class, new ServerLevel.EntityCallbacks(), entitypersistentstorage, this.entitySliceManager); // Paper // Paper - rewrite chunk system
+         StructureTemplateManager structuretemplatemanager = minecraftserver.getStructureManager();
+diff --git a/src/main/java/net/minecraft/util/worldupdate/WorldUpgrader.java b/src/main/java/net/minecraft/util/worldupdate/WorldUpgrader.java
+index e0bfeebeaac1aaea64bc07cdfdf7790e3e43ca7b..19951c4f368aa0ebd6dbe0ac5f2ef1bb25282a08 100644
+--- a/src/main/java/net/minecraft/util/worldupdate/WorldUpgrader.java
++++ b/src/main/java/net/minecraft/util/worldupdate/WorldUpgrader.java
+@@ -61,7 +61,7 @@ public class WorldUpgrader {
+     private volatile int skipped;
+     private final Object2FloatMap<ResourceKey<LevelStem>> progressMap = Object2FloatMaps.synchronize(new Object2FloatOpenCustomHashMap(Util.identityStrategy())); // CraftBukkit
+     private volatile Component status = Component.translatable("optimizeWorld.stage.counting");
+-    public static final Pattern REGEX = Pattern.compile("^r\\.(-?[0-9]+)\\.(-?[0-9]+)\\.mca$");
++    public static final Pattern REGEX = Pattern.compile("^r\\.(-?[0-9]+)\\.(-?[0-9]+)\\.(linear | mca)$"); // Plazma
+     private final DimensionDataStorage overworldDataStorage;
+ 
+     public WorldUpgrader(LevelStorageSource.LevelStorageAccess session, DataFixer dataFixer, Registry<LevelStem> dimensionOptionsRegistry, boolean eraseCache) {
+@@ -116,7 +116,10 @@ public class WorldUpgrader {
+                 ResourceKey<LevelStem> resourcekey1 = (ResourceKey) iterator1.next(); // CraftBukkit
+                 Path path = this.levelStorage.getDimensionPath((ResourceKey) null); // CraftBukkit
+ 
+-                builder1.put(resourcekey1, new ChunkStorage(path.resolve("region"), this.dataFixer, true));
++                // Plazma start
++                org.plazmamc.plazma.configurations.LevelConfigurations configurations = ((org.bukkit.craftbukkit.CraftWorld) org.bukkit.Bukkit.getWorld(this.levelStorage.getLevelId())).getHandle().plazmaLevelConfiguration();
++                builder1.put(resourcekey1, new ChunkStorage(configurations.misc.regionFile.format, configurations.misc.regionFile.linearCompressionLevel, path.resolve("region"), this.dataFixer, true));
++                // Plazma end
+             }
+ 
+             ImmutableMap<ResourceKey<LevelStem>, ChunkStorage> immutablemap1 = builder1.build(); // CraftBukkit
+@@ -235,7 +238,7 @@ public class WorldUpgrader {
+         File file = this.levelStorage.getDimensionPath((ResourceKey) null).toFile(); // CraftBukkit
+         File file1 = new File(file, "region");
+         File[] afile = file1.listFiles((file2, s) -> {
+-            return s.endsWith(".mca");
++            return s.endsWith(".mca") || s.endsWith(".linear"); // Plazma
+         });
+ 
+         if (afile == null) {
+@@ -254,7 +257,7 @@ public class WorldUpgrader {
+                     int l = Integer.parseInt(matcher.group(2)) << 5;
+ 
+                     try {
+-                        RegionFile regionfile = new RegionFile(file2.toPath(), file1.toPath(), true);
++                        org.plazmamc.plazma.level.AbstractRegionFile regionfile = org.plazmamc.plazma.level.AbstractRegionFileFactory.getAbstractRegionFile(((org.bukkit.craftbukkit.CraftWorld) org.bukkit.Bukkit.getWorld(this.levelStorage.getLevelId())).getHandle().plazmaLevelConfiguration().misc.regionFile.linearCompressionLevel, file2.toPath(), file1.toPath(), true); // Plazma
+ 
+                         try {
+                             for (int i1 = 0; i1 < 32; ++i1) {
+diff --git a/src/main/java/net/minecraft/world/entity/ai/village/poi/PoiManager.java b/src/main/java/net/minecraft/world/entity/ai/village/poi/PoiManager.java
+index 8950b220b9a3512cd4667beb7bdec0e82e07edc6..da81c1c432a6ffdd52281c1337a9afa4e7be99b7 100644
+--- a/src/main/java/net/minecraft/world/entity/ai/village/poi/PoiManager.java
++++ b/src/main/java/net/minecraft/world/entity/ai/village/poi/PoiManager.java
+@@ -57,8 +57,8 @@ public class PoiManager extends SectionStorage<PoiSection> {
+     // Paper end - rewrite chunk system
+ 
+ 
+-    public PoiManager(Path path, DataFixer dataFixer, boolean dsync, RegistryAccess registryManager, LevelHeightAccessor world) {
+-        super(path, PoiSection::codec, PoiSection::new, dataFixer, DataFixTypes.POI_CHUNK, dsync, registryManager, world);
++    public PoiManager(org.plazmamc.plazma.level.RegionFileFormat format, int linearCompressionLevel, Path path, DataFixer dataFixer, boolean dsync, RegistryAccess registryManager, LevelHeightAccessor world) { // Plazma
++        super(format, linearCompressionLevel, path, PoiSection::codec, PoiSection::new, dataFixer, DataFixTypes.POI_CHUNK, dsync, registryManager, world); // Plazma
+         this.world = (net.minecraft.server.level.ServerLevel)world; // Paper - rewrite chunk system
+     }
+ 
+diff --git a/src/main/java/net/minecraft/world/level/chunk/storage/ChunkStorage.java b/src/main/java/net/minecraft/world/level/chunk/storage/ChunkStorage.java
+index 29facbdcbad17ce38bf785f7f3f8346d81cbc32f..11d2032c9c4987418fdb407b1139ffe6d4ef4eef 100644
+--- a/src/main/java/net/minecraft/world/level/chunk/storage/ChunkStorage.java
++++ b/src/main/java/net/minecraft/world/level/chunk/storage/ChunkStorage.java
+@@ -37,11 +37,11 @@ public class ChunkStorage implements AutoCloseable {
+     public final RegionFileStorage regionFileCache;
+     // Paper end - async chunk loading
+ 
+-    public ChunkStorage(Path directory, DataFixer dataFixer, boolean dsync) {
++    public ChunkStorage(org.plazmamc.plazma.level.RegionFileFormat format, int linearCompressionLevel, Path directory, DataFixer dataFixer, boolean dsync) { // Plazma
+         this.fixerUpper = dataFixer;
+         // Paper start - async chunk io
+         // remove IO worker
+-        this.regionFileCache = new RegionFileStorage(directory, dsync, true); // Paper - nuke IOWorker // Paper
++        this.regionFileCache = new RegionFileStorage(format, linearCompressionLevel, directory, dsync, true); // Paper - nuke IOWorker // Paper // Plazma
+         // Paper end - async chunk io
+     }
+ 
+diff --git a/src/main/java/net/minecraft/world/level/chunk/storage/RegionFile.java b/src/main/java/net/minecraft/world/level/chunk/storage/RegionFile.java
+index dcfe090c269d4cbcc2eb1b6f85392848bb34656c..96d7b6708781d3291c30e78ec62972a3184c26e1 100644
+--- a/src/main/java/net/minecraft/world/level/chunk/storage/RegionFile.java
++++ b/src/main/java/net/minecraft/world/level/chunk/storage/RegionFile.java
+@@ -27,7 +27,7 @@ import net.minecraft.nbt.NbtIo;
+ import net.minecraft.world.level.ChunkPos;
+ import org.slf4j.Logger;
+ 
+-public class RegionFile implements AutoCloseable {
++public class RegionFile implements AutoCloseable, org.plazmamc.plazma.level.AbstractRegionFile { // Plazma
+ 
+     private static final Logger LOGGER = LogUtils.getLogger();
+     private static final int SECTOR_BYTES = 4096;
+@@ -51,6 +51,16 @@ public class RegionFile implements AutoCloseable {
+     public final java.util.concurrent.locks.ReentrantLock fileLock = new java.util.concurrent.locks.ReentrantLock(true); // Paper
+     public final Path regionFile; // Paper
+ 
++    // Plazma start
++    public Path getRegionFile() {
++        return this.regionFile;
++    }
++
++    public java.util.concurrent.locks.ReentrantLock getFileLock() {
++        return this.fileLock;
++    }
++    // Plazma end
++
+     // Paper start - try to recover from RegionFile header corruption
+     private static long roundToSectors(long bytes) {
+         long sectors = bytes >>> 12; // 4096 = 2^12
+@@ -129,7 +139,7 @@ public class RegionFile implements AutoCloseable {
+     }
+ 
+     // note: only call for CHUNK regionfiles
+-    boolean recalculateHeader() throws IOException {
++    public boolean recalculateHeader() throws IOException { // Plazma - package -> public
+         if (!this.canRecalcHeader) {
+             return false;
+         }
+@@ -952,13 +962,13 @@ public class RegionFile implements AutoCloseable {
+         }
+     }
+ 
+-    private static int getChunkIndex(int x, int z) {
++    public static int getChunkIndex(int x, int z) { // Plazma - private -> public
+         return (x & 31) + (z & 31) * 32;
+     }
+-    synchronized boolean isOversized(int x, int z) {
++    public synchronized boolean isOversized(int x, int z) { // Plazma - package -> public
+         return this.oversized[getChunkIndex(x, z)] == 1;
+     }
+-    synchronized void setOversized(int x, int z, boolean oversized) throws IOException {
++    public synchronized void setOversized(int x, int z, boolean oversized) throws IOException { // Plazma - package -> public
+         final int offset = getChunkIndex(x, z);
+         boolean previous = this.oversized[offset] == 1;
+         this.oversized[offset] = (byte) (oversized ? 1 : 0);
+@@ -997,7 +1007,7 @@ public class RegionFile implements AutoCloseable {
+         return this.regionFile.getParent().resolve(this.regionFile.getFileName().toString().replaceAll("\\.mca$", "") + "_oversized_" + x + "_" + z + ".nbt");
+     }
+ 
+-    synchronized CompoundTag getOversizedData(int x, int z) throws IOException {
++    public synchronized CompoundTag getOversizedData(int x, int z) throws IOException { // Plazma -> package -> public
+         Path file = getOversizedFile(x, z);
+         try (DataInputStream out = new DataInputStream(new java.io.BufferedInputStream(new InflaterInputStream(Files.newInputStream(file))))) {
+             return NbtIo.read((java.io.DataInput) out);
+diff --git a/src/main/java/net/minecraft/world/level/chunk/storage/RegionFileStorage.java b/src/main/java/net/minecraft/world/level/chunk/storage/RegionFileStorage.java
+index d72f61f545c3929825e628607b85e0d25f79db1f..1c14aae5c5d54f5965c9d1442e3112f3a56200f7 100644
+--- a/src/main/java/net/minecraft/world/level/chunk/storage/RegionFileStorage.java
++++ b/src/main/java/net/minecraft/world/level/chunk/storage/RegionFileStorage.java
+@@ -22,17 +22,25 @@ public class RegionFileStorage implements AutoCloseable {
+ 
+     public static final String ANVIL_EXTENSION = ".mca";
+     private static final int MAX_CACHE_SIZE = 256;
+-    public final Long2ObjectLinkedOpenHashMap<RegionFile> regionCache = new Long2ObjectLinkedOpenHashMap();
++    public final Long2ObjectLinkedOpenHashMap<org.plazmamc.plazma.level.AbstractRegionFile> regionCache = new Long2ObjectLinkedOpenHashMap(); // Plazma
+     private final Path folder;
+     private final boolean sync;
+ 
+     private final boolean isChunkData; // Paper
+ 
+-    protected RegionFileStorage(Path directory, boolean dsync) { // Paper - protected constructor
++    // Plazma start
++    public final org.plazmamc.plazma.level.RegionFileFormat format;
++    public final int linearCompressionLevel;
++
++    protected RegionFileStorage(org.plazmamc.plazma.level.RegionFileFormat format, int linearCompressionLevel, Path directory, boolean dsync) { // Paper - protected constructor
+         // Paper start - add isChunkData param
+-        this(directory, dsync, false);
++        this(format, linearCompressionLevel, directory, dsync, false);
+     }
+-    RegionFileStorage(Path directory, boolean dsync, boolean isChunkData) {
++
++    RegionFileStorage(org.plazmamc.plazma.level.RegionFileFormat format, int linearCompressionLevel, Path directory, boolean dsync, boolean isChunkData) {
++        this.format = format;
++        this.linearCompressionLevel = linearCompressionLevel;
++    // Plazma end
+         this.isChunkData = isChunkData;
+         // Paper end - add isChunkData param
+         this.folder = directory;
+@@ -42,7 +50,7 @@ public class RegionFileStorage implements AutoCloseable {
+     // Paper start
+     public static @Nullable ChunkPos getRegionFileCoordinates(Path file) {
+         String fileName = file.getFileName().toString();
+-        if (!fileName.startsWith("r.") || !fileName.endsWith(".mca")) {
++        if (!fileName.startsWith("r.") || !(fileName.endsWith(".mca") || file.endsWith(".linear"))) { // Plazma
+             return null;
+         }
+ 
+@@ -62,49 +70,66 @@ public class RegionFileStorage implements AutoCloseable {
+         }
+     }
+ 
+-    public synchronized RegionFile getRegionFileIfLoaded(ChunkPos chunkcoordintpair) {
++    public synchronized org.plazmamc.plazma.level.AbstractRegionFile getRegionFileIfLoaded(ChunkPos chunkcoordintpair) { // Plazma
+         return this.regionCache.getAndMoveToFirst(ChunkPos.asLong(chunkcoordintpair.getRegionX(), chunkcoordintpair.getRegionZ()));
+     }
+ 
+     public synchronized boolean chunkExists(ChunkPos pos) throws IOException {
+-        RegionFile regionfile = getRegionFile(pos, true);
++        org.plazmamc.plazma.level.AbstractRegionFile regionfile = getRegionFile(pos, true); // Plazma
+ 
+         return regionfile != null ? regionfile.hasChunk(pos) : false;
+     }
+ 
+-    public synchronized RegionFile getRegionFile(ChunkPos chunkcoordintpair, boolean existingOnly) throws IOException { // CraftBukkit
++    public synchronized org.plazmamc.plazma.level.AbstractRegionFile getRegionFile(ChunkPos chunkcoordintpair, boolean existingOnly) throws IOException { // CraftBukkit // Plazma
+         return this.getRegionFile(chunkcoordintpair, existingOnly, false);
+     }
+-    public synchronized RegionFile getRegionFile(ChunkPos chunkcoordintpair, boolean existingOnly, boolean lock) throws IOException {
++    public synchronized org.plazmamc.plazma.level.AbstractRegionFile getRegionFile(ChunkPos chunkcoordintpair, boolean existingOnly, boolean lock) throws IOException { // Plazma
+         // Paper end
+         long i = ChunkPos.asLong(chunkcoordintpair.getRegionX(), chunkcoordintpair.getRegionZ());
+-        RegionFile regionfile = (RegionFile) this.regionCache.getAndMoveToFirst(i);
++        org.plazmamc.plazma.level.AbstractRegionFile regionfile = this.regionCache.getAndMoveToFirst(i); // Plazma
+ 
+         if (regionfile != null) {
+             // Paper start
+             if (lock) {
+                 // must be in this synchronized block
+-                regionfile.fileLock.lock();
++                regionfile.getFileLock().lock(); // Plazma
+             }
+             // Paper end
+             return regionfile;
+         } else {
+             if (this.regionCache.size() >= io.papermc.paper.configuration.GlobalConfiguration.get().misc.regionFileCacheSize) { // Paper - configurable
+-                ((RegionFile) this.regionCache.removeLast()).close();
++                this.regionCache.removeLast().close(); // Plazma
+             }
+ 
+             FileUtil.createDirectoriesSafe(this.folder);
+             Path path = this.folder;
+             int j = chunkcoordintpair.getRegionX();
+-            Path path1 = path.resolve("r." + j + "." + chunkcoordintpair.getRegionZ() + ".mca"); // Paper - diff on change
+-            if (existingOnly && !java.nio.file.Files.exists(path1)) return null; // CraftBukkit
+-            RegionFile regionfile1 = new RegionFile(path1, this.folder, this.sync, this.isChunkData); // Paper - allow for chunk regionfiles to regen header
++            // Plazma start
++            Path path1;
++
++            if (existingOnly) {
++                Path anvil = path.resolve("r." + j + "." + chunkcoordintpair.getRegionZ() + ".mca");
++                Path linear = path.resolve("r." + j + "." + chunkcoordintpair.getRegionZ() + ".linear");
++                if (java.nio.file.Files.exists(anvil)) path1 = anvil;
++                else if (java.nio.file.Files.exists(linear)) path1 = linear;
++                else return null;
++            } else {
++                String extension = switch (this.format) {
++                    case ANVIL -> ".mca";
++                    case LINEAR -> ".linear";
++                    default -> throw new IllegalStateException("Unexpected value: " + this.format);
++                };
++                path1 = path.resolve("r." + j + "." + chunkcoordintpair.getRegionZ() + extension);
++            }
++
++            org.plazmamc.plazma.level.AbstractRegionFile regionfile1 = org.plazmamc.plazma.level.AbstractRegionFileFactory.getAbstractRegionFile(this.linearCompressionLevel, path1, this.folder, this.sync, this.isChunkData); // Paper - allow for chunk regionfiles to regen header // Plazma
++            // Plazma end
+ 
+             this.regionCache.putAndMoveToFirst(i, regionfile1);
+             // Paper start
+             if (lock) {
+                 // must be in this synchronized block
+-                regionfile1.fileLock.lock();
++                regionfile1.getFileLock().lock(); // Plazma
+             }
+             // Paper end
+             return regionfile1;
+@@ -132,7 +157,7 @@ public class RegionFileStorage implements AutoCloseable {
+     }
+ 
+ 
+-    private static CompoundTag readOversizedChunk(RegionFile regionfile, ChunkPos chunkCoordinate) throws IOException {
++    private static CompoundTag readOversizedChunk(org.plazmamc.plazma.level.AbstractRegionFile regionfile, ChunkPos chunkCoordinate) throws IOException { // Plazma
+         synchronized (regionfile) {
+             try (DataInputStream datainputstream = regionfile.getChunkDataInputStream(chunkCoordinate)) {
+                 CompoundTag oversizedData = regionfile.getOversizedData(chunkCoordinate.x, chunkCoordinate.z);
+@@ -179,14 +204,14 @@ public class RegionFileStorage implements AutoCloseable {
+     @Nullable
+     public CompoundTag read(ChunkPos pos) throws IOException {
+         // CraftBukkit start - SPIGOT-5680: There's no good reason to preemptively create files on read, save that for writing
+-        RegionFile regionfile = this.getRegionFile(pos, true, true); // Paper
++        org.plazmamc.plazma.level.AbstractRegionFile regionfile = this.getRegionFile(pos, true, true); // Paper // Plazma
+         if (regionfile == null) {
+             return null;
+         }
+         // Paper start - Add regionfile parameter
+         return this.read(pos, regionfile);
+     }
+-    public CompoundTag read(ChunkPos pos, RegionFile regionfile) throws IOException {
++    public CompoundTag read(ChunkPos pos, org.plazmamc.plazma.level.AbstractRegionFile regionfile) throws IOException { // Plazma
+         // We add the regionfile parameter to avoid the potential deadlock (on fileLock) if we went back to obtain a regionfile
+         // if we decide to re-read
+         // Paper end
+@@ -196,7 +221,7 @@ public class RegionFileStorage implements AutoCloseable {
+ 
+         // Paper start
+         if (regionfile.isOversized(pos.x, pos.z)) {
+-            printOversizedLog("Loading Oversized Chunk!", regionfile.regionFile, pos.x, pos.z);
++            printOversizedLog("Loading Oversized Chunk!", regionfile.getRegionFile(), pos.x, pos.z); // Plazma
+             return readOversizedChunk(regionfile, pos);
+         }
+         // Paper end
+@@ -210,12 +235,12 @@ public class RegionFileStorage implements AutoCloseable {
+                     if (this.isChunkData) {
+                         ChunkPos chunkPos = ChunkSerializer.getChunkCoordinate(nbttagcompound);
+                         if (!chunkPos.equals(pos)) {
+-                            net.minecraft.server.MinecraftServer.LOGGER.error("Attempting to read chunk data at " + pos + " but got chunk data for " + chunkPos + " instead! Attempting regionfile recalculation for regionfile " + regionfile.regionFile.toAbsolutePath());
++                            net.minecraft.server.MinecraftServer.LOGGER.error("Attempting to read chunk data at " + pos + " but got chunk data for " + chunkPos + " instead! Attempting regionfile recalculation for regionfile " + regionfile.getRegionFile().toAbsolutePath()); // Plazma
+                             if (regionfile.recalculateHeader()) {
+-                                regionfile.fileLock.lock(); // otherwise we will unlock twice and only lock once.
++                                regionfile.getFileLock().lock(); // otherwise we will unlock twice and only lock once. // Plazma
+                                 return this.read(pos, regionfile);
+                             }
+-                            net.minecraft.server.MinecraftServer.LOGGER.error("Can't recalculate regionfile header, regenerating chunk " + pos + " for " + regionfile.regionFile.toAbsolutePath());
++                            net.minecraft.server.MinecraftServer.LOGGER.error("Can't recalculate regionfile header, regenerating chunk " + pos + " for " + regionfile.getRegionFile().toAbsolutePath()); // Plazma
+                             return null;
+                         }
+                     }
+@@ -249,13 +274,13 @@ public class RegionFileStorage implements AutoCloseable {
+ 
+         return nbttagcompound;
+         } finally { // Paper start
+-            regionfile.fileLock.unlock();
++            regionfile.getFileLock().unlock(); // Plazma
+         } // Paper end
+     }
+ 
+     public void scanChunk(ChunkPos chunkPos, StreamTagVisitor scanner) throws IOException {
+         // CraftBukkit start - SPIGOT-5680: There's no good reason to preemptively create files on read, save that for writing
+-        RegionFile regionfile = this.getRegionFile(chunkPos, true);
++        org.plazmamc.plazma.level.AbstractRegionFile regionfile = this.getRegionFile(chunkPos, true); // Plazma
+         if (regionfile == null) {
+             return;
+         }
+@@ -285,7 +310,7 @@ public class RegionFileStorage implements AutoCloseable {
+     }
+ 
+     protected void write(ChunkPos pos, @Nullable CompoundTag nbt) throws IOException {
+-        RegionFile regionfile = this.getRegionFile(pos, nbt == null, true); // CraftBukkit // Paper // Paper start - rewrite chunk system
++        org.plazmamc.plazma.level.AbstractRegionFile regionfile = this.getRegionFile(pos, nbt == null, true); // CraftBukkit // Paper // Paper start - rewrite chunk system // Plazma
+         if (nbt == null && regionfile == null) {
+             return;
+         }
+@@ -335,7 +360,7 @@ public class RegionFileStorage implements AutoCloseable {
+         }
+         // Paper end
+         } finally { // Paper start
+-            regionfile.fileLock.unlock();
++            regionfile.getFileLock().unlock(); // Plazma
+         } // Paper end
+     }
+ 
+@@ -344,7 +369,7 @@ public class RegionFileStorage implements AutoCloseable {
+         ObjectIterator objectiterator = this.regionCache.values().iterator();
+ 
+         while (objectiterator.hasNext()) {
+-            RegionFile regionfile = (RegionFile) objectiterator.next();
++            org.plazmamc.plazma.level.AbstractRegionFile regionfile = (org.plazmamc.plazma.level.AbstractRegionFile) objectiterator.next(); // Plazma
+ 
+             try {
+                 regionfile.close();
+@@ -360,7 +385,7 @@ public class RegionFileStorage implements AutoCloseable {
+         ObjectIterator objectiterator = this.regionCache.values().iterator();
+ 
+         while (objectiterator.hasNext()) {
+-            RegionFile regionfile = (RegionFile) objectiterator.next();
++            org.plazmamc.plazma.level.AbstractRegionFile regionfile = (org.plazmamc.plazma.level.AbstractRegionFile) objectiterator.next(); // Plazma
+ 
+             regionfile.flush();
+         }
+diff --git a/src/main/java/net/minecraft/world/level/chunk/storage/SectionStorage.java b/src/main/java/net/minecraft/world/level/chunk/storage/SectionStorage.java
+index 5561b8499a0503b850974b1dc309edfb80219549..d24e19eaa0ca808ad56a6206509556c607212189 100644
+--- a/src/main/java/net/minecraft/world/level/chunk/storage/SectionStorage.java
++++ b/src/main/java/net/minecraft/world/level/chunk/storage/SectionStorage.java
+@@ -47,8 +47,8 @@ public class SectionStorage<R> extends RegionFileStorage implements AutoCloseabl
+     public final RegistryAccess registryAccess; // Paper - rewrite chunk system
+     protected final LevelHeightAccessor levelHeightAccessor;
+ 
+-    public SectionStorage(Path path, Function<Runnable, Codec<R>> codecFactory, Function<Runnable, R> factory, DataFixer dataFixer, DataFixTypes dataFixTypes, boolean dsync, RegistryAccess dynamicRegistryManager, LevelHeightAccessor world) {
+-        super(path, dsync); // Paper - remove mojang I/O thread
++    public SectionStorage(org.plazmamc.plazma.level.RegionFileFormat format, int linearCompression, Path path, Function<Runnable, Codec<R>> codecFactory, Function<Runnable, R> factory, DataFixer dataFixer, DataFixTypes dataFixTypes, boolean dsync, RegistryAccess dynamicRegistryManager, LevelHeightAccessor world) { // Plazma
++        super(format, linearCompression, path, dsync); // Paper - remove mojang I/O thread // Plazma
+         this.codec = codecFactory;
+         this.factory = factory;
+         this.fixerUpper = dataFixer;
+diff --git a/src/main/java/org/bukkit/craftbukkit/CraftWorld.java b/src/main/java/org/bukkit/craftbukkit/CraftWorld.java
+index c6a3b59c65466f9f2b16cefe0059a6e5dd84044c..1452bf4d9564520bb7b6640a025e0b857b3bed8d 100644
+--- a/src/main/java/org/bukkit/craftbukkit/CraftWorld.java
++++ b/src/main/java/org/bukkit/craftbukkit/CraftWorld.java
+@@ -552,7 +552,7 @@ public class CraftWorld extends CraftRegionAccessor implements World {
+                 return true;
+             }
+ 
+-            net.minecraft.world.level.chunk.storage.RegionFile file;
++            org.plazmamc.plazma.level.AbstractRegionFile file; // Plazma
+             try {
+                 file = world.getChunkSource().chunkMap.regionFileCache.getRegionFile(chunkPos, false);
+             } catch (java.io.IOException ex) {
+diff --git a/src/main/java/org/plazmamc/plazma/level/AbstractRegionFile.java b/src/main/java/org/plazmamc/plazma/level/AbstractRegionFile.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..11035a95cc1e83d45c9cda826406ab59d73b6a70
+--- /dev/null
++++ b/src/main/java/org/plazmamc/plazma/level/AbstractRegionFile.java
+@@ -0,0 +1,31 @@
++package org.plazmamc.plazma.level;
++
++import net.minecraft.nbt.CompoundTag;
++import net.minecraft.world.level.ChunkPos;
++import net.minecraft.world.level.chunk.ChunkStatus;
++
++import java.io.DataInputStream;
++import java.io.DataOutputStream;
++import java.io.IOException;
++import java.nio.file.Path;
++import java.util.concurrent.locks.ReentrantLock;
++
++public interface AbstractRegionFile {
++    void flush() throws IOException;
++    void clear(ChunkPos pos) throws IOException;
++    void close() throws IOException;
++    void setStatus(int x, int z, ChunkStatus status);
++    void setOversized(int x, int z, boolean b) throws IOException;
++
++    boolean hasChunk(ChunkPos pos);
++    boolean doesChunkExist(ChunkPos pos) throws Exception;
++    boolean isOversized(int x, int z);
++    boolean recalculateHeader() throws IOException;
++
++    DataOutputStream getChunkDataOutputStream(ChunkPos pos) throws IOException;
++    DataInputStream getChunkDataInputStream(ChunkPos pos) throws IOException;
++    CompoundTag getOversizedData(int x, int z) throws IOException;
++    ChunkStatus getStatusIfCached(int x, int z);
++    ReentrantLock getFileLock();
++    Path getRegionFile();
++}
+diff --git a/src/main/java/org/plazmamc/plazma/level/AbstractRegionFileFactory.java b/src/main/java/org/plazmamc/plazma/level/AbstractRegionFileFactory.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..382fe435b9dfc2c466553474d79944c995da346d
+--- /dev/null
++++ b/src/main/java/org/plazmamc/plazma/level/AbstractRegionFileFactory.java
+@@ -0,0 +1,25 @@
++package org.plazmamc.plazma.level;
++
++import net.minecraft.world.level.chunk.storage.RegionFile;
++import net.minecraft.world.level.chunk.storage.RegionFileVersion;
++
++import java.io.IOException;
++import java.nio.file.Path;
++
++public class AbstractRegionFileFactory {
++
++    public static AbstractRegionFile getAbstractRegionFile(int linearCompressionLevel, Path file, Path dir, boolean dsync) throws IOException {
++        return getAbstractRegionFile(linearCompressionLevel, file, dir, RegionFileVersion.VERSION_DEFLATE, dsync, true);
++    }
++
++    public static AbstractRegionFile getAbstractRegionFile(int linearCompressionLevel, Path file, Path dir, boolean dsync, boolean canRecalcHeader) throws IOException {
++        return getAbstractRegionFile(linearCompressionLevel, file, dir, RegionFileVersion.VERSION_DEFLATE, dsync, true);
++    }
++
++    public static AbstractRegionFile getAbstractRegionFile(int linearCompressionLevel, Path file, Path dir, RegionFileVersion outputChunkStreamVersion, boolean dsync, boolean canRecalcHeader) throws IOException {
++        if (file.toString().endsWith(".linear"))
++            return new LinearRegionFile(file, linearCompressionLevel);
++        return new RegionFile(file, dir, outputChunkStreamVersion, dsync, canRecalcHeader);
++    }
++
++}
+diff --git a/src/main/java/org/plazmamc/plazma/level/LinearRegionFile.java b/src/main/java/org/plazmamc/plazma/level/LinearRegionFile.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..44b98eb7fd0524c5934f1425cef5df6435b05f88
+--- /dev/null
++++ b/src/main/java/org/plazmamc/plazma/level/LinearRegionFile.java
+@@ -0,0 +1,330 @@
++package org.plazmamc.plazma.level;
++
++import com.github.luben.zstd.ZstdInputStream;
++import com.github.luben.zstd.ZstdOutputStream;
++import com.mojang.logging.LogUtils;
++import net.jpountz.lz4.LZ4Compressor;
++import net.jpountz.lz4.LZ4Factory;
++import net.jpountz.lz4.LZ4FastDecompressor;
++import net.jpountz.xxhash.XXHashFactory;
++import net.minecraft.nbt.CompoundTag;
++import net.minecraft.world.level.ChunkPos;
++import net.minecraft.world.level.chunk.ChunkStatus;
++import org.slf4j.Logger;
++
++import javax.annotation.Nullable;
++import java.io.*;
++import java.nio.ByteBuffer;
++import java.nio.file.Files;
++import java.nio.file.Path;
++import java.nio.file.StandardCopyOption;
++import java.util.ArrayList;
++import java.util.concurrent.locks.ReentrantLock;
++
++import static net.minecraft.world.level.chunk.storage.RegionFile.getChunkIndex;
++
++public class LinearRegionFile extends Thread implements AbstractRegionFile {
++    private static final Logger LOGGER = LogUtils.getLogger();
++
++    final long SUPER_BLOCK = -4323716122432332390L;
++    final byte VERSION = 1;
++    final int HEADER_SIZE = 32;
++    final int FOOTER_SIZE = 8;
++
++    private final byte[][] buffer = new byte[32 * 32][];
++    private final int[] bufferUncompressedSize = new int[32 * 32];
++
++    private final Object markedToSaveLock = new Object();
++    private final ChunkStatus[] statuses = new ChunkStatus[32 * 32];
++
++    private boolean markedToSave = false;
++    private boolean close = false;
++
++    public final ReentrantLock fileLock = new ReentrantLock(true);
++    public Path regionFile;
++
++    private final int compressionLevel;
++
++    public LinearRegionFile(Path filePath, int compression) throws IOException {
++        this.regionFile = filePath;
++        this.compressionLevel = compression;
++
++        File regionFile = new File(this.regionFile.toString());
++        LZ4Compressor compressor = LZ4Factory.fastestInstance().fastCompressor();
++
++        for (int i = 0; i < 32 * 32; i++) this.bufferUncompressedSize[i] = 0;
++
++        if (regionFile.canRead()) {
++            long fileLength = filePath.toFile().length();
++            DataInputStream rawDataStream = new DataInputStream(new FileInputStream(regionFile));
++
++            long superBlock = rawDataStream.readLong();
++            if (superBlock != SUPER_BLOCK)
++                throw new IOException("Invalid super block \"" + superBlock + "\" in region file: " + this.regionFile.toString());
++
++            long version = rawDataStream.readByte();
++            if (version != VERSION)
++                throw new IOException("Invalid version \"" + version + "\" in region file: " + this.regionFile.toString());
++
++            rawDataStream.readLong();
++            rawDataStream.readByte();
++            rawDataStream.readShort();
++            int dataCount = rawDataStream.readInt();
++
++            if (fileLength != HEADER_SIZE + dataCount + FOOTER_SIZE)
++                throw new IOException("Invalid file length in region file: " + this.regionFile.toString() + " (expected " + (HEADER_SIZE + dataCount + FOOTER_SIZE) + ", got " + fileLength + ")");
++
++            rawDataStream.readLong();
++
++            byte[] rawCompressed = new byte[dataCount];
++
++            rawDataStream.readFully(rawCompressed, 0, dataCount);
++
++            superBlock = rawDataStream.readLong();
++            if (superBlock != SUPER_BLOCK)
++                throw new IOException("Invalid footer super block \"" + superBlock + "\" in region file: " + this.regionFile.toString());
++
++            DataInputStream dataStream = new DataInputStream(new ZstdInputStream(new ByteArrayInputStream(rawCompressed)));
++
++            int[] starts = new int[32 * 32];
++            for (int i = 0; i < 32 * 32; i++) {
++                starts[i] = dataStream.readInt();
++                dataStream.readInt();
++            }
++
++            for (int i = 0; i < 32 * 32; i++) {
++                if (starts[i] == 0) continue;
++
++                int size = starts[i];
++                byte[] bytes = new byte[size];
++                dataStream.readFully(bytes, 0, size);
++
++                int maxCompressedLength = compressor.maxCompressedLength(size);
++                byte[] compressed = new byte[maxCompressedLength];
++                int compressedLength = compressor.compress(bytes, 0, size, compressed, 0, maxCompressedLength);
++                bytes = new byte[compressedLength];
++                System.arraycopy(compressed, 0, bytes, 0, compressedLength);
++
++                this.buffer[i] = bytes;
++                this.bufferUncompressedSize[i] = size;
++            }
++        }
++
++        this.start();
++    }
++
++    public Path getRegionFile() {
++        return this.regionFile;
++    }
++
++    public ReentrantLock getFileLock() {
++        return this.fileLock;
++    }
++
++    private synchronized void markToSave() {
++        synchronized (this.markedToSaveLock) {
++            this.markedToSave = true;
++        }
++    }
++
++    private synchronized boolean isMarkedToSave() {
++        synchronized (this.markedToSaveLock) {
++            if (this.markedToSave) {
++                markedToSave = false;
++                return true;
++            }
++            return false;
++        }
++    }
++
++    public void run() {
++        try {
++            while (true) {
++                if (markedToSave) {
++                    try {
++                        flush();
++                    } catch (IOException e) {
++                        LOGGER.error("Failed to save region file: " + this.regionFile.toString(), e);
++                    }
++                }
++
++                for (int i = 0; i < 100; i++) {
++                    Thread.sleep(100);
++                    if (close) return;
++                }
++            }
++        } catch (InterruptedException ignored) {}
++    }
++
++    public synchronized boolean doesChunkExist(ChunkPos pos) throws Exception {
++        throw new Exception("doesChunkExist is a stub in LinearRegionFile");
++    }
++
++    public synchronized void flush() throws IOException {
++        if (!isMarkedToSave()) return;
++
++        long timestamp = System.currentTimeMillis() / 1000L;
++        short chunkCount = 0;
++
++        File tempFile = new File(regionFile.toString() + ".tmp");
++        FileOutputStream fileStream = new FileOutputStream(tempFile);
++
++        ByteArrayOutputStream zstdByteArray = new ByteArrayOutputStream();
++        ZstdOutputStream zstdStream = new ZstdOutputStream(zstdByteArray, this.compressionLevel);
++        zstdStream.setChecksum(true);
++        DataOutputStream zstdDataStream = new DataOutputStream(zstdStream);
++        DataOutputStream dataStream = new DataOutputStream(fileStream);
++
++        dataStream.writeLong(SUPER_BLOCK);
++        dataStream.writeByte(VERSION);
++        dataStream.writeLong(timestamp);
++        dataStream.writeByte(this.compressionLevel);
++
++        LZ4FastDecompressor decompressor = LZ4Factory.fastestInstance().fastDecompressor();
++        ArrayList<byte[]> byteBuffers = new ArrayList<>();
++
++        for (int i = 0; i < 32 * 32; i++) {
++            byte[] content = null;
++            if (this.bufferUncompressedSize[i] != 0) {
++                chunkCount++;
++                content = new byte[bufferUncompressedSize[i]];
++                decompressor.decompress(this.buffer[i], 0, content, 0, bufferUncompressedSize[i]);
++            }
++            byteBuffers.add(content);
++        }
++
++        for (int i = 0; i < 32 * 32; i++) {
++            zstdDataStream.writeInt(bufferUncompressedSize[i]);
++            zstdDataStream.writeInt(0);
++        }
++
++        for (int i = 0; i < 32 * 32; i++) {
++            byte[] content = byteBuffers.get(i);
++            if (content != null) zstdDataStream.write(content, 0, content.length);
++        }
++
++        zstdDataStream.close();
++
++        dataStream.writeShort(chunkCount);
++
++        byte[] compressed = zstdByteArray.toByteArray();
++
++        dataStream.writeInt(compressed.length);
++        dataStream.writeLong(XXHashFactory.fastestInstance().hash64().hash(compressed, 0, compressed.length, 0));
++
++        dataStream.write(compressed, 0, compressed.length);
++        dataStream.writeLong(SUPER_BLOCK);
++
++        dataStream.close();
++        fileStream.close();
++
++        Files.move(tempFile.toPath(), this.regionFile, StandardCopyOption.REPLACE_EXISTING);
++    }
++
++    public void setStatus(int x, int z, ChunkStatus status) {
++        this.statuses[getChunkIndex(x, z)] = status;
++    }
++
++    public synchronized void write(ChunkPos pos, ByteBuffer buffer) {
++        LZ4Compressor compressor = LZ4Factory.fastestInstance().fastCompressor();
++        try {
++            byte[] byteArray = toByteArray(new ByteArrayInputStream(buffer.array()));
++            int uncompressedSize = byteArray.length;
++
++            int maxCompressedLength = compressor.maxCompressedLength(uncompressedSize);
++            byte[] compressed = new byte[maxCompressedLength];
++
++            int compressedLength = compressor.compress(byteArray, 0, uncompressedSize, compressed, 0, maxCompressedLength);
++            byteArray = new byte[compressedLength];
++            System.arraycopy(compressed, 0, byteArray, 0, compressedLength);
++
++            this.buffer[getChunkIndex(pos.x, pos.z)] = byteArray;
++            this.bufferUncompressedSize[getChunkIndex(pos.x, pos.z)] = uncompressedSize;
++        } catch (IOException e) {
++            LOGGER.error("Failed to write chunk to region file: " + this.regionFile.toString(), e);
++        }
++    }
++
++    private byte[] toByteArray(InputStream in) throws IOException {
++        ByteArrayOutputStream out = new ByteArrayOutputStream();
++        byte[] temp = new byte[4096];
++        int length;
++
++        while ((length = in.read(temp)) >= 0) {
++            out.write(temp, 0, length);
++        }
++
++        return out.toByteArray();
++    }
++
++    public DataOutputStream getChunkDataOutputStream(ChunkPos pos) {
++        return new DataOutputStream(new BufferedOutputStream(new LinearRegionFile.ChunkBuffer(pos)));
++    }
++
++    private class ChunkBuffer extends ByteArrayOutputStream {
++
++        private final ChunkPos pos;
++
++        public ChunkBuffer(ChunkPos chunkcoordintpair) {
++            super();
++            this.pos = chunkcoordintpair;
++        }
++
++        public void close() throws IOException {
++            ByteBuffer buffer = ByteBuffer.wrap(this.buf, 0, this.count);
++            LinearRegionFile.this.write(this.pos, buffer);
++        }
++
++    }
++
++    @Nullable
++    public synchronized DataInputStream getChunkDataInputStream(ChunkPos pos) {
++        if (this.bufferUncompressedSize[getChunkIndex(pos.x, pos.z)] == 0) return null;
++        LZ4FastDecompressor decompressor = LZ4Factory.fastestInstance().fastDecompressor();
++        byte[] content = new byte[this.bufferUncompressedSize[getChunkIndex(pos.x, pos.z)]];
++        decompressor.decompress(this.buffer[getChunkIndex(pos.x, pos.z)], 0, content, 0, this.bufferUncompressedSize[getChunkIndex(pos.x, pos.z)]);
++        return new DataInputStream(new ByteArrayInputStream(content));
++    }
++
++    public ChunkStatus getStatusIfCached(int x, int z) {
++        return this.statuses[getChunkIndex(x, z)];
++    }
++
++    public void clear(ChunkPos pos) {
++        int i = getChunkIndex(pos.x, pos.z);
++        this.buffer[i] = null;
++        this.bufferUncompressedSize[i] = 0;
++        markToSave();
++    }
++
++    public boolean hasChunk(ChunkPos pos) {
++        return this.bufferUncompressedSize[getChunkIndex(pos.x, pos.z)] != 0;
++    }
++
++    public void close() throws IOException {
++        this.close = true;
++        try {
++            flush();
++        } catch (IOException e) {
++            throw new IOException("Failed to close region file: " + this.regionFile.toString(), e);
++        }
++    }
++
++    private static int getChunkIndex(int x, int z) {
++        return (x & 31) + (z & 31) * 32;
++    }
++
++    public boolean recalculateHeader() {
++        return false;
++    }
++
++    public void setOversized(int x, int z, boolean oversized) {}
++
++    public CompoundTag getOversizedData(int x, int z) throws IOException {
++        throw new IOException("getOversizedData is a stub in LinearRegionFile");
++    }
++
++    public boolean isOversized(int x, int z) {
++        return false;
++    }
++}

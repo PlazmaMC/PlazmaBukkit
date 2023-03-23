@@ -1,0 +1,57 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: AlphaKR93 <dev@alpha93.kr>
+Date: Thu, 23 Mar 2023 14:41:14 +0900
+Subject: [PATCH] Linear region file support - Configuration
+
+
+diff --git a/src/main/java/org/plazmamc/plazma/configurations/LevelConfigurations.java b/src/main/java/org/plazmamc/plazma/configurations/LevelConfigurations.java
+index d1b5b269173c43452960bbe38d5d940f2089c0fa..aa6c0db9d2f2dd876e74f1f379257515dd238160 100644
+--- a/src/main/java/org/plazmamc/plazma/configurations/LevelConfigurations.java
++++ b/src/main/java/org/plazmamc/plazma/configurations/LevelConfigurations.java
+@@ -4,6 +4,7 @@ import io.papermc.paper.configuration.Configuration;
+ import io.papermc.paper.configuration.ConfigurationPart;
+ import io.papermc.paper.configuration.PaperConfigurations;
+ import net.minecraft.resources.ResourceLocation;
++import org.plazmamc.plazma.level.RegionFileFormat;
+ import org.spongepowered.configurate.objectmapping.meta.Setting;
+ 
+ @SuppressWarnings({"FieldCanBeLocal", "FieldMayBeFinal", "NotNullFieldNotInitialized", "InnerClassMayBeStatic"})
+@@ -21,4 +22,17 @@ public class LevelConfigurations extends ConfigurationPart {
+ 
+     @Setting(Configuration.VERSION_FIELD)
+     public int version = CURRENT_VERSION;
++
++    public Misc misc;
++    public class Misc extends ConfigurationPart {
++
++        public RegionFile regionFile;
++        public class RegionFile extends ConfigurationPart {
++
++            public RegionFileFormat format = Boolean.getBoolean("Plazma.disableConfigOptimization") ? RegionFileFormat.ANVIL : RegionFileFormat.LINEAR;
++            public int linearCompressionLevel = 1;
++
++        }
++
++    }
+ }
+diff --git a/src/main/java/org/plazmamc/plazma/level/RegionFileFormat.java b/src/main/java/org/plazmamc/plazma/level/RegionFileFormat.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..e4880a104a84539008c4a3328156cf3584ffc698
+--- /dev/null
++++ b/src/main/java/org/plazmamc/plazma/level/RegionFileFormat.java
+@@ -0,0 +1,15 @@
++package org.plazmamc.plazma.level;
++
++public enum RegionFileFormat {
++    ANVIL("Anvil"), LINEAR("Linear");
++
++    private final String name;
++
++    RegionFileFormat(String name) {
++        this.name = name;
++    }
++
++    public String getName() {
++        return name;
++    }
++}
