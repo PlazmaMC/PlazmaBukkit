@@ -88,7 +88,7 @@ index a08cde4eefe879adcee7c4118bc38f98c5097ed0..83212a80af6e82c7c5e4c420be9ba469
              }
          }
 diff --git a/src/main/java/io/papermc/paper/world/ThreadedWorldUpgrader.java b/src/main/java/io/papermc/paper/world/ThreadedWorldUpgrader.java
-index 513833c2ea23df5b079d157bc5cb89d5c9754c0b..1afcba3a81fa8d85c337422d573559ae50bd4346 100644
+index 513833c2ea23df5b079d157bc5cb89d5c9754c0b..1f3075d27915ce9ae4d7dcc2ede6a47e43d28bb2 100644
 --- a/src/main/java/io/papermc/paper/world/ThreadedWorldUpgrader.java
 +++ b/src/main/java/io/papermc/paper/world/ThreadedWorldUpgrader.java
 @@ -84,8 +84,17 @@ public class ThreadedWorldUpgrader {
@@ -98,7 +98,7 @@ index 513833c2ea23df5b079d157bc5cb89d5c9754c0b..1afcba3a81fa8d85c337422d573559ae
 +        // Plazma start - Support Linear region file format
 +        org.plazmamc.plazma.configurations.LevelConfigurations levelConfigurations = ((org.bukkit.craftbukkit.CraftWorld) org.bukkit.Bukkit.getWorld(worldName)).getHandle().plazmaLevelConfiguration();
 +        org.plazmamc.plazma.level.RegionFileFormat regionFormat = levelConfigurations.misc.regionFile.format;
-+        int linearCompressionLevel = levelConfigurations.misc.regionFile.linearCompressionLevel;
++        int linearCompressionLevel = levelConfigurations.misc.regionFile.linear.compressionLevel();
 +        if (regionFormat == org.plazmamc.plazma.level.RegionFileFormat.LINEAR)
 +            LOGGER.info("Using " + regionFormat.name() + " region file format with compression level " + linearCompressionLevel);
 +        else
@@ -133,7 +133,7 @@ index 6d2d1d99977d33fdd8c9a34b65bbca189852d1c0..2db2958397c5cb4d8eb8b9b1f5bff04b
  
          return flag3;
 diff --git a/src/main/java/net/minecraft/server/level/ChunkMap.java b/src/main/java/net/minecraft/server/level/ChunkMap.java
-index 57fdef8b16e1ed9a4693356144b4685bbcea285c..6566750e383e2ef612b254b4274aa4b233653e7b 100644
+index 57fdef8b16e1ed9a4693356144b4685bbcea285c..b149eee5727ca8aec99a1aa22cc88fc7c66f55b2 100644
 --- a/src/main/java/net/minecraft/server/level/ChunkMap.java
 +++ b/src/main/java/net/minecraft/server/level/ChunkMap.java
 @@ -294,7 +294,7 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
@@ -141,7 +141,7 @@ index 57fdef8b16e1ed9a4693356144b4685bbcea285c..6566750e383e2ef612b254b4274aa4b2
  
      public ChunkMap(ServerLevel world, LevelStorageSource.LevelStorageAccess session, DataFixer dataFixer, StructureTemplateManager structureTemplateManager, Executor executor, BlockableEventLoop<Runnable> mainThreadExecutor, LightChunkGetter chunkProvider, ChunkGenerator chunkGenerator, ChunkProgressListener worldGenerationProgressListener, ChunkStatusUpdateListener chunkStatusChangeListener, Supplier<DimensionDataStorage> persistentStateManagerFactory, int viewDistance, boolean dsync) {
 -        super(session.getDimensionPath(world.dimension()).resolve("region"), dataFixer, dsync);
-+        super(world.getLevel().plazmaLevelConfiguration().misc.regionFile.format, world.getLevel().plazmaLevelConfiguration().misc.regionFile.linearCompressionLevel, session.getDimensionPath(world.dimension()).resolve("region"), dataFixer, dsync); // Plazma
++        super(world.getLevel().plazmaLevelConfiguration().misc.regionFile.format, world.getLevel().plazmaLevelConfiguration().misc.regionFile.linear.compressionLevel(), session.getDimensionPath(world.dimension()).resolve("region"), dataFixer, dsync); // Plazma
          // Paper - rewrite chunk system
          this.tickingGenerated = new AtomicInteger();
          this.playerMap = new PlayerMap();
@@ -150,7 +150,7 @@ index 57fdef8b16e1ed9a4693356144b4685bbcea285c..6566750e383e2ef612b254b4274aa4b2
          this.distanceManager = new ChunkMap.ChunkDistanceManager(executor, mainThreadExecutor);
          this.overworldDataStorage = persistentStateManagerFactory;
 -        this.poiManager = new PoiManager(path.resolve("poi"), dataFixer, dsync, iregistrycustom, world);
-+        this.poiManager = new PoiManager(world.getLevel().plazmaLevelConfiguration().misc.regionFile.format, world.getLevel().plazmaLevelConfiguration().misc.regionFile.linearCompressionLevel, path.resolve("poi"), dataFixer, dsync, iregistrycustom, world); // Plazma
++        this.poiManager = new PoiManager(world.getLevel().plazmaLevelConfiguration().misc.regionFile.format, world.getLevel().plazmaLevelConfiguration().misc.regionFile.linear.compressionLevel(), path.resolve("poi"), dataFixer, dsync, iregistrycustom, world); // Plazma
          this.setViewDistance(viewDistance);
          // Paper start
          this.dataRegionManager = new io.papermc.paper.chunk.SingleThreadChunkRegionManager(this.level, 2, (1.0 / 3.0), 1, 6, "Data", DataRegionData::new, DataRegionSectionData::new);
@@ -180,7 +180,7 @@ index 57fdef8b16e1ed9a4693356144b4685bbcea285c..6566750e383e2ef612b254b4274aa4b2
          regionFile.setStatus(chunkPos.x, chunkPos.z, ChunkSerializer.getStatus(compound));
      }
 diff --git a/src/main/java/net/minecraft/server/level/ServerLevel.java b/src/main/java/net/minecraft/server/level/ServerLevel.java
-index 341f3f060bfe196afe805a7cf11d21a556e18ad0..ddfa37bf3388e0699a0d8da3153967d07cb55f87 100644
+index 341f3f060bfe196afe805a7cf11d21a556e18ad0..0d9d2a927b53811af04816d3b8d5c05245e253ac 100644
 --- a/src/main/java/net/minecraft/server/level/ServerLevel.java
 +++ b/src/main/java/net/minecraft/server/level/ServerLevel.java
 @@ -389,8 +389,8 @@ public class ServerLevel extends Level implements WorldGenLevel {
@@ -199,12 +199,12 @@ index 341f3f060bfe196afe805a7cf11d21a556e18ad0..ddfa37bf3388e0699a0d8da3153967d0
          boolean flag2 = minecraftserver.forceSynchronousWrites();
          DataFixer datafixer = minecraftserver.getFixerUpper();
 -        this.entityStorage = new EntityRegionFileStorage(convertable_conversionsession.getDimensionPath(resourcekey).resolve("entities"), flag2); // Paper - rewrite chunk system  //EntityPersistentStorage<Entity> entitypersistentstorage = new EntityStorage(this, convertable_conversionsession.getDimensionPath(resourcekey).resolve("entities"), datafixer, flag2, minecraftserver);
-+        this.entityStorage = new EntityRegionFileStorage(this.getLevel().plazmaLevelConfiguration().misc.regionFile.format, this.getLevel().plazmaLevelConfiguration().misc.regionFile.linearCompressionLevel, convertable_conversionsession.getDimensionPath(resourcekey).resolve("entities"), flag2); // Paper - rewrite chunk system  //EntityPersistentStorage<Entity> entitypersistentstorage = new EntityStorage(this, convertable_conversionsession.getDimensionPath(resourcekey).resolve("entities"), datafixer, flag2, minecraftserver); // Plazma
++        this.entityStorage = new EntityRegionFileStorage(this.getLevel().plazmaLevelConfiguration().misc.regionFile.format, this.getLevel().plazmaLevelConfiguration().misc.regionFile.linear.compressionLevel(), convertable_conversionsession.getDimensionPath(resourcekey).resolve("entities"), flag2); // Paper - rewrite chunk system  //EntityPersistentStorage<Entity> entitypersistentstorage = new EntityStorage(this, convertable_conversionsession.getDimensionPath(resourcekey).resolve("entities"), datafixer, flag2, minecraftserver); // Plazma
  
          // this.entityManager = new PersistentEntitySectionManager<>(Entity.class, new ServerLevel.EntityCallbacks(), entitypersistentstorage, this.entitySliceManager); // Paper // Paper - rewrite chunk system
          StructureTemplateManager structuretemplatemanager = minecraftserver.getStructureManager();
 diff --git a/src/main/java/net/minecraft/util/worldupdate/WorldUpgrader.java b/src/main/java/net/minecraft/util/worldupdate/WorldUpgrader.java
-index e0bfeebeaac1aaea64bc07cdfdf7790e3e43ca7b..19951c4f368aa0ebd6dbe0ac5f2ef1bb25282a08 100644
+index e0bfeebeaac1aaea64bc07cdfdf7790e3e43ca7b..efd19fb90729a8c416c892eecd889ca454917a1d 100644
 --- a/src/main/java/net/minecraft/util/worldupdate/WorldUpgrader.java
 +++ b/src/main/java/net/minecraft/util/worldupdate/WorldUpgrader.java
 @@ -61,7 +61,7 @@ public class WorldUpgrader {
@@ -223,7 +223,7 @@ index e0bfeebeaac1aaea64bc07cdfdf7790e3e43ca7b..19951c4f368aa0ebd6dbe0ac5f2ef1bb
 -                builder1.put(resourcekey1, new ChunkStorage(path.resolve("region"), this.dataFixer, true));
 +                // Plazma start
 +                org.plazmamc.plazma.configurations.LevelConfigurations configurations = ((org.bukkit.craftbukkit.CraftWorld) org.bukkit.Bukkit.getWorld(this.levelStorage.getLevelId())).getHandle().plazmaLevelConfiguration();
-+                builder1.put(resourcekey1, new ChunkStorage(configurations.misc.regionFile.format, configurations.misc.regionFile.linearCompressionLevel, path.resolve("region"), this.dataFixer, true));
++                builder1.put(resourcekey1, new ChunkStorage(configurations.misc.regionFile.format, configurations.misc.regionFile.linear.compressionLevel(), path.resolve("region"), this.dataFixer, true));
 +                // Plazma end
              }
  
@@ -242,7 +242,7 @@ index e0bfeebeaac1aaea64bc07cdfdf7790e3e43ca7b..19951c4f368aa0ebd6dbe0ac5f2ef1bb
  
                      try {
 -                        RegionFile regionfile = new RegionFile(file2.toPath(), file1.toPath(), true);
-+                        org.plazmamc.plazma.level.AbstractRegionFile regionfile = org.plazmamc.plazma.level.AbstractRegionFileFactory.getAbstractRegionFile(((org.bukkit.craftbukkit.CraftWorld) org.bukkit.Bukkit.getWorld(this.levelStorage.getLevelId())).getHandle().plazmaLevelConfiguration().misc.regionFile.linearCompressionLevel, file2.toPath(), file1.toPath(), true); // Plazma
++                        org.plazmamc.plazma.level.AbstractRegionFile regionfile = org.plazmamc.plazma.level.AbstractRegionFileFactory.getAbstractRegionFile(((org.bukkit.craftbukkit.CraftWorld) org.bukkit.Bukkit.getWorld(this.levelStorage.getLevelId())).getHandle().plazmaLevelConfiguration().misc.regionFile.linear.compressionLevel(), file2.toPath(), file1.toPath(), true); // Plazma
  
                          try {
                              for (int i1 = 0; i1 < 32; ++i1) {
@@ -596,6 +596,30 @@ index c6a3b59c65466f9f2b16cefe0059a6e5dd84044c..1452bf4d9564520bb7b6640a025e0b85
              try {
                  file = world.getChunkSource().chunkMap.regionFileCache.getRegionFile(chunkPos, false);
              } catch (java.io.IOException ex) {
+diff --git a/src/main/java/org/plazmamc/plazma/configurations/LevelConfigurations.java b/src/main/java/org/plazmamc/plazma/configurations/LevelConfigurations.java
+index 0c32fed71f2847bc9833fba542f6626a16999010..4d048ff8a2ca3b4fe408109155fcbfd8c4d850b5 100644
+--- a/src/main/java/org/plazmamc/plazma/configurations/LevelConfigurations.java
++++ b/src/main/java/org/plazmamc/plazma/configurations/LevelConfigurations.java
+@@ -29,7 +29,18 @@ public class LevelConfigurations extends ConfigurationPart {
+         public RegionFile regionFile;
+         public class RegionFile extends ConfigurationPart {
+ 
+-            public RegionFileFormat format = RegionFileFormat.ANVIL;
++            public RegionFileFormat format = Boolean.getBoolean("Plazma.disableConfigOptimization") ? RegionFileFormat.ANVIL : RegionFileFormat.LINEAR;
++            public Linear linear;
++
++            public class Linear extends ConfigurationPart {
++
++                int compressionLevel = 1;
++
++                public int compressionLevel() {
++                    return Math.max(1, Math.min(23, this.compressionLevel));
++                }
++
++            }
+ 
+         }
+ 
 diff --git a/src/main/java/org/plazmamc/plazma/level/AbstractRegionFile.java b/src/main/java/org/plazmamc/plazma/level/AbstractRegionFile.java
 new file mode 100644
 index 0000000000000000000000000000000000000000..11035a95cc1e83d45c9cda826406ab59d73b6a70
@@ -1000,3 +1024,16 @@ index 0000000000000000000000000000000000000000..44b98eb7fd0524c5934f1425cef5df64
 +        return false;
 +    }
 +}
+diff --git a/src/main/java/org/plazmamc/plazma/level/RegionFileFormat.java b/src/main/java/org/plazmamc/plazma/level/RegionFileFormat.java
+index 39a1937c9a2c376d47c222d4fcd222845a1d6227..e4880a104a84539008c4a3328156cf3584ffc698 100644
+--- a/src/main/java/org/plazmamc/plazma/level/RegionFileFormat.java
++++ b/src/main/java/org/plazmamc/plazma/level/RegionFileFormat.java
+@@ -1,7 +1,7 @@
+ package org.plazmamc.plazma.level;
+ 
+ public enum RegionFileFormat {
+-    ANVIL("Anvil");
++    ANVIL("Anvil"), LINEAR("Linear");
+ 
+     private final String name;
+ 
