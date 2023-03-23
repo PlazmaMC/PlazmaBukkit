@@ -1,0 +1,96 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: IPECTER <ipectert@gmail.com>
+Date: Thu, 23 Mar 2023 14:32:26 +0900
+Subject: [PATCH] ChunkSending-Implementation
+
+Original: someaddons/chunksending
+Copyright (C) 2023 someaddons
+
+diff --git a/src/main/java/net/minecraft/server/level/ChunkHolder.java b/src/main/java/net/minecraft/server/level/ChunkHolder.java
+index 904fcdeb7937d36208cc9a8d5eca9ef3a5b2cd9e..5046ca2d8d8583bf1b36909d655714982d8317f9 100644
+--- a/src/main/java/net/minecraft/server/level/ChunkHolder.java
++++ b/src/main/java/net/minecraft/server/level/ChunkHolder.java
+@@ -360,17 +360,15 @@ public class ChunkHolder {
+         if (players == null) {
+             return;
+         }
+-
++        // Plazma start - ChunkSending
+         Object[] backingSet = players.getBackingSet();
+-        for (int i = 0, len = backingSet.length; i < len; ++i) {
+-            if (!(backingSet[i] instanceof ServerPlayer player)) {
+-                continue;
+-            }
+-            if (!this.chunkMap.playerChunkManager.isChunkSent(player, this.pos.x, this.pos.z, onlyOnWatchDistanceEdge)) {
+-                continue;
+-            }
++        for (Object o : backingSet) {
++            if (!(o instanceof ServerPlayer player)) continue;
++            if (!this.chunkMap.playerChunkManager.isChunkSent(player, this.pos.x, this.pos.z, onlyOnWatchDistanceEdge)) continue;
++            if (this.chunkMap.level.plazmaLevelConfiguration().chunksending.enable && player.attachToPending(pos, packet)) continue;
+             player.connection.send(packet);
+         }
++        // Plazma end
+         // Paper end - per player view distance
+     }
+ 
+diff --git a/src/main/java/net/minecraft/server/level/ServerPlayer.java b/src/main/java/net/minecraft/server/level/ServerPlayer.java
+index 74238a87d1ff3391aac5812b24b84af228baeaa4..0863b7bc4e9b1e2da880cfb8e78ae9e38ccfb45f 100644
+--- a/src/main/java/net/minecraft/server/level/ServerPlayer.java
++++ b/src/main/java/net/minecraft/server/level/ServerPlayer.java
+@@ -727,7 +727,39 @@ public class ServerPlayer extends Player {
+             }
+         }
+         // Purpur end
++        // Plazma start - ChunkSending
++        if (this.level.plazmaLevelConfiguration().chunksending.enable) {
++            if (chunksToSend.isEmpty()) {
++                return;
++            }
++
++            if (disconnected) {
++                chunksToSend.clear();
++                return;
++            }
++
++            final List<java.util.Map.Entry<ChunkPos, List<Packet<?>>>> packets = new java.util.ArrayList<>(chunksToSend.entrySet());
++            packets.sort(java.util.Comparator.comparingDouble(e -> e.getKey().getMiddleBlockPosition(getBlockY()).distSqr(blockPosition())));
++
++            for (int i = 0; i < packets.size() && i < this.level.plazmaLevelConfiguration().chunksending.maxChunksPerTick; i++) {
++                final java.util.Map.Entry<ChunkPos, List<Packet<?>>> entry = packets.get(i);
++                for (final Packet<?> packet : entry.getValue()) {
++                    connection.send(packet);
++                }
++                chunksToSend.remove(entry.getKey());
++            }
++        }
++        // Plazma end
++    }
++
++    //Plazma start - ChunkSending
++    public boolean attachToPending(final ChunkPos pos, final Packet<?> packet) {
++        final List<Packet<?>> packetList = chunksToSend.get(pos);
++        if (packetList == null) return false;
++        packetList.add(packet);
++        return true;
+     }
++    // Plazma end
+ 
+     public void doTick() {
+         try {
+@@ -2345,7 +2377,15 @@ public class ServerPlayer extends Player {
+         return true; // Paper
+     }
+ 
++    private final java.util.Map<ChunkPos, List<Packet<?>>> chunksToSend = java.util.Collections.synchronizedMap(new java.util.HashMap<>()); // Plazma - ChunkSending
++
+     public void trackChunk(ChunkPos chunkPos, Packet<?> chunkDataPacket) {
++        // Plazma start - ChunkSending
++        if (this.level.plazmaLevelConfiguration().chunksending.enable) {
++            List<Packet<?>> packetList = chunksToSend.computeIfAbsent(chunkPos, k -> new java.util.ArrayList<>());
++            packetList.add(chunkDataPacket);
++        }
++        // Plazma end
+         this.connection.send(chunkDataPacket);
+         // Paper start
+         if(io.papermc.paper.event.packet.PlayerChunkLoadEvent.getHandlerList().getRegisteredListeners().length > 0){
