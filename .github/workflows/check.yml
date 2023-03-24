@@ -1,25 +1,18 @@
-name: Test build with Normal JDK
+name: Test Gradle build script
 
 on:
   push:
     branches: [ "ver/*", "feat/*", "dev/*", "expr/*", "ench/*" ]
   workflow_dispatch:
 
-env:
-  ORG_NAME: PlazmaMC
-  MC_VERSION: 1.19.4
-  MAIN_BRANCH: ver/1.19.4
-  DEBUG: 'false'
-
 jobs:
   release:
     strategy:
       matrix:
-        jdk: [19.0.2+7]
-        java: ['temurin']
+        base_jdk: [19]
+        graal: [latest]
         os: [ubuntu-22.04]
 
-    if: "!startsWith(github.event.commits[0].message, '[CI-Skip]')"
     runs-on: ${{ matrix.os }}
     steps:
       - name: Checkout action
@@ -28,15 +21,17 @@ jobs:
       - name: Validate Gradle Wrapper
         uses: gradle/wrapper-validation-action@v1
 
-      - name: Set up JDK ${{ matrix.java }} ${{ matrix.jdk }}
-        uses: actions/setup-java@v3
+      - name: Set up GraalVM ${{ matrix.jdk }}
+        uses: graalvm/setup-graalvm@v1
         with:
-          distribution: ${{ matrix.java }}
-          java-version: ${{ matrix.jdk }}
+          github-token: ${{ secrets.GH_PAT }}
+          java-version: ${{ matrix.base_jdk }}
+          version: ${{ matrix.graal }}
           cache: 'gradle'
 
-      - name: Test build
+      - name: Configure Git
         run: |
           git config --global user.email "41898282+github-actions[bot]@users.noreply.github.com" && git config --global user.name "github-actions[bot]"
-          ./gradlew applyPatches --stacktrace
-          ./gradlew build --stacktrace
+
+      - name: Run Gradle
+        run: ./gradlew --stacktrace
