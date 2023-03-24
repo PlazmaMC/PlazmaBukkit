@@ -80,3 +80,35 @@ paperweight {
         }
     }
 }
+
+tasks.register("updateUpstream") {
+    // Update the purpurRef in gradle.properties to be the latest commit.
+    val tempDir = layout.cacheDir("purpurRefLatest");
+    val file = "gradle.properties";
+    val branch = "ver/1.19.4";
+
+    doFirst {
+        data class GithubCommit(
+                 val sha: String
+        )
+
+        val response = layout.cache.resolve("apiResponse.json");
+        download.get().download("https://api.github.com/repos/PaperMC/Paper/commits/$branch", response);
+        val latestCommit = gson.fromJson<paper.libs.com.google.gson.JsonObject>(response)["sha"].asString;
+
+        copy {
+            from(file)
+            into(tempDir)
+            filter { line: String ->
+                line.replace("paperCommit = .*".toRegex(), "paperCommit = $latestCommit")
+            }
+        }
+    }
+
+    doLast {
+        copy {
+            from(tempDir.file("gradle.properties"))
+            into(project.file(file).parent)
+        }
+    }
+}
