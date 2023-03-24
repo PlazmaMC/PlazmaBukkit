@@ -45,7 +45,7 @@ jobs:
       - name: Configure Git
         run: |
           git config --global user.email "41898282+github-actions[bot]@users.noreply.github.com" && git config --global user.name "github-actions[bot]"
-          echo "workflow=$GITHUB_RUN_NUMBER" >> $GITHUB_ENV
+          echo "release_num=$(git tag | wc -l)" >> $GITHUB_ENV
 
       - name: Apply Patches
         run: ./gradlew applyPatches --stacktrace
@@ -88,8 +88,8 @@ jobs:
         if: github.ref_name == env.MAIN_BRANCH
         uses: marvinpinto/action-automatic-releases@latest
         with:
-          title: "Release #${{ env.workflow }}"
-          automatic_release_tag: release-${{ env.workflow }}
+          title: "Release #${{ env.release_num }}"
+          automatic_release_tag: release-${{ env.release_num }}
           repo_token: "${{ secrets.GH_PAT }}"
           files: build/libs/*.jar
           prerelease: false
@@ -98,7 +98,7 @@ jobs:
         if: github.ref_name == env.MAIN_BRANCH
         uses: marvinpinto/action-automatic-releases@latest
         with:
-          title: "Release #${{ env.workflow }}"
+          title: "Release #${{ env.release_num }}"
           automatic_release_tag: latest-${{ env.MC_VERSION }}
           repo_token: "${{ secrets.GH_PAT }}"
           files: build/libs/*.jar
