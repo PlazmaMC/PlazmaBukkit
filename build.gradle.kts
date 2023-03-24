@@ -1,4 +1,6 @@
-import io.papermc.paperweight.util.constants.*
+import io.papermc.paperweight.patcher.*
+import io.papermc.paperweight.util.*
+import io.papermc.paperweight.util.constants.PAPERCLIP_CONFIG
 
 plugins {
     java
@@ -45,6 +47,7 @@ subprojects {
     tasks.withType<ProcessResources> {
         filteringCharset = Charsets.UTF_8.name()
     }
+
     tasks.withType<Test> {
         minHeapSize = "2g"
         maxHeapSize = "2g"
@@ -82,33 +85,37 @@ paperweight {
 }
 
 tasks.register("updateUpstream") {
+    dependsOn("updateUpstreamCommit")
+    dependsOn("applyPatches")
+}
+
+tasks.register("updateUpstreamCommit") {
     // Update the purpurRef in gradle.properties to be the latest commit.
     val tempDir = layout.cacheDir("purpurRefLatest");
     val file = "gradle.properties";
-    val branch = "ver/1.19.4";
 
     doFirst {
-        data class GithubCommit(
-                 val sha: String
-        )
+      data class GithubCommit(
+        val sha: String
+      )
 
-        val response = layout.cache.resolve("apiResponse.json");
-        download.get().download("https://api.github.com/repos/PaperMC/Paper/commits/$branch", response);
-        val latestCommit = gson.fromJson<paper.libs.com.google.gson.JsonObject>(response)["sha"].asString;
+      val purpurLatestCommitJson = layout.cache.resolve("purpurLatestCommit.json");
+      download.get().download("https://api.github.com/repos/PaperMC/Paper/commits/master", purpurLatestCommitJson);
+      val purpurLatestCommit = gson.fromJson<paper.libs.com.google.gson.JsonObject>(purpurLatestCommitJson)["sha"].asString;
 
-        copy {
-            from(file)
-            into(tempDir)
-            filter { line: String ->
-                line.replace("paperCommit = .*".toRegex(), "paperCommit = $latestCommit")
-            }
+      copy {
+        from(file)
+        into(tempDir)
+        filter { line: String ->
+          line.replace("paperCommit = .*".toRegex(), "paperCommit = $purpurLatestCommit")
         }
+      }
     }
 
     doLast {
-        copy {
-            from(tempDir.file("gradle.properties"))
-            into(project.file(file).parent)
-        }
+      copy {
+        from(tempDir.file("gradle.properties"))
+        into(project.file(file).parent)
+      }
     }
 }
