@@ -2,7 +2,7 @@ name: Build Plazma
 
 on:
   push:
-    branches: [ "ver/*", "feat/*", "dev/*", "expr/*", "ench/*" ]
+    branches: [ "ver/*", "feat/*", "dev/*", "expr/*", "ench/*", "impl/*" ]
   workflow_dispatch:
 
 env:
@@ -77,7 +77,7 @@ jobs:
           ./gradlew publish --stacktrace
 
       - name: Upload Artifacts
-        if: env.DEBUG == 'true' || github.ref_name != env.MAIN_BRANCH
+        if: env.DEBUG == 'true' || !startsWith(github.ref_name, 'ver/')
         uses: actions/upload-artifact@v3
         with:
           name: Artifacts
@@ -86,7 +86,7 @@ jobs:
             Plazma-API/build/docs/javadoc
 
       - name: Release Artifacts
-        if: github.ref_name == env.MAIN_BRANCH
+        if: startsWith(github.ref_name, 'ver/')
         uses: marvinpinto/action-automatic-releases@latest
         with:
           title: "Release #${{ env.release_num }}"
@@ -96,7 +96,7 @@ jobs:
           prerelease: false
           
       - name: Release Artifacts (Latest)
-        if: github.ref_name == env.MAIN_BRANCH
+        if: startsWith(github.ref_name, 'ver/')
         uses: marvinpinto/action-automatic-releases@latest
         with:
           title: "Release #${{ env.release_num }}"
