@@ -44,9 +44,8 @@ jobs:
 
       - name: Configure Git
         run: |
-          git pull
           git config --global user.email "41898282+github-actions[bot]@users.noreply.github.com" && git config --global user.name "github-actions[bot]"
-          echo "release_num=$(git tag | wc -l)" >> $GITHUB_ENV
+          echo "release_num=$(git ls-remote --tags origin | grep "release" | wc -l)" >> $GITHUB_ENV
 
       - name: Apply Patches
         run: ./gradlew applyPatches --stacktrace
@@ -67,7 +66,7 @@ jobs:
           (cd Plazma-API/build/docs/javadoc && tar c .) | (cd javadoc && tar xf -)
           cd javadoc
           git add . && git commit -m "Update Javadocs"
-          git push https://${{ secrets.GH_PAT }}@github.com/PlazmaMC/Plazma.git
+          git push -f
 
       - name: Publish Packages
         if: github.ref_name == env.MAIN_BRANCH
