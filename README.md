@@ -41,3 +41,6 @@
 [![Discord](https://img.shields.io/discord/911980670123905054?color=%239c91fd&label=MDD&logo=discord&style=for-the-badge&logoColor=ffffff)](https://discord.gg/AZwXTA9Pgx) 
 - 한글로 번역&정리된 Minecraft와 서드파티 버킷들의 소식들을 빠르게 만나볼 수 있습니다.
 - Skript와 Plugin등 서버 개발과 관련된 질문에 대한 답변을 받으실 수 있습니다.
+
+## bStat
+[![](https://bstats.org/signatures/server-implementation/Plazma.svg)](https://bstats.org/plugin/server-implementation/Plazma/18047)
