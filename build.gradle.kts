@@ -84,38 +84,30 @@ paperweight {
     }
 }
 
-tasks.register("updateUpstream") {
-    dependsOn("updateUpstreamCommit")
-    dependsOn("applyPatches")
-}
+val upstreamTask = tasks.register("updateUpstream") {
+    finalizedBy("applyPatches")
 
-tasks.register("updateUpstreamCommit") {
-    // Update the purpurRef in gradle.properties to be the latest commit.
-    val tempDir = layout.cacheDir("purpurRefLatest");
+    val tempDir = layout.cacheDir("updateUpstream");
     val file = "gradle.properties";
 
     doFirst {
-      data class GithubCommit(
-        val sha: String
-      )
+        val apiResponse = layout.cache.resolve("apiResponse.json");
+        download.get().download("https://api.github.com/repos/PaperMC/Paper/commits/master", apiResponse);
+        val latestCommit = gson.fromJson<paper.libs.com.google.gson.JsonObject>(apiResponse)["sha"].asString;
 
-      val purpurLatestCommitJson = layout.cache.resolve("purpurLatestCommit.json");
-      download.get().download("https://api.github.com/repos/PaperMC/Paper/commits/master", purpurLatestCommitJson);
-      val purpurLatestCommit = gson.fromJson<paper.libs.com.google.gson.JsonObject>(purpurLatestCommitJson)["sha"].asString;
-
-      copy {
-        from(file)
-        into(tempDir)
-        filter { line: String ->
-          line.replace("paperCommit = .*".toRegex(), "paperCommit = $purpurLatestCommit")
+        copy {
+            from(file)
+            into(tempDir)
+            filter { line: String ->
+                line.replace("paperCommit = .*".toRegex(), "paperCommit = $latestCommit")
+            }
         }
-      }
     }
 
     doLast {
-      copy {
-        from(tempDir.file("gradle.properties"))
-        into(project.file(file).parent)
-      }
+        copy {
+            from(tempDir.file("gradle.properties"))
+            into(project.file(file).parent)
+        }
     }
 }
