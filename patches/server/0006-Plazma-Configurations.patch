@@ -189,7 +189,7 @@ index 180ea5edb002856f975c074e319998b68b67a7af..6d2d1d99977d33fdd8c9a34b65bbca18
      // CraftBukkit end
  
 diff --git a/src/main/java/net/minecraft/server/Services.java b/src/main/java/net/minecraft/server/Services.java
-index ef6ff78af2ae747e939895b82ee9d11c75012dcd..44cca10e5341b80e5b7b38d4db86c1980194d9a7 100644
+index ef6ff78af2ae747e939895b82ee9d11c75012dcd..6e3a1ea75005ba53a72889285597603f2d244919 100644
 --- a/src/main/java/net/minecraft/server/Services.java
 +++ b/src/main/java/net/minecraft/server/Services.java
 @@ -8,10 +8,10 @@ import net.minecraft.server.players.GameProfileCache;
@@ -220,15 +220,14 @@ index ef6ff78af2ae747e939895b82ee9d11c75012dcd..44cca10e5341b80e5b7b38d4db86c198
      public static final String USERID_CACHE_FILE = "usercache.json"; // Paper - private -> public
  
      public static Services create(YggdrasilAuthenticationService authenticationService, File rootDirectory, File userCacheFile, joptsimple.OptionSet optionSet) throws Exception { // Paper
-@@ -30,7 +38,12 @@ public record Services(MinecraftSessionService sessionService, SignatureValidato
+@@ -30,7 +38,11 @@ public record Services(MinecraftSessionService sessionService, SignatureValidato
          final java.nio.file.Path legacyConfigPath = ((File) optionSet.valueOf("paper-settings")).toPath();
          final java.nio.file.Path configDirPath = ((File) optionSet.valueOf("paper-settings-directory")).toPath();
          io.papermc.paper.configuration.PaperConfigurations paperConfigurations = io.papermc.paper.configuration.PaperConfigurations.setup(legacyConfigPath, configDirPath, rootDirectory.toPath(), (File) optionSet.valueOf("spigot-settings"));
 -        return new Services(minecraftSessionService, signatureValidator, gameProfileRepository, gameProfileCache, paperConfigurations);
 +        // Plazma start
-+        final java.nio.file.Path legacyPlazmaConfigurationPath = ((File) optionSet.valueOf("plazma-configurations")).toPath();
 +        final java.nio.file.Path plazmaConfigurationDirPath = ((File) optionSet.valueOf("plazma-configurations-directory")).toPath();
-+        org.plazmamc.plazma.configurations.PlazmaConfigurations plazmaConfigurations = org.plazmamc.plazma.configurations.PlazmaConfigurations.setup(legacyPlazmaConfigurationPath, plazmaConfigurationDirPath);
++        org.plazmamc.plazma.configurations.PlazmaConfigurations plazmaConfigurations = org.plazmamc.plazma.configurations.PlazmaConfigurations.setup(plazmaConfigurationDirPath);
 +        return new Services(minecraftSessionService, signatureValidator, gameProfileRepository, gameProfileCache, paperConfigurations, plazmaConfigurations);
 +        // Plazma end
          // Paper end
@@ -327,10 +326,10 @@ index e59532dda47d0f9635b5393cb4ef0484fd6bb9ae..7b7c9c8aa1bb949b6076161f5b175941
          @Override
          public YamlConfiguration getPurpurConfig() {
 diff --git a/src/main/java/org/bukkit/craftbukkit/Main.java b/src/main/java/org/bukkit/craftbukkit/Main.java
-index ab05f4151e6ec7404a85ddb3a141ed39d9ed86d7..9fa9b58bc18f02d0999bd937f36ba2173948ffd7 100644
+index ab05f4151e6ec7404a85ddb3a141ed39d9ed86d7..7c6480cee6585ea39af517c4b5639603a54e4c8f 100644
 --- a/src/main/java/org/bukkit/craftbukkit/Main.java
 +++ b/src/main/java/org/bukkit/craftbukkit/Main.java
-@@ -173,6 +173,19 @@ public class Main {
+@@ -173,6 +173,14 @@ public class Main {
                          .describedAs("Jar file");
                  // Paper end
  
@@ -340,11 +339,6 @@ index ab05f4151e6ec7404a85ddb3a141ed39d9ed86d7..9fa9b58bc18f02d0999bd937f36ba217
 +                        .ofType(File.class)
 +                        .defaultsTo(new File(io.papermc.paper.configuration.PaperConfigurations.CONFIG_DIR))
 +                        .describedAs("Config directory");
-+                acceptsAll(asList("plazma", "plazma-configurations"), "File for Plazma configurations")
-+                        .withRequiredArg()
-+                        .ofType(File.class)
-+                        .defaultsTo(new File("plazma.yml"))
-+                        .describedAs("Yml file");
 +                // Plazma end
 +
                  // Purpur Start
@@ -654,10 +648,10 @@ index 0000000000000000000000000000000000000000..857ddc62dd9affbbebcd7cde8a6d675d
 +}
 diff --git a/src/main/java/org/plazmamc/plazma/configurations/PlazmaConfigurations.java b/src/main/java/org/plazmamc/plazma/configurations/PlazmaConfigurations.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..d5f3b2eb2169227f22482caf34c1857eef8d0f14
+index 0000000000000000000000000000000000000000..b1104778995a3734f3b6df71d59172e546e152a2
 --- /dev/null
 +++ b/src/main/java/org/plazmamc/plazma/configurations/PlazmaConfigurations.java
-@@ -0,0 +1,332 @@
+@@ -0,0 +1,304 @@
 +package org.plazmamc.plazma.configurations;
 +
 +import com.google.common.collect.Table;
@@ -786,25 +780,6 @@ index 0000000000000000000000000000000000000000..d5f3b2eb2169227f22482caf34c1857e
 +                    이 구성 파일의 설정은 각 레벨 폴더 안 구성 파일에서 덮어쓰기 되지 않는 한 모든 레벨에 적용됩니다.
 +                    """
 +    );
-+
-+    private static final String MOVED_NOTICE = """
-+            # English
-+            The global and level default configuration have moved to %s
-+            and the level-specific configuration has been moved inside
-+            the respective level folder.
-+            
-+            See GitHub Wiki for more information.
-+            
-+            
-+            # 한국어
-+            전역 및 레벨 전역 구성 파일은 %s 로 이동되었으며, 레벨별 구성 파일은
-+            각 레벨 폴더 안으로 이동되었습니다.
-+            
-+            자세한 내용은 GitHub 위키를 참고하시기 바랍니다.
-+            
-+            
-+            Wiki: https://github.com/TeamEarendel/Plazma/wiki
-+            """;
 +
 +    private static final List<Transformations.DefaultsAware> DEFAULTS_AWARE_TRANSFORMATIONS = Collections.emptyList();
 +
@@ -961,16 +936,7 @@ index 0000000000000000000000000000000000000000..d5f3b2eb2169227f22482caf34c1857e
 +        return BasicConfigurationNode.root(options);
 +    }
 +
-+    public static PlazmaConfigurations setup(final Path legacyConfigurations, final Path configurationDir) throws Exception {
-+        final Path legacy = Files.isSymbolicLink(legacyConfigurations) ? Files.readSymbolicLink(legacyConfigurations) : legacyConfigurations;
-+        final Path replacementFile = legacy.resolveSibling(legacyConfigurations.getFileName() + "-README.txt");
-+
-+        if (Files.exists(legacyConfigurations) && Files.notExists(replacementFile)) {
-+            Path path = configurationDir.toAbsolutePath();
-+            Files.createFile(replacementFile);
-+            Files.writeString(replacementFile, String.format(MOVED_NOTICE, path, path));
-+        }
-+
++    public static PlazmaConfigurations setup(final Path configurationDir) throws Exception {
 +        try {
 +            PaperConfigurations.createDirectoriesSymlinkAware(configurationDir);
 +            return new PlazmaConfigurations(configurationDir);
