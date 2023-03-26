@@ -43,9 +43,7 @@ jobs:
           cache: 'gradle'
 
       - name: Configure Git
-        run: |
-          git config --global user.email "41898282+github-actions[bot]@users.noreply.github.com" && git config --global user.name "github-actions[bot]"
-          echo "release_num=$(git ls-remote --tags origin | grep "release" | wc -l)" >> $GITHUB_ENV
+        run: git config --global user.email "41898282+github-actions[bot]@users.noreply.github.com" && git config --global user.name "github-actions[bot]"
 
       - name: Apply Patches
         run: ./gradlew applyPatches --stacktrace
@@ -83,13 +81,16 @@ jobs:
           path: |
             build/libs
             Plazma-API/build/docs/javadoc
+      
+      - name: Get Release Number
+        run: echo "RELEASE=$(git ls-remote --tags origin | grep "release" | wc -l)" >> $GITHUB_ENV
 
       - name: Release Artifacts
         if: startsWith(github.ref_name, 'ver/')
         uses: marvinpinto/action-automatic-releases@latest
         with:
-          title: "Release #${{ env.release_num }}"
-          automatic_release_tag: release-${{ env.release_num }}
+          title: "Release #${{ env.RELEASE }}"
+          automatic_release_tag: release-${{ env.RELEASE }}
           repo_token: "${{ secrets.GH_PAT }}"
           files: build/libs/*.jar
           prerelease: false
@@ -98,7 +99,7 @@ jobs:
         if: startsWith(github.ref_name, 'ver/')
         uses: marvinpinto/action-automatic-releases@latest
         with:
-          title: "Release #${{ env.release_num }}"
+          title: "Release #${{ env.RELEASE }}"
           automatic_release_tag: latest-${{ env.MC_VERSION }}
           repo_token: "${{ secrets.GH_PAT }}"
           files: build/libs/*.jar
