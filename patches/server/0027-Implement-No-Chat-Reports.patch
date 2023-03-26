@@ -71,7 +71,7 @@ index efcee39cd7154493de04ca903edbd32b5901b191..a398b71c52817bd68a05613ec037ed6d
  
      protected boolean convertOldUsers() {
 diff --git a/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java b/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
-index dee076d1e6e30f108a79565546182b4751737baa..9e4f51dc86f71ffac8602131c9d6aaa8a5e94e89 100644
+index dee076d1e6e30f108a79565546182b4751737baa..c18f953950fd2c00a3880fa20c9904a940191666 100644
 --- a/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
 +++ b/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
 @@ -2224,10 +2224,19 @@ public class ServerGamePacketListenerImpl implements ServerPlayerConnection, Tic
@@ -81,7 +81,7 @@ index dee076d1e6e30f108a79565546182b4751737baa..9e4f51dc86f71ffac8602131c9d6aaa8
 -        this.send(packet, (PacketSendListener) null);
 +        // Plazma start - NCR
 +        if (org.plazmamc.plazma.configurations.GlobalConfiguration.get().noChatReports.convertToGameMessage() && packet instanceof ClientboundPlayerChatPacket p)
-+            packet = new ClientboundSystemChatPacket(p.chatType().resolve(this.player.level.registryAccess()).get().decorate(p.unsignedContent() != null ? p.unsignedContent() : Component.literal(p.body().content())), false);
++            packet = new ClientboundSystemChatPacket(null, Component.Serializer.toJson(p.chatType().resolve(this.player.level.registryAccess()).get().decorate(p.unsignedContent() != null ? p.unsignedContent() : Component.literal(p.body().content()))), false);
 +        this.send(packet, null);
      }
  
