@@ -30,11 +30,12 @@ jobs:
         with:
           path: javadoc
           ref: gh-pages
+          token: ${{ secrets.GH_PAT }}
 
       - name: Validate Gradle Wrapper
         uses: gradle/wrapper-validation-action@v1
 
-      - name: Set up GraalVM ${{ matrix.jdk }}
+      - name: Set up GraalVM ${{ matrix.base_jdk }}
         uses: graalvm/setup-graalvm@v1
         with:
           github-token: ${{ secrets.GH_PAT }}
@@ -64,7 +65,7 @@ jobs:
           (cd Plazma-API/build/docs/javadoc && tar c .) | (cd javadoc && tar xf -)
           cd javadoc
           git add . && git commit -m "Update Javadocs"
-          git push https://${{ secrets.GH_PAT }}@github.com/PlazmaMC/Plazma.git -f
+          git push
 
       - name: Publish Packages
         if: github.ref_name == env.MAIN_BRANCH

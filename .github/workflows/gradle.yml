@@ -9,8 +9,8 @@ jobs:
   release:
     strategy:
       matrix:
-        base_jdk: [19]
-        graal: [latest]
+        jdk: [19.0.2+7]
+        java: ['temurin']
         os: [ubuntu-22.04]
 
     if: "!contains(github.event.commits[0].message, '[CheckSkip]')"
@@ -22,12 +22,11 @@ jobs:
       - name: Validate Gradle Wrapper
         uses: gradle/wrapper-validation-action@v1
 
-      - name: Set up GraalVM ${{ matrix.jdk }}
-        uses: graalvm/setup-graalvm@v1
+      - name: Set up JDK ${{ matrix.java }} ${{ matrix.jdk }}
+        uses: actions/setup-java@v3
         with:
-          github-token: ${{ secrets.GH_PAT }}
-          java-version: ${{ matrix.base_jdk }}
-          version: ${{ matrix.graal }}
+          distribution: ${{ matrix.java }}
+          java-version: ${{ matrix.jdk }}
           cache: 'gradle'
 
       - name: Configure Git
