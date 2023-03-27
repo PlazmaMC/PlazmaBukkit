@@ -1,8 +1,8 @@
-name: Test Pull Request
+name: Test Gradle build script
 
 on:
-  pull_request:
-    branches: [ "ver/*", "feat/*", "dev/*", "expr/*" ]
+  push:
+    branches: [ "ver/*", "feat/*", "dev/*", "expr/*", "ench/*", "impl/*" ]
   workflow_dispatch:
 
 jobs:
@@ -13,7 +13,7 @@ jobs:
         java: ['temurin']
         os: [ubuntu-22.04]
 
-    if: !startsWith(github.event.commits[0].message, '[CI-Skip]')
+    if: "!contains(github.event.commits[0].message, '[CheckSkip]')"
     runs-on: ${{ matrix.os }}
     steps:
       - name: Checkout action
@@ -33,23 +33,5 @@ jobs:
         run: |
           git config --global user.email "41898282+github-actions[bot]@users.noreply.github.com" && git config --global user.name "github-actions[bot]"
 
-      - name: Apply Patches
-        run: ./gradlew applyPatches --stacktrace
-
-      - name: Build
-        run: ./gradlew build --stacktrace
-
-      - name: Create Reobf Jar
-        run: ./gradlew createReobfPaperclipJar --stacktrace
-
-      - name: Create Mojmap Jar
-        run: ./gradlew createMojmapPaperclipJar --stacktrace
-
-      - name: Upload Artifacts
-        if: contains(github.event.pull_request.labels.*.name, 'upload_artifact')
-        uses: actions/upload-artifact@v3
-        with:
-          name: Artifacts
-          path: |
-            build/libs
-            Plazma-API/build/docs/javadoc
+      - name: Run Gradle
+        run: ./gradlew --stacktrace

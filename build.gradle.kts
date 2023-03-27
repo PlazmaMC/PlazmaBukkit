@@ -1,4 +1,6 @@
-import io.papermc.paperweight.util.constants.*
+import io.papermc.paperweight.patcher.*
+import io.papermc.paperweight.util.*
+import io.papermc.paperweight.util.constants.PAPERCLIP_CONFIG
 
 plugins {
     java
@@ -45,6 +47,7 @@ subprojects {
     tasks.withType<ProcessResources> {
         filteringCharset = Charsets.UTF_8.name()
     }
+
     tasks.withType<Test> {
         minHeapSize = "2g"
         maxHeapSize = "2g"
@@ -77,6 +80,34 @@ paperweight {
 
             serverPatchDir.set(layout.projectDirectory.dir("patches/server"))
             serverOutputDir.set(layout.projectDirectory.dir("Plazma-Server"))
+        }
+    }
+}
+
+val upstreamTask = tasks.register("updateUpstream") {
+    finalizedBy("applyPatches")
+
+    val tempDir = layout.cacheDir("updateUpstream");
+    val file = "gradle.properties";
+
+    doFirst {
+        val apiResponse = layout.cache.resolve("apiResponse.json");
+        download.get().download("https://api.github.com/repos/PaperMC/Paper/commits/master", apiResponse);
+        val latestCommit = gson.fromJson<paper.libs.com.google.gson.JsonObject>(apiResponse)["sha"].asString;
+
+        copy {
+            from(file)
+            into(tempDir)
+            filter { line: String ->
+                line.replace("paperCommit = .*".toRegex(), "paperCommit = $latestCommit")
+            }
+        }
+    }
+
+    doLast {
+        copy {
+            from(tempDir.file("gradle.properties"))
+            into(project.file(file).parent)
         }
     }
 }

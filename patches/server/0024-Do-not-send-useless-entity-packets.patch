@@ -1,0 +1,52 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: AlphaKR93 <dev@alpha93.kr>
+Date: Sat, 25 Mar 2023 22:07:39 +0900
+Subject: [PATCH] Do not send useless entity packets
+
+
+diff --git a/src/main/java/net/minecraft/server/level/ServerEntity.java b/src/main/java/net/minecraft/server/level/ServerEntity.java
+index 6afee2a744a3498d4a0eee35f77cde444f73d12c..dbb987d5896e199aeae3bcd86c69bf3327af8ada 100644
+--- a/src/main/java/net/minecraft/server/level/ServerEntity.java
++++ b/src/main/java/net/minecraft/server/level/ServerEntity.java
+@@ -207,6 +207,7 @@ public class ServerEntity {
+                         flag4 = true;
+                         flag5 = true;
+                     }
++                    if (org.plazmamc.plazma.configurations.GlobalConfiguration.get().misc.doNotSendUselessEntityPackets && isUselessEntityPacket(packet1)) packet1 = null; // Plazma
+                 }
+ 
+                 if ((this.trackDelta || this.entity.hasImpulse || this.entity instanceof LivingEntity && ((LivingEntity) this.entity).isFallFlying()) && this.tickCount > 0) {
+@@ -281,6 +282,21 @@ public class ServerEntity {
+         }));
+     }
+ 
++    // Plazma start
++    private boolean isUselessEntityPacket(@Nullable Packet<?> packet) {
++        if (packet == null) return false;
++        if (packet instanceof ClientboundMoveEntityPacket p) {
++            if (p instanceof ClientboundMoveEntityPacket.Pos)
++                return p.getXa() == 0 && p.getYa() == 0 && p.getZa() == 0;
++            else if (p instanceof ClientboundMoveEntityPacket.Rot)
++                return p.getxRot() == 0 && p.getyRot() == 0;
++            else if (p instanceof ClientboundMoveEntityPacket.PosRot)
++                return p.getXa() == 0 && p.getYa() == 0 && p.getZa() == 0 && p.getxRot() == 0 && p.getyRot() == 0;
++        }
++        return false;
++    }
++    // Plazma end
++
+     public void removePairing(ServerPlayer player) {
+         this.entity.stopSeenByPlayer(player);
+         player.connection.send(new ClientboundRemoveEntitiesPacket(new int[]{this.entity.getId()}));
+diff --git a/src/main/java/org/plazmamc/plazma/configurations/GlobalConfiguration.java b/src/main/java/org/plazmamc/plazma/configurations/GlobalConfiguration.java
+index 87a85fb1cd9a19541df04a5d1c457d86cf7f68eb..989b6d20818dec0a527a170ad2b19d456ca023d9 100644
+--- a/src/main/java/org/plazmamc/plazma/configurations/GlobalConfiguration.java
++++ b/src/main/java/org/plazmamc/plazma/configurations/GlobalConfiguration.java
+@@ -42,6 +42,7 @@ public class GlobalConfiguration extends ConfigurationPart {
+ 
+         public boolean reduceCreateRandomInstance = DO_OPTIMIZE;
+         public boolean doNotTriggerLootTableRefreshForNonPlayerInteraction = DO_OPTIMIZE;
++        public boolean doNotSendUselessEntityPackets = DO_OPTIMIZE;
+ 
+     }
+ }

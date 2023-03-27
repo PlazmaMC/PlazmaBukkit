@@ -1,0 +1,75 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: AlphaKR93 <dev@alpha93.kr>
+Date: Fri, 24 Mar 2023 23:54:51 +0900
+Subject: [PATCH] Add more metrics
+
+
+diff --git a/src/main/java/com/destroystokyo/paper/Metrics.java b/src/main/java/com/destroystokyo/paper/Metrics.java
+index 7d80d2cf5d607d6051e99e4b08bc1b76098a79da..067bcbcb81802a3a52ecff737ddf2c033696ecfb 100644
+--- a/src/main/java/com/destroystokyo/paper/Metrics.java
++++ b/src/main/java/com/destroystokyo/paper/Metrics.java
+@@ -636,12 +636,63 @@ public class Metrics {
+                     return map;
+                 }));
+ 
++                // Plazma start
++                metrics.addCustomChart(new Metrics.DrilldownPie("datapacks", () -> {
++                    Map<String, Map<String, Integer>> map = new HashMap<>();
++                    int datapacks = Bukkit.getServer().getDatapackManager().getEnabledPacks().size();
++                    Map<String, Integer> entry = new HashMap<>();
++                    entry.put(String.valueOf(datapacks), 1);
++
++                    if (datapacks == 0)
++                        map.put("0", entry);
++                    else if (datapacks <= 5)
++                        map.put("1-5", entry);
++                    else if (datapacks <= 10)
++                        map.put("6-10", entry);
++                    else if (datapacks <= 25)
++                        map.put("11-25", entry);
++                    else
++                        map.put("26+", entry);
++
++                    return map;
++                }));
++                
++                List<Plugin> plugins = new ArrayList<>();
++                for (Plugin plugin : Bukkit.getPluginManager().getPlugins()) {
++                    if (plugin.isEnabled()) {
++                        plugins.add(plugin);
++                    }
++                }
++
++                metrics.addCustomChart(new Metrics.DrilldownPie("plugins", () -> {
++                    Map<String, Map<String, Integer>> map = new HashMap<>();
++                    int plugins1 = plugins.size();
++                    Map<String, Integer> entry = new HashMap<>();
++                    entry.put(String.valueOf(plugins1), 1);
++
++                    if (plugins1 == 0)
++                        map.put("0", entry);
++                    else if (plugins1 <= 5)
++                        map.put("1-5", entry);
++                    else if (plugins1 <= 10)
++                        map.put("6-10", entry);
++                    else if (plugins1 <= 25)
++                        map.put("11-25", entry);
++                    else if (plugins1 <= 50)
++                        map.put("26-50", entry);
++                    else
++                        map.put("51+", entry);
++
++                    return map;
++                }));
++                // Plazma end
++
+                 metrics.addCustomChart(new Metrics.DrilldownPie("legacy_plugins", () -> {
+                     Map<String, Map<String, Integer>> map = new HashMap<>();
+ 
+                     // count legacy plugins
+                     int legacy = 0;
+-                    for (Plugin plugin : Bukkit.getPluginManager().getPlugins()) {
++                    for (Plugin plugin : plugins) { // Plazma
+                         if (CraftMagicNumbers.isLegacy(plugin.getDescription())) {
+                             legacy++;
+                         }

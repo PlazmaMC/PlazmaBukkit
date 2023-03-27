@@ -7,56 +7,45 @@ Original: YouHaveTrouble/minecraft-optimization, AkiraDevelopment/SimplyMC
 Copyright (C) 2023 YouHaveTrouble, AkiraDevelopment
 
 diff --git a/src/main/java/gg/pufferfish/pufferfish/PufferfishConfig.java b/src/main/java/gg/pufferfish/pufferfish/PufferfishConfig.java
-index c0f44f0593aab16d5ceab493f4075772f454732e..7aa260293a12c0b9b9efcd2d8bc470fb06a32cf1 100644
+index 62b2a3a44929b80b813bc24a33cd1f5049fecbb2..cea33db916f9fd828f3cb131a4b2ebdd16866649 100644
 --- a/src/main/java/gg/pufferfish/pufferfish/PufferfishConfig.java
 +++ b/src/main/java/gg/pufferfish/pufferfish/PufferfishConfig.java
-@@ -72,7 +72,7 @@ public class PufferfishConfig {
- 		getString("info.version", "1.0");
- 		setComment("info",
- 				"Pufferfish Configuration",
--				"Check out Pufferfish Host for maximum performance server hosting: https://pufferfish.host",
-+				//"Check out Pufferfish Host for maximum performance server hosting: https://pufferfish.host", // Plazma
- 				"Join our Discord for support: https://discord.gg/reZw4vQV9H",
- 				"Download new builds at https://ci.pufferfish.host/job/Pufferfish");
- 		
-@@ -220,7 +220,7 @@ public class PufferfishConfig {
+@@ -211,7 +211,7 @@ public class PufferfishConfig {
+     public static int maxProjectileLoadsPerTick;
      public static int maxProjectileLoadsPerProjectile;
      private static void projectileLoading() {
-         maxProjectileLoadsPerTick = getInt("projectile.max-loads-per-tick", 10, "Controls how many chunks are allowed", "to be sync loaded by projectiles in a tick.");
--        maxProjectileLoadsPerProjectile = getInt("projectile.max-loads-per-projectile", 10, "Controls how many chunks a projectile", "can load in its lifetime before it gets", "automatically removed.");
-+		maxProjectileLoadsPerProjectile = getInt("projectile.max-loads-per-projectile", Boolean.getBoolean("Plazma.disableConfigOptimization") ? 10 : 8, "Controls how many chunks a projectile", "can load in its lifetime before it gets", "automatically removed."); // Plazma - Optimize Default Configurations
+-        maxProjectileLoadsPerTick = getInt("projectile.max-loads-per-tick", 10, "Controls how many chunks are allowed", "to be sync loaded by projectiles in a tick.");
++        maxProjectileLoadsPerTick = getInt("projectile.max-loads-per-tick", Boolean.getBoolean("Plazma.disableConfigOptimization") ? 10 : 8, "Controls how many chunks are allowed", "to be sync loaded by projectiles in a tick."); // Plazma
+         maxProjectileLoadsPerProjectile = getInt("projectile.max-loads-per-projectile", 10, "Controls how many chunks a projectile", "can load in its lifetime before it gets", "automatically removed.");
  
          setComment("projectile", "Optimizes projectile settings");
-     }
-@@ -233,7 +233,7 @@ public class PufferfishConfig {
+@@ -225,7 +225,7 @@ public class PufferfishConfig {
      public static int activationDistanceMod;
  
      private static void dynamicActivationOfBrains() throws IOException {
 -        dearEnabled = getBoolean("dab.enabled", "activation-range.enabled", false); // Purpur
-+		dearEnabled = getBoolean("dab.enabled", "activation-range.enabled", !Boolean.getBoolean("Plazma.disableConfigOptimization")); // Purpur // Plazma - Optimize Default Configurations
++        dearEnabled = getBoolean("dab.enabled", "activation-range.enabled", !Boolean.getBoolean("Plazma.disableConfigOptimization")); // Purpur // Plazma
          startDistance = getInt("dab.start-distance", "activation-range.start-distance", 12,
                  "This value determines how far away an entity has to be",
                  "from the player to start being effected by DEAR.");
-@@ -241,7 +241,7 @@ public class PufferfishConfig {
+@@ -233,7 +233,7 @@ public class PufferfishConfig {
          maximumActivationPrio = getInt("dab.max-tick-freq", "activation-range.max-tick-freq", 20,
                  "This value defines how often in ticks, the furthest entity",
                  "will get their pathfinders and behaviors ticked. 20 = 1s");
 -        activationDistanceMod = getInt("dab.activation-dist-mod", "activation-range.activation-dist-mod", 8,
-+		activationDistanceMod = getInt("dab.activation-dist-mod", "activation-range.activation-dist-mod", Boolean.getBoolean("Plazma.disableConfigOptimization") ? 8 : 7, // Plazma - Optimize Default Configurations
++        activationDistanceMod = getInt("dab.activation-dist-mod", "activation-range.activation-dist-mod", Boolean.getBoolean("Plazma.disableConfigOptimization") ? 8 : 7, // Plazma
                  "This value defines how much distance modifies an entity's",
                  "tick frequency. freq = (distanceToPlayer^2) / (2^value)",
                  "If you want further away entities to tick less often, use 7.",
-@@ -277,7 +277,7 @@ public class PufferfishConfig {
-     
+@@ -269,16 +269,16 @@ public class PufferfishConfig {
+ 
      public static boolean throttleInactiveGoalSelectorTick;
  	private static void inactiveGoalSelectorThrottle() {
 -		getBoolean("inactive-goal-selector-throttle", "inactive-goal-selector-disable", false, // Purpur
-+		getBoolean("inactive-goal-selector-throttle", "inactive-goal-selector-disable", !Boolean.getBoolean("Plazma.disableConfigOptimization"), // Purpur // Plazma - Optimize Default Configurations
++		getBoolean("inactive-goal-selector-throttle", "inactive-goal-selector-disable", !Boolean.getBoolean("Plazma.disableConfigOptimization"), // Purpur // Plazma
  				"Throttles the AI goal selector in entity inactive ticks.",
  				"This can improve performance by a few percent, but has minor gameplay implications.");
  	}
-@@ -307,10 +307,10 @@ public class PufferfishConfig {
-     }
  
  
 -    public static boolean disableMethodProfiler;
@@ -339,7 +328,7 @@ index ac238eeea791180b66677870401c0b756f0db07b..ce960bc620d84e56c4e7fc9b721fd45c
          useAlternateKeepAlive = getBoolean("settings.use-alternate-keepalive", useAlternateKeepAlive);
      }
 diff --git a/src/main/java/org/purpurmc/purpur/PurpurWorldConfig.java b/src/main/java/org/purpurmc/purpur/PurpurWorldConfig.java
-index fe903b1e1bd211651e3808becd34a2d28dc57f34..bd87af1ebde124ba405d3e1d1698b78724e112c4 100644
+index d3f2002759ac4788feca1e62c90c2e64596eb2f2..47f2c8f23e318b89324bfcb1342dadc325f53afc 100644
 --- a/src/main/java/org/purpurmc/purpur/PurpurWorldConfig.java
 +++ b/src/main/java/org/purpurmc/purpur/PurpurWorldConfig.java
 @@ -425,7 +425,7 @@ public class PurpurWorldConfig {

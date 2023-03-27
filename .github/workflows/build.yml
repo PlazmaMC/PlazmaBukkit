@@ -2,7 +2,7 @@ name: Build Plazma
 
 on:
   push:
-    branches: [ "ver/*", "feat/*", "dev/*", "expr/*" ]
+    branches: [ "ver/*", "feat/*", "dev/*", "expr/*", "ench/*", "impl/*" ]
   workflow_dispatch:
 
 env:
@@ -15,8 +15,8 @@ jobs:
   release:
     strategy:
       matrix:
-        jdk: [19.0.2+7]
-        java: ['temurin']
+        base_jdk: [19]
+        graal: [latest]
         os: [ubuntu-22.04]
 
     if: "!startsWith(github.event.commits[0].message, '[CI-Skip]')"
@@ -30,21 +30,21 @@ jobs:
         with:
           path: javadoc
           ref: gh-pages
+          token: ${{ secrets.GH_PAT }}
 
       - name: Validate Gradle Wrapper
         uses: gradle/wrapper-validation-action@v1
 
-      - name: Set up JDK ${{ matrix.java }} ${{ matrix.jdk }}
-        uses: actions/setup-java@v3
+      - name: Set up GraalVM ${{ matrix.base_jdk }}
+        uses: graalvm/setup-graalvm@v1
         with:
-          distribution: ${{ matrix.java }}
-          java-version: ${{ matrix.jdk }}
+          github-token: ${{ secrets.GH_PAT }}
+          java-version: ${{ matrix.base_jdk }}
+          version: ${{ matrix.graal }}
           cache: 'gradle'
 
       - name: Configure Git
-        run: |
-          git config --global user.email "41898282+github-actions[bot]@users.noreply.github.com" && git config --global user.name "github-actions[bot]"
-          echo "workflow=$GITHUB_RUN_NUMBER" >> $GITHUB_ENV
+        run: git config --global user.email "41898282+github-actions[bot]@users.noreply.github.com" && git config --global user.name "github-actions[bot]"
 
       - name: Apply Patches
         run: ./gradlew applyPatches --stacktrace
@@ -75,29 +75,32 @@ jobs:
           ./gradlew publish --stacktrace
 
       - name: Upload Artifacts
-        if: env.DEBUG == 'true' || github.ref_name != env.MAIN_BRANCH
+        if: env.DEBUG == 'true' || !startsWith(github.ref_name, 'ver/')
         uses: actions/upload-artifact@v3
         with:
           name: Artifacts
           path: |
             build/libs
             Plazma-API/build/docs/javadoc
+      
+      - name: Get Release Number
+        run: echo "RELEASE=$(git ls-remote --tags origin | grep "release" | wc -l)" >> $GITHUB_ENV
 
       - name: Release Artifacts
-        if: github.ref_name == env.MAIN_BRANCH
+        if: startsWith(github.ref_name, 'ver/')
         uses: marvinpinto/action-automatic-releases@latest
         with:
-          title: "Release #${{ env.workflow }}"
-          automatic_release_tag: release-${{ env.workflow }}
+          title: "Release #${{ env.RELEASE }}"
+          automatic_release_tag: release-${{ env.RELEASE }}
           repo_token: "${{ secrets.GH_PAT }}"
           files: build/libs/*.jar
           prerelease: false
           
       - name: Release Artifacts (Latest)
-        if: github.ref_name == env.MAIN_BRANCH
+        if: startsWith(github.ref_name, 'ver/')
         uses: marvinpinto/action-automatic-releases@latest
         with:
-          title: "Release #${{ env.workflow }}"
+          title: "Release #${{ env.RELEASE }}"
           automatic_release_tag: latest-${{ env.MC_VERSION }}
           repo_token: "${{ secrets.GH_PAT }}"
           files: build/libs/*.jar
