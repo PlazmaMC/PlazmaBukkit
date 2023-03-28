@@ -1,0 +1,30 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: IPECTER <ipectert@gmail.com>
+Date: Tue, 28 Mar 2023 12:42:17 +0900
+Subject: [PATCH] Implement MemoryLeakFix
+
+Original: fxmorin/MemoryLeakFix
+Copyright (C) 2023 fxmorin
+
+diff --git a/src/main/java/net/minecraft/world/level/biome/Biome.java b/src/main/java/net/minecraft/world/level/biome/Biome.java
+index ed439b7e94646141c93a7dd3704d1cdeb5c27e16..2bddcaf8762ee7834c32622402a976bfad12d127 100644
+--- a/src/main/java/net/minecraft/world/level/biome/Biome.java
++++ b/src/main/java/net/minecraft/world/level/biome/Biome.java
+@@ -67,7 +67,7 @@ public final class Biome {
+     private final MobSpawnSettings mobSettings;
+     private final BiomeSpecialEffects specialEffects;
+     // Pufferfish start - use our cache
+-    private final ThreadLocal<gg.airplane.structs.Long2FloatAgingCache> temperatureCache = ThreadLocal.withInitial(() -> {
++    private static final ThreadLocal<gg.airplane.structs.Long2FloatAgingCache> temperatureCache = ThreadLocal.withInitial(() -> { // Plazma - MemoryLeakFix
+         return Util.make(() -> {
+             /*
+             Long2FloatLinkedOpenHashMap long2FloatLinkedOpenHashMap = new Long2FloatLinkedOpenHashMap(1024, 0.25F) {
+@@ -125,7 +125,7 @@ public final class Biome {
+     public float getTemperature(BlockPos blockPos) {
+         long l = blockPos.asLong();
+         // Pufferfish start
+-        gg.airplane.structs.Long2FloatAgingCache cache = this.temperatureCache.get();
++        gg.airplane.structs.Long2FloatAgingCache cache = temperatureCache.get(); // Plazma - MemoryLeakFix
+         float f = cache.getValue(l);
+         if (!Float.isNaN(f)) {
+             return f;
