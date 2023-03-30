@@ -85,8 +85,6 @@ paperweight {
 }
 
 val upstreamTask = tasks.register("updateUpstream") {
-    finalizedBy("applyPatches")
-
     val tempDir = layout.cacheDir("updateUpstream");
     val file = "gradle.properties";
 
