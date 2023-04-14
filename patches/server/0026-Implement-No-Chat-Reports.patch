@@ -71,7 +71,7 @@ index efcee39cd7154493de04ca903edbd32b5901b191..a398b71c52817bd68a05613ec037ed6d
  
      protected boolean convertOldUsers() {
 diff --git a/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java b/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
-index 32e91b8866dd2aa5e4d26ef6ca77dc3f1206781b..48f66a67c251d1183d59a3b8ad417980419a9906 100644
+index 32e91b8866dd2aa5e4d26ef6ca77dc3f1206781b..8ced242580f8b25bab68e4906cfbd4237873b8c5 100644
 --- a/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
 +++ b/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
 @@ -2234,10 +2234,19 @@ public class ServerGamePacketListenerImpl implements ServerPlayerConnection, Tic
@@ -80,9 +80,9 @@ index 32e91b8866dd2aa5e4d26ef6ca77dc3f1206781b..48f66a67c251d1183d59a3b8ad417980
      public void send(Packet<?> packet) {
 -        this.send(packet, (PacketSendListener) null);
 +        // Plazma start - NCR
-+        if (org.plazmamc.plazma.configurations.GlobalConfiguration.get().noChatReports.convertToGameMessage() && packet instanceof ClientboundPlayerChatPacket p)
-+            packet = new ClientboundSystemChatPacket(null, Component.Serializer.toJson(p.chatType().resolve(this.player.level.registryAccess()).get().decorate(p.unsignedContent() != null ? p.unsignedContent() : Component.literal(p.body().content()))), false);
-+        this.send(packet, null);
++        if (org.plazmamc.plazma.configurations.GlobalConfiguration.get().noChatReports.convertToGameMessage() && packet instanceof ClientboundPlayerChatPacket chat)
++            packet = new ClientboundSystemChatPacket(chat.chatType().resolve(this.player.level.registryAccess()).get().decorate(chat.unsignedContent() != null ? chat.unsignedContent() : Component.literal(chat.body().content())), false);
++        this.send(packet);
      }
  
      public void send(Packet<?> packet, @Nullable PacketSendListener callbacks) {
@@ -96,7 +96,7 @@ index 32e91b8866dd2aa5e4d26ef6ca77dc3f1206781b..48f66a67c251d1183d59a3b8ad417980
          if (packet == null || this.processedDisconnect) { // Spigot
              return;
 diff --git a/src/main/java/net/minecraft/server/players/PlayerList.java b/src/main/java/net/minecraft/server/players/PlayerList.java
-index 427a50198c80459fb4d2364a859ed978b1ec7871..6d3e66f91f6ba47a2cde29e68f6961fdf0bde4de 100644
+index 427a50198c80459fb4d2364a859ed978b1ec7871..91c047d865fe40f130f4414e9722dad447478de5 100644
 --- a/src/main/java/net/minecraft/server/players/PlayerList.java
 +++ b/src/main/java/net/minecraft/server/players/PlayerList.java
 @@ -1462,7 +1462,7 @@ public abstract class PlayerList {
@@ -104,7 +104,7 @@ index 427a50198c80459fb4d2364a859ed978b1ec7871..6d3e66f91f6ba47a2cde29e68f6961fd
  
      public boolean verifyChatTrusted(PlayerChatMessage message) { // Paper - private -> public
 -        return message.hasSignature() && !message.hasExpiredServer(Instant.now());
-+        return org.plazmamc.plazma.configurations.GlobalConfiguration.get().noChatReports.enabled || message.hasSignature() && !message.hasExpiredServer(Instant.now()); // Plazma - NCR
++        return org.plazmamc.plazma.configurations.GlobalConfiguration.get().noChatReports.enabled || (message.hasSignature() && !message.hasExpiredServer(Instant.now())); // Plazma - NCR
      }
  
      // CraftBukkit start
