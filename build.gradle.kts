@@ -1,4 +1,3 @@
-import io.papermc.paperweight.patcher.*
 import io.papermc.paperweight.util.*
 import io.papermc.paperweight.util.constants.PAPERCLIP_CONFIG
 
@@ -20,7 +19,7 @@ repositories {
 
 dependencies {
     remapper("net.fabricmc:tiny-remapper:0.8.6:fat")
-    decompiler("net.minecraftforge:forgeflower:2.0.605.2")
+    decompiler("net.minecraftforge:forgeflower:2.0.627.2")
     paperclip("io.papermc:paperclip:3.0.3")
 }
 

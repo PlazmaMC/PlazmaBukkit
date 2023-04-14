@@ -7,38 +7,43 @@ Original: YouHaveTrouble/minecraft-optimization, AkiraDevelopment/SimplyMC
 Copyright (C) 2023 YouHaveTrouble, AkiraDevelopment
 
 diff --git a/src/main/java/gg/pufferfish/pufferfish/PufferfishConfig.java b/src/main/java/gg/pufferfish/pufferfish/PufferfishConfig.java
-index 62b2a3a44929b80b813bc24a33cd1f5049fecbb2..cea33db916f9fd828f3cb131a4b2ebdd16866649 100644
+index 47e77541e558e18758ae0fcc2aa4e47261e928b6..dd3a29c49392910a38be14a638c6c9b6e825d772 100644
 --- a/src/main/java/gg/pufferfish/pufferfish/PufferfishConfig.java
 +++ b/src/main/java/gg/pufferfish/pufferfish/PufferfishConfig.java
-@@ -211,7 +211,7 @@ public class PufferfishConfig {
+@@ -211,8 +211,8 @@ public class PufferfishConfig {
      public static int maxProjectileLoadsPerTick;
      public static int maxProjectileLoadsPerProjectile;
      private static void projectileLoading() {
 -        maxProjectileLoadsPerTick = getInt("projectile.max-loads-per-tick", 10, "Controls how many chunks are allowed", "to be sync loaded by projectiles in a tick.");
-+        maxProjectileLoadsPerTick = getInt("projectile.max-loads-per-tick", Boolean.getBoolean("Plazma.disableConfigOptimization") ? 10 : 8, "Controls how many chunks are allowed", "to be sync loaded by projectiles in a tick."); // Plazma
-         maxProjectileLoadsPerProjectile = getInt("projectile.max-loads-per-projectile", 10, "Controls how many chunks a projectile", "can load in its lifetime before it gets", "automatically removed.");
+-        maxProjectileLoadsPerProjectile = getInt("projectile.max-loads-per-projectile", 10, "Controls how many chunks a projectile", "can load in its lifetime before it gets", "automatically removed.");
++		maxProjectileLoadsPerTick = getInt("projectile.max-loads-per-tick", Boolean.getBoolean("Plazma.disableConfigOptimization") ? 10 : 8, "Controls how many chunks are allowed", "to be sync loaded by projectiles in a tick."); // Plazma
++		maxProjectileLoadsPerProjectile = getInt("projectile.max-loads-per-projectile", 10, "Controls how many chunks a projectile", "can load in its lifetime before it gets", "automatically removed.");
  
          setComment("projectile", "Optimizes projectile settings");
-@@ -225,7 +225,7 @@ public class PufferfishConfig {
+     }
+@@ -225,16 +225,16 @@ public class PufferfishConfig {
      public static int activationDistanceMod;
  
      private static void dynamicActivationOfBrains() throws IOException {
 -        dearEnabled = getBoolean("dab.enabled", "activation-range.enabled", false); // Purpur
-+        dearEnabled = getBoolean("dab.enabled", "activation-range.enabled", !Boolean.getBoolean("Plazma.disableConfigOptimization")); // Purpur // Plazma
-         startDistance = getInt("dab.start-distance", "activation-range.start-distance", 12,
+-        startDistance = getInt("dab.start-distance", "activation-range.start-distance", 12,
++		dearEnabled = getBoolean("dab.enabled", "activation-range.enabled", !Boolean.getBoolean("Plazma.disableConfigOptimization")); // Purpur // Plazma
++		startDistance = getInt("dab.start-distance", "activation-range.start-distance", 12,
                  "This value determines how far away an entity has to be",
                  "from the player to start being effected by DEAR.");
-@@ -233,7 +233,7 @@ public class PufferfishConfig {
+         startDistanceSquared = startDistance * startDistance;
          maximumActivationPrio = getInt("dab.max-tick-freq", "activation-range.max-tick-freq", 20,
                  "This value defines how often in ticks, the furthest entity",
                  "will get their pathfinders and behaviors ticked. 20 = 1s");
 -        activationDistanceMod = getInt("dab.activation-dist-mod", "activation-range.activation-dist-mod", 8,
-+        activationDistanceMod = getInt("dab.activation-dist-mod", "activation-range.activation-dist-mod", Boolean.getBoolean("Plazma.disableConfigOptimization") ? 8 : 7, // Plazma
-                 "This value defines how much distance modifies an entity's",
+-                "This value defines how much distance modifies an entity's",
++		activationDistanceMod = getInt("dab.activation-dist-mod", "activation-range.activation-dist-mod", Boolean.getBoolean("Plazma.disableConfigOptimization") ? 8 : 7, // Plazma
++				"This value defines how much distance modifies an entity's",
                  "tick frequency. freq = (distanceToPlayer^2) / (2^value)",
                  "If you want further away entities to tick less often, use 7.",
-@@ -269,16 +269,16 @@ public class PufferfishConfig {
- 
+                 "If you want further away entities to tick more often, try 9.");
+@@ -269,7 +269,7 @@ public class PufferfishConfig {
+     
      public static boolean throttleInactiveGoalSelectorTick;
  	private static void inactiveGoalSelectorThrottle() {
 -		getBoolean("inactive-goal-selector-throttle", "inactive-goal-selector-disable", false, // Purpur
@@ -46,22 +51,11 @@ index 62b2a3a44929b80b813bc24a33cd1f5049fecbb2..cea33db916f9fd828f3cb131a4b2ebdd
  				"Throttles the AI goal selector in entity inactive ticks.",
  				"This can improve performance by a few percent, but has minor gameplay implications.");
  	}
- 
- 
--    public static boolean disableMethodProfiler;
-+    public static boolean disableMethodProfiler = true; // Plazma
- 	public static boolean disableOutOfOrderChat;
-     private static void miscSettings() {
--		disableMethodProfiler = getBoolean("misc.disable-method-profiler", true);
-+		//disableMethodProfiler = getBoolean("misc.disable-method-profiler", true); // Plazma
- 		disableOutOfOrderChat = getBoolean("misc.disable-out-of-order-chat", false);
-         setComment("misc", "Settings for things that don't belong elsewhere");
-     }
 diff --git a/src/main/java/io/papermc/paper/configuration/GlobalConfiguration.java b/src/main/java/io/papermc/paper/configuration/GlobalConfiguration.java
-index 6bf14183a3fcd2b3d166752ce33240d2ff1ffa7c..4398c1b992f53248bb13180d4a69e55c0e742387 100644
+index 8d442c5a498ecf288a0cc0c54889c6e2fda849ce..205ce3456a3f6d28cc2c7cbc131ec0f63a461527 100644
 --- a/src/main/java/io/papermc/paper/configuration/GlobalConfiguration.java
 +++ b/src/main/java/io/papermc/paper/configuration/GlobalConfiguration.java
-@@ -114,7 +114,7 @@ public class GlobalConfiguration extends ConfigurationPart {
+@@ -103,7 +103,7 @@ public class GlobalConfiguration extends ConfigurationPart {
  
      public class Watchdog extends ConfigurationPart {
          public int earlyWarningEvery = 5000;
@@ -71,7 +65,7 @@ index 6bf14183a3fcd2b3d166752ce33240d2ff1ffa7c..4398c1b992f53248bb13180d4a69e55c
  
      public SpamLimiter spamLimiter;
 diff --git a/src/main/java/io/papermc/paper/configuration/WorldConfiguration.java b/src/main/java/io/papermc/paper/configuration/WorldConfiguration.java
-index ee430563b99e48cd722c2897e4729936457d3017..e42f8e5d31689a167c8944095c53da6be832e7fa 100644
+index ee430563b99e48cd722c2897e4729936457d3017..5a1be0fe6cd96dbb1c786b27ad3ac943ce13ed3c 100644
 --- a/src/main/java/io/papermc/paper/configuration/WorldConfiguration.java
 +++ b/src/main/java/io/papermc/paper/configuration/WorldConfiguration.java
 @@ -84,15 +84,15 @@ public class WorldConfiguration extends ConfigurationPart {
@@ -79,7 +73,7 @@ index ee430563b99e48cd722c2897e4729936457d3017..e42f8e5d31689a167c8944095c53da6b
          public class AntiXray extends ConfigurationPart {
              public boolean enabled = false;
 -            public EngineMode engineMode = EngineMode.HIDE;
-+            public EngineMode engineMode = Boolean.getBoolean("Plazma.disableConfigOptimization") ? EngineMode.HIDE : EngineMode.OBFUSCATE; // Plazma - Optimize Default Configurations
++            public EngineMode engineMode = Boolean.getBoolean("Plazma.disableConfigOptimization") ? EngineMode.HIDE : EngineMode.OBFUSCATE_LAYER; // Plazma - Optimize Default Configurations
              public int maxBlockHeight = 64;
              public int updateRadius = 2;
              public boolean lavaObscures = false;
@@ -175,7 +169,7 @@ index ee430563b99e48cd722c2897e4729936457d3017..e42f8e5d31689a167c8944095c53da6b
          });
      }
  
-@@ -438,11 +460,30 @@ public class WorldConfiguration extends ConfigurationPart {
+@@ -438,9 +460,9 @@ public class WorldConfiguration extends ConfigurationPart {
      public TickRates tickRates;
  
      public class TickRates extends ConfigurationPart {
@@ -183,34 +177,11 @@ index ee430563b99e48cd722c2897e4729936457d3017..e42f8e5d31689a167c8944095c53da6b
 +        public int grassSpread = Boolean.getBoolean("Plazma.disableConfigOptimization") ? 1 : 4; // Plazma - Optimize Default Configurations
          public int containerUpdate = 1;
 -        public int mobSpawner = 1;
--        public Table<EntityType<?>, String, Integer> sensor = Util.make(HashBasedTable.create(), table -> table.put(EntityType.VILLAGER, "secondarypoisensor", 40));
--        public Table<EntityType<?>, String, Integer> behavior = Util.make(HashBasedTable.create(), table -> table.put(EntityType.VILLAGER, "validatenearbypoi", -1));
 +        public int mobSpawner = Boolean.getBoolean("Plazma.disableConfigOptimization") ? 1 : 2; // Plazma - Optimize Default Configurations
-+        // Plazma start - Optimize Default Configurations
-+        public Table<EntityType<?>, String, Integer> sensor = Util.make(HashBasedTable.create(), table -> {
-+            if (!Boolean.getBoolean("Plazma.disableConfigOptimization")) {
-+                table.put(EntityType.VILLAGER, "secondarypoisensor", 80);
-+                table.put(EntityType.VILLAGER, "nearestbedsensor", 80);
-+                table.put(EntityType.VILLAGER, "villagerbabiessensor", 40);
-+                table.put(EntityType.VILLAGER, "playersensor", 40);
-+                table.put(EntityType.VILLAGER, "nearestlivingentitysensor", 40);
-+            } else {
-+                table.put(EntityType.VILLAGER, "secondarypoisensor", 40);
-+            }
-+        });
-+        public Table<EntityType<?>, String, Integer> behavior = Util.make(HashBasedTable.create(), table -> {
-+            if (!Boolean.getBoolean("Plazma.disableConfigOptimization")) {
-+                table.put(EntityType.VILLAGER, "acquirepoi", 120);
-+                table.put(EntityType.VILLAGER, "validatenearbypoi", 60);
-+            } else {
-+                table.put(EntityType.VILLAGER, "validatenearbypoi", -1);
-+            }
-+        });
-+        // Plazma end
+         public Table<EntityType<?>, String, Integer> sensor = Util.make(HashBasedTable.create(), table -> table.put(EntityType.VILLAGER, "secondarypoisensor", 40));
+         public Table<EntityType<?>, String, Integer> behavior = Util.make(HashBasedTable.create(), table -> table.put(EntityType.VILLAGER, "validatenearbypoi", -1));
      }
- 
-     @Setting(FeatureSeedsGeneration.FEATURE_SEEDS_KEY)
-@@ -464,9 +505,9 @@ public class WorldConfiguration extends ConfigurationPart {
+@@ -464,9 +486,9 @@ public class WorldConfiguration extends ConfigurationPart {
  
      public class Misc extends ConfigurationPart {
          public int lightQueueSize = 20;
@@ -290,7 +261,7 @@ index 1ea3012995c738c67b31e997c138f824f9e69ba1..8ed00a650b712cbf4bc8796165a539d7
          this.enableStatus = this.get("enable-status", true);
          this.hideOnlinePlayers = this.get("hide-online-players", false);
 diff --git a/src/main/java/org/bukkit/craftbukkit/CraftServer.java b/src/main/java/org/bukkit/craftbukkit/CraftServer.java
-index 4ddbda401c1161aa0a6295d3fbc245f8085f1e1d..aa3fb2e582b6a2ba22647b2153a6459090620774 100644
+index a694d01b32bff939eb82d3c659158454af75225c..9760095f77b6425610f93abac467f92742eb2178 100644
 --- a/src/main/java/org/bukkit/craftbukkit/CraftServer.java
 +++ b/src/main/java/org/bukkit/craftbukkit/CraftServer.java
 @@ -346,7 +346,7 @@ public final class CraftServer implements Server {
@@ -328,7 +299,7 @@ index ac238eeea791180b66677870401c0b756f0db07b..ce960bc620d84e56c4e7fc9b721fd45c
          useAlternateKeepAlive = getBoolean("settings.use-alternate-keepalive", useAlternateKeepAlive);
      }
 diff --git a/src/main/java/org/purpurmc/purpur/PurpurWorldConfig.java b/src/main/java/org/purpurmc/purpur/PurpurWorldConfig.java
-index d3f2002759ac4788feca1e62c90c2e64596eb2f2..47f2c8f23e318b89324bfcb1342dadc325f53afc 100644
+index 9159e790533f06582a521f11103e6cbcbc72978b..ebe966834337740fa5f918bf66fc3be1c3f5c588 100644
 --- a/src/main/java/org/purpurmc/purpur/PurpurWorldConfig.java
 +++ b/src/main/java/org/purpurmc/purpur/PurpurWorldConfig.java
 @@ -425,7 +425,7 @@ public class PurpurWorldConfig {

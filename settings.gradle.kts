@@ -9,7 +9,7 @@ pluginManagement {
 
 rootProject.name = "plazma"
 for (name in listOf("Plazma-API", "Plazma-Server")) {
-    val projName = name.toLowerCase(Locale.ENGLISH)
+    val projName = name.lowercase(Locale.ENGLISH)
     include(projName)
     findProject(":$projName")!!.projectDir = file(name)
 }
