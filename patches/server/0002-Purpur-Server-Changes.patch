@@ -1,6 +1,6 @@
 From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
 From: AlphaKR93 <dev@alpha93.kr>
-Date: Fri, 14 Apr 2023 05:26:56 +0000
+Date: Fri, 14 Apr 2023 06:50:31 +0000
 Subject: [PATCH] Purpur Server Changes
 
 Original: PurpurMC
@@ -3005,7 +3005,7 @@ index 877498729c66de9aa6a27c9148f7494d7895615c..acd7468ee3c86d3456e96e4ec3d7e6a4
              Util.logAndPauseIfInIde("Detected setBlock in a far chunk [" + i + ", " + j + "], pos: " + pos + ", status: " + this.generatingStatus + (this.currentlyGenerating == null ? "" : ", currently generating: " + (String) this.currentlyGenerating.get()));
              hasSetFarWarned = true;
 diff --git a/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java b/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
-index cc7187c597337665d3cf3c3de4b53e3105b9e4c3..177090697e42fcca84dbfdf04ca5118a2c5e7be2 100644
+index cc7187c597337665d3cf3c3de4b53e3105b9e4c3..7254d62f3713113027eba29853e9d975eab15f7f 100644
 --- a/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
 +++ b/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
 @@ -262,6 +262,7 @@ public class ServerGamePacketListenerImpl implements ServerPlayerConnection, Tic
@@ -3081,7 +3081,7 @@ index cc7187c597337665d3cf3c3de4b53e3105b9e4c3..177090697e42fcca84dbfdf04ca5118a
          if (this.player.getLastActionTime() > 0L && this.server.getPlayerIdleTimeout() > 0 && Util.getMillis() - this.player.getLastActionTime() > (long) (this.server.getPlayerIdleTimeout() * 1000 * 60) && !this.player.wonGame) { // Paper - Prevent AFK kick while watching end credits.
 +            // Purpur start
 +            this.player.setAfk(true);
-+            if (!this.player.level.purpurConfig.idleTimeoutKick || kickPermissionCache.getUnchecked(this.player.getBukkitEntity())) {
++            if (!this.player.level.purpurConfig.idleTimeoutKick || (!Boolean.parseBoolean(System.getenv("PURPUR_FORCE_IDLE_KICK")) && kickPermissionCache.getUnchecked(this.player.getBukkitEntity()))) {
 +                return;
 +            }
 +            // Purpur end
