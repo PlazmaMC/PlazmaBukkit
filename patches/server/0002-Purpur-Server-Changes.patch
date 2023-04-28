@@ -1,6 +1,6 @@
 From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
 From: AlphaKR93 <dev@alpha93.kr>
-Date: Thu, 27 Apr 2023 15:55:58 +0000
+Date: Fri, 28 Apr 2023 07:03:40 +0000
 Subject: [PATCH] Purpur Server Changes
 
 Original: PurpurMC
@@ -288,10 +288,22 @@ index 6e441a1a28ba72a8b1cc09fe5fca71b3c70627d4..47e77541e558e18758ae0fcc2aa4e472
  				"This can improve performance by a few percent, but has minor gameplay implications.");
  	}
 diff --git a/src/main/java/io/papermc/paper/chunk/system/scheduling/ChunkHolderManager.java b/src/main/java/io/papermc/paper/chunk/system/scheduling/ChunkHolderManager.java
-index e5d9c6f2cbe11c2ded6d8ad111fa6a8b2086dfba..830d863cd9665d58875bfa5ca2bcd22f89ab2d49 100644
+index e5d9c6f2cbe11c2ded6d8ad111fa6a8b2086dfba..51018f8b7176c72231fc0d0c23878659ab5c1b5b 100644
 --- a/src/main/java/io/papermc/paper/chunk/system/scheduling/ChunkHolderManager.java
 +++ b/src/main/java/io/papermc/paper/chunk/system/scheduling/ChunkHolderManager.java
-@@ -915,9 +915,9 @@ public final class ChunkHolderManager {
+@@ -257,6 +257,11 @@ public final class ChunkHolderManager {
+         }
+         if (flush) {
+             RegionFileIOThread.flush();
++            try {
++                this.world.chunkSource.chunkMap.regionFileCache.flush();
++            } catch (IOException ex) {
++                LOGGER.error("Exception when flushing regions in world {}", this.world.getWorld().getName(), ex);
++            }
+         }
+         if (logProgress) {
+             LOGGER.info("Saved " + savedChunk + " block chunks, " + savedEntity + " entity chunks, " + savedPoi + " poi chunks in world '" + this.world.getWorld().getName() + "' in " + format.format(1.0E-9 * (System.nanoTime() - start)) + "s");
+@@ -915,9 +920,9 @@ public final class ChunkHolderManager {
      }
  
      public boolean processTicketUpdates() {
