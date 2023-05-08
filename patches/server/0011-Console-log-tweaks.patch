@@ -7,21 +7,8 @@ Subject: [PATCH] Console log tweaks
 Original by Irochi <me@irochi.moe>
 Licensed under the GPL 3.0
 
-diff --git a/src/main/java/io/papermc/paper/adventure/ChatProcessor.java b/src/main/java/io/papermc/paper/adventure/ChatProcessor.java
-index 951a7df30bd70bb3051c04f592529d560be6948e..461dbcac2f1265be7b23960f4422f69d5c8c42a9 100644
---- a/src/main/java/io/papermc/paper/adventure/ChatProcessor.java
-+++ b/src/main/java/io/papermc/paper/adventure/ChatProcessor.java
-@@ -353,7 +353,7 @@ public final class ChatProcessor {
- 
-         private void sendToServer(final ChatType.Bound chatType, final @Nullable Function<Audience, net.minecraft.network.chat.Component> msgFunction) {
-             final PlayerChatMessage toConsoleMessage = msgFunction == null ? ChatProcessor.this.message : ChatProcessor.this.message.withUnsignedContent(msgFunction.apply(ChatProcessor.this.server.console));
--            ChatProcessor.this.server.logChatMessage(toConsoleMessage.decoratedContent(), chatType, ChatProcessor.this.server.getPlayerList().verifyChatTrusted(toConsoleMessage) ? null : "Not Secure");
-+            ChatProcessor.this.server.logChatMessage(toConsoleMessage.decoratedContent(), chatType, ChatProcessor.this.server.getPlayerList().verifyChatTrusted(toConsoleMessage) || !org.plazmamc.plazma.configurations.GlobalConfiguration.get().consoleLogs.enableSecureChatMarker ? null : "Not Secure");
-         }
-     }
- 
 diff --git a/src/main/java/net/minecraft/server/dedicated/DedicatedServer.java b/src/main/java/net/minecraft/server/dedicated/DedicatedServer.java
-index 429ccd583ecd136a63862e94b8eb36b371e28d0f..efcee39cd7154493de04ca903edbd32b5901b191 100644
+index 429ccd583ecd136a63862e94b8eb36b371e28d0f..fd962c112f5d8823fa6f28c556c4fcb5e8abf9d7 100644
 --- a/src/main/java/net/minecraft/server/dedicated/DedicatedServer.java
 +++ b/src/main/java/net/minecraft/server/dedicated/DedicatedServer.java
 @@ -179,16 +179,6 @@ public class DedicatedServer extends MinecraftServer implements ServerInterface
@@ -55,7 +42,7 @@ index 429ccd583ecd136a63862e94b8eb36b371e28d0f..efcee39cd7154493de04ca903edbd32b
              }
              // Spigot end
 -            DedicatedServer.LOGGER.warn("To change this, set \"online-mode\" to \"true\" in the server.properties file.");
-+            DedicatedServer.LOGGER.warn("To change this, set \"online-mode\" to \"true\" in the \"server.properties\" file or set \"console-logs.offline-warning\" to \"false\" in the \"plazma.yml\" file."); // Plazma
++            DedicatedServer.LOGGER.warn("To change this, set \"online-mode\" to \"true\" in the \"server.properties\" file or set \"console-logs.offline-warning\" to \"false\" in the \"config/plazma-global.yml\" file."); // Plazma
          }
  
 +        // Plazma start - Moved down
@@ -72,30 +59,16 @@ index 429ccd583ecd136a63862e94b8eb36b371e28d0f..efcee39cd7154493de04ca903edbd32b
  
          if (!OldUsersConverter.serverReadyAfterUserconversion(this)) {
              return false;
-diff --git a/src/main/java/net/minecraft/server/players/PlayerList.java b/src/main/java/net/minecraft/server/players/PlayerList.java
-index 33d4c1af86382cc3343d5db42283b27f69f52374..030166f46b2ce23976a679685ffccf8b5439ce48 100644
---- a/src/main/java/net/minecraft/server/players/PlayerList.java
-+++ b/src/main/java/net/minecraft/server/players/PlayerList.java
-@@ -1431,7 +1431,7 @@ public abstract class PlayerList {
-     }
-     public void broadcastChatMessage(PlayerChatMessage message, Predicate<ServerPlayer> shouldSendFiltered, @Nullable ServerPlayer sender, ChatType.Bound params, @Nullable Function<net.kyori.adventure.audience.Audience, Component> unsignedFunction) {
-         // Paper end
--        boolean flag = this.verifyChatTrusted(message);
-+        boolean flag = this.verifyChatTrusted(message) || !org.plazmamc.plazma.configurations.GlobalConfiguration.get().consoleLogs.enableSecureChatMarker;
- 
-         this.server.logChatMessage((unsignedFunction == null ? message.decoratedContent() : unsignedFunction.apply(this.server.console)), params, flag ? null : "Not Secure"); // Paper
-         OutgoingChatMessage outgoingchatmessage = OutgoingChatMessage.create(message);
 diff --git a/src/main/java/org/plazmamc/plazma/configurations/GlobalConfiguration.java b/src/main/java/org/plazmamc/plazma/configurations/GlobalConfiguration.java
-index 3c70653b720d3d55be199e000e89c627b90e65da..ba542542cbab63b0764d437049123a76ccaca716 100644
+index 3c70653b720d3d55be199e000e89c627b90e65da..122482e1fae7d6ac8e6b32ebdcf3e611d47901c4 100644
 --- a/src/main/java/org/plazmamc/plazma/configurations/GlobalConfiguration.java
 +++ b/src/main/java/org/plazmamc/plazma/configurations/GlobalConfiguration.java
-@@ -24,6 +24,9 @@ public class GlobalConfiguration extends ConfigurationPart {
+@@ -24,6 +24,8 @@ public class GlobalConfiguration extends ConfigurationPart {
      public ConsoleLogs consoleLogs;
      public class ConsoleLogs extends ConfigurationPart {
  
 +        public boolean enableOfflineWarnings = true;
 +        public boolean enableRootUserWarnings = true;
-+        public boolean enableSecureChatMarker = DO_OPTIMIZE;
  
      }
  }
