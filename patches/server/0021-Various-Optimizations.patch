@@ -10,14 +10,14 @@ Subject: [PATCH] Various Optimizations
 0011 - Swaps the predicate order of collision (Akarin)
 
 diff --git a/src/main/java/net/minecraft/world/entity/Entity.java b/src/main/java/net/minecraft/world/entity/Entity.java
-index 3c10c719f6172161a2dcc6592a0a1492e9b3d7c1..d64f188257c135e2a4af07e28ff8f912c80eac03 100644
+index b2ee73a2ef6042694ca84c27d592e5fb13b4a0fe..d6e20ebb1e07da767f6571bbaf0dc882cdf4503f 100644
 --- a/src/main/java/net/minecraft/world/entity/Entity.java
 +++ b/src/main/java/net/minecraft/world/entity/Entity.java
 @@ -1991,8 +1991,9 @@ public abstract class Entity implements Nameable, EntityAccess, CommandSource {
      public void playerTouch(Player player) {}
  
      public void push(Entity entity) {
-+        if (entity.noPhysics && this.noPhysics) return; // Plazma
++        if (entity.noPhysics || this.noPhysics) return; // Plazma
          if (!this.isPassengerOfSameVehicle(entity)) {
 -            if (!entity.noPhysics && !this.noPhysics) {
 +            //if (!entity.noPhysics && !this.noPhysics) { // Plazma
@@ -81,10 +81,10 @@ index 36af81f0957d17e170d229059c66f4eb4539dfeb..039c952f0c157cba6e79fa9b976958bd
              }
              // Spigot Start
 diff --git a/src/main/java/org/plazmamc/plazma/configurations/GlobalConfiguration.java b/src/main/java/org/plazmamc/plazma/configurations/GlobalConfiguration.java
-index 66436d4eb66b5a71f18b7db359ab1d63bbac74c0..87a85fb1cd9a19541df04a5d1c457d86cf7f68eb 100644
+index fa33fd5a64fadbfe6507ae9f61fdfbfc816686b5..590afba7c588e7b9f5f9c61e91805e3dc3b62771 100644
 --- a/src/main/java/org/plazmamc/plazma/configurations/GlobalConfiguration.java
 +++ b/src/main/java/org/plazmamc/plazma/configurations/GlobalConfiguration.java
-@@ -41,6 +41,7 @@ public class GlobalConfiguration extends ConfigurationPart {
+@@ -40,6 +40,7 @@ public class GlobalConfiguration extends ConfigurationPart {
      public class Misc extends ConfigurationPart {
  
          public boolean reduceCreateRandomInstance = DO_OPTIMIZE;
