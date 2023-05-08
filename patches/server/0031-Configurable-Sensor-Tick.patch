@@ -1,0 +1,42 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: IPECTER <ipectert@gmail.com>
+Date: Wed, 3 May 2023 16:51:49 +0900
+Subject: [PATCH] Configurable Sensor Tick
+
+Original: Bloom-host/Petal
+Copyright (C) 2023 peaches94
+
+diff --git a/src/main/java/net/minecraft/world/entity/Mob.java b/src/main/java/net/minecraft/world/entity/Mob.java
+index 8e2274f7dce34e0997356205cf96e46f8d41cca1..3a365d7efd439cb8ddb99381bd714fb48896f4d2 100644
+--- a/src/main/java/net/minecraft/world/entity/Mob.java
++++ b/src/main/java/net/minecraft/world/entity/Mob.java
+@@ -932,10 +932,10 @@ public abstract class Mob extends LivingEntity implements Targeting {
+         }
+         // Paper end
+         //this.level.getProfiler().push("sensing"); // Purpur
+-        this.sensing.tick();
++        // Plazma - Configurable Sensor Tick
+         //this.level.getProfiler().pop(); // Purpur
+         int i = this.level.getServer().getTickCount() + this.getId();
+-
++        if (i % this.level.plazmaLevelConfiguration().entity.sensor.tick == 0) this.sensing.tick(); // Plazma - Configurable Sensor Tick
+         if (i % 2 != 0 && this.tickCount > 1) {
+             //this.level.getProfiler().push("targetSelector"); // Purpur
+             if (this.targetSelector.inactiveTick(this.activatedPriority, false)) // Pufferfish - use this to alternate ticking
+diff --git a/src/main/java/org/plazmamc/plazma/configurations/LevelConfigurations.java b/src/main/java/org/plazmamc/plazma/configurations/LevelConfigurations.java
+index e6c22ab535ab8fecaadbf06d4982440fd5863f17..185e2627596314d979188468f838d008442f2d2e 100644
+--- a/src/main/java/org/plazmamc/plazma/configurations/LevelConfigurations.java
++++ b/src/main/java/org/plazmamc/plazma/configurations/LevelConfigurations.java
+@@ -107,5 +107,12 @@ public class LevelConfigurations extends ConfigurationPart {
+ 
+         }
+ 
++        public Sensor sensor;
++        public class Sensor extends ConfigurationPart {
++
++            public int tick = DO_OPTIMIZE ? 10 : 1;
++
++        }
++
+     }
+ }

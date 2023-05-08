@@ -1,0 +1,70 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: IPECTER <ipectert@gmail.com>
+Date: Thu, 4 May 2023 16:54:53 +0900
+Subject: [PATCH] Optimize VarInts
+
+https://github.com/PaperMC/Paper/pull/8418
+
+diff --git a/src/main/java/net/minecraft/network/FriendlyByteBuf.java b/src/main/java/net/minecraft/network/FriendlyByteBuf.java
+index c0bd2997fe3ebbfe926de832a36d209cc875f3e2..6108f3aa438b96e817c3a2e582c2c817f096e2eb 100644
+--- a/src/main/java/net/minecraft/network/FriendlyByteBuf.java
++++ b/src/main/java/net/minecraft/network/FriendlyByteBuf.java
+@@ -104,7 +104,20 @@ public class FriendlyByteBuf extends ByteBuf {
+         this.source = parent;
+     }
+ 
++    // Plazma start - Optimize VarInts
++    private static final int[] VARINT_EXACT_BYTE_LENGTHS = new int[33];
++    static {
++        for (int i = 0; i <= 32; ++i) {
++            VARINT_EXACT_BYTE_LENGTHS[i] = (int) Math.ceil((31d - (i - 1)) / 7d);
++        }
++        VARINT_EXACT_BYTE_LENGTHS[32] = 1; // Special case for the number 0.
++    }
++    // Plazma end
+     public static int getVarIntSize(int value) {
++        // Plazma start - Optimize VarInts
++        if (org.plazmamc.plazma.configurations.GlobalConfiguration.get().misc.optimizeVarInts)
++            return VARINT_EXACT_BYTE_LENGTHS[Integer.numberOfLeadingZeros(value)];
++        // Plazma end
+         for (int j = 1; j < 5; ++j) {
+             if ((value & -1 << j * 7) == 0) {
+                 return j;
+@@ -620,6 +633,25 @@ public class FriendlyByteBuf extends ByteBuf {
+     }
+ 
+     public FriendlyByteBuf writeVarInt(int value) {
++        // Plazma start - Optimize VarInts
++        if (org.plazmamc.plazma.configurations.GlobalConfiguration.get().misc.optimizeVarInts) {
++            // Peel the one and two byte count cases explicitly as they are the most common VarInt sizes
++            // that the proxy will write, to improve inlining.
++            if ((value & (0xFFFFFFFF << 7)) == 0) {
++                writeByte(value);
++            } else if ((value & (0xFFFFFFFF << 14)) == 0) {
++                int w = (value & 0x7F | 0x80) << 8 | (value >>> 7);
++                writeShort(w);
++            } else {
++                while ((value & -128) != 0) {
++                    this.writeByte(value & 127 | 128);
++                    value >>>= 7;
++                }
++                this.writeByte(value);
++            }
++            return this;
++        }
++        // Plazma end
+         while ((value & -128) != 0) {
+             this.writeByte(value & 127 | 128);
+             value >>>= 7;
+diff --git a/src/main/java/org/plazmamc/plazma/configurations/GlobalConfiguration.java b/src/main/java/org/plazmamc/plazma/configurations/GlobalConfiguration.java
+index 39eca4acefa8f9cf143398cfc6cf157e8489947e..754ed13a04631c69e3fb2421a12b17d0a6f732c6 100644
+--- a/src/main/java/org/plazmamc/plazma/configurations/GlobalConfiguration.java
++++ b/src/main/java/org/plazmamc/plazma/configurations/GlobalConfiguration.java
+@@ -42,6 +42,7 @@ public class GlobalConfiguration extends ConfigurationPart {
+         public boolean reduceCreateRandomInstance = DO_OPTIMIZE;
+         public boolean doNotTriggerLootTableRefreshForNonPlayerInteraction = DO_OPTIMIZE;
+         public boolean doNotSendUselessEntityPackets = DO_OPTIMIZE;
++        public boolean optimizeVarInts = DO_OPTIMIZE;
+ 
+     }
+ 
