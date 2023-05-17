@@ -1,6 +1,6 @@
 From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
-From: BillyGalbreath <blake.galbreath@gmail.com>
-Date: Sun, 12 Jun 2022 09:18:57 -0500
+From: AlphaKR93 <dev@alpha93.kr>
+Date: Wed, 17 May 2023 05:41:47 +0000
 Subject: [PATCH] Purpur Server Changes
 
 Original: PurpurMC
@@ -15250,7 +15250,7 @@ index 5d199fe497bd852827d3d18fb7566a09e70331a3..6cd8a50289a6404441e9e5e08d82d2eb
              if (NaturalSpawner.isSpawnPositionOk(SpawnPlacements.Type.ON_GROUND, world, blockposition2, EntityType.WANDERING_TRADER)) {
                  blockposition1 = blockposition2;
 diff --git a/src/main/java/net/minecraft/world/entity/player/Player.java b/src/main/java/net/minecraft/world/entity/player/Player.java
-index 0629c471d38a77c44fc1c86ccdfcb0690f61ca17..d055cfc257cc7282170ba67c848af3e6c5f2ec1f 100644
+index 0629c471d38a77c44fc1c86ccdfcb0690f61ca17..7edcb5b86f27d05a0526229262e0d3a3e160362b 100644
 --- a/src/main/java/net/minecraft/world/entity/player/Player.java
 +++ b/src/main/java/net/minecraft/world/entity/player/Player.java
 @@ -186,6 +186,8 @@ public abstract class Player extends LivingEntity {
@@ -15326,7 +15326,7 @@ index 0629c471d38a77c44fc1c86ccdfcb0690f61ca17..d055cfc257cc7282170ba67c848af3e6
      @Override
      public int getPortalWaitTime() {
 -        return this.abilities.invulnerable ? 1 : 80;
-+        return this.abilities.invulnerable || canPortalInstant ? 1 : 80; // Purpur
++        return canPortalInstant ? 1 : this.abilities.invulnerable ? this.level.purpurConfig.playerCreativePortalWaitTime : this.level.purpurConfig.playerPortalWaitTime; // Purpur
      }
  
      @Override
@@ -22041,10 +22041,10 @@ index 0000000000000000000000000000000000000000..62ad4c6ad417e11e9152f74636b2ff0d
 +}
 diff --git a/src/main/java/org/purpurmc/purpur/PurpurWorldConfig.java b/src/main/java/org/purpurmc/purpur/PurpurWorldConfig.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..157c5ce26015cabd5a007cf7444c8255db1a0b0f
+index 0000000000000000000000000000000000000000..0db8a1a51c857a3930d0b20028964fb355d8e5b4
 --- /dev/null
 +++ b/src/main/java/org/purpurmc/purpur/PurpurWorldConfig.java
-@@ -0,0 +1,3197 @@
+@@ -0,0 +1,3201 @@
 +package org.purpurmc.purpur;
 +
 +import net.minecraft.core.registries.BuiltInRegistries;
@@ -22482,6 +22482,8 @@ index 0000000000000000000000000000000000000000..157c5ce26015cabd5a007cf7444c8255
 +    public double playerCriticalDamageMultiplier = 1.5D;
 +    public int playerBurpDelay = 10;
 +    public boolean playerBurpWhenFull = false;
++    public int playerPortalWaitTime = 80;
++    public int playerCreativePortalWaitTime = 1;
 +    public boolean playerRidableInWater = false;
 +    public boolean playerRemoveBindingWithWeakness = false;
 +    public int shiftRightClickRepairsMendingPoints = 0;
@@ -22512,6 +22514,8 @@ index 0000000000000000000000000000000000000000..157c5ce26015cabd5a007cf7444c8255
 +        playerCriticalDamageMultiplier = getDouble("gameplay-mechanics.player.critical-damage-multiplier", playerCriticalDamageMultiplier);
 +        playerBurpDelay = getInt("gameplay-mechanics.player.burp-delay", playerBurpDelay);
 +        playerBurpWhenFull = getBoolean("gameplay-mechanics.player.burp-when-full", playerBurpWhenFull);
++        playerPortalWaitTime = getInt("gameplay-mechanics.player.portal-wait-time", playerPortalWaitTime);
++        playerCreativePortalWaitTime = getInt("gameplay-mechanics.player.creative-portal-wait-time", playerCreativePortalWaitTime);
 +        playerRidableInWater = getBoolean("gameplay-mechanics.player.ridable-in-water", playerRidableInWater);
 +        playerRemoveBindingWithWeakness = getBoolean("gameplay-mechanics.player.curse-of-binding.remove-with-weakness", playerRemoveBindingWithWeakness);
 +        shiftRightClickRepairsMendingPoints = getInt("gameplay-mechanics.player.shift-right-click-repairs-mending-points", shiftRightClickRepairsMendingPoints);
