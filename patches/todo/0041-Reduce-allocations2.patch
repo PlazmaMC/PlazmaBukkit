@@ -1,0 +1,196 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: IPECTER <ipectert@gmail.com>
+Date: Tue, 30 May 2023 11:57:07 +0900
+Subject: [PATCH] Reduce-allocations2
+
+
+diff --git a/src/main/java/net/minecraft/advancements/AdvancementRewards.java b/src/main/java/net/minecraft/advancements/AdvancementRewards.java
+index 9e20a870a9c9c295b32cfa591eb52625125a5439..30473930bf3acf0ae74f3ff5e500f6e1374c11da 100644
+--- a/src/main/java/net/minecraft/advancements/AdvancementRewards.java
++++ b/src/main/java/net/minecraft/advancements/AdvancementRewards.java
+@@ -24,7 +24,7 @@ import net.minecraft.world.level.storage.loot.parameters.LootContextParamSets;
+ import net.minecraft.world.level.storage.loot.parameters.LootContextParams;
+ 
+ public class AdvancementRewards {
+-    public static final AdvancementRewards EMPTY = new AdvancementRewards(0, new ResourceLocation[0], new ResourceLocation[0], CommandFunction.CacheableFunction.NONE);
++    public static final AdvancementRewards EMPTY = new AdvancementRewards(0, org.plazmamc.plazma.util.Constants.RESOURCE_LOCATION, org.plazmamc.plazma.util.Constants.RESOURCE_LOCATION, CommandFunction.CacheableFunction.NONE);
+     private final int experience;
+     private final ResourceLocation[] loot;
+     private final ResourceLocation[] recipes;
+@@ -187,7 +187,7 @@ public class AdvancementRewards {
+         }
+ 
+         public AdvancementRewards build() {
+-            return new AdvancementRewards(this.experience, this.loot.toArray(new ResourceLocation[0]), this.recipes.toArray(new ResourceLocation[0]), this.function == null ? CommandFunction.CacheableFunction.NONE : new CommandFunction.CacheableFunction(this.function));
++            return new AdvancementRewards(this.experience, this.loot.toArray(org.plazmamc.plazma.util.Constants.RESOURCE_LOCATION), this.recipes.toArray(org.plazmamc.plazma.util.Constants.RESOURCE_LOCATION), this.function == null ? CommandFunction.CacheableFunction.NONE : new CommandFunction.CacheableFunction(this.function));
+         }
+     }
+ }
+diff --git a/src/main/java/net/minecraft/advancements/RequirementsStrategy.java b/src/main/java/net/minecraft/advancements/RequirementsStrategy.java
+index 051c1fb81d79c40be683edb86579bb975643bcb3..469c34c773e3257d0edfc807cb882b4cbfc3c53f 100644
+--- a/src/main/java/net/minecraft/advancements/RequirementsStrategy.java
++++ b/src/main/java/net/minecraft/advancements/RequirementsStrategy.java
+@@ -14,7 +14,7 @@ public interface RequirementsStrategy {
+         return strings;
+     };
+     RequirementsStrategy OR = (criteriaNames) -> {
+-        return new String[][]{criteriaNames.toArray(new String[0])};
++        return new String[][]{criteriaNames.toArray(org.plazmamc.plazma.util.Constants.EMPTY_STRING)};
+     };
+ 
+     String[][] createRequirements(Collection<String> criteriaNames);
+diff --git a/src/main/java/net/minecraft/nbt/ListTag.java b/src/main/java/net/minecraft/nbt/ListTag.java
+index 749d3e67a877d7d1ed47b5fef511a604ee6589b6..0529814353ba82d6083a88531f06e73377ab5aaf 100644
+--- a/src/main/java/net/minecraft/nbt/ListTag.java
++++ b/src/main/java/net/minecraft/nbt/ListTag.java
+@@ -230,7 +230,7 @@ public class ListTag extends CollectionTag<Tag> {
+             }
+         }
+ 
+-        return new int[0];
++        return org.plazmamc.plazma.util.Constants.EMPTY_INT;
+     }
+ 
+     public long[] getLongArray(int index) {
+@@ -241,7 +241,7 @@ public class ListTag extends CollectionTag<Tag> {
+             }
+         }
+ 
+-        return new long[0];
++        return org.plazmamc.plazma.util.Constants.EMPTY_LONG;
+     }
+ 
+     public double getDouble(int index) {
+diff --git a/src/main/java/net/minecraft/nbt/LongArrayTag.java b/src/main/java/net/minecraft/nbt/LongArrayTag.java
+index bdc0adc652228328ebe8fe2455c73c257a89d3c5..122d4b9391ddaae2631db213230f57a829d1c943 100644
+--- a/src/main/java/net/minecraft/nbt/LongArrayTag.java
++++ b/src/main/java/net/minecraft/nbt/LongArrayTag.java
+@@ -193,7 +193,7 @@ public class LongArrayTag extends CollectionTag<LongTag> {
+ 
+     @Override
+     public void clear() {
+-        this.data = new long[0];
++        this.data = org.plazmamc.plazma.util.Constants.EMPTY_LONG;
+     }
+ 
+     @Override
+diff --git a/src/main/java/net/minecraft/network/CipherBase.java b/src/main/java/net/minecraft/network/CipherBase.java
+index a2920b8a9eff77d9c5d1d7f70ad3abdacba8f0fa..c1c97cc8fa5e0d8349655f90392382a0a878c95f 100644
+--- a/src/main/java/net/minecraft/network/CipherBase.java
++++ b/src/main/java/net/minecraft/network/CipherBase.java
+@@ -7,8 +7,8 @@ import javax.crypto.ShortBufferException;
+ 
+ public class CipherBase {
+     private final Cipher cipher;
+-    private byte[] heapIn = new byte[0];
+-    private byte[] heapOut = new byte[0];
++    private byte[] heapIn = org.plazmamc.plazma.util.Constants.EMPTY_BYTE;
++    private byte[] heapOut = org.plazmamc.plazma.util.Constants.EMPTY_BYTE;
+ 
+     protected CipherBase(Cipher cipher) {
+         this.cipher = cipher;
+diff --git a/src/main/java/net/minecraft/network/chat/contents/TranslatableContents.java b/src/main/java/net/minecraft/network/chat/contents/TranslatableContents.java
+index 8a68baf6bd46b59cf57c94ffe5651d47a7cae99c..c732299c908622e3b6262cd942a7397b3f34b8e9 100644
+--- a/src/main/java/net/minecraft/network/chat/contents/TranslatableContents.java
++++ b/src/main/java/net/minecraft/network/chat/contents/TranslatableContents.java
+@@ -21,7 +21,7 @@ import net.minecraft.network.chat.Style;
+ import net.minecraft.world.entity.Entity;
+ 
+ public class TranslatableContents implements ComponentContents {
+-    public static final Object[] NO_ARGS = new Object[0];
++    public static final Object[] NO_ARGS = org.plazmamc.plazma.util.Constants.EMPTY_OBJECT;
+     private static final FormattedText TEXT_PERCENT = FormattedText.of("%");
+     private static final FormattedText TEXT_NULL = FormattedText.of("null");
+     private final String key;
+diff --git a/src/main/java/net/minecraft/server/RunningOnDifferentThreadException.java b/src/main/java/net/minecraft/server/RunningOnDifferentThreadException.java
+index 0f52e8a61ca7e57e9f52473dceb9cc3464c0c86d..857c3609b3cd965e1c10caa8fc5682baae999820 100644
+--- a/src/main/java/net/minecraft/server/RunningOnDifferentThreadException.java
++++ b/src/main/java/net/minecraft/server/RunningOnDifferentThreadException.java
+@@ -4,12 +4,12 @@ public final class RunningOnDifferentThreadException extends RuntimeException {
+     public static final RunningOnDifferentThreadException RUNNING_ON_DIFFERENT_THREAD = new RunningOnDifferentThreadException();
+ 
+     private RunningOnDifferentThreadException() {
+-        this.setStackTrace(new StackTraceElement[0]);
++        this.setStackTrace(org.plazmamc.plazma.util.Constants.STACK_TRACE_ELEMENT);
+     }
+ 
+     @Override
+     public synchronized Throwable fillInStackTrace() {
+-        this.setStackTrace(new StackTraceElement[0]);
++        this.setStackTrace(org.plazmamc.plazma.util.Constants.STACK_TRACE_ELEMENT);
+         return this;
+     }
+ }
+diff --git a/src/main/java/net/minecraft/server/ServerFunctionLibrary.java b/src/main/java/net/minecraft/server/ServerFunctionLibrary.java
+index 975422a57b83a31e63a600bb4ff9c4e2baaf6da7..64d8935c18f3e92ec35b3b160443700e350a72fa 100644
+--- a/src/main/java/net/minecraft/server/ServerFunctionLibrary.java
++++ b/src/main/java/net/minecraft/server/ServerFunctionLibrary.java
+@@ -81,7 +81,7 @@ public class ServerFunctionLibrary implements PreparableReloadListener {
+                 }, prepareExecutor));
+             }
+ 
+-            CompletableFuture<?>[] completableFutures = map.values().toArray(new CompletableFuture[0]);
++            CompletableFuture<?>[] completableFutures = map.values().toArray(org.plazmamc.plazma.util.Constants.COMPLETABLE_FUTURE);
+             return CompletableFuture.allOf(completableFutures).handle((unused, ex) -> {
+                 return map;
+             });
+diff --git a/src/main/java/net/minecraft/util/MemoryReserve.java b/src/main/java/net/minecraft/util/MemoryReserve.java
+index 0ee04fe6ff6a4d09754f326526ae04fe7226bab2..0efc5682210e6cd3e0ee03a5e4340614869a8575 100644
+--- a/src/main/java/net/minecraft/util/MemoryReserve.java
++++ b/src/main/java/net/minecraft/util/MemoryReserve.java
+@@ -11,6 +11,6 @@ public class MemoryReserve {
+     }
+ 
+     public static void release() {
+-        reserve = new byte[0];
++        reserve = org.plazmamc.plazma.util.Constants.EMPTY_BYTE;
+     }
+ }
+diff --git a/src/main/java/net/minecraft/world/level/levelgen/DebugLevelSource.java b/src/main/java/net/minecraft/world/level/levelgen/DebugLevelSource.java
+index c68736b023127c7b395835f4fa82d9062110697b..bd88f27db229d1e34b69bcd9e975bec502d8226b 100644
+--- a/src/main/java/net/minecraft/world/level/levelgen/DebugLevelSource.java
++++ b/src/main/java/net/minecraft/world/level/levelgen/DebugLevelSource.java
+@@ -88,7 +88,7 @@ public class DebugLevelSource extends ChunkGenerator {
+ 
+     @Override
+     public NoiseColumn getBaseColumn(int x, int z, LevelHeightAccessor world, RandomState noiseConfig) {
+-        return new NoiseColumn(0, new BlockState[0]);
++        return new NoiseColumn(0, org.plazmamc.plazma.util.Constants.BLOCK_STATE);
+     }
+ 
+     @Override
+diff --git a/src/main/java/net/minecraft/world/level/storage/loot/LootPool.java b/src/main/java/net/minecraft/world/level/storage/loot/LootPool.java
+index fad524f8b032174cee0c68da7c68e020ee3cd619..92fe0ca7c16134701f72ea263d9aa933185978d3 100644
+--- a/src/main/java/net/minecraft/world/level/storage/loot/LootPool.java
++++ b/src/main/java/net/minecraft/world/level/storage/loot/LootPool.java
+@@ -160,7 +160,7 @@ public class LootPool {
+             if (this.rolls == null) {
+                 throw new IllegalArgumentException("Rolls not set");
+             } else {
+-                return new LootPool(this.entries.toArray(new LootPoolEntryContainer[0]), this.conditions.toArray(new LootItemCondition[0]), this.functions.toArray(new LootItemFunction[0]), this.rolls, this.bonusRolls);
++                return new LootPool(this.entries.toArray(new LootPoolEntryContainer[0]), this.conditions.toArray(new LootItemCondition[0]), this.functions.toArray(org.plazmamc.plazma.util.Constants.LOOT_ITEM_FUNCTION), this.rolls, this.bonusRolls);
+             }
+         }
+     }
+@@ -171,7 +171,7 @@ public class LootPool {
+             JsonObject jsonObject = GsonHelper.convertToJsonObject(jsonElement, "loot pool");
+             LootPoolEntryContainer[] lootPoolEntryContainers = GsonHelper.getAsObject(jsonObject, "entries", jsonDeserializationContext, LootPoolEntryContainer[].class);
+             LootItemCondition[] lootItemConditions = GsonHelper.getAsObject(jsonObject, "conditions", new LootItemCondition[0], jsonDeserializationContext, LootItemCondition[].class);
+-            LootItemFunction[] lootItemFunctions = GsonHelper.getAsObject(jsonObject, "functions", new LootItemFunction[0], jsonDeserializationContext, LootItemFunction[].class);
++            LootItemFunction[] lootItemFunctions = GsonHelper.getAsObject(jsonObject, "functions", org.plazmamc.plazma.util.Constants.LOOT_ITEM_FUNCTION, jsonDeserializationContext, LootItemFunction[].class);
+             NumberProvider numberProvider = GsonHelper.getAsObject(jsonObject, "rolls", jsonDeserializationContext, NumberProvider.class);
+             NumberProvider numberProvider2 = GsonHelper.getAsObject(jsonObject, "bonus_rolls", ConstantValue.exactly(0.0F), jsonDeserializationContext, NumberProvider.class);
+             return new LootPool(lootPoolEntryContainers, lootItemConditions, lootItemFunctions, numberProvider, numberProvider2);
+diff --git a/src/main/java/net/minecraft/world/scores/Team.java b/src/main/java/net/minecraft/world/scores/Team.java
+index 16d2aa4556bc9f32a2def7f9ca282aa3fa23fb87..c9b266246a83e3d7f5ce61306f291ceff902079d 100644
+--- a/src/main/java/net/minecraft/world/scores/Team.java
++++ b/src/main/java/net/minecraft/world/scores/Team.java
+@@ -80,7 +80,7 @@ public abstract class Team {
+         public final int id;
+ 
+         public static String[] getAllNames() {
+-            return BY_NAME.keySet().toArray(new String[0]);
++            return BY_NAME.keySet().toArray(org.plazmamc.plazma.util.Constants.EMPTY_STRING);
+         }
+ 
+         @Nullable
