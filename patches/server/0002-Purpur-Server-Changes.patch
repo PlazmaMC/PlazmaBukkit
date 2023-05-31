@@ -1,6 +1,6 @@
 From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
 From: AlphaKR93 <dev@alpha93.kr>
-Date: Wed, 17 May 2023 05:41:47 +0000
+Date: Wed, 31 May 2023 12:46:00 +0000
 Subject: [PATCH] Purpur Server Changes
 
 Original: PurpurMC
@@ -3620,7 +3620,7 @@ index 9ddbfcf80d9a381dace78a62880f85a4d767e0eb..7383c7d3820dce06108eaafd236a7c6c
      }
  
 diff --git a/src/main/java/net/minecraft/server/players/PlayerList.java b/src/main/java/net/minecraft/server/players/PlayerList.java
-index 5c21de0d48fba88c3164b72e0eb624706b683fab..c27e455321951e76e4818fec0e64301f5620dbf6 100644
+index 92e758a286a5db079c32d53cc52c8a422457daef..ff56981a03b55f9ee1ec8ad36adaf9849b2c914b 100644
 --- a/src/main/java/net/minecraft/server/players/PlayerList.java
 +++ b/src/main/java/net/minecraft/server/players/PlayerList.java
 @@ -469,6 +469,7 @@ public abstract class PlayerList {
@@ -18061,37 +18061,31 @@ index a6c25647fb37f59307de0d390f8e8cf55504d7d3..52aae8bd4023b2bb48f12983f54b20fa
              world.scheduleTick(pos, this, 1);
              return super.updateShape(state, direction, neighborState, world, pos, neighborPos);
 diff --git a/src/main/java/net/minecraft/world/level/block/ComposterBlock.java b/src/main/java/net/minecraft/world/level/block/ComposterBlock.java
-index fb4382337fe83f7d00c2212a7a71e0ba5bdd51cc..f085a669e2f2645e8c4f7a7e5a3c958f13809744 100644
+index 6fab2b69a0af298bd00b309efcd6aa8399e23d1f..4f7b21caa123ea7896788fd25133d8de3ab1ccaf 100644
 --- a/src/main/java/net/minecraft/world/level/block/ComposterBlock.java
 +++ b/src/main/java/net/minecraft/world/level/block/ComposterBlock.java
-@@ -228,26 +228,28 @@ public class ComposterBlock extends Block implements WorldlyContainerHolder {
+@@ -228,20 +228,28 @@ public class ComposterBlock extends Block implements WorldlyContainerHolder {
          ItemStack itemstack = player.getItemInHand(hand);
  
          if (i < 8 && ComposterBlock.COMPOSTABLES.containsKey(itemstack.getItem())) {
 -            if (i < 7 && !world.isClientSide) {
--                // Paper start - EntityChangeBlockEvent
--                double rand = world.getRandom().nextDouble();
--                BlockState dummyBlockState = ComposterBlock.addItem(player, state, org.bukkit.craftbukkit.util.DummyGeneratorAccess.INSTANCE, pos, itemstack, rand);
--                if (dummyBlockState == null) {
+-                BlockState iblockdata1 = ComposterBlock.addItem(player, state, world, pos, itemstack);
+-                // Paper start - handle cancelled events
+-                if (iblockdata1 == null) {
 -                    return InteractionResult.PASS;
 -                }
--                if (state != dummyBlockState && org.bukkit.craftbukkit.event.CraftEventFactory.callEntityChangeBlockEvent(player, pos, dummyBlockState).isCancelled()) { // if block state will change and event cancelled
--                    return InteractionResult.sidedSuccess(world.isClientSide);
--                }
--                BlockState iblockdata1 = ComposterBlock.addItem(player, state, world, pos, itemstack, rand);
 -                // Paper end
--
++            // Purpur start
++            BlockState newState = process(i, state, world, itemstack, pos, player);
++            if (newState == null) {
++                return InteractionResult.PASS;
++            }
+ 
 -                world.levelEvent(1500, pos, state != iblockdata1 ? 1 : 0);
 -                player.awardStat(Stats.ITEM_USED.get(itemstack.getItem()));
 -                if (!player.getAbilities().instabuild) {
 -                    itemstack.shrink(1);
 -                }
-+            // Purpur start
-+            BlockState newState = process(i, state, world, itemstack, pos, player);
-+            if (newState == null) {
-+                return InteractionResult.PASS;
-             }
- 
 +            if (world.purpurConfig.composterBulkProcess && player.isShiftKeyDown() && newState != state) {
 +                BlockState oldState;
 +                int oldCount, newCount, oldLevel, newLevel;
@@ -18106,28 +18100,22 @@ index fb4382337fe83f7d00c2212a7a71e0ba5bdd51cc..f085a669e2f2645e8c4f7a7e5a3c958f
 +                    newCount = itemstack.getCount();
 +                    newLevel = newState.getValue(ComposterBlock.LEVEL);
 +                } while (newCount > 0 && (newCount != oldCount || newLevel != oldLevel || newState != oldState));
-+            }
+             }
 +            // Purpur end
+ 
              return InteractionResult.sidedSuccess(world.isClientSide);
          } else if (i == 8) {
-             ComposterBlock.extractProduce(player, state, world, pos);
-@@ -257,6 +259,32 @@ public class ComposterBlock extends Block implements WorldlyContainerHolder {
+@@ -252,6 +260,26 @@ public class ComposterBlock extends Block implements WorldlyContainerHolder {
          }
      }
  
-+    // Purpur start
 +    private static BlockState process(int level, BlockState state, Level world, ItemStack itemstack, BlockPos pos, Player player) {
 +        if (level < 7 && !world.isClientSide) {
-+            // Paper start - EntityChangeBlockEvent
-+            double rand = world.getRandom().nextDouble();
-+            BlockState dummyBlockState = ComposterBlock.addItem(player, state, org.bukkit.craftbukkit.util.DummyGeneratorAccess.INSTANCE, pos, itemstack, rand);
-+            if (dummyBlockState == null) {
-+                return dummyBlockState;
++            BlockState iblockdata1 = ComposterBlock.addItem(player, state, world, pos, itemstack);
++            // Paper start - handle cancelled events
++            if (iblockdata1 == null) {
++                return iblockdata1;
 +            }
-+            if (state != dummyBlockState && org.bukkit.craftbukkit.event.CraftEventFactory.callEntityChangeBlockEvent(player, pos, dummyBlockState).isCancelled()) { // if block state will change and event cancelled
-+                return state;
-+            }
-+            BlockState iblockdata1 = ComposterBlock.addItem(player, state, world, pos, itemstack, rand);
 +            // Paper end
 +
 +            world.levelEvent(1500, pos, state != iblockdata1 ? 1 : 0);
@@ -18135,7 +18123,7 @@ index fb4382337fe83f7d00c2212a7a71e0ba5bdd51cc..f085a669e2f2645e8c4f7a7e5a3c958f
 +            if (!player.getAbilities().instabuild) {
 +                itemstack.shrink(1);
 +            }
-+            return dummyBlockState;
++            return iblockdata1;
 +        }
 +        return state;
 +    }
@@ -20240,7 +20228,7 @@ index 714afc98b5150907b45a00060be4e41582333204..312a6d90c0a09570aef24c205dc2ff27
 +    // Purpur end - OfflinePlayer API
  }
 diff --git a/src/main/java/org/bukkit/craftbukkit/CraftServer.java b/src/main/java/org/bukkit/craftbukkit/CraftServer.java
-index e38391da44a1b5e3b845eba2d80453021a1e0c25..e5bac6bc792196226f975e7f3dd8f147fb14dbad 100644
+index f025905a7afae894401638a8842a4a44fa41d1ef..d9af2c681f1aa9836930b9a546d638ea6f6b830a 100644
 --- a/src/main/java/org/bukkit/craftbukkit/CraftServer.java
 +++ b/src/main/java/org/bukkit/craftbukkit/CraftServer.java
 @@ -257,7 +257,7 @@ import javax.annotation.Nullable; // Paper
@@ -20380,7 +20368,7 @@ index e38391da44a1b5e3b845eba2d80453021a1e0c25..e5bac6bc792196226f975e7f3dd8f147
          @Override
          public void restart() {
              org.spigotmc.RestartCommand.restart();
-@@ -2921,4 +3000,16 @@ public final class CraftServer implements Server {
+@@ -2959,4 +3038,16 @@ public final class CraftServer implements Server {
      }
  
      // Paper end
@@ -20398,10 +20386,10 @@ index e38391da44a1b5e3b845eba2d80453021a1e0c25..e5bac6bc792196226f975e7f3dd8f147
 +    // Purpur end
  }
 diff --git a/src/main/java/org/bukkit/craftbukkit/CraftWorld.java b/src/main/java/org/bukkit/craftbukkit/CraftWorld.java
-index 8d3a32a0538a6065fd0725721ab8a1a011c4d64a..3013aeb442799aba5b2ae45edcb3c2c72a18a740 100644
+index dafd2c85f89d8822e50db63c21631199c69a97a0..39a2ff8c34f995ab860aadc24d24136d602af646 100644
 --- a/src/main/java/org/bukkit/craftbukkit/CraftWorld.java
 +++ b/src/main/java/org/bukkit/craftbukkit/CraftWorld.java
-@@ -2249,6 +2249,48 @@ public class CraftWorld extends CraftRegionAccessor implements World {
+@@ -2282,6 +2282,48 @@ public class CraftWorld extends CraftRegionAccessor implements World {
          return (this.getHandle().dragonFight() == null) ? null : new CraftDragonBattle(this.getHandle().dragonFight());
      }
  
@@ -20801,7 +20789,7 @@ index 4d7a2c4c1001aefe9fcd4be8dbcb414f721bfff9..2c7716a9d65ebda209a144b82c2126b6
 +    // Purpur end
  }
 diff --git a/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java b/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java
-index 3f498543cf0476ff1b184788d93f13b70c476c16..f4a341f72d727bbffa4cfcf72eda8ed0c8945c9e 100644
+index f3e1ba16446ff569f178a4bd16d328e8c2f0e40c..3c31701795b25b16dafe53292e9561dd0bfbe2b5 100644
 --- a/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java
 +++ b/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java
 @@ -533,10 +533,15 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
@@ -20861,7 +20849,7 @@ index 3f498543cf0476ff1b184788d93f13b70c476c16..f4a341f72d727bbffa4cfcf72eda8ed0
      private void validateSpeed(float value) {
          if (value < 0) {
              if (value < -1f) {
-@@ -3196,4 +3227,97 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
+@@ -3174,4 +3205,97 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
          return this.spigot;
      }
      // Spigot end
