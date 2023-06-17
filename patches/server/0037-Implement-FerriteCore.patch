@@ -7,30 +7,34 @@ Original: malte0811/FerriteCore
 Copyright (C) 2023 malte0811
 
 diff --git a/src/main/java/net/minecraft/world/level/block/state/BlockBehaviour.java b/src/main/java/net/minecraft/world/level/block/state/BlockBehaviour.java
-index bee42ce7c1cb0f5ebd4890c02bc9c5dd727f7fd6..478802cedeef5166bf5662187038d1439be6c242 100644
+index bee42ce7c1cb0f5ebd4890c02bc9c5dd727f7fd6..22f194956640b88c1d060b732e517f85d9091cf6 100644
 --- a/src/main/java/net/minecraft/world/level/block/state/BlockBehaviour.java
 +++ b/src/main/java/net/minecraft/world/level/block/state/BlockBehaviour.java
-@@ -737,9 +737,16 @@ public abstract class BlockBehaviour implements FeatureElement {
+@@ -737,6 +737,12 @@ public abstract class BlockBehaviour implements FeatureElement {
          protected BlockBehaviour.BlockStateBase.Cache cache;
          private FluidState fluidState;
          private boolean isRandomlyTicking;
 +        // Plazma start - FerriteCore
-+        public final java.util.Map<net.minecraft.world.phys.shapes.VoxelShape, net.minecraft.world.phys.shapes.VoxelShape> CACHE_COLLIDE = new java.util.HashMap<>();
-+        public final java.util.Map<VoxelShape, org.apache.commons.lang3.tuple.Pair<VoxelShape, VoxelShape[]>> CACHE_PROJECT = new java.util.HashMap<>();
-+        public final java.util.Map<boolean[], boolean[]> CACHE_FACE_STURDY = new it.unimi.dsi.fastutil.objects.Object2ObjectOpenCustomHashMap<>(it.unimi.dsi.fastutil.booleans.BooleanArrays.HASH_STRATEGY);
-+        private final ThreadLocal<BlockBehaviour.BlockStateBase.Cache> LAST_CACHE = new ThreadLocal<>();
++        public static final java.util.Map<net.minecraft.world.phys.shapes.VoxelShape, net.minecraft.world.phys.shapes.VoxelShape> CACHE_COLLIDE = new java.util.HashMap<>();
++        public static final java.util.Map<VoxelShape, org.apache.commons.lang3.tuple.Pair<VoxelShape, VoxelShape[]>> CACHE_PROJECT = new java.util.HashMap<>();
++        public static final java.util.Map<boolean[], boolean[]> CACHE_FACE_STURDY = new it.unimi.dsi.fastutil.objects.Object2ObjectOpenCustomHashMap<>(it.unimi.dsi.fastutil.booleans.BooleanArrays.HASH_STRATEGY);
++        private static final ThreadLocal<BlockBehaviour.BlockStateBase.Cache> LAST_CACHE = new ThreadLocal<>();
 +        // Plazma end
  
          protected BlockStateBase(Block block, ImmutableMap<Property<?>, Comparable<?>> propertyMap, MapCodec<BlockState> codec) {
              super(block, propertyMap, codec);
-+            LAST_CACHE.set(asState().cache); // Plazma - FerriteCore
-             this.fluidState = Fluids.EMPTY.defaultFluidState();
-             BlockBehaviour.Properties blockbase_info = block.properties;
+@@ -795,6 +801,7 @@ public abstract class BlockBehaviour implements FeatureElement {
+         // Paper end
  
-@@ -759,7 +766,60 @@ public abstract class BlockBehaviour implements FeatureElement {
-             this.offsetFunction = blockbase_info.offsetFunction;
-             this.spawnParticlesOnBreak = blockbase_info.spawnParticlesOnBreak;
-             this.conditionallyFullOpaque = this.isOpaque() & this.isTransparentOnSomeFaces(); // Paper
+         public void initCache() {
++            LAST_CACHE.set(asState().cache); // Plazma - FerriteCore
+             this.fluidState = ((Block) this.owner).getFluidState(this.asState());
+             this.isRandomlyTicking = ((Block) this.owner).isRandomlyTicking(this.asState());
+             if (!this.getBlock().hasDynamicShape()) {
+@@ -832,7 +839,61 @@ public abstract class BlockBehaviour implements FeatureElement {
+                 }
+             }
+             // Paper end
 +            // Plazma start - FerriteCore
 +            if (asState().cache != null) {
 +                Cache newCache = asState().cache;
@@ -67,6 +71,7 @@ index bee42ce7c1cb0f5ebd4890c02bc9c5dd727f7fd6..478802cedeef5166bf5662187038d143
 +            }
 +            // Plazma end
 +        }
++
 +        // Plazma start - FerriteCore
 +        private void replaceInternals(net.minecraft.world.phys.shapes.ArrayVoxelShape toKeep, net.minecraft.world.phys.shapes.ArrayVoxelShape toReplace) {
 +            if (toKeep == toReplace) return;
@@ -85,10 +90,10 @@ index bee42ce7c1cb0f5ebd4890c02bc9c5dd727f7fd6..478802cedeef5166bf5662187038d143
 +            return null;
          }
 +        // Plazma end
-         // Paper start - impl cached craft block data, lazy load to fix issue with loading at the wrong time
-         private org.bukkit.craftbukkit.block.data.CraftBlockData cachedCraftBlockData;
  
-@@ -1205,10 +1265,10 @@ public abstract class BlockBehaviour implements FeatureElement {
+         public Block getBlock() {
+             return (Block) this.owner;
+@@ -1205,10 +1266,10 @@ public abstract class BlockBehaviour implements FeatureElement {
              final boolean propagatesSkylightDown;
              final int lightBlock;
              @Nullable
