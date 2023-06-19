@@ -7,7 +7,7 @@ Original: YouHaveTrouble/minecraft-optimization, AkiraDevelopment/SimplyMC
 Copyright (C) 2023 YouHaveTrouble, AkiraDevelopment
 
 diff --git a/src/main/java/gg/pufferfish/pufferfish/PufferfishConfig.java b/src/main/java/gg/pufferfish/pufferfish/PufferfishConfig.java
-index 47e77541e558e18758ae0fcc2aa4e47261e928b6..dd3a29c49392910a38be14a638c6c9b6e825d772 100644
+index b4e5fbace85c67e7bd347e6a90514bbc2c132d5e..edc8eba38af743167a8b78d34cb426d6929f9605 100644
 --- a/src/main/java/gg/pufferfish/pufferfish/PufferfishConfig.java
 +++ b/src/main/java/gg/pufferfish/pufferfish/PufferfishConfig.java
 @@ -211,8 +211,8 @@ public class PufferfishConfig {
@@ -42,15 +42,6 @@ index 47e77541e558e18758ae0fcc2aa4e47261e928b6..dd3a29c49392910a38be14a638c6c9b6
                  "tick frequency. freq = (distanceToPlayer^2) / (2^value)",
                  "If you want further away entities to tick less often, use 7.",
                  "If you want further away entities to tick more often, try 9.");
-@@ -269,7 +269,7 @@ public class PufferfishConfig {
-     
-     public static boolean throttleInactiveGoalSelectorTick;
- 	private static void inactiveGoalSelectorThrottle() {
--		getBoolean("inactive-goal-selector-throttle", "inactive-goal-selector-disable", false, // Purpur
-+		getBoolean("inactive-goal-selector-throttle", "inactive-goal-selector-disable", !Boolean.getBoolean("Plazma.disableConfigOptimization"), // Purpur // Plazma
- 				"Throttles the AI goal selector in entity inactive ticks.",
- 				"This can improve performance by a few percent, but has minor gameplay implications.");
- 	}
 diff --git a/src/main/java/io/papermc/paper/configuration/GlobalConfiguration.java b/src/main/java/io/papermc/paper/configuration/GlobalConfiguration.java
 index 8d442c5a498ecf288a0cc0c54889c6e2fda849ce..205ce3456a3f6d28cc2c7cbc131ec0f63a461527 100644
 --- a/src/main/java/io/papermc/paper/configuration/GlobalConfiguration.java
@@ -261,10 +252,10 @@ index 1ea3012995c738c67b31e997c138f824f9e69ba1..8ed00a650b712cbf4bc8796165a539d7
          this.enableStatus = this.get("enable-status", true);
          this.hideOnlinePlayers = this.get("hide-online-players", false);
 diff --git a/src/main/java/org/bukkit/craftbukkit/CraftServer.java b/src/main/java/org/bukkit/craftbukkit/CraftServer.java
-index bb5ec38711f369ffcbd184b4e144bc0d8d576013..5df6fd278a6555e483ea4ebc4e9625907585f77f 100644
+index 1367072684078c0e93c275c2159ece799f96428b..84fb7f6cdad5e7a5389e2469bfd6fb961cd1b299 100644
 --- a/src/main/java/org/bukkit/craftbukkit/CraftServer.java
 +++ b/src/main/java/org/bukkit/craftbukkit/CraftServer.java
-@@ -349,7 +349,7 @@ public final class CraftServer implements Server {
+@@ -354,7 +354,7 @@ public final class CraftServer implements Server {
  
          this.configuration = YamlConfiguration.loadConfiguration(this.getConfigFile());
          this.configuration.options().copyDefaults(true);
@@ -274,7 +265,7 @@ index bb5ec38711f369ffcbd184b4e144bc0d8d576013..5df6fd278a6555e483ea4ebc4e962590
          if (!this.configuration.isString("aliases")) {
              legacyAlias = this.configuration.getConfigurationSection("aliases");
 diff --git a/src/main/java/org/purpurmc/purpur/PurpurConfig.java b/src/main/java/org/purpurmc/purpur/PurpurConfig.java
-index 562baddc030c6a7861f58438a630cfbe47847d38..529247dad9300b0abc024464fb0ca35c4bc0f410 100644
+index c93f6d275d0541e0751eefca45d17c4ccd39a62a..38a8f79b0075279389f0b3dc7de4b16d9af05295 100644
 --- a/src/main/java/org/purpurmc/purpur/PurpurConfig.java
 +++ b/src/main/java/org/purpurmc/purpur/PurpurConfig.java
 @@ -49,7 +49,10 @@ public class PurpurConfig {
@@ -289,7 +280,7 @@ index 562baddc030c6a7861f58438a630cfbe47847d38..529247dad9300b0abc024464fb0ca35c
      private static File CONFIG_FILE;
      public static YamlConfiguration config;
  
-@@ -237,7 +240,7 @@ public class PurpurConfig {
+@@ -239,7 +242,7 @@ public class PurpurConfig {
          laggingThreshold = getDouble("settings.lagging-threshold", laggingThreshold);
      }
  
@@ -299,10 +290,10 @@ index 562baddc030c6a7861f58438a630cfbe47847d38..529247dad9300b0abc024464fb0ca35c
          useAlternateKeepAlive = getBoolean("settings.use-alternate-keepalive", useAlternateKeepAlive);
      }
 diff --git a/src/main/java/org/purpurmc/purpur/PurpurWorldConfig.java b/src/main/java/org/purpurmc/purpur/PurpurWorldConfig.java
-index 0db8a1a51c857a3930d0b20028964fb355d8e5b4..aca570efe2360d7d5f71e62433f6b1cd08f5214b 100644
+index 397c4afa8da85845f49974832674a6e45ee6edb7..ce702e6b5fff3a54f9f254a61becd12eb5c11dd7 100644
 --- a/src/main/java/org/purpurmc/purpur/PurpurWorldConfig.java
 +++ b/src/main/java/org/purpurmc/purpur/PurpurWorldConfig.java
-@@ -425,7 +425,7 @@ public class PurpurWorldConfig {
+@@ -427,7 +427,7 @@ public class PurpurWorldConfig {
      public boolean playerInvulnerableWhileAcceptingResourcePack = false;
      public String playerDeathExpDropEquation = "expLevel * 7";
      public int playerDeathExpDropMax = 100;
@@ -311,7 +302,7 @@ index 0db8a1a51c857a3930d0b20028964fb355d8e5b4..aca570efe2360d7d5f71e62433f6b1cd
      public boolean teleportOnNetherCeilingDamage = false;
      public boolean totemOfUndyingWorksInInventory = false;
      public boolean playerFixStuckPortal = false;
-@@ -3038,7 +3038,7 @@ public class PurpurWorldConfig {
+@@ -3040,7 +3040,7 @@ public class PurpurWorldConfig {
      public boolean zombieJockeyOnlyBaby = true;
      public double zombieJockeyChance = 0.05D;
      public boolean zombieJockeyTryExistingChickens = true;

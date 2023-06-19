@@ -1,6 +1,6 @@
 From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
-From: AlphaKR93 <dev@alpha93.kr>
-Date: Sun, 4 Jun 2023 07:52:24 +0000
+From: BillyGalbreath <blake.galbreath@gmail.com>
+Date: Sun, 12 Jun 2022 09:18:57 -0500
 Subject: [PATCH] Purpur Server Changes
 
 Original: PurpurMC
@@ -249,7 +249,7 @@ index fa56cd09102a89692b42f1d14257990508c5c720..f9251183df72ddc56662fd3f02acf216
          setListData(vector);
      }
 diff --git a/src/main/java/gg/pufferfish/pufferfish/PufferfishConfig.java b/src/main/java/gg/pufferfish/pufferfish/PufferfishConfig.java
-index f88e0b31b10b329fd8e94fc48148f490f31da646..fd26eb27a2fcebe8c768305c587c908bcedacf1d 100644
+index 0dd3374468e05f7a312ba5856b9cf8a4787dfa59..b4e5fbace85c67e7bd347e6a90514bbc2c132d5e 100644
 --- a/src/main/java/gg/pufferfish/pufferfish/PufferfishConfig.java
 +++ b/src/main/java/gg/pufferfish/pufferfish/PufferfishConfig.java
 @@ -28,6 +28,7 @@ public class PufferfishConfig {
@@ -282,8 +282,8 @@ index f88e0b31b10b329fd8e94fc48148f490f31da646..fd26eb27a2fcebe8c768305c587c908b
      
      public static boolean throttleInactiveGoalSelectorTick;
  	private static void inactiveGoalSelectorThrottle() {
--		getBoolean("inactive-goal-selector-throttle", "inactive-goal-selector-disable", true,
-+		getBoolean("inactive-goal-selector-throttle", "inactive-goal-selector-disable", false, // Purpur
+-		throttleInactiveGoalSelectorTick = getBoolean("inactive-goal-selector-throttle", "inactive-goal-selector-disable", true,
++		throttleInactiveGoalSelectorTick = getBoolean("inactive-goal-selector-throttle", "inactive-goal-selector-disable", false, // Purpur
  				"Throttles the AI goal selector in entity inactive ticks.",
  				"This can improve performance by a few percent, but has minor gameplay implications.");
  	}
@@ -2759,7 +2759,7 @@ index 3ee5c3c17d450dce54e051dc53c9df44d9b3dc1b..86b8485c0fb1dc5cd79c9e24546dc744
                  }
                  // Paper end
 diff --git a/src/main/java/net/minecraft/server/level/ServerPlayer.java b/src/main/java/net/minecraft/server/level/ServerPlayer.java
-index 98df2463bf41fc736aa6a2b6ddf89e5abde6eb39..82402be7bbbf04388339c6a471946a72f09dfe3b 100644
+index 98df2463bf41fc736aa6a2b6ddf89e5abde6eb39..852266234cf3d63e3b23a71639e40defca91c1b8 100644
 --- a/src/main/java/net/minecraft/server/level/ServerPlayer.java
 +++ b/src/main/java/net/minecraft/server/level/ServerPlayer.java
 @@ -277,6 +277,11 @@ public class ServerPlayer extends Player {
@@ -2955,13 +2955,13 @@ index 98df2463bf41fc736aa6a2b6ddf89e5abde6eb39..82402be7bbbf04388339c6a471946a72
          this.connection.send(new ClientboundResourcePackPacket(url, hash, required, resourcePackPrompt));
      }
  
-@@ -2041,8 +2103,63 @@ public class ServerPlayer extends Player {
+@@ -2041,8 +2103,68 @@ public class ServerPlayer extends Player {
  
      public void resetLastActionTime() {
          this.lastActionTime = Util.getMillis();
 +        this.setAfk(false); // Purpur
-     }
- 
++    }
++
 +    // Purpur Start
 +    private boolean isAfk = false;
 +
@@ -2986,7 +2986,12 @@ index 98df2463bf41fc736aa6a2b6ddf89e5abde6eb39..82402be7bbbf04388339c6a471946a72
 +
 +        msg = event.getBroadcastMsg();
 +        if (msg != null && !msg.isEmpty()) {
-+            server.getPlayerList().broadcastMiniMessage(String.format(msg, this.getGameProfile().getName()), false);
++            String playerName = this.getGameProfile().getName();
++            if (org.purpurmc.purpur.PurpurConfig.afkBroadcastUseDisplayName) {
++                net.kyori.adventure.text.Component playerDisplayNameComponent = net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer.legacySection().deserialize(this.getBukkitEntity().getDisplayName());
++                playerName = net.kyori.adventure.text.serializer.plain.PlainTextComponentSerializer.plainText().serialize(playerDisplayNameComponent);
++            }
++            server.getPlayerList().broadcastMiniMessage(String.format(msg, playerName), false);
 +        }
 +
 +        if (this.level.purpurConfig.idleTimeoutUpdateTabList) {
@@ -3008,8 +3013,8 @@ index 98df2463bf41fc736aa6a2b6ddf89e5abde6eb39..82402be7bbbf04388339c6a471946a72
 +    @Override
 +    public boolean isAfk() {
 +        return this.isAfk;
-+    }
-+
+     }
+ 
 +    @Override
 +    public boolean canBeCollidedWith() {
 +        return !this.isAfk() && super.canBeCollidedWith();
@@ -3019,7 +3024,7 @@ index 98df2463bf41fc736aa6a2b6ddf89e5abde6eb39..82402be7bbbf04388339c6a471946a72
      public ServerStatsCounter getStats() {
          return this.stats;
      }
-@@ -2514,8 +2631,16 @@ public class ServerPlayer extends Player {
+@@ -2514,8 +2636,16 @@ public class ServerPlayer extends Player {
  
      @Override
      public boolean isImmobile() {
@@ -3037,7 +3042,7 @@ index 98df2463bf41fc736aa6a2b6ddf89e5abde6eb39..82402be7bbbf04388339c6a471946a72
  
      @Override
      public Scoreboard getScoreboard() {
-@@ -2564,4 +2689,50 @@ public class ServerPlayer extends Player {
+@@ -2564,4 +2694,50 @@ public class ServerPlayer extends Player {
          return (CraftPlayer) super.getBukkitEntity();
      }
      // CraftBukkit end
@@ -4650,7 +4655,7 @@ index 8af0918d3a62de58a4b2af55022c812bb0e46092..3fc26a8976f4bfa28c2c6a862aac997d
      }
  
 diff --git a/src/main/java/net/minecraft/world/entity/ExperienceOrb.java b/src/main/java/net/minecraft/world/entity/ExperienceOrb.java
-index 89699aaccd45a5a928a97d1b3ad06f5de5b9fad1..186d6b06194eb2120c9cec6218c87e8cf2f11f65 100644
+index 89699aaccd45a5a928a97d1b3ad06f5de5b9fad1..b3b371ee4850c90a3142c3c96761b032e6de6af0 100644
 --- a/src/main/java/net/minecraft/world/entity/ExperienceOrb.java
 +++ b/src/main/java/net/minecraft/world/entity/ExperienceOrb.java
 @@ -306,7 +306,7 @@ public class ExperienceOrb extends Entity {
@@ -4671,6 +4676,24 @@ index 89699aaccd45a5a928a97d1b3ad06f5de5b9fad1..186d6b06194eb2120c9cec6218c87e8c
  
          if (entry != null) {
              ItemStack itemstack = (ItemStack) entry.getValue();
+@@ -352,13 +352,15 @@ public class ExperienceOrb extends Entity {
+         }
+     }
+ 
++    // Purpur start
+     public int durabilityToXp(int repairAmount) {
+-        return repairAmount / 2;
++        return (int) (repairAmount / (2 * level.purpurConfig.mendingMultiplier));
+     }
+ 
+     public int xpToDurability(int experienceAmount) {
+-        return experienceAmount * 2;
++        return (int) ((experienceAmount * 2) * level.purpurConfig.mendingMultiplier);
+     }
++    // Purpur end
+ 
+     public int getValue() {
+         return this.value;
 diff --git a/src/main/java/net/minecraft/world/entity/GlowSquid.java b/src/main/java/net/minecraft/world/entity/GlowSquid.java
 index c1e9b40a4a0f9cdc650caa88b5ea132e06ee2496..6f723171fa71d74b351b5cf0cd167bb6f7ca1691 100644
 --- a/src/main/java/net/minecraft/world/entity/GlowSquid.java
@@ -20228,10 +20251,10 @@ index 714afc98b5150907b45a00060be4e41582333204..312a6d90c0a09570aef24c205dc2ff27
 +    // Purpur end - OfflinePlayer API
  }
 diff --git a/src/main/java/org/bukkit/craftbukkit/CraftServer.java b/src/main/java/org/bukkit/craftbukkit/CraftServer.java
-index a49520fbb3cbce866338c964dd0aadbd113bf411..3f80b16c8d69f284a26b16cf2513a955005bf458 100644
+index 6ff93df3e870ebc6e52f8b8a719908bfa16a839b..3310828edcabd2c24e3200dcb89d4e8ebd82cf16 100644
 --- a/src/main/java/org/bukkit/craftbukkit/CraftServer.java
 +++ b/src/main/java/org/bukkit/craftbukkit/CraftServer.java
-@@ -259,7 +259,7 @@ import javax.annotation.Nullable; // Paper
+@@ -262,7 +262,7 @@ import javax.annotation.Nullable; // Paper
  import javax.annotation.Nonnull; // Paper
  
  public final class CraftServer implements Server {
@@ -20240,8 +20263,8 @@ index a49520fbb3cbce866338c964dd0aadbd113bf411..3f80b16c8d69f284a26b16cf2513a955
      private final String serverVersion;
      private final String bukkitVersion = Versioning.getBukkitVersion();
      private final Logger logger = Logger.getLogger("Minecraft");
-@@ -319,6 +319,20 @@ public final class CraftServer implements Server {
-         this.structureManager = new CraftStructureManager(console.getStructureManager());
+@@ -324,6 +324,20 @@ public final class CraftServer implements Server {
+         this.dataPackManager = new CraftDataPackManager(this.getServer().getPackRepository());
  
          Bukkit.setServer(this);
 +        // Purpur start
@@ -20261,7 +20284,7 @@ index a49520fbb3cbce866338c964dd0aadbd113bf411..3f80b16c8d69f284a26b16cf2513a955
  
          // Register all the Enchantments and PotionTypes now so we can stop new registration immediately after
          Enchantments.SHARPNESS.getClass();
-@@ -959,6 +973,7 @@ public final class CraftServer implements Server {
+@@ -979,6 +993,7 @@ public final class CraftServer implements Server {
  
          org.spigotmc.SpigotConfig.init((File) console.options.valueOf("spigot-settings")); // Spigot
          this.console.paperConfigurations.reloadConfigs(this.console);
@@ -20269,7 +20292,7 @@ index a49520fbb3cbce866338c964dd0aadbd113bf411..3f80b16c8d69f284a26b16cf2513a955
          for (ServerLevel world : this.console.getAllLevels()) {
              // world.serverLevelData.setDifficulty(config.difficulty); // Paper - per level difficulty
              world.setSpawnSettings(world.serverLevelData.getDifficulty() != Difficulty.PEACEFUL && config.spawnMonsters, config.spawnAnimals); // Paper - per level difficulty (from MinecraftServer#setDifficulty(ServerLevel, Difficulty, boolean))
-@@ -974,6 +989,7 @@ public final class CraftServer implements Server {
+@@ -994,6 +1009,7 @@ public final class CraftServer implements Server {
                  }
              }
              world.spigotConfig.init(); // Spigot
@@ -20277,7 +20300,7 @@ index a49520fbb3cbce866338c964dd0aadbd113bf411..3f80b16c8d69f284a26b16cf2513a955
          }
  
          Plugin[] pluginClone = pluginManager.getPlugins().clone(); // Paper
-@@ -989,6 +1005,7 @@ public final class CraftServer implements Server {
+@@ -1009,6 +1025,7 @@ public final class CraftServer implements Server {
          this.reloadData();
          org.spigotmc.SpigotConfig.registerCommands(); // Spigot
          io.papermc.paper.command.PaperCommands.registerCommands(this.console); // Paper
@@ -20285,7 +20308,7 @@ index a49520fbb3cbce866338c964dd0aadbd113bf411..3f80b16c8d69f284a26b16cf2513a955
          this.overrideAllCommandBlockCommands = this.commandsConfiguration.getStringList("command-block-overrides").contains("*");
          this.ignoreVanillaPermissions = this.commandsConfiguration.getBoolean("ignore-vanilla-permissions");
  
-@@ -1431,6 +1448,55 @@ public final class CraftServer implements Server {
+@@ -1451,6 +1468,55 @@ public final class CraftServer implements Server {
          return true;
      }
  
@@ -20341,7 +20364,7 @@ index a49520fbb3cbce866338c964dd0aadbd113bf411..3f80b16c8d69f284a26b16cf2513a955
      @Override
      public List<Recipe> getRecipesFor(ItemStack result) {
          Validate.notNull(result, "Result cannot be null");
-@@ -2702,6 +2768,7 @@ public final class CraftServer implements Server {
+@@ -2722,6 +2788,7 @@ public final class CraftServer implements Server {
      @Override
      public double[] getTPS() {
          return new double[] {
@@ -20349,7 +20372,7 @@ index a49520fbb3cbce866338c964dd0aadbd113bf411..3f80b16c8d69f284a26b16cf2513a955
                  net.minecraft.server.MinecraftServer.getServer().tps1.getAverage(),
                  net.minecraft.server.MinecraftServer.getServer().tps5.getAverage(),
                  net.minecraft.server.MinecraftServer.getServer().tps15.getAverage()
-@@ -2748,6 +2815,18 @@ public final class CraftServer implements Server {
+@@ -2768,6 +2835,18 @@ public final class CraftServer implements Server {
              return CraftServer.this.console.paperConfigurations.createLegacyObject(CraftServer.this.console);
          }
  
@@ -20368,7 +20391,7 @@ index a49520fbb3cbce866338c964dd0aadbd113bf411..3f80b16c8d69f284a26b16cf2513a955
          @Override
          public void restart() {
              org.spigotmc.RestartCommand.restart();
-@@ -2961,4 +3040,16 @@ public final class CraftServer implements Server {
+@@ -2981,4 +3060,16 @@ public final class CraftServer implements Server {
      }
  
      // Paper end
@@ -20386,10 +20409,10 @@ index a49520fbb3cbce866338c964dd0aadbd113bf411..3f80b16c8d69f284a26b16cf2513a955
 +    // Purpur end
  }
 diff --git a/src/main/java/org/bukkit/craftbukkit/CraftWorld.java b/src/main/java/org/bukkit/craftbukkit/CraftWorld.java
-index dafd2c85f89d8822e50db63c21631199c69a97a0..39a2ff8c34f995ab860aadc24d24136d602af646 100644
+index 8f0234296397ca2d4a607dcea6093c6c606dc7d2..68df53648c9b76cf1b6abcaa90c5e8938e9e0d05 100644
 --- a/src/main/java/org/bukkit/craftbukkit/CraftWorld.java
 +++ b/src/main/java/org/bukkit/craftbukkit/CraftWorld.java
-@@ -2282,6 +2282,48 @@ public class CraftWorld extends CraftRegionAccessor implements World {
+@@ -2284,6 +2284,48 @@ public class CraftWorld extends CraftRegionAccessor implements World {
          return (this.getHandle().dragonFight() == null) ? null : new CraftDragonBattle(this.getHandle().dragonFight());
      }
  
@@ -20439,7 +20462,7 @@ index dafd2c85f89d8822e50db63c21631199c69a97a0..39a2ff8c34f995ab860aadc24d24136d
      public PersistentDataContainer getPersistentDataContainer() {
          return this.persistentDataContainer;
 diff --git a/src/main/java/org/bukkit/craftbukkit/Main.java b/src/main/java/org/bukkit/craftbukkit/Main.java
-index c103f10dbb6c06e14bb7b5df73a797f456803301..2a8db3527f3680789125fca41097657063efb32d 100644
+index bfa091f72d6f477bcaf63d364639a1b4df9b1987..288cf98287c6d3c073b9ab6696c3957c999cad32 100644
 --- a/src/main/java/org/bukkit/craftbukkit/Main.java
 +++ b/src/main/java/org/bukkit/craftbukkit/Main.java
 @@ -173,6 +173,20 @@ public class Main {
@@ -20463,7 +20486,7 @@ index c103f10dbb6c06e14bb7b5df73a797f456803301..2a8db3527f3680789125fca410976570
                  // Paper start
                  acceptsAll(asList("server-name"), "Name of the server")
                          .withRequiredArg()
-@@ -277,7 +291,7 @@ public class Main {
+@@ -284,7 +298,7 @@ public class Main {
                      System.setProperty(net.minecrell.terminalconsole.TerminalConsoleAppender.JLINE_OVERRIDE_PROPERTY, "false"); // Paper
                  }
  
@@ -21339,10 +21362,10 @@ index 138407c2d4b0bc55ddb9aac5d2aa3edadda090fb..a6e9e503a496c18e2501b03ec84f4600
          // Paper end - add timings for scoreboard search
      }
 diff --git a/src/main/java/org/bukkit/craftbukkit/util/CraftMagicNumbers.java b/src/main/java/org/bukkit/craftbukkit/util/CraftMagicNumbers.java
-index d4f62940504e3ef7a70e13b1f4a7726f23b4c637..1dd7f923dd6adb41eafc3ea0c063e3aae6670124 100644
+index 1ecf065c5323f65401412cb98d4a0b622f356759..1bf9a11abf7884a421374cbca5ccc18480717b79 100644
 --- a/src/main/java/org/bukkit/craftbukkit/util/CraftMagicNumbers.java
 +++ b/src/main/java/org/bukkit/craftbukkit/util/CraftMagicNumbers.java
-@@ -464,7 +464,7 @@ public final class CraftMagicNumbers implements UnsafeValues {
+@@ -472,7 +472,7 @@ public final class CraftMagicNumbers implements UnsafeValues {
  
      @Override
      public com.destroystokyo.paper.util.VersionFetcher getVersionFetcher() {
@@ -21387,10 +21410,10 @@ index ec771c480156db393c326fa2fbdc2d432fb76f53..71940bf3a4162d12a422a5b3100ad8de
          DefaultPermissions.registerPermission(CommandPermissions.PREFIX + "seed", "Allows the user to view the seed of the world", PermissionDefault.OP, commands);
 diff --git a/src/main/java/org/purpurmc/purpur/PurpurConfig.java b/src/main/java/org/purpurmc/purpur/PurpurConfig.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..62ad4c6ad417e11e9152f74636b2ff0d187d0799
+index 0000000000000000000000000000000000000000..be8b44daa0141151c973917a774aa07721647ed1
 --- /dev/null
 +++ b/src/main/java/org/purpurmc/purpur/PurpurConfig.java
-@@ -0,0 +1,636 @@
+@@ -0,0 +1,638 @@
 +package org.purpurmc.purpur;
 +
 +import com.google.common.base.Throwables;
@@ -21569,6 +21592,7 @@ index 0000000000000000000000000000000000000000..62ad4c6ad417e11e9152f74636b2ff0d
 +    public static String cannotRideMob = "<red>You cannot mount that mob";
 +    public static String afkBroadcastAway = "<yellow><italic>%s is now AFK";
 +    public static String afkBroadcastBack = "<yellow><italic>%s is no longer AFK";
++    public static boolean afkBroadcastUseDisplayName = false;
 +    public static String afkTabListPrefix = "[AFK] ";
 +    public static String afkTabListSuffix = "";
 +    public static String creditsCommandOutput = "<green>%s has been shown the end credits";
@@ -21586,6 +21610,7 @@ index 0000000000000000000000000000000000000000..62ad4c6ad417e11e9152f74636b2ff0d
 +        cannotRideMob = getString("settings.messages.cannot-ride-mob", cannotRideMob);
 +        afkBroadcastAway = getString("settings.messages.afk-broadcast-away", afkBroadcastAway);
 +        afkBroadcastBack = getString("settings.messages.afk-broadcast-back", afkBroadcastBack);
++        afkBroadcastUseDisplayName = getBoolean("settings.messages.afk-broadcast-use-display-name", afkBroadcastUseDisplayName);
 +        afkTabListPrefix = MiniMessage.miniMessage().serialize(MiniMessage.miniMessage().deserialize(getString("settings.messages.afk-tab-list-prefix", afkTabListPrefix)));
 +        afkTabListSuffix = MiniMessage.miniMessage().serialize(MiniMessage.miniMessage().deserialize(getString("settings.messages.afk-tab-list-suffix", afkTabListSuffix)));
 +        creditsCommandOutput = getString("settings.messages.credits-command-output", creditsCommandOutput);
@@ -22029,10 +22054,10 @@ index 0000000000000000000000000000000000000000..62ad4c6ad417e11e9152f74636b2ff0d
 +}
 diff --git a/src/main/java/org/purpurmc/purpur/PurpurWorldConfig.java b/src/main/java/org/purpurmc/purpur/PurpurWorldConfig.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..0db8a1a51c857a3930d0b20028964fb355d8e5b4
+index 0000000000000000000000000000000000000000..397c4afa8da85845f49974832674a6e45ee6edb7
 --- /dev/null
 +++ b/src/main/java/org/purpurmc/purpur/PurpurWorldConfig.java
-@@ -0,0 +1,3201 @@
+@@ -0,0 +1,3203 @@
 +package org.purpurmc.purpur;
 +
 +import net.minecraft.core.registries.BuiltInRegistries;
@@ -22156,6 +22181,7 @@ index 0000000000000000000000000000000000000000..0db8a1a51c857a3930d0b20028964fb3
 +    }
 +
 +    public boolean useBetterMending = false;
++    public double mendingMultiplier = 1.0;
 +    public boolean alwaysTameInCreative = false;
 +    public boolean boatEjectPlayersOnLand = false;
 +    public boolean boatsDoFallDamage = false;
@@ -22183,6 +22209,7 @@ index 0000000000000000000000000000000000000000..0db8a1a51c857a3930d0b20028964fb3
 +    public int mobLastHurtByPlayerTime = 100;
 +    private void miscGameplayMechanicsSettings() {
 +        useBetterMending = getBoolean("gameplay-mechanics.use-better-mending", useBetterMending);
++        mendingMultiplier = getDouble("gameplay-mechanics.mending-multiplier", mendingMultiplier);
 +        alwaysTameInCreative = getBoolean("gameplay-mechanics.always-tame-in-creative", alwaysTameInCreative);
 +        boatEjectPlayersOnLand = getBoolean("gameplay-mechanics.boat.eject-players-on-land", boatEjectPlayersOnLand);
 +        boatsDoFallDamage = getBoolean("gameplay-mechanics.boat.do-fall-damage", boatsDoFallDamage);
