@@ -5,10 +5,25 @@ Subject: [PATCH] Implement No Chat Reports
 
 
 diff --git a/src/main/java/net/minecraft/network/FriendlyByteBuf.java b/src/main/java/net/minecraft/network/FriendlyByteBuf.java
-index 1f4b64a5f812376c499c98cb4be62469bd0b7dbe..59d3b33d523dea21e7a3f0747734b20226fd1dae 100644
+index 1f4b64a5f812376c499c98cb4be62469bd0b7dbe..c0bd2997fe3ebbfe926de832a36d209cc875f3e2 100644
 --- a/src/main/java/net/minecraft/network/FriendlyByteBuf.java
 +++ b/src/main/java/net/minecraft/network/FriendlyByteBuf.java
-@@ -156,9 +156,14 @@ public class FriendlyByteBuf extends ByteBuf {
+@@ -147,18 +147,23 @@ public class FriendlyByteBuf extends ByteBuf {
+     public <T> T readJsonWithCodec(Codec<T> codec) {
+         JsonElement jsonelement = (JsonElement) GsonHelper.fromJson(FriendlyByteBuf.GSON, this.readUtf(), JsonElement.class);
+         DataResult<T> dataresult = codec.parse(JsonOps.INSTANCE, jsonelement);
+-
+-        return Util.getOrThrow(dataresult, (s) -> {
+-            return new DecoderException("Failed to decode json: " + s);
+-        });
++        // Plazma start - NCR
++        T result = Util.getOrThrow(dataresult, (s) -> new DecoderException("Failed to decode json: " + s));
++        if (org.plazmamc.plazma.configurations.GlobalConfiguration.get().noChatReports.addQueryData() && jsonelement.getAsJsonObject().has("preventsChatReports"))
++            ((net.minecraft.network.protocol.status.ServerStatus) result).setPreventsChatReports(jsonelement.getAsJsonObject().get("preventsChatReports").getAsBoolean());
++        return result;
++        // Plazma end
+     }
+ 
      public <T> void writeJsonWithCodec(Codec<T> codec, T value) {
          DataResult<JsonElement> dataresult = codec.encodeStart(JsonOps.INSTANCE, value);
  
@@ -17,51 +32,44 @@ index 1f4b64a5f812376c499c98cb4be62469bd0b7dbe..59d3b33d523dea21e7a3f0747734b202
 -        })));
 +        // Plazma start - NCR
 +        JsonElement element = Util.getOrThrow(dataresult, (s) -> new EncoderException("Failed to encode: " + s + " " + value));
-+
-+        if (codec == net.minecraft.network.protocol.status.ServerStatus.CODEC && org.plazmamc.plazma.configurations.GlobalConfiguration.get().noChatReports.addQueryData())
++        if (org.plazmamc.plazma.configurations.GlobalConfiguration.get().noChatReports.addQueryData() && codec == net.minecraft.network.protocol.status.ServerStatus.CODEC)
 +            element.getAsJsonObject().addProperty("preventsChatReports", true);
-+
 +        this.writeUtf(FriendlyByteBuf.GSON.toJson(element));
 +        // Plazma end
      }
  
      public <T> void writeId(IdMap<T> registry, T value) {
-diff --git a/src/main/java/net/minecraft/network/protocol/game/ServerboundChatCommandPacket.java b/src/main/java/net/minecraft/network/protocol/game/ServerboundChatCommandPacket.java
-index b8c1f3b9afddc87d56541c8af63cffecfcdd2653..c74c17f058b7a6587e3dcab35878d469e0599240 100644
---- a/src/main/java/net/minecraft/network/protocol/game/ServerboundChatCommandPacket.java
-+++ b/src/main/java/net/minecraft/network/protocol/game/ServerboundChatCommandPacket.java
-@@ -24,4 +24,10 @@ public record ServerboundChatCommandPacket(String command, Instant timeStamp, lo
-     public void handle(ServerGamePacketListener listener) {
-         listener.handleChatCommand(this);
+diff --git a/src/main/java/net/minecraft/network/protocol/status/ServerStatus.java b/src/main/java/net/minecraft/network/protocol/status/ServerStatus.java
+index e6cc2bab1fde2e8c1394772b99201ea8d7eb8057..2ba3291f6c82f633d7ed7b150f2ae3c28d74b21e 100644
+--- a/src/main/java/net/minecraft/network/protocol/status/ServerStatus.java
++++ b/src/main/java/net/minecraft/network/protocol/status/ServerStatus.java
+@@ -64,4 +64,21 @@ public record ServerStatus(Component description, Optional<ServerStatus.Players>
+             return new ServerStatus.Version(worldVersion.getName(), worldVersion.getProtocolVersion());
+         }
      }
 +
 +    // Plazma start - NCR
-+    public ArgumentSignatures argumentSignatures() {
-+        return org.plazmamc.plazma.configurations.GlobalConfiguration.get().noChatReports.enabled ? ArgumentSignatures.EMPTY : this.argumentSignatures;
++    public boolean enforcesSecureChat() {
++        return org.plazmamc.plazma.configurations.GlobalConfiguration.get().noChatReports.enabled || this.enforcesSecureChat;
 +    }
-+    // Plazma end
- }
-diff --git a/src/main/java/net/minecraft/network/protocol/game/ServerboundChatPacket.java b/src/main/java/net/minecraft/network/protocol/game/ServerboundChatPacket.java
-index d1d2fc0c57523c1abf1e8bfec913c78927c3dafc..f93372070b3babc76d43b18df9a0f91a2125e37e 100644
---- a/src/main/java/net/minecraft/network/protocol/game/ServerboundChatPacket.java
-+++ b/src/main/java/net/minecraft/network/protocol/game/ServerboundChatPacket.java
-@@ -25,4 +25,11 @@ public record ServerboundChatPacket(String message, Instant timeStamp, long salt
-     public void handle(ServerGamePacketListener listener) {
-         listener.handleChat(this);
-     }
 +
-+    // Plazma start - NCR
-+    @Nullable
-+    public MessageSignature signature() {
-+        return org.plazmamc.plazma.configurations.GlobalConfiguration.get().noChatReports.enabled ? null : this.signature;
++    private static boolean preventsChatReports;
++
++    public boolean preventsChatReports() {
++        if (this.version().isPresent() && this.version().get().protocol() < 759 && this.version().get().protocol() > 0) return true;
++        return this.preventsChatReports;
++    }
++
++    public void setPreventsChatReports(boolean prevents) {
++        this.preventsChatReports = prevents;
 +    }
 +    // Plazma end
  }
 diff --git a/src/main/java/net/minecraft/server/dedicated/DedicatedServer.java b/src/main/java/net/minecraft/server/dedicated/DedicatedServer.java
-index efcee39cd7154493de04ca903edbd32b5901b191..a398b71c52817bd68a05613ec037ed6d7ae6fb27 100644
+index 84bb45aef3c2087cb9c03a99184956c484b3d8e9..778b79ce3530781705f6d6ae11a2631f186e3763 100644
 --- a/src/main/java/net/minecraft/server/dedicated/DedicatedServer.java
 +++ b/src/main/java/net/minecraft/server/dedicated/DedicatedServer.java
-@@ -683,7 +683,7 @@ public class DedicatedServer extends MinecraftServer implements ServerInterface
+@@ -684,7 +684,7 @@ public class DedicatedServer extends MinecraftServer implements ServerInterface
  
      @Override
      public boolean enforceSecureProfile() {
@@ -71,18 +79,17 @@ index efcee39cd7154493de04ca903edbd32b5901b191..a398b71c52817bd68a05613ec037ed6d
  
      protected boolean convertOldUsers() {
 diff --git a/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java b/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
-index dee076d1e6e30f108a79565546182b4751737baa..c18f953950fd2c00a3880fa20c9904a940191666 100644
+index 8f911f589bf04902e38e2c625d84ba0c47cbd9ee..b15de37a06c3efb1c4bc790ccb23ebff3c97d54d 100644
 --- a/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
 +++ b/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
-@@ -2224,10 +2224,19 @@ public class ServerGamePacketListenerImpl implements ServerPlayerConnection, Tic
+@@ -2235,10 +2235,19 @@ public class ServerGamePacketListenerImpl implements ServerPlayerConnection, Tic
  
      @Override
      public void send(Packet<?> packet) {
--        this.send(packet, (PacketSendListener) null);
 +        // Plazma start - NCR
-+        if (org.plazmamc.plazma.configurations.GlobalConfiguration.get().noChatReports.convertToGameMessage() && packet instanceof ClientboundPlayerChatPacket p)
-+            packet = new ClientboundSystemChatPacket(null, Component.Serializer.toJson(p.chatType().resolve(this.player.level.registryAccess()).get().decorate(p.unsignedContent() != null ? p.unsignedContent() : Component.literal(p.body().content()))), false);
-+        this.send(packet, null);
++        if (org.plazmamc.plazma.configurations.GlobalConfiguration.get().noChatReports.convertToGameMessage() && packet instanceof ClientboundPlayerChatPacket chat)
++            packet = new ClientboundSystemChatPacket(null, Component.Serializer.toJson(chat.chatType().resolve(this.player.level.registryAccess()).get().decorate(chat.unsignedContent() != null ? chat.unsignedContent() : Component.literal(chat.body().content()))), false);
+         this.send(packet, (PacketSendListener) null);
      }
  
      public void send(Packet<?> packet, @Nullable PacketSendListener callbacks) {
@@ -96,23 +103,23 @@ index dee076d1e6e30f108a79565546182b4751737baa..c18f953950fd2c00a3880fa20c9904a9
          if (packet == null || this.processedDisconnect) { // Spigot
              return;
 diff --git a/src/main/java/net/minecraft/server/players/PlayerList.java b/src/main/java/net/minecraft/server/players/PlayerList.java
-index 0615c92894f42ccc320a5a6f5e6c5289a2dee5f9..e9728c2b14462e7a8ce196bc59d8829d42177ef0 100644
+index b22b86d7f226e0e24d6be27ea33ec9d690f8f238..022da50912d357581b2132cf57e1a767e436022c 100644
 --- a/src/main/java/net/minecraft/server/players/PlayerList.java
 +++ b/src/main/java/net/minecraft/server/players/PlayerList.java
-@@ -1457,7 +1457,7 @@ public abstract class PlayerList {
+@@ -1464,7 +1464,7 @@ public abstract class PlayerList {
      }
  
      public boolean verifyChatTrusted(PlayerChatMessage message) { // Paper - private -> public
 -        return message.hasSignature() && !message.hasExpiredServer(Instant.now());
-+        return org.plazmamc.plazma.configurations.GlobalConfiguration.get().noChatReports.enabled || message.hasSignature() && !message.hasExpiredServer(Instant.now()); // Plazma - NCR
++        return org.plazmamc.plazma.configurations.GlobalConfiguration.get().noChatReports.enabled || (message.hasSignature() && !message.hasExpiredServer(Instant.now())); // Plazma - NCR
      }
  
      // CraftBukkit start
 diff --git a/src/main/java/org/plazmamc/plazma/configurations/GlobalConfiguration.java b/src/main/java/org/plazmamc/plazma/configurations/GlobalConfiguration.java
-index b6348572f4a90acbcf6ec234beac84e8a019ee50..7a585540c72c1c18ddcb45ec1caa350f1f9ce544 100644
+index 0e8d5b01a673ba826c943fcb33552518022a2ea3..17454a128f7ef53428920f95e4709180fd8efb32 100644
 --- a/src/main/java/org/plazmamc/plazma/configurations/GlobalConfiguration.java
 +++ b/src/main/java/org/plazmamc/plazma/configurations/GlobalConfiguration.java
-@@ -49,7 +49,17 @@ public class GlobalConfiguration extends ConfigurationPart {
+@@ -48,7 +48,17 @@ public class GlobalConfiguration extends ConfigurationPart {
      public NoChatReports noChatReports;
      public class NoChatReports extends ConfigurationPart {
  

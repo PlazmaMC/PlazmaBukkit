@@ -1,0 +1,42 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: IPECTER <ipectert@gmail.com>
+Date: Wed, 10 May 2023 15:38:58 +0900
+Subject: [PATCH] Suppress-Error-From-DirtyAttributes
+
+
+diff --git a/src/main/java/net/minecraft/server/level/ServerEntity.java b/src/main/java/net/minecraft/server/level/ServerEntity.java
+index dbb987d5896e199aeae3bcd86c69bf3327af8ada..d6079c9577d65eab51dab8803eab6e46dccc8dd3 100644
+--- a/src/main/java/net/minecraft/server/level/ServerEntity.java
++++ b/src/main/java/net/minecraft/server/level/ServerEntity.java
+@@ -419,8 +419,8 @@ public class ServerEntity {
+         }
+ 
+         if (this.entity instanceof LivingEntity) {
+-            Set<AttributeInstance> set = ((LivingEntity) this.entity).getAttributes().getDirtyAttributes();
+-
++            Set<AttributeInstance> attributes = ((LivingEntity) this.entity).getAttributes().getDirtyAttributes(); // Plazma - suppress error from dirty attributes
++            final Set<AttributeInstance> set = this.entity.level.plazmaLevelConfiguration().misc.suppressErrorFromDirtyAttributes ? java.util.Collections.synchronizedSet(attributes) : attributes; // Plazma - suppress error from dirty attributes
+             if (!set.isEmpty()) {
+                 // CraftBukkit start - Send scaled max health
+                 if (this.entity instanceof ServerPlayer) {
+@@ -430,7 +430,7 @@ public class ServerEntity {
+                 this.broadcastAndSend(new ClientboundUpdateAttributesPacket(this.entity.getId(), set));
+             }
+ 
+-            set.clear();
++            attributes.clear();
+         }
+ 
+     }
+diff --git a/src/main/java/org/plazmamc/plazma/configurations/LevelConfigurations.java b/src/main/java/org/plazmamc/plazma/configurations/LevelConfigurations.java
+index 238e10a35a9e4b300b11c838cda39b8799f16fe2..a1b55bb5431d1712fc06da0cf06857a986efeea0 100644
+--- a/src/main/java/org/plazmamc/plazma/configurations/LevelConfigurations.java
++++ b/src/main/java/org/plazmamc/plazma/configurations/LevelConfigurations.java
+@@ -89,6 +89,7 @@ public class LevelConfigurations extends ConfigurationPart {
+ 
+         public boolean reduceCreateRandomInstance = DO_OPTIMIZE;
+         public boolean checkSpectatorMovedToQuickly = DO_OPTIMIZE;
++        public boolean suppressErrorFromDirtyAttributes = false;
+ 
+     }
+ 

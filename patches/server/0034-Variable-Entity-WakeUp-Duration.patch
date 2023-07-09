@@ -1,0 +1,78 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: IPECTER <ipectert@gmail.com>
+Date: Sat, 6 May 2023 21:09:45 +0900
+Subject: [PATCH] Variable-Entity-WakeUp-Duration
+
+Original: GaleMC/Gale
+Copyright (C) 2023 Martijn Muijsers
+
+diff --git a/src/main/java/org/plazmamc/plazma/configurations/LevelConfigurations.java b/src/main/java/org/plazmamc/plazma/configurations/LevelConfigurations.java
+index 185e2627596314d979188468f838d008442f2d2e..238e10a35a9e4b300b11c838cda39b8799f16fe2 100644
+--- a/src/main/java/org/plazmamc/plazma/configurations/LevelConfigurations.java
++++ b/src/main/java/org/plazmamc/plazma/configurations/LevelConfigurations.java
+@@ -114,5 +114,20 @@ public class LevelConfigurations extends ConfigurationPart {
+ 
+         }
+ 
++        public WakeUp wakeUp;
++        public class WakeUp extends ConfigurationPart {
++
++            public DurationVariance durationVariance;
++            public class DurationVariance extends ConfigurationPart {
++
++                public double animal = DO_OPTIMIZE ? 0.2 : 0.0;
++                public double monster = DO_OPTIMIZE ? 0.2 : 0.0;
++                public double flyingMonster = DO_OPTIMIZE ? 0.2 : 0.0;
++                public double villager = DO_OPTIMIZE ? 0.2 : 0.0;
++
++            }
++
++        }
++
+     }
+ }
+diff --git a/src/main/java/org/spigotmc/ActivationRange.java b/src/main/java/org/spigotmc/ActivationRange.java
+index ee64ddb0da23ea1e54d0295324aca5b46a438111..d5230a360cd8c296303b494d716d33ad1fca6a96 100644
+--- a/src/main/java/org/spigotmc/ActivationRange.java
++++ b/src/main/java/org/spigotmc/ActivationRange.java
+@@ -75,28 +75,36 @@ public class ActivationRange
+         if (entity.activationType == ActivationType.VILLAGER) {
+             if (inactiveFor > config.wakeUpInactiveVillagersEvery && world.wakeupInactiveRemainingVillagers > 0) {
+                 world.wakeupInactiveRemainingVillagers--;
+-                return config.wakeUpInactiveVillagersFor;
++                return getWakeUpDurationWithVariance(config.wakeUpInactiveVillagersFor, entity.level.plazmaLevelConfiguration().entity.wakeUp.durationVariance.villager); // Plazma - Variable Entity WakeUp Duration
+             }
+         } else if (entity.activationType == ActivationType.ANIMAL) {
+             if (inactiveFor > config.wakeUpInactiveAnimalsEvery && world.wakeupInactiveRemainingAnimals > 0) {
+                 world.wakeupInactiveRemainingAnimals--;
+-                return config.wakeUpInactiveAnimalsFor;
++                return getWakeUpDurationWithVariance(config.wakeUpInactiveAnimalsFor, entity.level.plazmaLevelConfiguration().entity.wakeUp.durationVariance.animal); // Plazma - Variable Entity WakeUp Duration
+             }
+         } else if (entity.activationType == ActivationType.FLYING_MONSTER) {
+             if (inactiveFor > config.wakeUpInactiveFlyingEvery && world.wakeupInactiveRemainingFlying > 0) {
+                 world.wakeupInactiveRemainingFlying--;
+-                return config.wakeUpInactiveFlyingFor;
++                return getWakeUpDurationWithVariance(config.wakeUpInactiveFlyingFor, entity.level.plazmaLevelConfiguration().entity.wakeUp.durationVariance.flyingMonster); // Plazma - Variable Entity WakeUp Duration
+             }
+         } else if (entity.activationType == ActivationType.MONSTER || entity.activationType == ActivationType.RAIDER) {
+             if (inactiveFor > config.wakeUpInactiveMonstersEvery && world.wakeupInactiveRemainingMonsters > 0) {
+                 world.wakeupInactiveRemainingMonsters--;
+-                return config.wakeUpInactiveMonstersFor;
++                return getWakeUpDurationWithVariance(config.wakeUpInactiveMonstersFor, entity.level.plazmaLevelConfiguration().entity.wakeUp.durationVariance.monster); // Plazma - Variable Entity WakeUp Duration
+             }
+         }
+         return -1;
+     }
+     // Paper end
+ 
++    // Plazma start - Variable Entity WakeUp Duration
++    private static final java.util.Random wakeUpDurationRandom = new java.util.Random();
++    private static int getWakeUpDurationWithVariance(int wakeUpDuration, double deviation) {
++        if (deviation <= 0) return wakeUpDuration;
++        return (int) Math.min(Integer.MAX_VALUE, Math.max(1, Math.round(wakeUpDuration * wakeUpDurationRandom.nextGaussian(1, deviation))));
++    }
++    // Plazma end
++
+     static AABB maxBB = new AABB( 0, 0, 0, 0, 0, 0 );
+ 
+     /**
