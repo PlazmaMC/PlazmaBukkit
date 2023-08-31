@@ -5,7 +5,7 @@ Subject: [PATCH] Reduce create random instance
 
 
 diff --git a/src/main/java/net/minecraft/server/commands/SpreadPlayersCommand.java b/src/main/java/net/minecraft/server/commands/SpreadPlayersCommand.java
-index 591163d8f8300b084ac734800efee902c4def958..d74401ca3182145d136ad668704f5c043b163317 100644
+index f5bc3497831877e0c2b7dc1cbd8abe3a67d7695b..d157758282cc79d58134c056c52a43a24d443153 100644
 --- a/src/main/java/net/minecraft/server/commands/SpreadPlayersCommand.java
 +++ b/src/main/java/net/minecraft/server/commands/SpreadPlayersCommand.java
 @@ -65,7 +65,7 @@ public class SpreadPlayersCommand {
@@ -18,10 +18,10 @@ index 591163d8f8300b084ac734800efee902c4def958..d74401ca3182145d136ad668704f5c04
              double d1 = (double) (center.y - maxRange);
              double d2 = (double) (center.x + maxRange);
 diff --git a/src/main/java/net/minecraft/server/level/ServerPlayer.java b/src/main/java/net/minecraft/server/level/ServerPlayer.java
-index 40eda117db2e3f578ad9d25522b6aadfe319b5cc..ef624a99c971aa5c4ce3869d10e2435c0bc8e0a4 100644
+index ae04c5f4fd340c6bce0be29d4288dad37f260c7d..4a67650da636da5a6d5b5dfaaa86077d0cc9269c 100644
 --- a/src/main/java/net/minecraft/server/level/ServerPlayer.java
 +++ b/src/main/java/net/minecraft/server/level/ServerPlayer.java
-@@ -405,7 +405,7 @@ public class ServerPlayer extends Player {
+@@ -447,7 +447,7 @@ public class ServerPlayer extends Player {
              long l = k * k;
              int i1 = l > 2147483647L ? Integer.MAX_VALUE : (int) l;
              int j1 = this.getCoprime(i1);
@@ -30,12 +30,12 @@ index 40eda117db2e3f578ad9d25522b6aadfe319b5cc..ef624a99c971aa5c4ce3869d10e2435c
  
              for (int l1 = 0; l1 < i1; ++l1) {
                  int i2 = (k1 + j1 * l1) % i1;
-@@ -442,7 +442,7 @@ public class ServerPlayer extends Player {
+@@ -484,7 +484,7 @@ public class ServerPlayer extends Player {
              long l = k * k;
              int i1 = l > 2147483647L ? Integer.MAX_VALUE : (int) l;
              int j1 = this.getCoprime(i1);
 -            int k1 = RandomSource.create().nextInt(i1);
-+            int k1 = (world.plazmaLevelConfiguration().misc.reduceCreateRandomInstance ? world.getRandom() : RandomSource.create()).nextInt(i1);
++            int k1 = (world.plazmaLevelConfiguration().misc.reduceCreateRandomInstance ? world.getRandom() : RandomSource.create()).nextInt(i1); // Plazma
  
              for (int l1 = 0; l1 < i1; ++l1) {
                  int i2 = (k1 + j1 * l1) % i1;
@@ -53,7 +53,7 @@ index 1ef089dbf83de35d875c00efdf468c397be56978..dc111e0d1e7303c56cd12fa83be3ff85
          }
  
 diff --git a/src/main/java/net/minecraft/world/entity/projectile/FishingHook.java b/src/main/java/net/minecraft/world/entity/projectile/FishingHook.java
-index bcb0f3fd09ed064b64dc6495302b40828d906837..c6152b295a2f46e5204f42fe76e6cd10127ce12e 100644
+index b8c238287e0639b578170c6fec0d4db5a1a59fe7..9e5eab45d589db16b4f1ec563e40dc3890581bf4 100644
 --- a/src/main/java/net/minecraft/world/entity/projectile/FishingHook.java
 +++ b/src/main/java/net/minecraft/world/entity/projectile/FishingHook.java
 @@ -86,7 +86,7 @@ public class FishingHook extends Projectile {
@@ -66,7 +66,7 @@ index bcb0f3fd09ed064b64dc6495302b40828d906837..c6152b295a2f46e5204f42fe76e6cd10
          this.currentState = FishingHook.FishHookState.FLYING;
          this.noCulling = true;
 diff --git a/src/main/java/net/minecraft/world/entity/raid/Raid.java b/src/main/java/net/minecraft/world/entity/raid/Raid.java
-index 879c3bb661e24b9682b654def57c2800f4f8ca92..4c465466543e51ff1e8343d3af7ee31a8b04b839 100644
+index f7399737548483905f3b5c08a03876b0da54b714..7ff8e19fcee67a33bbc8603f8c089a5b76ed23b6 100644
 --- a/src/main/java/net/minecraft/world/entity/raid/Raid.java
 +++ b/src/main/java/net/minecraft/world/entity/raid/Raid.java
 @@ -110,7 +110,7 @@ public class Raid {
@@ -88,7 +88,7 @@ index 879c3bb661e24b9682b654def57c2800f4f8ca92..4c465466543e51ff1e8343d3af7ee31a
          this.level = world;
          this.id = nbt.getInt("Id");
 diff --git a/src/main/java/net/minecraft/world/level/Explosion.java b/src/main/java/net/minecraft/world/level/Explosion.java
-index 7a3d9c1f8abdbc25e88ca35da1546725f0013c68..79f980cadddbfe234b410f25b5f0bc6edfcbba26 100644
+index 4932374ab9a3d8582fb0ef024d817ad896dd23c4..fd9be520b838346555dee2dc13f54dcf0fe0e9d8 100644
 --- a/src/main/java/net/minecraft/world/level/Explosion.java
 +++ b/src/main/java/net/minecraft/world/level/Explosion.java
 @@ -81,7 +81,7 @@ public class Explosion {
@@ -101,10 +101,10 @@ index 7a3d9c1f8abdbc25e88ca35da1546725f0013c68..79f980cadddbfe234b410f25b5f0bc6e
          this.hitPlayers = Maps.newHashMap();
          this.level = world;
 diff --git a/src/main/java/net/minecraft/world/level/Level.java b/src/main/java/net/minecraft/world/level/Level.java
-index 058449f24eb3260dc230dad2a0b4c552d0b7f40e..cf0ad841267cac84ed058dee6cdd62a835325feb 100644
+index 08f9af1d7aebba943096b59b6452818a1aafc94c..1d2c3147abfa09233976f4cc1cc417a9dab9ed44 100644
 --- a/src/main/java/net/minecraft/world/level/Level.java
 +++ b/src/main/java/net/minecraft/world/level/Level.java
-@@ -125,7 +125,7 @@ public abstract class Level implements LevelAccessor, AutoCloseable {
+@@ -124,7 +124,7 @@ public abstract class Level implements LevelAccessor, AutoCloseable {
      public final Thread thread;
      private final boolean isDebug;
      private int skyDarken;
@@ -114,10 +114,10 @@ index 058449f24eb3260dc230dad2a0b4c552d0b7f40e..cf0ad841267cac84ed058dee6cdd62a8
      protected float oRainLevel;
      public float rainLevel;
 diff --git a/src/main/java/net/minecraft/world/level/block/entity/TheEndGatewayBlockEntity.java b/src/main/java/net/minecraft/world/level/block/entity/TheEndGatewayBlockEntity.java
-index a4cd9869988f414ce1bf14d38442f78207e3f048..f99a7b2da94ef7b413ff10b57fa43e23398aa715 100644
+index 7291e4056b8e46ab59b71818388ac55fbb12993f..5e5efeec92f70060b0d409252ceff65691155367 100644
 --- a/src/main/java/net/minecraft/world/level/block/entity/TheEndGatewayBlockEntity.java
 +++ b/src/main/java/net/minecraft/world/level/block/entity/TheEndGatewayBlockEntity.java
-@@ -369,7 +369,7 @@ public class TheEndGatewayBlockEntity extends TheEndPortalBlockEntity {
+@@ -368,7 +368,7 @@ public class TheEndGatewayBlockEntity extends TheEndPortalBlockEntity {
      }
  
      private static void spawnGatewayPortal(ServerLevel world, BlockPos pos, EndGatewayConfiguration config) {
@@ -127,45 +127,32 @@ index a4cd9869988f414ce1bf14d38442f78207e3f048..f99a7b2da94ef7b413ff10b57fa43e23
  
      @Override
 diff --git a/src/main/java/net/minecraft/world/level/dimension/end/EndDragonFight.java b/src/main/java/net/minecraft/world/level/dimension/end/EndDragonFight.java
-index e9eb32469a5c03f7a3677ef50fd4541c1ed662ad..75665373c291faaea1cbf5f54c3634fdb042556c 100644
+index 5b333bef255d7ef61c99510837536920c6fb6e8c..6331c068aefcdf07d2c880eef8df07add277f856 100644
 --- a/src/main/java/net/minecraft/world/level/dimension/end/EndDragonFight.java
 +++ b/src/main/java/net/minecraft/world/level/dimension/end/EndDragonFight.java
-@@ -411,7 +411,7 @@ public class EndDragonFight {
-         this.level.registryAccess().registry(Registries.CONFIGURED_FEATURE).flatMap((registry) -> {
-             return registry.getHolder(EndFeatures.END_GATEWAY_DELAYED);
-         }).ifPresent((reference) -> {
--            reference.value().place(this.level, this.level.getChunkSource().getGenerator(), RandomSource.create(), pos);
-+            reference.value().place(this.level, this.level.getChunkSource().getGenerator(), (this.level.plazmaLevelConfiguration().misc.reduceCreateRandomInstance ? this.level.getRandom() : RandomSource.create()), pos); // Plazma
+@@ -472,7 +472,7 @@ public class EndDragonFight {
+         this.level.registryAccess().registry(Registries.CONFIGURED_FEATURE).flatMap((iregistry) -> {
+             return iregistry.getHolder(EndFeatures.END_GATEWAY_DELAYED);
+         }).ifPresent((holder_c) -> {
+-            ((ConfiguredFeature) holder_c.value()).place(this.level, this.level.getChunkSource().getGenerator(), RandomSource.create(), pos);
++            ((ConfiguredFeature) holder_c.value()).place(this.level, this.level.getChunkSource().getGenerator(), (this.level.plazmaLevelConfiguration().misc.reduceCreateRandomInstance ? this.level.getRandom() : RandomSource.create()), pos);
          });
      }
  
-@@ -427,7 +427,7 @@ public class EndDragonFight {
+@@ -490,7 +490,7 @@ public class EndDragonFight {
              this.portalLocation = this.portalLocation.atY(this.level.getMinBuildHeight() + 1);
          }
          // Paper end
--        endPodiumFeature.place(FeatureConfiguration.NONE, this.level, this.level.getChunkSource().getGenerator(), RandomSource.create(), this.portalLocation);
-+        endPodiumFeature.place(FeatureConfiguration.NONE, this.level, this.level.getChunkSource().getGenerator(), (this.level.plazmaLevelConfiguration().misc.reduceCreateRandomInstance ? this.level.getRandom() : RandomSource.create()), this.portalLocation); // Plazma
+-        worldgenendtrophy.place(FeatureConfiguration.NONE, this.level, this.level.getChunkSource().getGenerator(), RandomSource.create(), this.portalLocation);
++        worldgenendtrophy.place(FeatureConfiguration.NONE, this.level, this.level.getChunkSource().getGenerator(), (this.level.plazmaLevelConfiguration().misc.reduceCreateRandomInstance ? this.level.getRandom() : RandomSource.create()), this.portalLocation);
      }
  
      @Nullable
-diff --git a/src/main/java/net/minecraft/world/level/storage/loot/LootContext.java b/src/main/java/net/minecraft/world/level/storage/loot/LootContext.java
-index 9e9ac64764cf0a84e25e75d8d6f516cde6047284..2d197a7de77657a19b1b527c0aa53ef9918eb15f 100644
---- a/src/main/java/net/minecraft/world/level/storage/loot/LootContext.java
-+++ b/src/main/java/net/minecraft/world/level/storage/loot/LootContext.java
-@@ -202,7 +202,7 @@ public class LootContext {
-                 } else {
-                     RandomSource randomSource = this.random;
-                     if (randomSource == null) {
--                        randomSource = RandomSource.create();
-+                        randomSource = this.level.plazmaLevelConfiguration().misc.reduceCreateRandomInstance ? this.level.getRandom() : RandomSource.create();
-                     }
- 
-                     MinecraftServer minecraftServer = this.level.getServer();
 diff --git a/src/main/java/org/plazmamc/plazma/configurations/GlobalConfiguration.java b/src/main/java/org/plazmamc/plazma/configurations/GlobalConfiguration.java
-index 59b9b268467b098e5c21d1d00f599cfb36154179..fa33fd5a64fadbfe6507ae9f61fdfbfc816686b5 100644
+index 61477d98f10ce7d0ec29d51de8c7a3b42026dd2d..3e0d0d21dc73b2a5d033d8bcd43b08866e0d6923 100644
 --- a/src/main/java/org/plazmamc/plazma/configurations/GlobalConfiguration.java
 +++ b/src/main/java/org/plazmamc/plazma/configurations/GlobalConfiguration.java
-@@ -39,7 +39,7 @@ public class GlobalConfiguration extends ConfigurationPart {
+@@ -40,7 +40,7 @@ public class GlobalConfiguration extends ConfigurationPart {
      public Misc misc;
      public class Misc extends ConfigurationPart {
  

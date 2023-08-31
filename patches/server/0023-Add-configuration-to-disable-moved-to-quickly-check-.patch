@@ -6,18 +6,18 @@ Subject: [PATCH] Add configuration to disable moved to quickly check for
 
 
 diff --git a/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java b/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
-index af8cb1f1f0c128923495f51e4828003133ce766b..8f911f589bf04902e38e2c625d84ba0c47cbd9ee 100644
+index 9cc3ab8cd3f7ab7f8fbf4d9d14f25ea0bd757eec..09183dbac0e8ca2cc2c8da57b105b80eab42d459 100644
 --- a/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
 +++ b/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
-@@ -1544,7 +1544,7 @@ public class ServerGamePacketListenerImpl implements ServerPlayerConnection, Tic
-                             if (!this.player.isChangingDimension() && (!this.player.getLevel().getGameRules().getBoolean(GameRules.RULE_DISABLE_ELYTRA_MOVEMENT_CHECK) || !this.player.isFallFlying())) {
+@@ -1566,7 +1566,7 @@ public class ServerGamePacketListenerImpl implements ServerPlayerConnection, Tic
+                             if (!this.player.isChangingDimension() && (!this.player.level().getGameRules().getBoolean(GameRules.RULE_DISABLE_ELYTRA_MOVEMENT_CHECK) || !this.player.isFallFlying())) {
                                  float f2 = this.player.isFallFlying() ? 300.0F : 100.0F;
  
--                                if (d11 - d10 > Math.max(f2, Math.pow((double) (org.spigotmc.SpigotConfig.movedTooQuicklyMultiplier * (float) i * speed), 2)) && !this.isSingleplayerOwner()) {
-+                                if (!(this.player.getLevel().plazmaLevelConfiguration().misc.checkSpectatorMovedToQuickly && this.player.isSpectator()) && d11 - d10 > Math.max(f2, Math.pow((double) (org.spigotmc.SpigotConfig.movedTooQuicklyMultiplier * (float) i * speed), 2)) && !this.isSingleplayerOwner()) { // Plazma
+-                                if (d10 - d9 > Math.max(f2, Math.pow((double) (org.spigotmc.SpigotConfig.movedTooQuicklyMultiplier * (float) i * speed), 2)) && !this.isSingleplayerOwner()) {
++                                if (!(this.player.level().plazmaLevelConfiguration().misc.checkSpectatorMovedToQuickly && this.player.isSpectator()) && d10 - d9 > Math.max(f2, Math.pow((double) (org.spigotmc.SpigotConfig.movedTooQuicklyMultiplier * (float) i * speed), 2)) && !this.isSingleplayerOwner()) { // Plazma
                                  // CraftBukkit end
-                                     ServerGamePacketListenerImpl.LOGGER.warn("{} moved too quickly! {},{},{}", new Object[]{this.player.getName().getString(), d7, d8, d9});
-                                     this.teleport(this.player.getX(), this.player.getY(), this.player.getZ(), this.player.getYRot(), this.player.getXRot());
+                                     // Paper start - Add fail move event
+                                     io.papermc.paper.event.player.PlayerFailMoveEvent event = fireFailMove(io.papermc.paper.event.player.PlayerFailMoveEvent.FailReason.MOVED_TOO_QUICKLY,
 diff --git a/src/main/java/org/plazmamc/plazma/configurations/LevelConfigurations.java b/src/main/java/org/plazmamc/plazma/configurations/LevelConfigurations.java
 index 80ee8293d73ecdb1a942ca88f1aa00813d600849..e6c22ab535ab8fecaadbf06d4982440fd5863f17 100644
 --- a/src/main/java/org/plazmamc/plazma/configurations/LevelConfigurations.java

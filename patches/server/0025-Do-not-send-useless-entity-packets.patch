@@ -5,10 +5,10 @@ Subject: [PATCH] Do not send useless entity packets
 
 
 diff --git a/src/main/java/net/minecraft/server/level/ServerEntity.java b/src/main/java/net/minecraft/server/level/ServerEntity.java
-index 6afee2a744a3498d4a0eee35f77cde444f73d12c..dbb987d5896e199aeae3bcd86c69bf3327af8ada 100644
+index 1a4658db86e89d57b0a52923773a0983ff60989c..f39e7fb4aabf319785f134ecc0c81e4a1830712e 100644
 --- a/src/main/java/net/minecraft/server/level/ServerEntity.java
 +++ b/src/main/java/net/minecraft/server/level/ServerEntity.java
-@@ -207,6 +207,7 @@ public class ServerEntity {
+@@ -203,6 +203,7 @@ public class ServerEntity {
                          flag4 = true;
                          flag5 = true;
                      }
@@ -16,15 +16,15 @@ index 6afee2a744a3498d4a0eee35f77cde444f73d12c..dbb987d5896e199aeae3bcd86c69bf33
                  }
  
                  if ((this.trackDelta || this.entity.hasImpulse || this.entity instanceof LivingEntity && ((LivingEntity) this.entity).isFallFlying()) && this.tickCount > 0) {
-@@ -281,6 +282,21 @@ public class ServerEntity {
-         }));
+@@ -275,6 +276,21 @@ public class ServerEntity {
+         });
      }
  
 +    // Plazma start
 +    private boolean isUselessEntityPacket(@Nullable Packet<?> packet) {
 +        if (packet == null) return false;
 +        if (packet instanceof ClientboundMoveEntityPacket p) {
-+            if (p instanceof ClientboundMoveEntityPacket.Pos)
++           if (p instanceof ClientboundMoveEntityPacket.Pos)
 +                return p.getXa() == 0 && p.getYa() == 0 && p.getZa() == 0;
 +            else if (p instanceof ClientboundMoveEntityPacket.Rot)
 +                return p.getxRot() == 0 && p.getyRot() == 0;
@@ -39,10 +39,10 @@ index 6afee2a744a3498d4a0eee35f77cde444f73d12c..dbb987d5896e199aeae3bcd86c69bf33
          this.entity.stopSeenByPlayer(player);
          player.connection.send(new ClientboundRemoveEntitiesPacket(new int[]{this.entity.getId()}));
 diff --git a/src/main/java/org/plazmamc/plazma/configurations/GlobalConfiguration.java b/src/main/java/org/plazmamc/plazma/configurations/GlobalConfiguration.java
-index 590afba7c588e7b9f5f9c61e91805e3dc3b62771..8ed22e178bd093241592981c06c747524ad24dc3 100644
+index e91b404fca2823748c2ed343cbd83301e55b2f0a..d21be63b98f026fa3ac7dcdc73f9f488a7000643 100644
 --- a/src/main/java/org/plazmamc/plazma/configurations/GlobalConfiguration.java
 +++ b/src/main/java/org/plazmamc/plazma/configurations/GlobalConfiguration.java
-@@ -41,6 +41,7 @@ public class GlobalConfiguration extends ConfigurationPart {
+@@ -42,6 +42,7 @@ public class GlobalConfiguration extends ConfigurationPart {
  
          public boolean reduceCreateRandomInstance = DO_OPTIMIZE;
          public boolean doNotTriggerLootTableRefreshForNonPlayerInteraction = DO_OPTIMIZE;

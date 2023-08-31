@@ -1,0 +1,31 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: AlphaKR93 <dev@alpha93.kr>
+Date: Thu, 29 Jun 2023 05:49:26 +0000
+Subject: [PATCH] Skip event if no listeners
+
+
+diff --git a/src/main/java/io/papermc/paper/plugin/manager/PaperEventManager.java b/src/main/java/io/papermc/paper/plugin/manager/PaperEventManager.java
+index 7ce9ebba8ce304d1f3f21d4f15ee5f3560d7700b..32305a34bcebd53aa523102a6da59bc2eb765055 100644
+--- a/src/main/java/io/papermc/paper/plugin/manager/PaperEventManager.java
++++ b/src/main/java/io/papermc/paper/plugin/manager/PaperEventManager.java
+@@ -36,15 +36,17 @@ class PaperEventManager {
+ 
+     // SimplePluginManager
+     public void callEvent(@NotNull Event event) {
++        // Plazma start
++        HandlerList handlers = event.getHandlers();
++        RegisteredListener[] listeners = handlers.getRegisteredListeners();
++        if (listeners.length == 0) return;
++        // Plazma end
+         if (event.isAsynchronous() && this.server.isPrimaryThread()) {
+             throw new IllegalStateException(event.getEventName() + " may only be triggered asynchronously.");
+         } else if (!event.isAsynchronous() && !this.server.isPrimaryThread() && !this.server.isStopping()) {
+             throw new IllegalStateException(event.getEventName() + " may only be triggered synchronously.");
+         }
+ 
+-        HandlerList handlers = event.getHandlers();
+-        RegisteredListener[] listeners = handlers.getRegisteredListeners();
+-
+         for (RegisteredListener registration : listeners) {
+             if (!registration.getPlugin().isEnabled()) {
+                 continue;

@@ -1,7 +1,7 @@
 From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
 From: IPECTER <ipectert@gmail.com>
 Date: Wed, 10 May 2023 15:30:03 +0900
-Subject: [PATCH] More-Optimise-State-Lookup
+Subject: [PATCH] More optimise state lookup
 
 
 diff --git a/src/main/java/io/papermc/paper/util/table/ZeroCollidingReferenceStateTable.java b/src/main/java/io/papermc/paper/util/table/ZeroCollidingReferenceStateTable.java
@@ -18,7 +18,7 @@ index 57d0cd3ad6f972e986c72a57f1a6e36003f190c2..5c03e26db0f9da992e9b0487a872e0ec
  
      public ZeroCollidingReferenceStateTable(final StateHolder<?, ?> state, final Map<Property<?>, Comparable<?>> this_map) {
 diff --git a/src/main/java/net/minecraft/world/level/block/state/StateHolder.java b/src/main/java/net/minecraft/world/level/block/state/StateHolder.java
-index 170f5cb3f01a57ad76e3bbeacd5b7c7e52f29959..ec42cafb7a9caf710f9ec5cea6130d54092dc5d2 100644
+index 5f285d190186a2ff5a61d05070593e1d633dd79a..62934ef07ef856b917862c6f58ad391984da6327 100644
 --- a/src/main/java/net/minecraft/world/level/block/state/StateHolder.java
 +++ b/src/main/java/net/minecraft/world/level/block/state/StateHolder.java
 @@ -114,21 +114,17 @@ public abstract class StateHolder<O, S> {
@@ -26,7 +26,7 @@ index 170f5cb3f01a57ad76e3bbeacd5b7c7e52f29959..ec42cafb7a9caf710f9ec5cea6130d54
  
      public <T extends Comparable<T>, V extends T> S trySetValue(Property<T> property, V value) {
 -        Comparable<?> comparable = this.values.get(property);
--        if (comparable != null && comparable != value) {
+-        if (comparable != null && !comparable.equals(value)) {
 -            S object = this.neighbours.get(property, value);
 -            if (object == null) {
 -                throw new IllegalArgumentException("Cannot set property " + property + " to " + value + " on " + this.owner + ", it is not an allowed value");

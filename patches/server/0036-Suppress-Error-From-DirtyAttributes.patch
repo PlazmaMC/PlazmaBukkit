@@ -5,21 +5,21 @@ Subject: [PATCH] Suppress-Error-From-DirtyAttributes
 
 
 diff --git a/src/main/java/net/minecraft/server/level/ServerEntity.java b/src/main/java/net/minecraft/server/level/ServerEntity.java
-index dbb987d5896e199aeae3bcd86c69bf3327af8ada..d6079c9577d65eab51dab8803eab6e46dccc8dd3 100644
+index 80ab684a33876d62186dcf86f555e46db1594b09..21b18d85563ffd5f93234455dca4dc30582b8925 100644
 --- a/src/main/java/net/minecraft/server/level/ServerEntity.java
 +++ b/src/main/java/net/minecraft/server/level/ServerEntity.java
-@@ -419,8 +419,8 @@ public class ServerEntity {
+@@ -403,8 +403,8 @@ public class ServerEntity {
          }
  
          if (this.entity instanceof LivingEntity) {
 -            Set<AttributeInstance> set = ((LivingEntity) this.entity).getAttributes().getDirtyAttributes();
 -
 +            Set<AttributeInstance> attributes = ((LivingEntity) this.entity).getAttributes().getDirtyAttributes(); // Plazma - suppress error from dirty attributes
-+            final Set<AttributeInstance> set = this.entity.level.plazmaLevelConfiguration().misc.suppressErrorFromDirtyAttributes ? java.util.Collections.synchronizedSet(attributes) : attributes; // Plazma - suppress error from dirty attributes
++            final Set<AttributeInstance> set = this.entity.level().plazmaLevelConfiguration().misc.suppressErrorFromDirtyAttributes ? java.util.Collections.synchronizedSet(attributes) : attributes; // Plazma - suppress error from dirty attributes
              if (!set.isEmpty()) {
                  // CraftBukkit start - Send scaled max health
                  if (this.entity instanceof ServerPlayer) {
-@@ -430,7 +430,7 @@ public class ServerEntity {
+@@ -414,7 +414,7 @@ public class ServerEntity {
                  this.broadcastAndSend(new ClientboundUpdateAttributesPacket(this.entity.getId(), set));
              }
  

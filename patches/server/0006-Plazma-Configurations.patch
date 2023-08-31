@@ -104,17 +104,10 @@ index a0aa1f1a7adf986d500a2135aa42e138aa3c4f08..28a1d21900dbff4b9d1887b9aa4e68f4
 +    // Plazma end
  }
 diff --git a/src/main/java/io/papermc/paper/configuration/PaperConfigurations.java b/src/main/java/io/papermc/paper/configuration/PaperConfigurations.java
-index f6b9d216c24d8858802f85209fe1a869e5a9be31..746fdd880862e7dd8b53dec99b07ae627764dcf8 100644
+index e471960e0443392f6f54732b052a4debf2a8fd97..928cb4827768667a975036da73b25abdd74a489f 100644
 --- a/src/main/java/io/papermc/paper/configuration/PaperConfigurations.java
 +++ b/src/main/java/io/papermc/paper/configuration/PaperConfigurations.java
-@@ -127,13 +127,13 @@ public class PaperConfigurations extends Configurations<GlobalConfiguration, Wor
-         See https://docs.papermc.io/paper/configuration for more information.
-         """;
- 
--    private static final Supplier<SpigotWorldConfig> SPIGOT_WORLD_DEFAULTS = Suppliers.memoize(() -> new SpigotWorldConfig(RandomStringUtils.randomAlphabetic(255)) {
-+    public static final Supplier<SpigotWorldConfig> SPIGOT_WORLD_DEFAULTS = Suppliers.memoize(() -> new SpigotWorldConfig(RandomStringUtils.randomAlphabetic(255)) { // Plazma - private -> public
-         @Override // override to ensure "verbose" is false
-         public void init() {
+@@ -135,7 +135,7 @@ public class PaperConfigurations extends Configurations<GlobalConfiguration, Wor
              SpigotConfig.readConfig(SpigotWorldConfig.class, this);
          }
      });
@@ -123,7 +116,7 @@ index f6b9d216c24d8858802f85209fe1a869e5a9be31..746fdd880862e7dd8b53dec99b07ae62
  
  
      public PaperConfigurations(final Path globalFolder) {
-@@ -297,7 +297,7 @@ public class PaperConfigurations extends Configurations<GlobalConfiguration, Wor
+@@ -300,7 +300,7 @@ public class PaperConfigurations extends Configurations<GlobalConfiguration, Wor
          }
      }
  
@@ -132,10 +125,12 @@ index f6b9d216c24d8858802f85209fe1a869e5a9be31..746fdd880862e7dd8b53dec99b07ae62
          return createWorldContextMap(level.convertable.levelDirectory.path(), level.serverLevelData.getLevelName(), level.dimension().location(), level.spigotConfig);
      }
  
-@@ -398,17 +398,6 @@ public class PaperConfigurations extends Configurations<GlobalConfiguration, Wor
-         return Files.exists(legacyConfig) && Files.isRegularFile(legacyConfig);
-     }
+@@ -399,18 +399,7 @@ public class PaperConfigurations extends Configurations<GlobalConfiguration, Wor
  
+     private static boolean needsConverting(final Path legacyConfig) {
+         return Files.exists(legacyConfig) && Files.isRegularFile(legacyConfig);
+-    }
+-
 -    @Deprecated
 -    public YamlConfiguration createLegacyObject(final MinecraftServer server) {
 -        YamlConfiguration global = YamlConfiguration.loadConfiguration(this.globalFolder.resolve(this.globalConfigFileName).toFile());
@@ -146,11 +141,11 @@ index f6b9d216c24d8858802f85209fe1a869e5a9be31..746fdd880862e7dd8b53dec99b07ae62
 -        }
 -        return global;
 -    }
--
++    } 
+ 
      @Deprecated
      public static YamlConfiguration loadLegacyConfigFile(File configFile) throws Exception {
-         YamlConfiguration config = new YamlConfiguration();
-@@ -431,9 +420,16 @@ public class PaperConfigurations extends Configurations<GlobalConfiguration, Wor
+@@ -434,9 +423,15 @@ public class PaperConfigurations extends Configurations<GlobalConfiguration, Wor
      }
  
      // Symlinks are not correctly checked in createDirectories
@@ -162,17 +157,16 @@ index f6b9d216c24d8858802f85209fe1a869e5a9be31..746fdd880862e7dd8b53dec99b07ae62
      }
 +
 +    // Plazma start
-+    @Override
 +    protected int getWorldConfigurationCurrentVersion() {
-+        return WorldConfiguration.CURRENT_VERSION;
++	return WorldConfiguration.CURRENT_VERSION;
 +    }
 +    // Plazma end
  }
 diff --git a/src/main/java/net/minecraft/server/MinecraftServer.java b/src/main/java/net/minecraft/server/MinecraftServer.java
-index 615c456de68a20d0e95b30e124a2bdf46039408f..cc6968a064b30f7250d18c20efb2bb8602bb0cdd 100644
+index 77b40f3d7162befe4da29a60b3de2b93b261412c..0acbaa18a61d1cfdb894c6c756d2b9bdc3599b82 100644
 --- a/src/main/java/net/minecraft/server/MinecraftServer.java
 +++ b/src/main/java/net/minecraft/server/MinecraftServer.java
-@@ -309,6 +309,7 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
+@@ -306,6 +306,7 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
      public final double[] recentTps = new double[ 4 ]; // Purpur
      // Spigot end
      public final io.papermc.paper.configuration.PaperConfigurations paperConfigurations;
@@ -180,7 +174,7 @@ index 615c456de68a20d0e95b30e124a2bdf46039408f..cc6968a064b30f7250d18c20efb2bb86
      public static long currentTickLong = 0L; // Paper
      public boolean lagging = false; // Purpur
      protected boolean upnp = false; // Purpur
-@@ -415,6 +416,7 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
+@@ -412,6 +413,7 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
          // Paper end
          Runtime.getRuntime().addShutdownHook(new org.bukkit.craftbukkit.util.ServerShutdownThread(this));
          this.paperConfigurations = services.paperConfigurations(); // Paper
@@ -189,27 +183,26 @@ index 615c456de68a20d0e95b30e124a2bdf46039408f..cc6968a064b30f7250d18c20efb2bb86
      // CraftBukkit end
  
 diff --git a/src/main/java/net/minecraft/server/Services.java b/src/main/java/net/minecraft/server/Services.java
-index ef6ff78af2ae747e939895b82ee9d11c75012dcd..6e3a1ea75005ba53a72889285597603f2d244919 100644
+index a9b2c8cd4dcd3f884e4306bebee9334d3848fce5..203c34342f19c6afb3020364baf0cc48554fa912 100644
 --- a/src/main/java/net/minecraft/server/Services.java
 +++ b/src/main/java/net/minecraft/server/Services.java
-@@ -8,10 +8,10 @@ import net.minecraft.server.players.GameProfileCache;
+@@ -11,10 +11,10 @@ import net.minecraft.server.players.GameProfileCache;
  import net.minecraft.util.SignatureValidator;
  
  // Paper start
--public record Services(MinecraftSessionService sessionService, SignatureValidator serviceSignatureValidator, GameProfileRepository profileRepository, GameProfileCache profileCache, @javax.annotation.Nullable io.papermc.paper.configuration.PaperConfigurations paperConfigurations) {
-+public record Services(MinecraftSessionService sessionService, SignatureValidator serviceSignatureValidator, GameProfileRepository profileRepository, GameProfileCache profileCache, @javax.annotation.Nullable io.papermc.paper.configuration.PaperConfigurations paperConfigurations, @javax.annotation.Nullable org.plazmamc.plazma.configurations.PlazmaConfigurations plazmaConfigurations) { // Plazma
+-public record Services(MinecraftSessionService sessionService, ServicesKeySet servicesKeySet, GameProfileRepository profileRepository, GameProfileCache profileCache, @javax.annotation.Nullable io.papermc.paper.configuration.PaperConfigurations paperConfigurations) {
++public record Services(MinecraftSessionService sessionService, ServicesKeySet servicesKeySet, GameProfileRepository profileRepository, GameProfileCache profileCache, @javax.annotation.Nullable io.papermc.paper.configuration.PaperConfigurations paperConfigurations, @javax.annotation.Nullable org.plazmamc.plazma.configurations.PlazmaConfigurations plazmaConfigurations) { // Plazma
  
-     public Services(MinecraftSessionService sessionService, SignatureValidator signatureValidator, GameProfileRepository profileRepository, GameProfileCache profileCache) {
--        this(sessionService, signatureValidator, profileRepository, profileCache, null);
-+        this(sessionService, signatureValidator, profileRepository, profileCache, null, null); // Plazma
+     public Services(MinecraftSessionService sessionService, ServicesKeySet servicesKeySet, GameProfileRepository profileRepository, GameProfileCache profileCache) {
+-        this(sessionService, servicesKeySet, profileRepository, profileCache, null);
++        this(sessionService, servicesKeySet, profileRepository, profileCache, null, null); // Plazma
      }
  
      @Override
-@@ -19,6 +19,14 @@ public record Services(MinecraftSessionService sessionService, SignatureValidato
-         return java.util.Objects.requireNonNull(this.paperConfigurations);
-     }
+@@ -24,6 +24,13 @@ public record Services(MinecraftSessionService sessionService, ServicesKeySet se
      // Paper end
-+
+     public static final String USERID_CACHE_FILE = "usercache.json"; // Paper - private -> public
+ 
 +    // Plazma start
 +    @Override
 +    public org.plazmamc.plazma.configurations.PlazmaConfigurations plazmaConfigurations() {
@@ -217,24 +210,24 @@ index ef6ff78af2ae747e939895b82ee9d11c75012dcd..6e3a1ea75005ba53a72889285597603f
 +    }
 +    // Plazma end
 +
-     public static final String USERID_CACHE_FILE = "usercache.json"; // Paper - private -> public
- 
      public static Services create(YggdrasilAuthenticationService authenticationService, File rootDirectory, File userCacheFile, joptsimple.OptionSet optionSet) throws Exception { // Paper
-@@ -30,7 +38,11 @@ public record Services(MinecraftSessionService sessionService, SignatureValidato
+         MinecraftSessionService minecraftSessionService = authenticationService.createMinecraftSessionService();
+         GameProfileRepository gameProfileRepository = authenticationService.createProfileRepository();
+@@ -32,7 +39,11 @@ public record Services(MinecraftSessionService sessionService, ServicesKeySet se
          final java.nio.file.Path legacyConfigPath = ((File) optionSet.valueOf("paper-settings")).toPath();
          final java.nio.file.Path configDirPath = ((File) optionSet.valueOf("paper-settings-directory")).toPath();
          io.papermc.paper.configuration.PaperConfigurations paperConfigurations = io.papermc.paper.configuration.PaperConfigurations.setup(legacyConfigPath, configDirPath, rootDirectory.toPath(), (File) optionSet.valueOf("spigot-settings"));
--        return new Services(minecraftSessionService, signatureValidator, gameProfileRepository, gameProfileCache, paperConfigurations);
+-        return new Services(minecraftSessionService, authenticationService.getServicesKeySet(), gameProfileRepository, gameProfileCache, paperConfigurations);
 +        // Plazma start
 +        final java.nio.file.Path plazmaConfigurationDirPath = ((File) optionSet.valueOf("plazma-configurations-directory")).toPath();
 +        org.plazmamc.plazma.configurations.PlazmaConfigurations plazmaConfigurations = org.plazmamc.plazma.configurations.PlazmaConfigurations.setup(plazmaConfigurationDirPath);
-+        return new Services(minecraftSessionService, signatureValidator, gameProfileRepository, gameProfileCache, paperConfigurations, plazmaConfigurations);
++        return new Services(minecraftSessionService, authenticationService.getServicesKeySet(), gameProfileRepository, gameProfileCache, paperConfigurations, plazmaConfigurations);
 +        // Plazma end
          // Paper end
      }
- }
+ 
 diff --git a/src/main/java/net/minecraft/server/dedicated/DedicatedServer.java b/src/main/java/net/minecraft/server/dedicated/DedicatedServer.java
-index 6ecc75621867390738e804e06ac284524664473d..b91910eaac0e9c18722e52d223a4420199d77a7f 100644
+index 2a70abb9e0af502885593df1e732887cd9d2ce4d..e6f14bb0825e3b6987ebb2ec782c8316e3b7c094 100644
 --- a/src/main/java/net/minecraft/server/dedicated/DedicatedServer.java
 +++ b/src/main/java/net/minecraft/server/dedicated/DedicatedServer.java
 @@ -209,6 +209,10 @@ public class DedicatedServer extends MinecraftServer implements ServerInterface
@@ -252,15 +245,15 @@ index 6ecc75621867390738e804e06ac284524664473d..b91910eaac0e9c18722e52d223a44201
          org.spigotmc.WatchdogThread.doStart(org.spigotmc.SpigotConfig.timeoutTime, org.spigotmc.SpigotConfig.restartOnCrash);
          thread.start(); // Paper - start console thread after MinecraftServer.console & PaperConfig are initialized
          io.papermc.paper.command.PaperCommands.registerCommands(this);
-+        org.plazmamc.plazma.commands.PlazmaCommands.registerCommands(this);
++        org.plazmamc.plazma.commands.PlazmaCommands.registerCommands(this); // Plazma
          com.destroystokyo.paper.Metrics.PaperMetrics.startMetrics();
          // Purpur start
          try {
 diff --git a/src/main/java/net/minecraft/server/level/ServerLevel.java b/src/main/java/net/minecraft/server/level/ServerLevel.java
-index 86b8485c0fb1dc5cd79c9e24546dc74459822a48..ebbf462835e5a14fe1413c724d4985635207a897 100644
+index 221d1d0e1b4b46de6ebca5faac09bbda875fae17..e009dba395779e2c89a36fe4524e5d40474a29e6 100644
 --- a/src/main/java/net/minecraft/server/level/ServerLevel.java
 +++ b/src/main/java/net/minecraft/server/level/ServerLevel.java
-@@ -530,7 +530,7 @@ public class ServerLevel extends Level implements WorldGenLevel {
+@@ -650,7 +650,7 @@ public class ServerLevel extends Level implements WorldGenLevel {
          // Holder holder = worlddimension.type(); // CraftBukkit - decompile error
  
          // Objects.requireNonNull(minecraftserver); // CraftBukkit - decompile error
@@ -270,10 +263,10 @@ index 86b8485c0fb1dc5cd79c9e24546dc74459822a48..ebbf462835e5a14fe1413c724d498563
          this.convertable = convertable_conversionsession;
          this.uuid = WorldUUID.getUUID(convertable_conversionsession.levelDirectory.path().toFile());
 diff --git a/src/main/java/net/minecraft/world/level/Level.java b/src/main/java/net/minecraft/world/level/Level.java
-index 92b440b24c6b083f81837611d08fbd6773a2a6e6..058449f24eb3260dc230dad2a0b4c552d0b7f40e 100644
+index 9fb140b3b6a0c621466b85a6ec7df765a4e823b0..08f9af1d7aebba943096b59b6452818a1aafc94c 100644
 --- a/src/main/java/net/minecraft/world/level/Level.java
 +++ b/src/main/java/net/minecraft/world/level/Level.java
-@@ -175,7 +175,12 @@ public abstract class Level implements LevelAccessor, AutoCloseable {
+@@ -174,7 +174,12 @@ public abstract class Level implements LevelAccessor, AutoCloseable {
          return this.paperConfig;
      }
      // Paper end
@@ -287,7 +280,7 @@ index 92b440b24c6b083f81837611d08fbd6773a2a6e6..058449f24eb3260dc230dad2a0b4c552
      public final com.destroystokyo.paper.antixray.ChunkPacketBlockController chunkPacketBlockController; // Paper - Anti-Xray
      public final org.purpurmc.purpur.PurpurWorldConfig purpurConfig; // Purpur
      public final co.aikar.timings.WorldTimingsHandler timings; // Paper
-@@ -329,9 +334,10 @@ public abstract class Level implements LevelAccessor, AutoCloseable {
+@@ -328,9 +333,10 @@ public abstract class Level implements LevelAccessor, AutoCloseable {
      @Override public final int getHeight() { return this.height; }
      // Pufferfish end
  
@@ -300,10 +293,10 @@ index 92b440b24c6b083f81837611d08fbd6773a2a6e6..058449f24eb3260dc230dad2a0b4c552
          this.playerBreedingCooldowns = this.getNewBreedingCooldownCache(); // Purpur
          this.generator = gen;
 diff --git a/src/main/java/org/bukkit/craftbukkit/CraftServer.java b/src/main/java/org/bukkit/craftbukkit/CraftServer.java
-index 5e6952a9d4c1137dc3d720ee2c944d95d4628065..1367072684078c0e93c275c2159ece799f96428b 100644
+index 8833a66f43e9a4ac486fa67db9e8147007917e15..153fcfc55589691a570080aa4f4e179452bf4f6c 100644
 --- a/src/main/java/org/bukkit/craftbukkit/CraftServer.java
 +++ b/src/main/java/org/bukkit/craftbukkit/CraftServer.java
-@@ -993,6 +993,7 @@ public final class CraftServer implements Server {
+@@ -1071,6 +1071,7 @@ public final class CraftServer implements Server {
  
          org.spigotmc.SpigotConfig.init((File) console.options.valueOf("spigot-settings")); // Spigot
          this.console.paperConfigurations.reloadConfigs(this.console);
@@ -311,7 +304,7 @@ index 5e6952a9d4c1137dc3d720ee2c944d95d4628065..1367072684078c0e93c275c2159ece79
          org.purpurmc.purpur.PurpurConfig.init((File) console.options.valueOf("purpur-settings")); // Purpur
          for (ServerLevel world : this.console.getAllLevels()) {
              // world.serverLevelData.setDifficulty(config.difficulty); // Paper - per level difficulty
-@@ -2835,6 +2836,13 @@ public final class CraftServer implements Server {
+@@ -3004,6 +3005,13 @@ public final class CraftServer implements Server {
              return CraftServer.this.console.paperConfigurations.createLegacyObject(CraftServer.this.console);
          }
  
@@ -326,7 +319,7 @@ index 5e6952a9d4c1137dc3d720ee2c944d95d4628065..1367072684078c0e93c275c2159ece79
          @Override
          public YamlConfiguration getPurpurConfig() {
 diff --git a/src/main/java/org/bukkit/craftbukkit/Main.java b/src/main/java/org/bukkit/craftbukkit/Main.java
-index 288cf98287c6d3c073b9ab6696c3957c999cad32..4970b246356bbd04eb1f9715da3fc7c9494573e2 100644
+index 9a3374a1236164194ef0df43ed639296cbe1c731..affd4c6267f60cbae75b6e6a09990144a1f1e1f0 100644
 --- a/src/main/java/org/bukkit/craftbukkit/Main.java
 +++ b/src/main/java/org/bukkit/craftbukkit/Main.java
 @@ -173,6 +173,14 @@ public class Main {
@@ -975,7 +968,7 @@ index 0000000000000000000000000000000000000000..469100cd86e6742eeebad22923097782
 +
 +}
 diff --git a/src/test/java/org/bukkit/support/AbstractTestingBase.java b/src/test/java/org/bukkit/support/AbstractTestingBase.java
-index a616624a7beb35239be0fc2bb7fe60db1c673c2d..602ac1b30937a89312be7ba068a595d398e53394 100644
+index d1fd4cf65c31bc00d0bffa3123fc2223f1498a34..0aebabc83eea721e4f373fb00f4ee80b659efe83 100644
 --- a/src/test/java/org/bukkit/support/AbstractTestingBase.java
 +++ b/src/test/java/org/bukkit/support/AbstractTestingBase.java
 @@ -63,6 +63,7 @@ public abstract class AbstractTestingBase {

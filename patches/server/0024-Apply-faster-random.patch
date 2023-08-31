@@ -5,10 +5,10 @@ Subject: [PATCH] Apply faster random
 
 
 diff --git a/src/main/java/com/destroystokyo/paper/loottable/PaperLootableInventoryData.java b/src/main/java/com/destroystokyo/paper/loottable/PaperLootableInventoryData.java
-index e5ea9f27a1936ed9e329e74317c91c5df89b9fbd..7e7a4d872983cd2efdc575bc33353f94d73cc641 100644
+index 5408cbc21fc7577a6100b5a1ca0463e899d2df8b..4f264e098e7907c397f09ee23a579ed7da494edc 100644
 --- a/src/main/java/com/destroystokyo/paper/loottable/PaperLootableInventoryData.java
 +++ b/src/main/java/com/destroystokyo/paper/loottable/PaperLootableInventoryData.java
-@@ -13,7 +13,7 @@ import java.util.UUID;
+@@ -16,7 +16,7 @@ import java.util.UUID;
  
  public class PaperLootableInventoryData {
  
@@ -18,10 +18,10 @@ index e5ea9f27a1936ed9e329e74317c91c5df89b9fbd..7e7a4d872983cd2efdc575bc33353f94
      private long lastFill = -1;
      private long nextRefill = -1;
 diff --git a/src/main/java/net/minecraft/server/MinecraftServer.java b/src/main/java/net/minecraft/server/MinecraftServer.java
-index cc6968a064b30f7250d18c20efb2bb8602bb0cdd..3c80e14392ee7a6bf5040d7cb81b7d894e162eff 100644
+index 0acbaa18a61d1cfdb894c6c756d2b9bdc3599b82..93ff3ef401d4212cede5290990528988c7ca3a0c 100644
 --- a/src/main/java/net/minecraft/server/MinecraftServer.java
 +++ b/src/main/java/net/minecraft/server/MinecraftServer.java
-@@ -694,7 +694,7 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
+@@ -691,7 +691,7 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
              ChunkPos chunkcoordintpair = new ChunkPos(chunkproviderserver.randomState().sampler().findSpawnPosition());
              // CraftBukkit start
              if (world.generator != null) {
@@ -31,10 +31,10 @@ index cc6968a064b30f7250d18c20efb2bb8602bb0cdd..3c80e14392ee7a6bf5040d7cb81b7d89
  
                  if (spawn != null) {
 diff --git a/src/main/java/org/bukkit/craftbukkit/CraftWorld.java b/src/main/java/org/bukkit/craftbukkit/CraftWorld.java
-index 68df53648c9b76cf1b6abcaa90c5e8938e9e0d05..90cfe6f05f11f18a818857b1da8da75d8831c40c 100644
+index 1392e483c363e25d1f16465d876cb7d7c70afa68..f4b99ffec5c84a5fa1f90060ec15d09b08239d49 100644
 --- a/src/main/java/org/bukkit/craftbukkit/CraftWorld.java
 +++ b/src/main/java/org/bukkit/craftbukkit/CraftWorld.java
-@@ -230,7 +230,7 @@ public class CraftWorld extends CraftRegionAccessor implements World {
+@@ -229,7 +229,7 @@ public class CraftWorld extends CraftRegionAccessor implements World {
      }
      // Paper end
  
@@ -44,10 +44,10 @@ index 68df53648c9b76cf1b6abcaa90c5e8938e9e0d05..90cfe6f05f11f18a818857b1da8da75d
      public CraftWorld(ServerLevel world, ChunkGenerator gen, BiomeProvider biomeProvider, Environment env) {
          this.world = world;
 diff --git a/src/main/java/org/bukkit/craftbukkit/entity/CraftFirework.java b/src/main/java/org/bukkit/craftbukkit/entity/CraftFirework.java
-index d1c7ab67cba881d96b7a5e9220130d86d0514304..6018c5332410a5a0db29f35c0b4cb628df07f596 100644
+index 68c5af9b67a2834ee6e2f80ceefa19c3a982b8ed..7cd8a12ad560626ad3965bd46a5a71168ce6bf80 100644
 --- a/src/main/java/org/bukkit/craftbukkit/entity/CraftFirework.java
 +++ b/src/main/java/org/bukkit/craftbukkit/entity/CraftFirework.java
-@@ -15,7 +15,7 @@ import org.bukkit.inventory.meta.FireworkMeta;
+@@ -14,7 +14,7 @@ import org.bukkit.inventory.meta.FireworkMeta;
  
  public class CraftFirework extends CraftProjectile implements Firework {
  
@@ -57,7 +57,7 @@ index d1c7ab67cba881d96b7a5e9220130d86d0514304..6018c5332410a5a0db29f35c0b4cb628
  
      public CraftFirework(CraftServer server, FireworkRocketEntity entity) {
 diff --git a/src/main/java/org/bukkit/craftbukkit/generator/CustomChunkGenerator.java b/src/main/java/org/bukkit/craftbukkit/generator/CustomChunkGenerator.java
-index a9673a804d597599c35c83f4f245510c83005328..202ac2b0d96b870ce853959da89e82a4949ca585 100644
+index c3972ba41ad61af4c423e6f942ac984dc61716f0..f7b53cf1161e53d49ec2b72fed2473c1814159cd 100644
 --- a/src/main/java/org/bukkit/craftbukkit/generator/CustomChunkGenerator.java
 +++ b/src/main/java/org/bukkit/craftbukkit/generator/CustomChunkGenerator.java
 @@ -48,7 +48,7 @@ public class CustomChunkGenerator extends InternalChunkGenerator {

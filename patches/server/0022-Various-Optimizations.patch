@@ -10,31 +10,32 @@ Subject: [PATCH] Various Optimizations
 0011 - Swaps the predicate order of collision (Akarin)
 
 diff --git a/src/main/java/net/minecraft/world/entity/Entity.java b/src/main/java/net/minecraft/world/entity/Entity.java
-index e71eca3ddbbeb3168dd73433b6d6ffe9f6755f77..f8be2d9d454965257de55d2aa572016115d1b346 100644
+index cf0d8da4c4b5f4aa4e4ef15897ca252a2b52ec8d..42c1b7c635cd22125dbb6b4d195976daac0c9ea1 100644
 --- a/src/main/java/net/minecraft/world/entity/Entity.java
 +++ b/src/main/java/net/minecraft/world/entity/Entity.java
-@@ -1993,8 +1993,9 @@ public abstract class Entity implements Nameable, EntityAccess, CommandSource {
+@@ -2145,8 +2145,9 @@ public abstract class Entity implements Nameable, EntityAccess, CommandSource {
      public void playerTouch(Player player) {}
  
      public void push(Entity entity) {
 +        if (entity.noPhysics || this.noPhysics) return; // Plazma
          if (!this.isPassengerOfSameVehicle(entity)) {
 -            if (!entity.noPhysics && !this.noPhysics) {
-+            //if (!entity.noPhysics && !this.noPhysics) { // Plazma
++            //if (!entity.noPhysics && !this.noPhysics) { // Plazma - moved up
                  if (this.level.paperConfig().collisions.onlyPlayersCollide && !(entity instanceof ServerPlayer || this instanceof ServerPlayer)) return; // Paper
                  double d0 = entity.getX() - this.getX();
                  double d1 = entity.getZ() - this.getZ();
-@@ -2023,7 +2024,7 @@ public abstract class Entity implements Nameable, EntityAccess, CommandSource {
+@@ -2174,8 +2175,7 @@ public abstract class Entity implements Nameable, EntityAccess, CommandSource {
+                         entity.push(d0, 0.0D, d1);
                      }
                  }
- 
+-
 -            }
 +            //} // Plazma
          }
      }
  
 diff --git a/src/main/java/net/minecraft/world/level/block/entity/RandomizableContainerBlockEntity.java b/src/main/java/net/minecraft/world/level/block/entity/RandomizableContainerBlockEntity.java
-index 6d62cc8fb347ccafd51df05896e616995990f005..c26e4795afd0bd450d304f4528d0b8e4cfa761ce 100644
+index 765ee7f78532a363813286ef7db2a7e48605cb06..47830edd65b7f54a01559c80d28586b91cc07739 100644
 --- a/src/main/java/net/minecraft/world/level/block/entity/RandomizableContainerBlockEntity.java
 +++ b/src/main/java/net/minecraft/world/level/block/entity/RandomizableContainerBlockEntity.java
 @@ -70,6 +70,7 @@ public abstract class RandomizableContainerBlockEntity extends BaseContainerBloc
@@ -43,13 +44,13 @@ index 6d62cc8fb347ccafd51df05896e616995990f005..c26e4795afd0bd450d304f4528d0b8e4
      public void unpackLootTable(@Nullable Player player) {
 +        if (org.plazmamc.plazma.configurations.GlobalConfiguration.get().misc.doNotTriggerLootTableRefreshForNonPlayerInteraction && player == null) return; // Plazma
          if (this.lootableData.shouldReplenish(player) && this.level.getServer() != null) { // Paper
-             LootTable lootTable = this.level.getServer().getLootTables().get(this.lootTable);
+             LootTable lootTable = this.level.getServer().getLootData().getLootTable(this.lootTable);
              if (player instanceof ServerPlayer) {
 diff --git a/src/main/java/net/minecraft/world/level/levelgen/PhantomSpawner.java b/src/main/java/net/minecraft/world/level/levelgen/PhantomSpawner.java
-index f55c50f6637a4f930b15565d6ac82bb4f27b9059..9c4e65a67bda331625a0891be10495eaae5f3f5e 100644
+index f74c5eda91a3d521763ec7bc33f23e0c62458cc2..9f1ee01eb9dcb599d1eb453653c7e7479fb24a4c 100644
 --- a/src/main/java/net/minecraft/world/level/levelgen/PhantomSpawner.java
 +++ b/src/main/java/net/minecraft/world/level/levelgen/PhantomSpawner.java
-@@ -73,6 +73,7 @@ public class PhantomSpawner implements CustomSpawner {
+@@ -71,6 +71,7 @@ public class PhantomSpawner implements CustomSpawner {
  
                                      if (randomsource.nextInt(j) >= world.paperConfig().entities.behavior.playerInsomniaStartTicks) { // Paper
                                          BlockPos blockposition1 = blockposition.above(20 + randomsource.nextInt(15)).east(-10 + randomsource.nextInt(21)).south(-10 + randomsource.nextInt(21));
@@ -81,10 +82,10 @@ index 36af81f0957d17e170d229059c66f4eb4539dfeb..039c952f0c157cba6e79fa9b976958bd
              }
              // Spigot Start
 diff --git a/src/main/java/org/plazmamc/plazma/configurations/GlobalConfiguration.java b/src/main/java/org/plazmamc/plazma/configurations/GlobalConfiguration.java
-index fa33fd5a64fadbfe6507ae9f61fdfbfc816686b5..590afba7c588e7b9f5f9c61e91805e3dc3b62771 100644
+index 3e0d0d21dc73b2a5d033d8bcd43b08866e0d6923..e91b404fca2823748c2ed343cbd83301e55b2f0a 100644
 --- a/src/main/java/org/plazmamc/plazma/configurations/GlobalConfiguration.java
 +++ b/src/main/java/org/plazmamc/plazma/configurations/GlobalConfiguration.java
-@@ -40,6 +40,7 @@ public class GlobalConfiguration extends ConfigurationPart {
+@@ -41,6 +41,7 @@ public class GlobalConfiguration extends ConfigurationPart {
      public class Misc extends ConfigurationPart {
  
          public boolean reduceCreateRandomInstance = DO_OPTIMIZE;

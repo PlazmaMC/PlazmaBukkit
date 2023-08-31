@@ -40,10 +40,10 @@ index 1f4b64a5f812376c499c98cb4be62469bd0b7dbe..c0bd2997fe3ebbfe926de832a36d209c
  
      public <T> void writeId(IdMap<T> registry, T value) {
 diff --git a/src/main/java/net/minecraft/network/protocol/status/ServerStatus.java b/src/main/java/net/minecraft/network/protocol/status/ServerStatus.java
-index e6cc2bab1fde2e8c1394772b99201ea8d7eb8057..2ba3291f6c82f633d7ed7b150f2ae3c28d74b21e 100644
+index 98ea56cbc8de5a5694b4f4d9a2f25811fdecba04..9e2a1f04cd9de2b0a7f3c512a4849a572d8fc00c 100644
 --- a/src/main/java/net/minecraft/network/protocol/status/ServerStatus.java
 +++ b/src/main/java/net/minecraft/network/protocol/status/ServerStatus.java
-@@ -64,4 +64,21 @@ public record ServerStatus(Component description, Optional<ServerStatus.Players>
+@@ -62,4 +62,21 @@ public record ServerStatus(Component description, Optional<ServerStatus.Players>
              return new ServerStatus.Version(worldVersion.getName(), worldVersion.getProtocolVersion());
          }
      }
@@ -66,29 +66,29 @@ index e6cc2bab1fde2e8c1394772b99201ea8d7eb8057..2ba3291f6c82f633d7ed7b150f2ae3c2
 +    // Plazma end
  }
 diff --git a/src/main/java/net/minecraft/server/dedicated/DedicatedServer.java b/src/main/java/net/minecraft/server/dedicated/DedicatedServer.java
-index 84bb45aef3c2087cb9c03a99184956c484b3d8e9..778b79ce3530781705f6d6ae11a2631f186e3763 100644
+index 191bebab12c94756e9f98cfacbf06eb9a7c2f2f9..2d47c13f768ac482422e118921d186d3cfd5d765 100644
 --- a/src/main/java/net/minecraft/server/dedicated/DedicatedServer.java
 +++ b/src/main/java/net/minecraft/server/dedicated/DedicatedServer.java
 @@ -684,7 +684,7 @@ public class DedicatedServer extends MinecraftServer implements ServerInterface
- 
-     @Override
      public boolean enforceSecureProfile() {
--        return this.getProperties().enforceSecureProfile && this.getProperties().onlineMode;
-+        return !org.plazmamc.plazma.configurations.GlobalConfiguration.get().noChatReports.enabled && this.getProperties().enforceSecureProfile && this.getProperties().onlineMode; // Plazma - NCR
+         DedicatedServerProperties dedicatedserverproperties = this.getProperties();
+ 
+-        return dedicatedserverproperties.enforceSecureProfile && dedicatedserverproperties.onlineMode && this.services.profileKeySignatureValidator() != null;
++        return !org.plazmamc.plazma.configurations.GlobalConfiguration.get().noChatReports.enabled && dedicatedserverproperties.enforceSecureProfile && dedicatedserverproperties.onlineMode && this.services.profileKeySignatureValidator() != null; // Plazma - NCR // TODO: Check
      }
  
      protected boolean convertOldUsers() {
 diff --git a/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java b/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
-index 8f911f589bf04902e38e2c625d84ba0c47cbd9ee..b15de37a06c3efb1c4bc790ccb23ebff3c97d54d 100644
+index 09183dbac0e8ca2cc2c8da57b105b80eab42d459..e4c92730b63204126609a52d286da46ef6495080 100644
 --- a/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
 +++ b/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
-@@ -2235,10 +2235,19 @@ public class ServerGamePacketListenerImpl implements ServerPlayerConnection, Tic
+@@ -2293,10 +2293,19 @@ public class ServerGamePacketListenerImpl implements ServerPlayerConnection, Tic
  
      @Override
      public void send(Packet<?> packet) {
 +        // Plazma start - NCR
 +        if (org.plazmamc.plazma.configurations.GlobalConfiguration.get().noChatReports.convertToGameMessage() && packet instanceof ClientboundPlayerChatPacket chat)
-+            packet = new ClientboundSystemChatPacket(null, Component.Serializer.toJson(chat.chatType().resolve(this.player.level.registryAccess()).get().decorate(chat.unsignedContent() != null ? chat.unsignedContent() : Component.literal(chat.body().content()))), false);
++            packet = new ClientboundSystemChatPacket(null, Component.Serializer.toJson(chat.chatType().resolve(this.player.level().registryAccess()).get().decorate(chat.unsignedContent() != null ? chat.unsignedContent() : Component.literal(chat.body().content()))), false);
          this.send(packet, (PacketSendListener) null);
      }
  
@@ -103,10 +103,10 @@ index 8f911f589bf04902e38e2c625d84ba0c47cbd9ee..b15de37a06c3efb1c4bc790ccb23ebff
          if (packet == null || this.processedDisconnect) { // Spigot
              return;
 diff --git a/src/main/java/net/minecraft/server/players/PlayerList.java b/src/main/java/net/minecraft/server/players/PlayerList.java
-index b22b86d7f226e0e24d6be27ea33ec9d690f8f238..022da50912d357581b2132cf57e1a767e436022c 100644
+index 86932974a9101779691de336a8c45c464158fca8..b711efca8a834adaf0db902fab34c3c80c9cbad6 100644
 --- a/src/main/java/net/minecraft/server/players/PlayerList.java
 +++ b/src/main/java/net/minecraft/server/players/PlayerList.java
-@@ -1464,7 +1464,7 @@ public abstract class PlayerList {
+@@ -1479,7 +1479,7 @@ public abstract class PlayerList {
      }
  
      public boolean verifyChatTrusted(PlayerChatMessage message) { // Paper - private -> public
@@ -116,10 +116,10 @@ index b22b86d7f226e0e24d6be27ea33ec9d690f8f238..022da50912d357581b2132cf57e1a767
  
      // CraftBukkit start
 diff --git a/src/main/java/org/plazmamc/plazma/configurations/GlobalConfiguration.java b/src/main/java/org/plazmamc/plazma/configurations/GlobalConfiguration.java
-index 0e8d5b01a673ba826c943fcb33552518022a2ea3..17454a128f7ef53428920f95e4709180fd8efb32 100644
+index f67ac1a3dddb024af606da14b3929f10d8f22330..2033c7ff519e30f507e6535004687eb49c08c33b 100644
 --- a/src/main/java/org/plazmamc/plazma/configurations/GlobalConfiguration.java
 +++ b/src/main/java/org/plazmamc/plazma/configurations/GlobalConfiguration.java
-@@ -48,7 +48,17 @@ public class GlobalConfiguration extends ConfigurationPart {
+@@ -49,7 +49,17 @@ public class GlobalConfiguration extends ConfigurationPart {
      public NoChatReports noChatReports;
      public class NoChatReports extends ConfigurationPart {
  
