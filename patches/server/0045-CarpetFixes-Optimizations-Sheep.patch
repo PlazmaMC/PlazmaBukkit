@@ -1,0 +1,131 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: IPECTER <ipectert@gmail.com>
+Date: Wed, 6 Sep 2023 16:35:34 +0900
+Subject: [PATCH] CarpetFixes-Optimizations-Sheep
+
+Original: fxmorin/carpet-fixes
+Copyright (C) 2023 fxmorin
+
+The game determines the child sheep's color by getting a wool block from the parents, putting them in a crafting
+recipe, getting the output wool and getting the color from that.
+I don't know in what world we would consider a data-driven method with that much overhead as a smart idea. Instead,
+we used a prebaked list of all the possible colors and combinations, however this means that you can't use a
+datapack to change it.
+ 
+diff --git a/src/main/java/net/minecraft/world/entity/animal/Sheep.java b/src/main/java/net/minecraft/world/entity/animal/Sheep.java
+index 9399361c8d26a140fa6042988a30a1d3d552e418..5bfb246bfabf82feb805665b0be1a36ce62996ca 100644
+--- a/src/main/java/net/minecraft/world/entity/animal/Sheep.java
++++ b/src/main/java/net/minecraft/world/entity/animal/Sheep.java
+@@ -431,19 +431,27 @@ public class Sheep extends Animal implements Shearable {
+     }
+ 
+     private DyeColor getOffspringColor(Animal firstParent, Animal secondParent) {
++        // Plazma start - CarpetFixes - Optimized sheep chile color
+         DyeColor enumcolor = ((Sheep) firstParent).getColor();
+         DyeColor enumcolor1 = ((Sheep) secondParent).getColor();
+-        CraftingContainer inventorycrafting = Sheep.makeContainer(enumcolor, enumcolor1);
+-        Optional<Item> optional = this.level.getRecipeManager().getRecipeFor(RecipeType.CRAFTING, inventorycrafting, this.level).map((recipecrafting) -> { // CraftBukkit - decompile error
+-            return recipecrafting.assemble(inventorycrafting, this.level.registryAccess());
+-        }).map(ItemStack::getItem);
+-
+-        Objects.requireNonNull(DyeItem.class);
+-        optional = optional.filter(DyeItem.class::isInstance);
+-        Objects.requireNonNull(DyeItem.class);
+-        return (DyeColor) optional.map(DyeItem.class::cast).map(DyeItem::getDyeColor).orElseGet(() -> {
+-            return this.level.random.nextBoolean() ? enumcolor : enumcolor1;
+-        });
++        if (this.level.plazmaLevelConfiguration().carpetFixes.optimizedSheepChildColor()) {
++            DyeColor col = org.plazmamc.plazma.util.CarpetFixesUtils.properDyeMixin(enumcolor, enumcolor1);
++            if (col == null) col = this.level.random.nextBoolean() ? enumcolor : enumcolor1;
++            return col;
++        } else {
++            CraftingContainer inventorycrafting = Sheep.makeContainer(enumcolor, enumcolor1);
++            Optional<Item> optional = this.level.getRecipeManager().getRecipeFor(RecipeType.CRAFTING, inventorycrafting, this.level).map((recipecrafting) -> { // CraftBukkit - decompile error
++                return recipecrafting.assemble(inventorycrafting, this.level.registryAccess());
++            }).map(ItemStack::getItem);
++
++            Objects.requireNonNull(DyeItem.class);
++            optional = optional.filter(DyeItem.class::isInstance);
++            Objects.requireNonNull(DyeItem.class);
++            return (DyeColor) optional.map(DyeItem.class::cast).map(DyeItem::getDyeColor).orElseGet(() -> {
++                return this.level.random.nextBoolean() ? enumcolor : enumcolor1;
++            });
++        }
++        // Plazma end
+     }
+ 
+     private static CraftingContainer makeContainer(DyeColor firstColor, DyeColor secondColor) {
+diff --git a/src/main/java/org/plazmamc/plazma/configurations/LevelConfigurations.java b/src/main/java/org/plazmamc/plazma/configurations/LevelConfigurations.java
+index dde4eeb834ed71cb7a22ec212e13afea2156a44c..dc0a8f9c737a29cb60cb769bb778e7e1b733fc34 100644
+--- a/src/main/java/org/plazmamc/plazma/configurations/LevelConfigurations.java
++++ b/src/main/java/org/plazmamc/plazma/configurations/LevelConfigurations.java
+@@ -138,10 +138,15 @@ public class LevelConfigurations extends ConfigurationPart {
+ 
+         public boolean enabled = DO_OPTIMIZE;
+         boolean optimizedRecipeManager = true;
++        boolean optimizedSheepChildColor = false;
+ 
+         public boolean optimizedRecipeManager() {
+             return enabled && optimizedRecipeManager;
+         }
+ 
++        public boolean optimizedSheepChildColor() {
++            return enabled && optimizedSheepChildColor;
++        }
++
+     }
+ }
+diff --git a/src/main/java/org/plazmamc/plazma/util/CarpetFixesUtils.java b/src/main/java/org/plazmamc/plazma/util/CarpetFixesUtils.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..aae3cf170bca4b3e6cdd0a964967dfafe2759f65
+--- /dev/null
++++ b/src/main/java/org/plazmamc/plazma/util/CarpetFixesUtils.java
+@@ -0,0 +1,48 @@
++package org.plazmamc.plazma.util;
++
++import net.minecraft.world.item.DyeColor;
++
++public class CarpetFixesUtils {
++
++    //If I was actually implementing this, the color values would have been binary in order for fast calculations.
++    //Never do this in a production build, although this is better than using the RecipeManager xD
++    public static DyeColor properDyeMixin(DyeColor col1, DyeColor col2) {
++        if (col1.equals(col2)) return col1;
++        switch(col1) {
++            case WHITE -> {
++                switch(col2) {
++                    case BLUE -> {return DyeColor.LIGHT_BLUE;}
++                    case GRAY -> {return DyeColor.LIGHT_GRAY;}
++                    case BLACK -> {return DyeColor.GRAY;}
++                    case GREEN -> {return DyeColor.LIME;}
++                    case RED -> {return DyeColor.PINK;}
++                }
++            }
++            case BLUE -> {
++                switch(col2) {
++                    case WHITE -> {return DyeColor.LIGHT_BLUE;}
++                    case GREEN -> {return DyeColor.CYAN;}
++                    case RED -> {return DyeColor.PURPLE;}
++                }
++            }
++            case RED -> {
++                switch(col2) {
++                    case YELLOW -> {return DyeColor.ORANGE;}
++                    case WHITE -> {return DyeColor.PINK;}
++                    case BLUE -> {return DyeColor.PURPLE;}
++                }
++            }case GREEN -> {
++                switch(col2) {
++                    case BLUE -> {return DyeColor.CYAN;}
++                    case WHITE -> {return DyeColor.LIME;}
++                }
++            }
++            case YELLOW -> {if (col2.equals(DyeColor.RED)) return DyeColor.ORANGE;}
++            case PURPLE -> {if (col2.equals(DyeColor.PINK)) return DyeColor.MAGENTA;}
++            case PINK -> {if (col2.equals(DyeColor.PURPLE)) return DyeColor.MAGENTA;}
++            case GRAY -> {if (col2.equals(DyeColor.WHITE)) return DyeColor.LIGHT_GRAY;}
++            case BLACK -> {if (col2.equals(DyeColor.WHITE)) return DyeColor.GRAY;}
++        }
++        return null;
++    }
++}
