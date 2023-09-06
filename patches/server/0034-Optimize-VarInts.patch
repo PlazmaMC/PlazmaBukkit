@@ -6,10 +6,16 @@ Subject: [PATCH] Optimize VarInts
 https://github.com/PaperMC/Paper/pull/8418
 
 diff --git a/src/main/java/net/minecraft/network/FriendlyByteBuf.java b/src/main/java/net/minecraft/network/FriendlyByteBuf.java
-index c0bd2997fe3ebbfe926de832a36d209cc875f3e2..6108f3aa438b96e817c3a2e582c2c817f096e2eb 100644
+index c0bd2997fe3ebbfe926de832a36d209cc875f3e2..8bb552410207b39a3b4160a5df51410455107fcf 100644
 --- a/src/main/java/net/minecraft/network/FriendlyByteBuf.java
 +++ b/src/main/java/net/minecraft/network/FriendlyByteBuf.java
-@@ -104,7 +104,20 @@ public class FriendlyByteBuf extends ByteBuf {
+@@ -99,12 +99,26 @@ public class FriendlyByteBuf extends ByteBuf {
+     private static final Gson GSON = new Gson();
+ 
+     public static boolean hasItemSerializeEvent = false; // Purpur
++    public static boolean optimizeVarInts = false; // Plazma
+ 
+     public FriendlyByteBuf(ByteBuf parent) {
          this.source = parent;
      }
  
@@ -24,18 +30,18 @@ index c0bd2997fe3ebbfe926de832a36d209cc875f3e2..6108f3aa438b96e817c3a2e582c2c817
 +    // Plazma end
      public static int getVarIntSize(int value) {
 +        // Plazma start - Optimize VarInts
-+        if (org.plazmamc.plazma.configurations.GlobalConfiguration.get().misc.optimizeVarInts)
++        if (optimizeVarInts)
 +            return VARINT_EXACT_BYTE_LENGTHS[Integer.numberOfLeadingZeros(value)];
 +        // Plazma end
          for (int j = 1; j < 5; ++j) {
              if ((value & -1 << j * 7) == 0) {
                  return j;
-@@ -620,6 +633,25 @@ public class FriendlyByteBuf extends ByteBuf {
+@@ -620,6 +634,25 @@ public class FriendlyByteBuf extends ByteBuf {
      }
  
      public FriendlyByteBuf writeVarInt(int value) {
 +        // Plazma start - Optimize VarInts
-+        if (org.plazmamc.plazma.configurations.GlobalConfiguration.get().misc.optimizeVarInts) {
++        if (optimizeVarInts) {
 +            // Peel the one and two byte count cases explicitly as they are the most common VarInt sizes
 +            // that the proxy will write, to improve inlining.
 +            if ((value & (0xFFFFFFFF << 7)) == 0) {
@@ -57,14 +63,25 @@ index c0bd2997fe3ebbfe926de832a36d209cc875f3e2..6108f3aa438b96e817c3a2e582c2c817
              this.writeByte(value & 127 | 128);
              value >>>= 7;
 diff --git a/src/main/java/org/plazmamc/plazma/configurations/GlobalConfiguration.java b/src/main/java/org/plazmamc/plazma/configurations/GlobalConfiguration.java
-index b2c9ac1947e6c9ad0e693cfeaf6f2f4bfd521aa0..c1ff5d20dd3b74062837fd30a7b3966e16bdf54c 100644
+index b2c9ac1947e6c9ad0e693cfeaf6f2f4bfd521aa0..525fe30b6abba295709fca3d10f9b24679112571 100644
 --- a/src/main/java/org/plazmamc/plazma/configurations/GlobalConfiguration.java
 +++ b/src/main/java/org/plazmamc/plazma/configurations/GlobalConfiguration.java
-@@ -43,6 +43,7 @@ public class GlobalConfiguration extends ConfigurationPart {
+@@ -38,11 +38,17 @@ public class GlobalConfiguration extends ConfigurationPart {
+     }
+ 
+     public Misc misc;
+-    public class Misc extends ConfigurationPart {
++    public class Misc extends ConfigurationPart.Post {
+ 
          public boolean reduceCreateRandomInstance = DO_OPTIMIZE;
          public boolean doNotTriggerLootTableRefreshForNonPlayerInteraction = DO_OPTIMIZE;
          public boolean doNotSendUselessEntityPackets = DO_OPTIMIZE;
 +        public boolean optimizeVarInts = DO_OPTIMIZE;
++
++        @Override
++        public void postProcess() {
++            net.minecraft.network.FriendlyByteBuf.optimizeVarInts = optimizeVarInts;
++        }
  
      }
  
