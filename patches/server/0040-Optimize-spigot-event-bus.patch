@@ -1,0 +1,33 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: IPECTER <ipectert@gmail.com>
+Date: Wed, 6 Sep 2023 14:55:37 +0900
+Subject: [PATCH] Optimize-spigot-event-bus
+
+
+diff --git a/src/main/java/io/papermc/paper/plugin/manager/PaperEventManager.java b/src/main/java/io/papermc/paper/plugin/manager/PaperEventManager.java
+index 32305a34bcebd53aa523102a6da59bc2eb765055..6feb88b90831ec7106c9d777bdfa68fa185f1b89 100644
+--- a/src/main/java/io/papermc/paper/plugin/manager/PaperEventManager.java
++++ b/src/main/java/io/papermc/paper/plugin/manager/PaperEventManager.java
+@@ -41,12 +41,17 @@ class PaperEventManager {
+         RegisteredListener[] listeners = handlers.getRegisteredListeners();
+         if (listeners.length == 0) return;
+         // Plazma end
+-        if (event.isAsynchronous() && this.server.isPrimaryThread()) {
+-            throw new IllegalStateException(event.getEventName() + " may only be triggered asynchronously.");
+-        } else if (!event.isAsynchronous() && !this.server.isPrimaryThread() && !this.server.isStopping()) {
+-            throw new IllegalStateException(event.getEventName() + " may only be triggered synchronously.");
++        // Plazma start - Optimize spigot event bus
++        if (event.asynchronous() != net.kyori.adventure.util.TriState.NOT_SET) {
++            final boolean isAsync = event.isAsynchronous();
++            final boolean onPrimaryThread = this.server.isPrimaryThread();
++            if (isAsync && onPrimaryThread) {
++                throw new IllegalStateException(event.getEventName() + " may only be triggered asynchronously.");
++            } else if (!isAsync && !onPrimaryThread && !this.server.isStopping()) {
++                throw new IllegalStateException(event.getEventName() + " may only be triggered synchronously.");
++            }
+         }
+-
++        // Plazma end
+         for (RegisteredListener registration : listeners) {
+             if (!registration.getPlugin().isEnabled()) {
+                 continue;
