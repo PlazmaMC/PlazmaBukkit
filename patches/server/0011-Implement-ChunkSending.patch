@@ -7,10 +7,10 @@ Original: someaddons/chunksending
 Copyright (C) 2023 someaddons
 
 diff --git a/src/main/java/net/minecraft/server/level/ChunkHolder.java b/src/main/java/net/minecraft/server/level/ChunkHolder.java
-index e2202389a2c4133a183cca59c4e909fc419379ab..ccb7ff8832d3673a46d0a285f09d57d12bc0203a 100644
+index e2202389a2c4133a183cca59c4e909fc419379ab..b3e731c122b315d28ae51d32b798f818e270c7ff 100644
 --- a/src/main/java/net/minecraft/server/level/ChunkHolder.java
 +++ b/src/main/java/net/minecraft/server/level/ChunkHolder.java
-@@ -398,9 +398,11 @@ public class ChunkHolder {
+@@ -398,9 +398,12 @@ public class ChunkHolder {
      // Paper end - rewrite chunk system
  
      private void broadcast(List<ServerPlayer> players, Packet<?> packet) {
@@ -18,9 +18,10 @@ index e2202389a2c4133a183cca59c4e909fc419379ab..ccb7ff8832d3673a46d0a285f09d57d1
 -            entityplayer.connection.send(packet);
 -        });
 +        // Plazma start
-+        for (ServerPlayer player : players)
-+            if (this.chunkMap.level.plazmaLevelConfiguration().chunkSending.enabled && !player.attachToPending(pos, packet))
-+                player.connection.send(packet);
++        for (ServerPlayer player : players) {
++            if (this.chunkMap.level.plazmaLevelConfiguration().chunkSending.enabled && player.attachToPending(pos, packet)) continue;
++            player.connection.send(packet);
++        }
 +        // Plazma end
      }
  
