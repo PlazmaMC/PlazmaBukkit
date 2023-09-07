@@ -7,7 +7,7 @@ Original: someaddons/chunksending
 Copyright (C) 2023 someaddons
 
 diff --git a/src/main/java/net/minecraft/server/level/ChunkHolder.java b/src/main/java/net/minecraft/server/level/ChunkHolder.java
-index 904fcdeb7937d36208cc9a8d5eca9ef3a5b2cd9e..4841fcfd00ca5a1b0b7d39c934159a4bae841a1b 100644
+index 904fcdeb7937d36208cc9a8d5eca9ef3a5b2cd9e..005491785e5e776d8721362ecde5f85bad6ae4de 100644
 --- a/src/main/java/net/minecraft/server/level/ChunkHolder.java
 +++ b/src/main/java/net/minecraft/server/level/ChunkHolder.java
 @@ -362,15 +362,14 @@ public class ChunkHolder {
@@ -17,16 +17,16 @@ index 904fcdeb7937d36208cc9a8d5eca9ef3a5b2cd9e..4841fcfd00ca5a1b0b7d39c934159a4b
 -        for (int i = 0, len = backingSet.length; i < len; ++i) {
 -            if (!(backingSet[i] instanceof ServerPlayer player)) {
 -                continue;
--            }
++        // Plazma start - Implement ChunkSending
++        for (Object o : backingSet) {
++            if (o instanceof ServerPlayer player && this.chunkMap.playerChunkManager.isChunkSent(player, this.pos.x, this.pos.z, onlyOnWatchDistanceEdge)) {
++                if (this.chunkMap.level.plazmaLevelConfiguration().chunkSending.enabled && player.attachToPending(pos, packet)) continue;
++                player.connection.send(packet);
+             }
 -            if (!this.chunkMap.playerChunkManager.isChunkSent(player, this.pos.x, this.pos.z, onlyOnWatchDistanceEdge)) {
 -                continue;
 -            }
-+        // Plazma start - Implement ChunkSending
-+        for (Object o : backingSet) {
-+            if (!(o instanceof ServerPlayer player)
-+                    || !this.chunkMap.playerChunkManager.isChunkSent(player, this.pos.x, this.pos.z, onlyOnWatchDistanceEdge)
-+                    || (this.chunkMap.level.plazmaLevelConfiguration().chunkSending.enabled && !player.attachToPending(pos, packet))) continue;
-             player.connection.send(packet);
+-            player.connection.send(packet);
          }
 +        // Plazma end
          // Paper end - per player view distance
