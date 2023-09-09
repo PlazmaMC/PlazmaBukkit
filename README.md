@@ -20,7 +20,7 @@
 </div>
 
 ## ⚠️ Warning
-- Plazma may cause **<u>unexpected problems</u>**, so **don't use** it in production server!
+- Plazma may cause **<u>unexpected problems</u>**, so be sure to test it thoroughly before using it on a public server.
 
 ## 💬 About Plazma...
 - **Plazma** is created from the merger of **[Andromeda](https://github.com/TeamEarendel/Andromeda)** and **[Fusion](https://github.com/RuinedTechnologyUnify/Fusion)**
@@ -38,6 +38,12 @@
 
 ## ⚖️ License
 - This project and all patches are licensed under the [MIT license](LICENSE.md) unless otherwise noted in the patch headers.
+
+## 🔧 Support Status
+| Version                                                      | Support | Stability | Progress |
+| :---:                                                        | :---:   | :---:     | :---:    |
+| [1.20.1](https://github.com/PlazmaMC/Plazma/tree/ver/1.20.1) | Active  | Good      | 100%     |
+| [1.19.4](https://github.com/PlazmaMC/Plazma/tree/ver/1.19.4) | Active  | Good      | 100%     |
 
 ## 🌀 Sponsorship - Minecraft Development Dictionary (KOREAN)
 [![Discord](https://img.shields.io/discord/911980670123905054?color=%239c91fd&label=MDD&logo=discord&style=for-the-badge&logoColor=ffffff)](https://discord.gg/AZwXTA9Pgx) 
