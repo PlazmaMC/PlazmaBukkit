@@ -1,6 +1,6 @@
 From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
-From: BillyGalbreath <blake.galbreath@gmail.com>
-Date: Sun, 12 Jun 2022 09:18:57 -0500
+From: AlphaKR93 <dev@alpha93.kr>
+Date: Sat, 9 Sep 2023 16:32:10 +0000
 Subject: [PATCH] Purpur Server Changes
 
 Original: PurpurMC
@@ -342,7 +342,7 @@ index fa56cd09102a89692b42f1d14257990508c5c720..f9251183df72ddc56662fd3f02acf216
          setListData(vector);
      }
 diff --git a/src/main/java/gg/pufferfish/pufferfish/PufferfishConfig.java b/src/main/java/gg/pufferfish/pufferfish/PufferfishConfig.java
-index 3d4bb28fe686a9ad2e4c0f75f21e6289c2ea5cf9..bff1b41501c040487583a5a279fc7800fc6aedca 100644
+index 95d1a8a5b349f7849c040026bfa3469d03d92bfd..3e36958365bc136516bafbaad0c168f7956406f1 100644
 --- a/src/main/java/gg/pufferfish/pufferfish/PufferfishConfig.java
 +++ b/src/main/java/gg/pufferfish/pufferfish/PufferfishConfig.java
 @@ -28,6 +28,7 @@ public class PufferfishConfig {
@@ -4794,7 +4794,7 @@ index 759713f7c646aaf1a918c87a2834a1d405385dad..43cdda0cb26c5d5cc9025199eb71673d
      protected ParticleOptions getInkParticle() {
          return ParticleTypes.GLOW_SQUID_INK;
 diff --git a/src/main/java/net/minecraft/world/entity/LivingEntity.java b/src/main/java/net/minecraft/world/entity/LivingEntity.java
-index e9a31314424d9db911cd9806741222397c3072d7..4cd04661b39a7055f5767a3dff88f9a3e197d810 100644
+index e07140ef2f4c5b0019550eb3100c724699e7a05c..b84e921d539e300b60b8735cb4f1087d32fa2d41 100644
 --- a/src/main/java/net/minecraft/world/entity/LivingEntity.java
 +++ b/src/main/java/net/minecraft/world/entity/LivingEntity.java
 @@ -218,9 +218,9 @@ public abstract class LivingEntity extends Entity implements Attackable {
@@ -4880,15 +4880,6 @@ index e9a31314424d9db911cd9806741222397c3072d7..4cd04661b39a7055f5767a3dff88f9a3
          if (this.fireImmune() || this.level().isClientSide) {
              this.clearFire();
          }
-@@ -413,7 +419,7 @@ public abstract class LivingEntity extends Entity implements Attackable {
-             boolean flag = this instanceof net.minecraft.world.entity.player.Player;
- 
-             if (!this.level().isClientSide) {
--                if ((!gg.pufferfish.pufferfish.PufferfishConfig.enableSuffocationOptimization || (tickCount % 10 == 0 && couldPossiblyBeHurt(1.0F))) && this.isInWall()) { // Pufferfish - optimize suffocation
-+                if (shouldCheckForSuffocation() && this.isInWall()) { // Pufferfish - optimize suffocation // Purpur
-                     this.hurt(this.damageSources().inWall(), 1.0F);
-                 } else if (flag && !this.level().getWorldBorder().isWithinBounds(this.getBoundingBox())) {
-                     double d0 = this.level().getWorldBorder().getDistanceToBorder(this) + this.level().getWorldBorder().getDamageSafeZone();
 @@ -422,6 +428,7 @@ public abstract class LivingEntity extends Entity implements Attackable {
                          double d1 = this.level().getWorldBorder().getDamagePerBlock();
  
@@ -4986,19 +4977,7 @@ index e9a31314424d9db911cd9806741222397c3072d7..4cd04661b39a7055f5767a3dff88f9a3
                  EntityPotionEffectEvent event = CraftEventFactory.callEntityPotionEffectChangeEvent(this, effect, null, cause, EntityPotionEffectEvent.Action.CLEARED);
                  if (event.isCancelled()) {
                      continue;
-@@ -1376,6 +1412,11 @@ public abstract class LivingEntity extends Entity implements Attackable {
-         return true;
-     }
-     // Pufferfish end
-+    // Purpur start
-+    public boolean shouldCheckForSuffocation() {
-+        return (!gg.pufferfish.pufferfish.PufferfishConfig.enableSuffocationOptimization || (tickCount % 10 == 0 && couldPossiblyBeHurt(1.0F)));
-+    }
-+    // Purpur end
- 
-     @Override
-     public boolean hurt(DamageSource source, float amount) {
-@@ -1467,13 +1508,13 @@ public abstract class LivingEntity extends Entity implements Attackable {
+@@ -1471,13 +1507,13 @@ public abstract class LivingEntity extends Entity implements Attackable {
                  if (entity1 instanceof net.minecraft.world.entity.player.Player) {
                      net.minecraft.world.entity.player.Player entityhuman = (net.minecraft.world.entity.player.Player) entity1;
  
@@ -5014,7 +4993,7 @@ index e9a31314424d9db911cd9806741222397c3072d7..4cd04661b39a7055f5767a3dff88f9a3
                          LivingEntity entityliving2 = entitywolf.getOwner();
  
                          if (entityliving2 instanceof net.minecraft.world.entity.player.Player) {
-@@ -1584,6 +1625,18 @@ public abstract class LivingEntity extends Entity implements Attackable {
+@@ -1588,6 +1624,18 @@ public abstract class LivingEntity extends Entity implements Attackable {
                  }
              }
  
@@ -5033,7 +5012,7 @@ index e9a31314424d9db911cd9806741222397c3072d7..4cd04661b39a7055f5767a3dff88f9a3
              org.bukkit.inventory.EquipmentSlot handSlot = (hand != null) ? org.bukkit.craftbukkit.CraftEquipmentSlot.getHand(hand) : null;
              EntityResurrectEvent event = new EntityResurrectEvent((org.bukkit.entity.LivingEntity) this.getBukkitEntity(), handSlot);
              event.setCancelled(itemstack == null);
-@@ -1750,7 +1803,7 @@ public abstract class LivingEntity extends Entity implements Attackable {
+@@ -1754,7 +1802,7 @@ public abstract class LivingEntity extends Entity implements Attackable {
              boolean flag = false;
  
              if (this.dead && adversary instanceof WitherBoss) { // Paper
@@ -5042,7 +5021,7 @@ index e9a31314424d9db911cd9806741222397c3072d7..4cd04661b39a7055f5767a3dff88f9a3
                      BlockPos blockposition = this.blockPosition();
                      BlockState iblockdata = Blocks.WITHER_ROSE.defaultBlockState();
  
-@@ -1796,6 +1849,7 @@ public abstract class LivingEntity extends Entity implements Attackable {
+@@ -1800,6 +1848,7 @@ public abstract class LivingEntity extends Entity implements Attackable {
  
          this.dropEquipment(); // CraftBukkit - from below
          if (this.shouldDropLoot() && this.level().getGameRules().getBoolean(GameRules.RULE_DOMOBLOOT)) {
@@ -5050,7 +5029,7 @@ index e9a31314424d9db911cd9806741222397c3072d7..4cd04661b39a7055f5767a3dff88f9a3
              this.dropFromLootTable(source, flag);
              // Paper start
              final boolean prev = this.clearEquipmentSlots;
-@@ -1804,6 +1858,7 @@ public abstract class LivingEntity extends Entity implements Attackable {
+@@ -1808,6 +1857,7 @@ public abstract class LivingEntity extends Entity implements Attackable {
              // Paper end
              this.dropCustomDeathLoot(source, i, flag);
              this.clearEquipmentSlots = prev; // Paper
@@ -5058,7 +5037,7 @@ index e9a31314424d9db911cd9806741222397c3072d7..4cd04661b39a7055f5767a3dff88f9a3
          }
          // CraftBukkit start - Call death event // Paper start - call advancement triggers with correct entity equipment
          org.bukkit.event.entity.EntityDeathEvent deathEvent = CraftEventFactory.callEntityDeathEvent(this, this.drops, () -> {
-@@ -2050,7 +2105,7 @@ public abstract class LivingEntity extends Entity implements Attackable {
+@@ -2054,7 +2104,7 @@ public abstract class LivingEntity extends Entity implements Attackable {
              MobEffectInstance mobeffect = this.getEffect(MobEffects.JUMP);
              float f2 = mobeffect == null ? 0.0F : (float) (mobeffect.getAmplifier() + 1);
  
@@ -5067,7 +5046,7 @@ index e9a31314424d9db911cd9806741222397c3072d7..4cd04661b39a7055f5767a3dff88f9a3
          }
      }
  
-@@ -2273,6 +2328,20 @@ public abstract class LivingEntity extends Entity implements Attackable {
+@@ -2277,6 +2327,20 @@ public abstract class LivingEntity extends Entity implements Attackable {
                  }
              }
  
@@ -5088,7 +5067,7 @@ index e9a31314424d9db911cd9806741222397c3072d7..4cd04661b39a7055f5767a3dff88f9a3
              if (f > 0 || !human) {
                  if (human) {
                      // PAIL: Be sure to drag all this code from the EntityHuman subclass each update.
-@@ -2489,7 +2558,7 @@ public abstract class LivingEntity extends Entity implements Attackable {
+@@ -2493,7 +2557,7 @@ public abstract class LivingEntity extends Entity implements Attackable {
  
      @Override
      protected void onBelowWorld() {
@@ -5097,7 +5076,7 @@ index e9a31314424d9db911cd9806741222397c3072d7..4cd04661b39a7055f5767a3dff88f9a3
      }
  
      protected void updateSwingTime() {
-@@ -2686,7 +2755,7 @@ public abstract class LivingEntity extends Entity implements Attackable {
+@@ -2690,7 +2754,7 @@ public abstract class LivingEntity extends Entity implements Attackable {
      }
  
      protected long lastJumpTime = 0L; // Paper
@@ -5106,7 +5085,7 @@ index e9a31314424d9db911cd9806741222397c3072d7..4cd04661b39a7055f5767a3dff88f9a3
          Vec3 vec3d = this.getDeltaMovement();
          // Paper start
          long time = System.nanoTime();
-@@ -2838,6 +2907,7 @@ public abstract class LivingEntity extends Entity implements Attackable {
+@@ -2842,6 +2906,7 @@ public abstract class LivingEntity extends Entity implements Attackable {
  
                      if (f3 > 0.0F) {
                          this.playSound(this.getFallDamageSound((int) f3), 1.0F, 1.0F);
@@ -5114,7 +5093,7 @@ index e9a31314424d9db911cd9806741222397c3072d7..4cd04661b39a7055f5767a3dff88f9a3
                          this.hurt(this.damageSources().flyIntoWall(), f3);
                      }
                  }
-@@ -3059,10 +3129,10 @@ public abstract class LivingEntity extends Entity implements Attackable {
+@@ -3063,10 +3128,10 @@ public abstract class LivingEntity extends Entity implements Attackable {
          }
  
          this.run += (f3 - this.run) * 0.3F;
@@ -5128,7 +5107,7 @@ index e9a31314424d9db911cd9806741222397c3072d7..4cd04661b39a7055f5767a3dff88f9a3
  
          // Paper start - stop large pitch and yaw changes from crashing the server
          this.yRotO += Math.round((this.getYRot() - this.yRotO) / 360.0F) * 360.0F;
-@@ -3074,7 +3144,7 @@ public abstract class LivingEntity extends Entity implements Attackable {
+@@ -3078,7 +3143,7 @@ public abstract class LivingEntity extends Entity implements Attackable {
          this.yHeadRotO += Math.round((this.yHeadRot - this.yHeadRotO) / 360.0F) * 360.0F;
          // Paper end
  
@@ -5137,7 +5116,7 @@ index e9a31314424d9db911cd9806741222397c3072d7..4cd04661b39a7055f5767a3dff88f9a3
          this.animStep += f2;
          if (this.isFallFlying()) {
              ++this.fallFlyTicks;
-@@ -3363,19 +3433,19 @@ public abstract class LivingEntity extends Entity implements Attackable {
+@@ -3367,19 +3432,19 @@ public abstract class LivingEntity extends Entity implements Attackable {
          }
  
          this.setDeltaMovement(d4, d5, d6);
@@ -5162,7 +5141,7 @@ index e9a31314424d9db911cd9806741222397c3072d7..4cd04661b39a7055f5767a3dff88f9a3
          if (this.jumping && this.isAffectedByFluids()) {
              double d7;
  
-@@ -3402,8 +3472,8 @@ public abstract class LivingEntity extends Entity implements Attackable {
+@@ -3406,8 +3471,8 @@ public abstract class LivingEntity extends Entity implements Attackable {
              this.noJumpDelay = 0;
          }
  
@@ -5173,7 +5152,7 @@ index e9a31314424d9db911cd9806741222397c3072d7..4cd04661b39a7055f5767a3dff88f9a3
          this.xxa *= 0.98F;
          this.zza *= 0.98F;
          this.updateFallFlying();
-@@ -3430,8 +3500,8 @@ public abstract class LivingEntity extends Entity implements Attackable {
+@@ -3434,8 +3499,8 @@ public abstract class LivingEntity extends Entity implements Attackable {
              this.travel(vec3d1);
          }
  
@@ -5184,7 +5163,7 @@ index e9a31314424d9db911cd9806741222397c3072d7..4cd04661b39a7055f5767a3dff88f9a3
          if (!this.level().isClientSide && !this.isDeadOrDying() && !freezeLocked) { // Paper - Freeze Tick Lock API
              int i = this.getTicksFrozen();
  
-@@ -3448,18 +3518,20 @@ public abstract class LivingEntity extends Entity implements Attackable {
+@@ -3452,18 +3517,20 @@ public abstract class LivingEntity extends Entity implements Attackable {
              this.hurt(this.damageSources().freeze(), 1.0F);
          }
  
@@ -5210,7 +5189,7 @@ index e9a31314424d9db911cd9806741222397c3072d7..4cd04661b39a7055f5767a3dff88f9a3
                  Location from = new Location(this.level().getWorld(), this.xo, this.yo, this.zo, this.yRotO, this.xRotO);
                  Location to = new Location (this.level().getWorld(), this.getX(), this.getY(), this.getZ(), this.getYRot(), this.getXRot());
                  io.papermc.paper.event.entity.EntityMoveEvent event = new io.papermc.paper.event.entity.EntityMoveEvent(this.getBukkitLivingEntity(), from, to.clone());
-@@ -3469,12 +3541,48 @@ public abstract class LivingEntity extends Entity implements Attackable {
+@@ -3473,12 +3540,48 @@ public abstract class LivingEntity extends Entity implements Attackable {
                      this.absMoveTo(event.getTo().getX(), event.getTo().getY(), event.getTo().getZ(), event.getTo().getYaw(), event.getTo().getPitch());
                  }
              }
@@ -5259,7 +5238,7 @@ index e9a31314424d9db911cd9806741222397c3072d7..4cd04661b39a7055f5767a3dff88f9a3
      }
  
      public boolean isSensitiveToWater() {
-@@ -3495,7 +3603,16 @@ public abstract class LivingEntity extends Entity implements Attackable {
+@@ -3499,7 +3602,16 @@ public abstract class LivingEntity extends Entity implements Attackable {
                      int j = i / 10;
  
                      if (j % 2 == 0) {
@@ -10760,7 +10739,7 @@ index a24ae93efcdb2da5782d342c7697a1bb253400c7..ec595b74a6376adb65840035cdaa7502
      }
  
 diff --git a/src/main/java/net/minecraft/world/entity/boss/wither/WitherBoss.java b/src/main/java/net/minecraft/world/entity/boss/wither/WitherBoss.java
-index 1e07febcf7a3dfb281728cc5e3e4f15dd776d7e0..4952a7daa1aad68e3ba53123093cd879e0d544b5 100644
+index c65ab566c6241dd6a44bd11a449ef0c4b2f6dc65..c94a1b75593ad01e7f79fdc84818ea8ec269e124 100644
 --- a/src/main/java/net/minecraft/world/entity/boss/wither/WitherBoss.java
 +++ b/src/main/java/net/minecraft/world/entity/boss/wither/WitherBoss.java
 @@ -84,20 +84,59 @@ public class WitherBoss extends Monster implements PowerableMob, RangedAttackMob
@@ -10954,21 +10933,7 @@ index 1e07febcf7a3dfb281728cc5e3e4f15dd776d7e0..4952a7daa1aad68e3ba53123093cd879
  
      }
  
-@@ -150,6 +291,13 @@ public class WitherBoss extends Monster implements PowerableMob, RangedAttackMob
-         this.bossEvent.setName(this.getDisplayName());
-     }
- 
-+    // Purpur start - optimize suffocation
-+    @Override
-+    public boolean shouldCheckForSuffocation() {
-+        return true;
-+    }
-+    // Purpur end
-+
-     @Override
-     protected SoundEvent getAmbientSound() {
-         return SoundEvents.WITHER_AMBIENT;
-@@ -256,6 +404,16 @@ public class WitherBoss extends Monster implements PowerableMob, RangedAttackMob
+@@ -263,6 +404,16 @@ public class WitherBoss extends Monster implements PowerableMob, RangedAttackMob
  
      @Override
      protected void customServerAiStep() {
@@ -10985,7 +10950,7 @@ index 1e07febcf7a3dfb281728cc5e3e4f15dd776d7e0..4952a7daa1aad68e3ba53123093cd879
          int i;
  
          if (this.getInvulnerableTicks() > 0) {
-@@ -272,7 +430,7 @@ public class WitherBoss extends Monster implements PowerableMob, RangedAttackMob
+@@ -279,7 +430,7 @@ public class WitherBoss extends Monster implements PowerableMob, RangedAttackMob
                  }
                  // CraftBukkit end
  
@@ -10994,7 +10959,7 @@ index 1e07febcf7a3dfb281728cc5e3e4f15dd776d7e0..4952a7daa1aad68e3ba53123093cd879
                      // CraftBukkit start - Use relative location for far away sounds
                      // this.level().globalLevelEvent(1023, new BlockPosition(this), 0);
                      int viewDistance = ((ServerLevel) this.level()).getCraftServer().getViewDistance() * 16;
-@@ -296,7 +454,7 @@ public class WitherBoss extends Monster implements PowerableMob, RangedAttackMob
+@@ -303,7 +454,7 @@ public class WitherBoss extends Monster implements PowerableMob, RangedAttackMob
  
              this.setInvulnerableTicks(i);
              if (this.tickCount % 10 == 0) {
@@ -11003,7 +10968,7 @@ index 1e07febcf7a3dfb281728cc5e3e4f15dd776d7e0..4952a7daa1aad68e3ba53123093cd879
              }
  
          } else {
-@@ -356,7 +514,7 @@ public class WitherBoss extends Monster implements PowerableMob, RangedAttackMob
+@@ -363,7 +514,7 @@ public class WitherBoss extends Monster implements PowerableMob, RangedAttackMob
  
              if (this.destroyBlocksTick > 0) {
                  --this.destroyBlocksTick;
@@ -11012,7 +10977,7 @@ index 1e07febcf7a3dfb281728cc5e3e4f15dd776d7e0..4952a7daa1aad68e3ba53123093cd879
                      i = Mth.floor(this.getY());
                      j = Mth.floor(this.getX());
                      int i1 = Mth.floor(this.getZ());
-@@ -389,8 +547,10 @@ public class WitherBoss extends Monster implements PowerableMob, RangedAttackMob
+@@ -396,8 +547,10 @@ public class WitherBoss extends Monster implements PowerableMob, RangedAttackMob
                  }
              }
  
@@ -11025,7 +10990,7 @@ index 1e07febcf7a3dfb281728cc5e3e4f15dd776d7e0..4952a7daa1aad68e3ba53123093cd879
              }
  
              this.bossEvent.setProgress(this.getHealth() / this.getMaxHealth());
-@@ -576,11 +736,11 @@ public class WitherBoss extends Monster implements PowerableMob, RangedAttackMob
+@@ -583,11 +736,11 @@ public class WitherBoss extends Monster implements PowerableMob, RangedAttackMob
      }
  
      public int getAlternativeTarget(int headIndex) {
@@ -11039,7 +11004,7 @@ index 1e07febcf7a3dfb281728cc5e3e4f15dd776d7e0..4952a7daa1aad68e3ba53123093cd879
      }
  
      @Override
-@@ -595,6 +755,7 @@ public class WitherBoss extends Monster implements PowerableMob, RangedAttackMob
+@@ -602,6 +755,7 @@ public class WitherBoss extends Monster implements PowerableMob, RangedAttackMob
  
      @Override
      protected boolean canRide(Entity entity) {
