@@ -1,6 +1,6 @@
 From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
 From: AlphaKR93 <dev@alpha93.kr>
-Date: Sat, 9 Sep 2023 16:32:10 +0000
+Date: Mon, 11 Sep 2023 01:08:34 +0000
 Subject: [PATCH] Purpur Server Changes
 
 Original: PurpurMC
@@ -4794,7 +4794,7 @@ index 759713f7c646aaf1a918c87a2834a1d405385dad..43cdda0cb26c5d5cc9025199eb71673d
      protected ParticleOptions getInkParticle() {
          return ParticleTypes.GLOW_SQUID_INK;
 diff --git a/src/main/java/net/minecraft/world/entity/LivingEntity.java b/src/main/java/net/minecraft/world/entity/LivingEntity.java
-index e07140ef2f4c5b0019550eb3100c724699e7a05c..b84e921d539e300b60b8735cb4f1087d32fa2d41 100644
+index 0059ceabaed9c1888a6773efb906e761fd1ca252..f1bae6fa9bde0b65ca592d64e9bbb0f6326e3956 100644
 --- a/src/main/java/net/minecraft/world/entity/LivingEntity.java
 +++ b/src/main/java/net/minecraft/world/entity/LivingEntity.java
 @@ -218,9 +218,9 @@ public abstract class LivingEntity extends Entity implements Attackable {
@@ -11143,7 +11143,7 @@ index 18eaccb39a4c81338a8cbebe3de03934913ac2a4..7ad5583f05b608d5a34a33fb77c5bf91
              }
              // Paper end - fix sand duping
 diff --git a/src/main/java/net/minecraft/world/entity/item/ItemEntity.java b/src/main/java/net/minecraft/world/entity/item/ItemEntity.java
-index 80fc7918cb294b0d88a293bd6a920441cb55c3ad..d045877bfb0f364a43c8448cad21cc39d0565964 100644
+index b3d809c48b041af03471942213070cc3e0b19f2f..2d9bc2ed2b6afae6e846a6f79bb68adff78e35a7 100644
 --- a/src/main/java/net/minecraft/world/entity/item/ItemEntity.java
 +++ b/src/main/java/net/minecraft/world/entity/item/ItemEntity.java
 @@ -56,6 +56,12 @@ public class ItemEntity extends Entity implements TraceableEntity {
@@ -11159,7 +11159,7 @@ index 80fc7918cb294b0d88a293bd6a920441cb55c3ad..d045877bfb0f364a43c8448cad21cc39
  
      public ItemEntity(EntityType<? extends ItemEntity> type, Level world) {
          super(type, world);
-@@ -358,6 +364,15 @@ public class ItemEntity extends Entity implements TraceableEntity {
+@@ -350,6 +356,15 @@ public class ItemEntity extends Entity implements TraceableEntity {
              return false;
          } else if (!this.getItem().getItem().canBeHurtBy(source)) {
              return false;
@@ -11175,7 +11175,7 @@ index 80fc7918cb294b0d88a293bd6a920441cb55c3ad..d045877bfb0f364a43c8448cad21cc39
          } else if (this.level().isClientSide) {
              return true;
          } else {
-@@ -555,6 +570,12 @@ public class ItemEntity extends Entity implements TraceableEntity {
+@@ -547,6 +562,12 @@ public class ItemEntity extends Entity implements TraceableEntity {
          // com.google.common.base.Preconditions.checkArgument(!stack.isEmpty(), "Cannot drop air"); // CraftBukkit // Paper - Remove check
          this.getEntityData().set(ItemEntity.DATA_ITEM, stack);
          this.despawnRate = this.level().paperConfig().entities.spawning.altItemDespawnRate.enabled ? this.level().paperConfig().entities.spawning.altItemDespawnRate.items.getOrDefault(stack.getItem(), this.level().spigotConfig.itemDespawnRate) : this.level().spigotConfig.itemDespawnRate; // Paper
@@ -17556,7 +17556,7 @@ index 8f97c9df726ac20cfce7bdddd5dd4f8c5aa76c35..4932374ab9a3d8582fb0ef024d817ad8
              }
  
 diff --git a/src/main/java/net/minecraft/world/level/Level.java b/src/main/java/net/minecraft/world/level/Level.java
-index d8d4a1ca2eb062af8b2de4ab44503983587cdd77..bdb32964524cb2a4398b8d3bedfb03b0cb805b6d 100644
+index 5c83d703211725ddc36602bb480545288d6a06d9..80ab17142c34d576409e5fb353ff31db9673b2c0 100644
 --- a/src/main/java/net/minecraft/world/level/Level.java
 +++ b/src/main/java/net/minecraft/world/level/Level.java
 @@ -176,6 +176,7 @@ public abstract class Level implements LevelAccessor, AutoCloseable {
@@ -17635,7 +17635,7 @@ index d8d4a1ca2eb062af8b2de4ab44503983587cdd77..bdb32964524cb2a4398b8d3bedfb03b0
          this.generator = gen;
          this.world = new CraftWorld((ServerLevel) this, gen, biomeProvider, env);
  
-@@ -967,18 +1013,18 @@ public abstract class Level implements LevelAccessor, AutoCloseable {
+@@ -966,18 +1012,18 @@ public abstract class Level implements LevelAccessor, AutoCloseable {
      }
  
      protected void tickBlockEntities() {
@@ -17659,7 +17659,7 @@ index d8d4a1ca2eb062af8b2de4ab44503983587cdd77..bdb32964524cb2a4398b8d3bedfb03b0
          // Spigot start
          // Iterator iterator = this.blockEntityTickers.iterator();
          int tilesThisCycle = 0;
-@@ -1011,10 +1057,10 @@ public abstract class Level implements LevelAccessor, AutoCloseable {
+@@ -1010,10 +1056,10 @@ public abstract class Level implements LevelAccessor, AutoCloseable {
          }
          this.blockEntityTickers.removeAll(toRemove);
  
@@ -17672,7 +17672,7 @@ index d8d4a1ca2eb062af8b2de4ab44503983587cdd77..bdb32964524cb2a4398b8d3bedfb03b0
          spigotConfig.currentPrimedTnt = 0; // Spigot
      }
  
-@@ -1207,7 +1253,7 @@ public abstract class Level implements LevelAccessor, AutoCloseable {
+@@ -1206,7 +1252,7 @@ public abstract class Level implements LevelAccessor, AutoCloseable {
  
      @Override
      public List<Entity> getEntities(@Nullable Entity except, AABB box, Predicate<? super Entity> predicate) {
@@ -17681,7 +17681,7 @@ index d8d4a1ca2eb062af8b2de4ab44503983587cdd77..bdb32964524cb2a4398b8d3bedfb03b0
          List<Entity> list = Lists.newArrayList();
          ((ServerLevel)this).getEntityLookup().getEntities(except, box, list, predicate); // Paper - optimise this call
          return list;
-@@ -1226,7 +1272,7 @@ public abstract class Level implements LevelAccessor, AutoCloseable {
+@@ -1225,7 +1271,7 @@ public abstract class Level implements LevelAccessor, AutoCloseable {
      }
  
      public <T extends Entity> void getEntities(EntityTypeTest<Entity, T> filter, AABB box, Predicate<? super T> predicate, List<? super T> result, int limit) {
@@ -17690,7 +17690,7 @@ index d8d4a1ca2eb062af8b2de4ab44503983587cdd77..bdb32964524cb2a4398b8d3bedfb03b0
          // Paper start - optimise this call
          //TODO use limit
          if (filter instanceof net.minecraft.world.entity.EntityType entityTypeTest) {
-@@ -1483,7 +1529,7 @@ public abstract class Level implements LevelAccessor, AutoCloseable {
+@@ -1482,7 +1528,7 @@ public abstract class Level implements LevelAccessor, AutoCloseable {
      }
  
      public ProfilerFiller getProfiler() {
@@ -17699,7 +17699,7 @@ index d8d4a1ca2eb062af8b2de4ab44503983587cdd77..bdb32964524cb2a4398b8d3bedfb03b0
          return (ProfilerFiller) this.profiler.get();
      }
  
-@@ -1574,4 +1620,14 @@ public abstract class Level implements LevelAccessor, AutoCloseable {
+@@ -1573,4 +1619,14 @@ public abstract class Level implements LevelAccessor, AutoCloseable {
          return null;
      }
      // Paper end
@@ -20903,7 +20903,7 @@ index 5e83fabb20bc2b0668cbf48530053ca1bb9092f3..4ffb4046b63cbc140c76721f51c9a7a0
 +    // Purpur end
  }
 diff --git a/src/main/java/org/bukkit/craftbukkit/entity/CraftLivingEntity.java b/src/main/java/org/bukkit/craftbukkit/entity/CraftLivingEntity.java
-index f0ce29d21fe9af803ce4e41b8c037b2ec5d1b124..99dd93c066d4acc177de7f03ae45e491b535f4d1 100644
+index b25f5931f836fd4d8695120f0bcb7c52deff8583..b473f89c59c0fc080fadd0d4db320895e917fd41 100644
 --- a/src/main/java/org/bukkit/craftbukkit/entity/CraftLivingEntity.java
 +++ b/src/main/java/org/bukkit/craftbukkit/entity/CraftLivingEntity.java
 @@ -453,7 +453,7 @@ public class CraftLivingEntity extends CraftEntity implements LivingEntity {
@@ -20942,7 +20942,7 @@ index f0ce29d21fe9af803ce4e41b8c037b2ec5d1b124..99dd93c066d4acc177de7f03ae45e491
          }
          return effects;
      }
-@@ -907,7 +907,7 @@ public class CraftLivingEntity extends CraftEntity implements LivingEntity {
+@@ -912,7 +912,7 @@ public class CraftLivingEntity extends CraftEntity implements LivingEntity {
              return EntityCategory.WATER;
          }
  
@@ -20951,7 +20951,7 @@ index f0ce29d21fe9af803ce4e41b8c037b2ec5d1b124..99dd93c066d4acc177de7f03ae45e491
      }
  
      @Override
-@@ -1094,4 +1094,32 @@ public class CraftLivingEntity extends CraftEntity implements LivingEntity {
+@@ -1099,4 +1099,32 @@ public class CraftLivingEntity extends CraftEntity implements LivingEntity {
          getHandle().knockback(strength, directionX, directionZ);
      };
      // Paper end
