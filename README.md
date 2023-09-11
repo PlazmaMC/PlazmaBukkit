@@ -30,9 +30,12 @@
 - **Including [Pufferfish](https://github.com/pufferfish-gg/Pufferfish) and [Purpur](https://github.com/PurpurMC/Purpur)** - Provides multiple optimizations and customizations
 
 ## ⬇️ Downloads
-- You can download the file from [Releases](https://github.com/PlazmaMC/Plazma/releases)
-- Direct latest download: [Click here](https://github.com/PlazmaMC/Plazma/releases/download/latest-1.20.1/plazma-paperclip-1.20.1-R0.1-SNAPSHOT-reobf.jar)
-- NOTE: If you don't know about Mojmap or Bundler, download `plazma-paperclip-*-reobf.jar`
+| Version                                                      | Direct | Bundler Mojmap | Bundler Reobf | Paperclip Mojmap | Paperclip Reobf |
+| :---:                                                        | :---:  | :---:          | :---:         | :---:            | :---:           |
+| [1.20.1](https://github.com/PlazmaMC/Plazma/tree/ver/1.20.1) | [Download](https://github.com/PlazmaMC/Plazma/releases/download/latest-1.20.1/plazma-paperclip-1.20.1-R0.1-SNAPSHOT-reobf.jar)  | [Download](https://github.com/PlazmaMC/Plazma/releases/download/latest-1.20.1/plazma-bundler-1.20.1-R0.1-SNAPSHOT-mojmap.jar)  | [Download](https://github.com/PlazmaMC/Plazma/releases/download/latest-1.20.1/plazma-bundler-1.20.1-R0.1-SNAPSHOT-reobf.jar)  | [Download](https://github.com/PlazmaMC/Plazma/releases/download/latest-1.20.1/plazma-paperclip-1.20.1-R0.1-SNAPSHOT-mojmap.jar)  | [Download](https://github.com/PlazmaMC/Plazma/releases/download/latest-1.20.1/plazma-paperclip-1.20.1-R0.1-SNAPSHOT-reobf.jar)  |
+| [1.19.4](https://github.com/PlazmaMC/Plazma/tree/ver/1.19.4) | [Download](https://github.com/PlazmaMC/Plazma/releases/download/latest-1.19.4/plazma-paperclip-1.19.4-R0.1-SNAPSHOT-reobf.jar)  | [Download](https://github.com/PlazmaMC/Plazma/releases/download/latest-1.19.4/plazma-bundler-1.19.4-R0.1-SNAPSHOT-mojmap.jar)  | [Download](https://github.com/PlazmaMC/Plazma/releases/download/latest-1.19.4/plazma-bundler-1.19.4-R0.1-SNAPSHOT-reobf.jar)  | [Download](https://github.com/PlazmaMC/Plazma/releases/download/latest-1.19.4/plazma-paperclip-1.19.4-R0.1-SNAPSHOT-mojmap.jar)  | [Download](https://github.com/PlazmaMC/Plazma/releases/download/latest-1.19.4/plazma-paperclip-1.19.4-R0.1-SNAPSHOT-reobf.jar)  |
+- If you don't know about Mojmap or Bundler, download **Direct**
+- Old Builds: [Releases](https://github.com/PlazmaMC/Plazma/releases)
 
 ## ⚖️ License
 - This project and all patches are licensed under the [MIT license](LICENSE.md) unless otherwise noted in the patch headers.
