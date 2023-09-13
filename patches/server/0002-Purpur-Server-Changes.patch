@@ -1,6 +1,6 @@
 From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
 From: AlphaKR93 <dev@alpha93.kr>
-Date: Tue, 12 Sep 2023 02:01:20 +0000
+Date: Wed, 13 Sep 2023 23:17:56 +0000
 Subject: [PATCH] Purpur Server Changes
 
 Original: PurpurMC
@@ -11143,7 +11143,7 @@ index 18eaccb39a4c81338a8cbebe3de03934913ac2a4..7ad5583f05b608d5a34a33fb77c5bf91
              }
              // Paper end - fix sand duping
 diff --git a/src/main/java/net/minecraft/world/entity/item/ItemEntity.java b/src/main/java/net/minecraft/world/entity/item/ItemEntity.java
-index d39f31e7cf315c7cdc1daab28164380e44dd8341..f5f7f384329fdc96fce794c3cf5439d2ab8ecc8b 100644
+index d39f31e7cf315c7cdc1daab28164380e44dd8341..028b83b8e835cfdad19ae9edad76c524b98ead7f 100644
 --- a/src/main/java/net/minecraft/world/entity/item/ItemEntity.java
 +++ b/src/main/java/net/minecraft/world/entity/item/ItemEntity.java
 @@ -56,6 +56,12 @@ public class ItemEntity extends Entity implements TraceableEntity {
@@ -11159,22 +11159,24 @@ index d39f31e7cf315c7cdc1daab28164380e44dd8341..f5f7f384329fdc96fce794c3cf5439d2
  
      public ItemEntity(EntityType<? extends ItemEntity> type, Level world) {
          super(type, world);
-@@ -352,6 +358,15 @@ public class ItemEntity extends Entity implements TraceableEntity {
-             return false;
-         } else if (!this.getItem().getItem().canBeHurtBy(source)) {
-             return false;
+@@ -346,7 +352,16 @@ public class ItemEntity extends Entity implements TraceableEntity {
+ 
+     @Override
+     public boolean hurt(DamageSource source, float amount) {
+-        if (this.isInvulnerableTo(source)) {
 +        // Purpur start
-+        } else if (
-+                (immuneToCactus && source.is(net.minecraft.world.damagesource.DamageTypes.CACTUS)) ||
-+                (immuneToFire && (source.is(DamageTypeTags.IS_FIRE) && source.is(net.minecraft.world.damagesource.DamageTypes.IN_FIRE)) ||
-+                (immuneToLightning && source.is(net.minecraft.world.damagesource.DamageTypes.LIGHTNING_BOLT)) ||
-+                (immuneToExplosion && source.is(DamageTypeTags.IS_EXPLOSION)))
++        if (
++            (immuneToCactus && source.is(net.minecraft.world.damagesource.DamageTypes.CACTUS)) ||
++            (immuneToFire && (source.is(DamageTypeTags.IS_FIRE) || source.is(net.minecraft.world.damagesource.DamageTypes.ON_FIRE) || source.is(net.minecraft.world.damagesource.DamageTypes.IN_FIRE))) ||
++            (immuneToLightning && source.is(net.minecraft.world.damagesource.DamageTypes.LIGHTNING_BOLT)) ||
++            (immuneToExplosion && source.is(DamageTypeTags.IS_EXPLOSION))
 +        ) {
 +            return false;
++        } else if (this.isInvulnerableTo(source)) {
 +        // Purpur end
-         } else if (this.level().isClientSide) {
-             return true;
-         } else {
+             return false;
+         } else if (!this.getItem().isEmpty() && this.getItem().is(Items.NETHER_STAR) && source.is(DamageTypeTags.IS_EXPLOSION)) {
+             return false;
 @@ -549,6 +564,12 @@ public class ItemEntity extends Entity implements TraceableEntity {
          // com.google.common.base.Preconditions.checkArgument(!stack.isEmpty(), "Cannot drop air"); // CraftBukkit // Paper - Remove check
          this.getEntityData().set(ItemEntity.DATA_ITEM, stack);
