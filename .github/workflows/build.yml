@@ -1,0 +1,107 @@
+name: Build Plazma
+
+on:
+  push:
+    branches: [ "ver/*", "feat/*", "dev/*", "expr/*", "ench/*", "impl/*" ]
+  workflow_dispatch:
+
+env:
+  ORG_NAME: PlazmaMC
+  MC_VERSION: 1.20.1
+  MAIN_BRANCH: ver/1.20.1
+  DEBUG: 'false'
+
+jobs:
+  release:
+    strategy:
+      matrix:
+        base_jdk: [17]
+        graal: [latest]
+        os: [ubuntu-22.04]
+
+    if: "!startsWith(github.event.commits[0].message, '[CI-Skip]')"
+    runs-on: ${{ matrix.os }}
+    steps:
+      - name: Checkout action
+        uses: actions/checkout@v3
+
+      - name: Checkout pages
+        uses: actions/checkout@v3
+        with:
+          path: javadoc
+          ref: gh-pages
+          token: ${{ secrets.GH_PAT }}
+
+      - name: Validate Gradle Wrapper
+        uses: gradle/wrapper-validation-action@v1
+
+      - name: Set up GraalVM ${{ matrix.base_jdk }}
+        uses: graalvm/setup-graalvm@v1
+        with:
+          github-token: ${{ secrets.GH_PAT }}
+          java-version: ${{ matrix.base_jdk }}
+          version: ${{ matrix.graal }}
+          cache: 'gradle'
+
+      - name: Configure Git
+        run: git config --global user.email "41898282+github-actions[bot]@users.noreply.github.com" && git config --global user.name "github-actions[bot]"
+
+      - name: Apply Patches
+        run: ./gradlew applyPatches --stacktrace
+
+      - name: Build
+        run: ./gradlew build --stacktrace
+
+      - name: Create Reobf Jar
+        run: ./gradlew createReobfPaperclipJar --stacktrace
+
+      - name: Create Mojmap Jar
+        run: ./gradlew createMojmapPaperclipJar --stacktrace
+
+      - name: Update Javadoc
+        continue-on-error: true
+        if: github.ref_name == env.MAIN_BRANCH
+        run: |
+          (cd Plazma-API/build/docs/javadoc && tar c .) | (cd javadoc && tar xf -)
+          cd javadoc
+          git add . && git commit -m "Update Javadocs"
+          git push
+
+      - name: Publish Packages
+        if: github.ref_name == env.MAIN_BRANCH
+        run: |
+          export GITHUB_USERNAME=${{ env.ORG_NAME }}
+          export GITHUB_TOKEN=${{ secrets.GH_PAT }}
+          ./gradlew publish --stacktrace
+
+      - name: Upload Artifacts
+        if: env.DEBUG == 'true' || !startsWith(github.ref_name, 'ver/')
+        uses: actions/upload-artifact@v3
+        with:
+          name: Artifacts
+          path: |
+            build/libs
+            Plazma-API/build/docs/javadoc
+      
+      - name: Get Release Number
+        run: echo "RELEASE=$(git ls-remote --tags origin | grep "release" | wc -l)" >> $GITHUB_ENV
+
+      - name: Release Artifacts
+        if: startsWith(github.ref_name, 'ver/')
+        uses: marvinpinto/action-automatic-releases@latest
+        with:
+          title: "Release #${{ env.RELEASE }}"
+          automatic_release_tag: release-${{ env.RELEASE }}
+          repo_token: "${{ secrets.GH_PAT }}"
+          files: build/libs/*.jar
+          prerelease: false
+          
+      - name: Release Artifacts (Latest)
+        if: startsWith(github.ref_name, 'ver/')
+        uses: marvinpinto/action-automatic-releases@latest
+        with:
+          title: "Release #${{ env.RELEASE }}"
+          automatic_release_tag: latest-${{ env.MC_VERSION }}
+          repo_token: "${{ secrets.GH_PAT }}"
+          files: build/libs/*.jar
+          prerelease: false
