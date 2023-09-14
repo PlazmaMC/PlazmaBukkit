@@ -1,6 +1,6 @@
 <div align="center">
 
-![image](res/title-400.png)
+![image](https://raw.githubusercontent.com/PlazmaMC/Plazma/main/src/resources/title-900.png)
 
 ### A Server Platform for Minecraft: Java Edition based on [Paper](https://github.com/PaperMC/Paper)
 
@@ -17,40 +17,15 @@
 
 </div>
 
-## ⚠️ Warning
-- Plazma may cause **<u>unexpected problems</u>**, so be sure to test it thoroughly before using it on a public server.
+[main]: https://github.com/PlazmaMC/Plazma
 
-## 💬 About Plazma...
-- **Plazma** is created from the merger of **[Andromeda](https://github.com/TeamEarendel/Andromeda)** and **[Fusion](https://github.com/RuinedTechnologyUnify/Fusion)**
-- Compatible and effective patches from other bukkits and mods
-- We're always trying to keep it compatible and performance high.
-
-## ⚙️ Features
-- **Based on [Paper](https://github.com/PaperMC/Paper)** - Most plugins of Bukkit, Craft Bukkit, Spigot, and Paper are available
-- **Including [Pufferfish](https://github.com/pufferfish-gg/Pufferfish) and [Purpur](https://github.com/PurpurMC/Purpur)** - Provides multiple optimizations and customizations
+### This is the branch for Plazma 1.20.1. If you want to know more about Plazma, please check the [main branch][main].
+이곳은 플라즈마의 1.20.1용 브랜치 입니다. 플라즈마에 대해 자세히 알고 싶다면 [main 브랜치][main]를 확인해주세요.
 
 ## ⬇️ Downloads
-| Version                                                      | Bundler Mojmap | Bundler Reobf | Paperclip Mojmap | Paperclip Reobf |
-| :---:                                                        | :---:          | :---:         | :---:            | :---:           |
-| [1.20.1](https://github.com/PlazmaMC/Plazma/tree/ver/1.20.1) | [Download](https://github.com/PlazmaMC/Plazma/releases/download/latest-1.20.1/plazma-bundler-1.20.1-R0.1-SNAPSHOT-mojmap.jar)  | [Download](https://github.com/PlazmaMC/Plazma/releases/download/latest-1.20.1/plazma-bundler-1.20.1-R0.1-SNAPSHOT-reobf.jar)  | [Download](https://github.com/PlazmaMC/Plazma/releases/download/latest-1.20.1/plazma-paperclip-1.20.1-R0.1-SNAPSHOT-mojmap.jar)  | [Download](https://github.com/PlazmaMC/Plazma/releases/download/latest-1.20.1/plazma-paperclip-1.20.1-R0.1-SNAPSHOT-reobf.jar)  |
-| [1.19.4](https://github.com/PlazmaMC/Plazma/tree/ver/1.19.4) | [Download](https://github.com/PlazmaMC/Plazma/releases/download/latest-1.19.4/plazma-bundler-1.19.4-R0.1-SNAPSHOT-mojmap.jar)  | [Download](https://github.com/PlazmaMC/Plazma/releases/download/latest-1.19.4/plazma-bundler-1.19.4-R0.1-SNAPSHOT-reobf.jar)  | [Download](https://github.com/PlazmaMC/Plazma/releases/download/latest-1.19.4/plazma-paperclip-1.19.4-R0.1-SNAPSHOT-mojmap.jar)  | [Download](https://github.com/PlazmaMC/Plazma/releases/download/latest-1.19.4/plazma-paperclip-1.19.4-R0.1-SNAPSHOT-reobf.jar)  |
-- Mojmap 또는 Bundler에 대해 모르신다면 **Paperclip Reobf**을 다운로드하시면 됩니다
-- If you don't know about Mojmap or Bundler, download **Paperclip Reobf**
-- Old Builds: [Releases](https://github.com/PlazmaMC/Plazma/releases)
+### If you don't know about Mojmap or Bundler, download **Reobf Paperclip**
+Mojmap 또는 Bundler에 대해 잘 알지 못한다면, **Reobf Paperclip**을 사용하세요
 
-## ⚖️ License
-- This project and all patches are licensed under the [MIT license](LICENSE.md) unless otherwise noted in the patch headers.
-
-## 🔧 Support Status
-| Version                                                      | Support | Stability | Progress |
-| :---:                                                        | :---:   | :---:     | :---:    |
-| [1.20.1](https://github.com/PlazmaMC/Plazma/tree/ver/1.20.1) | Active  | Good      | 100%     |
-| [1.19.4](https://github.com/PlazmaMC/Plazma/tree/ver/1.19.4) | Active  | Good      | 100%     |
-
-## 🌀 Sponsorship - Minecraft Development Dictionary (KOREAN)
-[![Discord](https://img.shields.io/discord/911980670123905054?color=%239c91fd&label=MDD&logo=discord&style=for-the-badge&logoColor=ffffff)](https://discord.gg/AZwXTA9Pgx) 
-- 한글로 번역&정리된 Minecraft와 서드파티 버킷들의 소식들을 빠르게 만나볼 수 있습니다.
-- Skript와 Plugin등 서버 개발과 관련된 질문에 대한 답변을 받으실 수 있습니다.
-
-## 📈 bStats
-[![](https://bstats.org/signatures/server-implementation/Plazma.svg)](https://bstats.org/plugin/server-implementation/Plazma/18047)
+| **Reobf Paperclip (Default)** | Mojmap Paperclip | Reobf Bundler | Mojmap Bundler |
+| :---:               | :---:            | :---:         | :---:          |
+| [Download](https://github.com/PlazmaMC/Plazma/releases/download/latest-1.20.1/plazma-paperclip-1.20.1-R0.1-SNAPSHOT-reobf.jar) | [Download](https://github.com/PlazmaMC/Plazma/releases/download/latest-1.20.1/plazma-paperclip-1.20.1-R0.1-SNAPSHOT-mojmap.jar) | [Download](https://github.com/PlazmaMC/Plazma/releases/download/latest-1.20.1/plazma-bundler-1.20.1-R0.1-SNAPSHOT-reobf.jar) | [Download](https://github.com/PlazmaMC/Plazma/releases/download/latest-1.20.1/plazma-bundler-1.20.1-R0.1-SNAPSHOT-mojmap.jar) |
