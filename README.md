@@ -2,7 +2,7 @@
 
 ![image](src/resources/title-400.png)
 
-### A Server Platform for Minecraft: Java Edition based on [Paper](https://github.com/PaperMC/Paper)
+### A Server Platform for Minecraft: Java Edition based on [Paper](https://github.com/PaperMC/Paper) which provides fast performance
 
 [![Discord](https://img.shields.io/discord/1083716853928558652?style=for-the-badge&logo=discord&logoColor=ffffff&label=DISCORD&color=5865F2)](https://discord.gg/MmfC52K8A8)
 [![License](https://img.shields.io/github/license/PlazmaMC/Plazma?style=for-the-badge&logo=github&logoColor=ffffff)](LICENSE.md)
@@ -39,10 +39,19 @@
 ## ⚙️ 주요 기능
 - **[Paper](https://github.com/PaperMC/Paper) 기반** - 대부분의 Bukkit, CraftBukkit, Spigot 그리고 Paper 플러그인이 정상적으로 동작합니다.
 - **[Pufferfish](https://github.com/pufferfish-gg/Pufferfish) & [Purpur](https://github.com/PurpurMC/Purpur) 포함** - 여러 최적화와 사용자화를 제공합니다.
-- **Support [No Chat Reports](https://github.com/Aizistral-Studios/No-Chat-Reports)** - 채팅 신고를 비활성화 하여 서버를 트래킹으로부터 보호할 수 있습니다. (활성화 가능)
-- **Implemented many useful mods** - 여러 모드를 적용하여 안정적이고 높은 성능을 제공합니다.
-- **Various Improvements** - 여러 개선 패치를 적용하여 더 나은 환경을 제공합니다.
+- **[업스트림 자동 업데이트](https://github.com/PlazmaMC/AlwaysUpToDate)** - 자체 스크립트를 통해 업스트림을 자동으로 업데이트 하여 항상 최신으로 유지됩니다.
+- **[No Chat Reports](https://github.com/Aizistral-Studios/No-Chat-Reports) 탑재** - 채팅 신고를 비활성화 하여 서버를 트래킹으로부터 보호할 수 있습니다. (활성화 가능)
+- **여러 최적화 모드 적용** - 여러 모드를 적용하여 안정적이고 높은 성능을 제공합니다.
+- **[기본 구성 파일 최적화](https://github.com/YouHaveTrouble/minecraft-optimization)** - 기본 구성 파일이 최적화 되어 있어 따로 구성 파일을 최적화 하지 않아도 됩니다.
+- **자체 개선 적용** - 여러 개선 패치를 적용하여 더 나은 환경을 제공합니다.
 - **[더 알아보기](src/main/features.md)**
+
+## ✨ 활용 사례
+- **공동 개발자 IPECTER 이펙터의 서버에 사용되고 있습니다.** NMS 및 리플렉션으로 작동하는 플러그인이 굉장히 많지만, 아무런 문제 없이 정상 작동하고 있습니다.
+- **현재 테스트 중에 있는 RPG 서버에서 빠른 성능을 유지하고 있습니다.** 단일 클러스터에서 100명의 플레이어를 TPS 하락 없이 안정적으로 유지하였으며, 4개의 클러스터에서 총 250명 (클러스터당 약 70명) 이 쾌적한 환경에서 플레이 할 수 있었습니다.
+- 기존에 청크/엔티티에서 렉이 발생하던 마인팜/야생 서버의 버킷을 Purpur에서 Plazma로 변경하며 대부분의 청크/엔티티 렉을 제거하였습니다.
+- 무거운 데이터 팩 20개, 플레이어 20명이 동시에 월드를 생성하더라도 높은 TPS, 낮은 MSPT를 유지하였습니다.
+- 많은 Twitch 스트리머 분들의 시청자 참여용 서버와 야생, 도시능력자, 마인팜 서버에서 사용되고 있습니다.
 </details>
 
 ## 💬 About Plazma...
@@ -54,9 +63,18 @@
 - **Based on [Paper](https://github.com/PaperMC/Paper)** - Most plugins of Bukkit, Craft Bukkit, Spigot, and Paper are available
 - **Including [Pufferfish](https://github.com/pufferfish-gg/Pufferfish) and [Purpur](https://github.com/PurpurMC/Purpur)** - Provides multiple optimizations and customizations
 - **Support [No Chat Reports](https://github.com/Aizistral-Studios/No-Chat-Reports)** - Disable chat reporting to secure server chat (Configurable)
+  **[Automatic Upstream Updates](https://github.com/PlazmaMC/AlwaysUpToDate)** - Automatically updates the upstream through our own scripts, so it's always up to date.
 - **Implemented many useful mods** - Stable and fast by implementing many mods
+- **[Optimized Default Configuration](https://github.com/YouHaveTrouble/minecraft-optimization)** - The default configuration file is optimized, so you do not need to modify it separately.
 - **Various Improvements** - Apply improvement patches to provide a better experience
 - **[... and More!](src/main/features.md)**
+
+## ✨ Use Cases
+- **It is used by server of developer IPECTER.** There are a lot of plugins that work with NMS and reflection, but they are working fine without any problems.
+- **This performed fast on the RPG server currently being tested.** A single cluster kept 100 players stable without a drop in TPS, and a total of 250 players (about 70 per cluster) were able to play in a pleasant environment in four clusters.
+- This reduced chunk/entity lag by changing the bukkit of Skyblock/Survival server, which had previously been lagging in chunk/entity, from Purpur to Plazma.
+- With 20 heavy data packs applied, it maintained high TPS and low MSPT even if 20 players created the world at the same time.
+- It is used by many Korean Twitch streamers' servers, survival, mini games, and skyblock servers.
 
 ## ⬇️ Downloads
 ### If you don't know about Mojmap or Bundler, download **Reobf Paperclip**
