@@ -2,7 +2,7 @@
 
 ![image](src/resources/title-400.png)
 
-### A Server Platform for Minecraft: Java Edition based on [Paper](https://github.com/PaperMC/Paper) which provides fast performance
+### A Server Platform for Minecraft: Java Edition based on [Paper](https://github.com/PaperMC/Paper), which provides the fastest performance
 
 [![Discord](https://img.shields.io/discord/1083716853928558652?style=for-the-badge&logo=discord&logoColor=ffffff&label=DISCORD&color=5865F2)](https://discord.gg/MmfC52K8A8)
 [![License](https://img.shields.io/github/license/PlazmaMC/Plazma?style=for-the-badge&logo=github&logoColor=ffffff)](LICENSE.md)
