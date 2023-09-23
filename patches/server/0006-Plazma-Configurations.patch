@@ -263,7 +263,7 @@ index 221d1d0e1b4b46de6ebca5faac09bbda875fae17..e009dba395779e2c89a36fe4524e5d40
          this.convertable = convertable_conversionsession;
          this.uuid = WorldUUID.getUUID(convertable_conversionsession.levelDirectory.path().toFile());
 diff --git a/src/main/java/net/minecraft/world/level/Level.java b/src/main/java/net/minecraft/world/level/Level.java
-index 32bd43692b701b49776c10d9c4332bb41322b9fa..a6e7d98d1f4848b11a3776d8e7a42a56a1543865 100644
+index c80d73035b05bfb6b3639175c51bb37c477c28d1..6d513c903e06fe79dffdffd02871d00cb958b715 100644
 --- a/src/main/java/net/minecraft/world/level/Level.java
 +++ b/src/main/java/net/minecraft/world/level/Level.java
 @@ -174,7 +174,12 @@ public abstract class Level implements LevelAccessor, AutoCloseable {
@@ -293,10 +293,10 @@ index 32bd43692b701b49776c10d9c4332bb41322b9fa..a6e7d98d1f4848b11a3776d8e7a42a56
          this.playerBreedingCooldowns = this.getNewBreedingCooldownCache(); // Purpur
          this.generator = gen;
 diff --git a/src/main/java/org/bukkit/craftbukkit/CraftServer.java b/src/main/java/org/bukkit/craftbukkit/CraftServer.java
-index 8833a66f43e9a4ac486fa67db9e8147007917e15..153fcfc55589691a570080aa4f4e179452bf4f6c 100644
+index 875cc2357d17d37d8df921a84cf8af7b99d860f2..c43023fecf0882101248f625a28975586da05071 100644
 --- a/src/main/java/org/bukkit/craftbukkit/CraftServer.java
 +++ b/src/main/java/org/bukkit/craftbukkit/CraftServer.java
-@@ -1071,6 +1071,7 @@ public final class CraftServer implements Server {
+@@ -1051,6 +1051,7 @@ public final class CraftServer implements Server {
  
          org.spigotmc.SpigotConfig.init((File) console.options.valueOf("spigot-settings")); // Spigot
          this.console.paperConfigurations.reloadConfigs(this.console);
@@ -304,7 +304,7 @@ index 8833a66f43e9a4ac486fa67db9e8147007917e15..153fcfc55589691a570080aa4f4e1794
          org.purpurmc.purpur.PurpurConfig.init((File) console.options.valueOf("purpur-settings")); // Purpur
          for (ServerLevel world : this.console.getAllLevels()) {
              // world.serverLevelData.setDifficulty(config.difficulty); // Paper - per level difficulty
-@@ -3004,6 +3005,13 @@ public final class CraftServer implements Server {
+@@ -2984,6 +2985,13 @@ public final class CraftServer implements Server {
              return CraftServer.this.console.paperConfigurations.createLegacyObject(CraftServer.this.console);
          }
  
@@ -319,7 +319,7 @@ index 8833a66f43e9a4ac486fa67db9e8147007917e15..153fcfc55589691a570080aa4f4e1794
          @Override
          public YamlConfiguration getPurpurConfig() {
 diff --git a/src/main/java/org/bukkit/craftbukkit/Main.java b/src/main/java/org/bukkit/craftbukkit/Main.java
-index 9a3374a1236164194ef0df43ed639296cbe1c731..affd4c6267f60cbae75b6e6a09990144a1f1e1f0 100644
+index 4bc0a370c7aec06d30b4ebf7fa7d73263d0543bc..206cec149875137836437bd237c2ff52baad4f0e 100644
 --- a/src/main/java/org/bukkit/craftbukkit/Main.java
 +++ b/src/main/java/org/bukkit/craftbukkit/Main.java
 @@ -173,6 +173,14 @@ public class Main {
@@ -968,17 +968,17 @@ index 0000000000000000000000000000000000000000..469100cd86e6742eeebad22923097782
 +
 +}
 diff --git a/src/test/java/org/bukkit/support/AbstractTestingBase.java b/src/test/java/org/bukkit/support/AbstractTestingBase.java
-index d1fd4cf65c31bc00d0bffa3123fc2223f1498a34..0aebabc83eea721e4f373fb00f4ee80b659efe83 100644
+index 52a6f1791c7de062d5d567d7cc9ee68731fd6e67..36ad8262b20cdd5ce4e94866c5d22cbdb5d5b385 100644
 --- a/src/test/java/org/bukkit/support/AbstractTestingBase.java
 +++ b/src/test/java/org/bukkit/support/AbstractTestingBase.java
-@@ -63,6 +63,7 @@ public abstract class AbstractTestingBase {
+@@ -64,6 +64,7 @@ public abstract class AbstractTestingBase {
  
          DummyEnchantments.setup();
          io.papermc.paper.configuration.GlobalConfigTestingBase.setupGlobalConfigForTest(); // Paper
 +        org.plazmamc.plazma.configurations.GlobalConfigurationTestingBase.setupGlobalConfigurationForTest(); // Plazma
  
-         ImmutableList.Builder<Material> builder = ImmutableList.builder();
-         for (Material m : Material.values()) {
+         CraftRegistry.setMinecraftRegistry(REGISTRY_CUSTOM);
+ 
 diff --git a/src/test/java/org/plazmamc/plazma/configurations/GlobalConfigurationTestingBase.java b/src/test/java/org/plazmamc/plazma/configurations/GlobalConfigurationTestingBase.java
 new file mode 100644
 index 0000000000000000000000000000000000000000..2b9a17a2e04f7fb6b801920ed04133db9478f984

@@ -26,30 +26,26 @@ dependencies {
 subprojects {
     apply(plugin = "java")
 
-    java {
-        toolchain {
-            languageVersion.set(JavaLanguageVersion.of(17))
+    java.toolchain.languageVersion.set(JavaLanguageVersion.of(17))
+    
+    tasks {
+        withType<JavaCompile>().configureEach {
+            options.encoding = "UTF-8"
+            options.release.set(17)
         }
-    }
-}
-
-subprojects {
-    tasks.withType<JavaCompile>().configureEach {
-        options.encoding = "UTF-8"
-        options.release.set(17)
-    }
-
-    tasks.withType<Javadoc> {
-        options.encoding = Charsets.UTF_8.name()
-    }
-
-    tasks.withType<ProcessResources> {
-        filteringCharset = Charsets.UTF_8.name()
-    }
-
-    tasks.withType<Test> {
-        minHeapSize = "2g"
-        maxHeapSize = "2g"
+    
+        withType<Javadoc> {
+            options.encoding = Charsets.UTF_8.name()
+        }
+    
+        withType<ProcessResources> {
+            filteringCharset = Charsets.UTF_8.name()
+        }
+    
+        withType<Test> {
+            minHeapSize = "2g"
+            maxHeapSize = "2g"
+        }
     }
 
     repositories {
