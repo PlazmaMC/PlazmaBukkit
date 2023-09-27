@@ -578,14 +578,15 @@ index 0000000000000000000000000000000000000000..85002144e0b350c4ae044e1a4a4c1734
 +}
 diff --git a/src/main/java/org/plazmamc/plazma/configurations/GlobalConfiguration.java b/src/main/java/org/plazmamc/plazma/configurations/GlobalConfiguration.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..92524f24bdb56a861b06fffc900ff3c118bdb4ee
+index 0000000000000000000000000000000000000000..b9a6c781684b080bcfb07495e561325d594eeafd
 --- /dev/null
 +++ b/src/main/java/org/plazmamc/plazma/configurations/GlobalConfiguration.java
-@@ -0,0 +1,33 @@
+@@ -0,0 +1,37 @@
 +package org.plazmamc.plazma.configurations;
 +
 +import io.papermc.paper.configuration.Configuration;
 +import io.papermc.paper.configuration.ConfigurationPart;
++import org.jetbrains.annotations.NotNull;
 +import org.spongepowered.configurate.objectmapping.meta.Setting;
 +
 +@SuppressWarnings({"CanBeFinal", "FieldCanBeLocal", "FieldMayBeFinal", "InnerClassMayBeStatic"})
@@ -598,8 +599,11 @@ index 0000000000000000000000000000000000000000..92524f24bdb56a861b06fffc900ff3c1
 +        return instance;
 +    }
 +
-+    static void set(GlobalConfiguration instance) {
++    static void set(@NotNull GlobalConfiguration instance, boolean test) {
 +        GlobalConfiguration.instance = instance;
++        if (test) {
++
++        }
 +    }
 +
 +    @Setting(Configuration.VERSION_FIELD)
@@ -668,7 +672,7 @@ index 0000000000000000000000000000000000000000..d990c031255daf0d43541efe175c5b52
 +}
 diff --git a/src/main/java/org/plazmamc/plazma/configurations/PlazmaConfigurations.java b/src/main/java/org/plazmamc/plazma/configurations/PlazmaConfigurations.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..39db772735d57e12bbb26a6505ca7a5e360cdd78
+index 0000000000000000000000000000000000000000..295578fddc8f897763d0af9836cdd93b0d3cef31
 --- /dev/null
 +++ b/src/main/java/org/plazmamc/plazma/configurations/PlazmaConfigurations.java
 @@ -0,0 +1,309 @@
@@ -844,7 +848,7 @@ index 0000000000000000000000000000000000000000..39db772735d57e12bbb26a6505ca7a5e
 +    @Override
 +    public GlobalConfiguration initializeGlobalConfiguration() throws ConfigurateException {
 +        GlobalConfiguration configuration = super.initializeGlobalConfiguration();
-+        GlobalConfiguration.set(configuration);
++        GlobalConfiguration.set(configuration, false);
 +        return configuration;
 +    }
 +
@@ -1012,7 +1016,7 @@ index 8174b6bb78553cbe124b499ffa235368179d1564..a5f8a128b27906daba5aeb293851bb03
  
 diff --git a/src/test/java/org/plazmamc/plazma/configurations/GlobalConfigurationTestingBase.java b/src/test/java/org/plazmamc/plazma/configurations/GlobalConfigurationTestingBase.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..2b9a17a2e04f7fb6b801920ed04133db9478f984
+index 0000000000000000000000000000000000000000..adf57600250b05e1d7cf617d7f58797d2663bca9
 --- /dev/null
 +++ b/src/test/java/org/plazmamc/plazma/configurations/GlobalConfigurationTestingBase.java
 @@ -0,0 +1,18 @@
@@ -1027,7 +1031,7 @@ index 0000000000000000000000000000000000000000..2b9a17a2e04f7fb6b801920ed04133db
 +            ConfigurationNode node = PlazmaConfigurations.createForTesting();
 +            try {
 +                GlobalConfiguration globalConfiguration = node.require(GlobalConfiguration.class);
-+                GlobalConfiguration.set(globalConfiguration);
++                GlobalConfiguration.set(globalConfiguration, true);
 +            } catch (SerializationException e) {
 +                throw new RuntimeException(e);
 +            }
