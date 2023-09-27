@@ -235,7 +235,7 @@ index 9cc09f0415a09299102dbcf022326944368ea033..2e9e63f3ee6268cafa3b90666cf31019
          scanDirectory(resourceManager, this.directory, this.gson, map);
          return map;
 diff --git a/src/main/java/net/minecraft/server/packs/resources/SimplePreparableReloadListener.java b/src/main/java/net/minecraft/server/packs/resources/SimplePreparableReloadListener.java
-index 7ab57748b2f2aea1003d9b7e70e76c372aa1e432..da21380a84d4dcbeaf965b2202e5209b82a82529 100644
+index 7ab57748b2f2aea1003d9b7e70e76c372aa1e432..7de117e0464a24da632d134870554fd11e1b87ca 100644
 --- a/src/main/java/net/minecraft/server/packs/resources/SimplePreparableReloadListener.java
 +++ b/src/main/java/net/minecraft/server/packs/resources/SimplePreparableReloadListener.java
 @@ -2,19 +2,19 @@ package net.minecraft.server.packs.resources;
@@ -248,21 +248,21 @@ index 7ab57748b2f2aea1003d9b7e70e76c372aa1e432..da21380a84d4dcbeaf965b2202e5209b
  public abstract class SimplePreparableReloadListener<T> implements PreparableReloadListener {
      @Override
 -    public final CompletableFuture<Void> reload(PreparableReloadListener.PreparationBarrier synchronizer, ResourceManager manager, ProfilerFiller prepareProfiler, ProfilerFiller applyProfiler, Executor prepareExecutor, Executor applyExecutor) {
-+    public final CompletableFuture<Void> reload(PreparableReloadListener.PreparationBarrier synchronizer, ResourceManager manager/*, ProfilerFiller prepareProfiler, ProfilerFiller applyProfiler*/, Executor prepareExecutor, Executor applyExecutor) {
++    public final CompletableFuture<Void> reload(PreparableReloadListener.PreparationBarrier synchronizer, ResourceManager manager/*, ProfilerFiller prepareProfiler, ProfilerFiller applyProfiler*/, Executor prepareExecutor, Executor applyExecutor) { // Plazma - Completely remove profiler
          return CompletableFuture.supplyAsync(() -> {
 -            return this.prepare(manager, prepareProfiler);
-+            return this.prepare(manager/*, prepareProfiler*/);
++            return this.prepare(manager/*, prepareProfiler*/); // Plazma - Completely remove profiler
          }, prepareExecutor).thenCompose(synchronizer::wait).thenAcceptAsync((prepared) -> {
 -            this.apply(prepared, manager, applyProfiler);
-+            this.apply(prepared, manager/*, applyProfiler*/);
++            this.apply(prepared, manager/*, applyProfiler*/); // Plazma - Completely remove profiler
          }, applyExecutor);
      }
  
 -    protected abstract T prepare(ResourceManager manager, ProfilerFiller profiler);
-+    protected abstract T prepare(ResourceManager manager/*, ProfilerFiller profiler*/);
++    protected abstract T prepare(ResourceManager manager/*, ProfilerFiller profiler*/); // Plazma - Completely remove profiler
  
 -    protected abstract void apply(T prepared, ResourceManager manager, ProfilerFiller profiler);
-+    protected abstract void apply(T prepared, ResourceManager manager/*, ProfilerFiller profiler*/);
++    protected abstract void apply(T prepared, ResourceManager manager/*, ProfilerFiller profiler*/); // Plazma - Completely remove profiler
  }
 diff --git a/src/main/java/net/minecraft/server/packs/resources/SimpleReloadInstance.java b/src/main/java/net/minecraft/server/packs/resources/SimpleReloadInstance.java
 index de2ecc7c69fb870f843f60596115866214267ee4..05a731dec4aec1d3cf61a761bda018cc8c46afde 100644
@@ -891,7 +891,7 @@ index dd375fffa727db76fa989248b9b836960974c372..45161f960a29395538c67461ebf864e5
          CompletableFuture<?>[] acompletablefuture = (CompletableFuture[]) LootDataType.values().map((lootdatatype) -> {
              return LootDataManager.scheduleElementParse(lootdatatype, manager, prepareExecutor, map);
 diff --git a/src/main/java/net/minecraft/world/ticks/LevelTicks.java b/src/main/java/net/minecraft/world/ticks/LevelTicks.java
-index 0043c0087896a6df6910b0500da37d84b287c901..a7b4d38bf7d2f8c1ba42d64b7ffd577d6fca5378 100644
+index 0043c0087896a6df6910b0500da37d84b287c901..17a5928afade7e477cda34365dc8c72c52a6b758 100644
 --- a/src/main/java/net/minecraft/world/ticks/LevelTicks.java
 +++ b/src/main/java/net/minecraft/world/ticks/LevelTicks.java
 @@ -23,7 +23,7 @@ import net.minecraft.Util;
@@ -917,7 +917,7 @@ index 0043c0087896a6df6910b0500da37d84b287c901..a7b4d38bf7d2f8c1ba42d64b7ffd577d
      };
  
 -    public LevelTicks(LongPredicate tickingFutureReadyPredicate, Supplier<ProfilerFiller> profilerGetter) {
-+    public LevelTicks(LongPredicate tickingFutureReadyPredicate/*, Supplier<ProfilerFiller> profilerGetter*/) {
++    public LevelTicks(LongPredicate tickingFutureReadyPredicate/*, Supplier<ProfilerFiller> profilerGetter*/) { // Plazma - Completely remove profiler
          this.tickCheck = tickingFutureReadyPredicate;
 -        this.profiler = profilerGetter;
 +        //this.profiler = profilerGetter; // Plazma - Completely remove profiler
