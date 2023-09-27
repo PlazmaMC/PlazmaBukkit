@@ -19,7 +19,7 @@
 
 | Version (버전)                                                | Support (지원상태) | Stability (안정성) | Progress (완성도) | Build Status (빌드 상태) |
 | :---:                                                        | :---:            | :---:             | :---:            | :---: |
-| 1.20.2 | Working (작업중) | Poor (나쁨) | 36% | [![Build Status](https://img.shields.io/github/actions/workflow/status/PlazmaMC/Plazma/build.yml?style=for-the-badge&label=%20&branch=ver/1.20.2)](https://github.com/PlazmaMC/Plazma/actions/workflows/build.yml?query=branch:ver/1.20.2) |
+| 1.20.2 | Working (작업중) | Poor (나쁨) | 36% | [![Build Status](https://img.shields.io/github/actions/workflow/status/PlazmaMC/Plazma/build.yml?style=for-the-badge&label=%20&branch=dev/1.20.2)](https://github.com/PlazmaMC/Plazma/actions/workflows/build.yml?query=branch:dev/1.20.2) |
 | [1.20.1](https://github.com/PlazmaMC/Plazma/tree/ver/1.20.1) | Active (활성)     | Good (좋음)        | 100%             | [![Build Status](https://img.shields.io/github/actions/workflow/status/PlazmaMC/Plazma/build.yml?style=for-the-badge&label=%20&branch=ver/1.20.1)](https://github.com/PlazmaMC/Plazma/actions/workflows/build.yml?query=branch:ver/1.20.1) |
 | [1.19.4](https://github.com/PlazmaMC/Plazma/tree/ver/1.19.4) | Active (활성)     | Good (좋음)        | 100%             | [![Build Status](https://img.shields.io/github/actions/workflow/status/PlazmaMC/Plazma/build.yml?style=for-the-badge&label=%20&branch=ver/1.19.4)](https://github.com/PlazmaMC/Plazma/actions/workflows/build.yml?query=branch:ver/1.19.4) |
 
