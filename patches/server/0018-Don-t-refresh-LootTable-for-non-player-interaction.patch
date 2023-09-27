@@ -1,0 +1,30 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: AlphaKR93 <dev@alpha93.kr>
+Date: Wed, 27 Sep 2023 22:15:39 +0900
+Subject: [PATCH] Don't refresh LootTable for non player interaction
+
+
+diff --git a/src/main/java/net/minecraft/world/level/block/entity/RandomizableContainerBlockEntity.java b/src/main/java/net/minecraft/world/level/block/entity/RandomizableContainerBlockEntity.java
+index 081691f9710ff1115e4308f79ed49fbc38941193..79a27755534384ab94e79e422c0a5e9ccecacd8c 100644
+--- a/src/main/java/net/minecraft/world/level/block/entity/RandomizableContainerBlockEntity.java
++++ b/src/main/java/net/minecraft/world/level/block/entity/RandomizableContainerBlockEntity.java
+@@ -70,6 +70,7 @@ public abstract class RandomizableContainerBlockEntity extends BaseContainerBloc
+     }
+ 
+     public void unpackLootTable(@Nullable Player player) {
++        if (org.plazmamc.plazma.configurations.GlobalConfiguration.get().misc.dontRefreshLootTableForNonPlayerInteraction && player == null) return; // Plazma
+         if (this.lootableData.shouldReplenish(player) && this.level.getServer() != null) { // Paper
+             LootTable lootTable = this.level.getServer().getLootData().getLootTable(this.lootTable);
+             if (player instanceof ServerPlayer) {
+diff --git a/src/main/java/org/plazmamc/plazma/configurations/GlobalConfiguration.java b/src/main/java/org/plazmamc/plazma/configurations/GlobalConfiguration.java
+index f4634cc41e1aabc1e656f6720700c580645c8709..b58d91e842c29a28e8c6cbb275f2906eb361626a 100644
+--- a/src/main/java/org/plazmamc/plazma/configurations/GlobalConfiguration.java
++++ b/src/main/java/org/plazmamc/plazma/configurations/GlobalConfiguration.java
+@@ -26,6 +26,7 @@ public class GlobalConfiguration extends ConfigurationPart {
+ 
+         public boolean reduceCreateRandomInstance = DO_OPTIMIZE;
+         public boolean suppressThreadSafeRandom = DO_OPTIMIZE;
++        public boolean dontRefreshLootTableForNonPlayerInteraction = DO_OPTIMIZE;
+ 
+     }
+ 

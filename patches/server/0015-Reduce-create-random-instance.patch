@@ -1,0 +1,385 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: AlphaKR93 <dev@alpha93.kr>
+Date: Wed, 27 Sep 2023 21:18:22 +0900
+Subject: [PATCH] Reduce create random instance
+
+
+diff --git a/src/main/java/net/minecraft/server/MinecraftServer.java b/src/main/java/net/minecraft/server/MinecraftServer.java
+index 44248dc470d0882b7287debd1993cedf0f238aca..ee571f465ca1e83e760a4d57b3d11accb53c6cfe 100644
+--- a/src/main/java/net/minecraft/server/MinecraftServer.java
++++ b/src/main/java/net/minecraft/server/MinecraftServer.java
+@@ -228,7 +228,7 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
+     private ServerStatus status;
+     @Nullable
+     private ServerStatus.Favicon statusIcon;
+-    private final RandomSource random;
++    private final RandomSource random; public RandomSource getRandom() { return this.random; } // Plazma
+     public final DataFixer fixerUpper;
+     private String localIp;
+     private int port;
+diff --git a/src/main/java/net/minecraft/server/commands/SpreadPlayersCommand.java b/src/main/java/net/minecraft/server/commands/SpreadPlayersCommand.java
+index f5bc3497831877e0c2b7dc1cbd8abe3a67d7695b..7834700eb0e1d789f7b338b535a0a9f8965201ef 100644
+--- a/src/main/java/net/minecraft/server/commands/SpreadPlayersCommand.java
++++ b/src/main/java/net/minecraft/server/commands/SpreadPlayersCommand.java
+@@ -65,7 +65,7 @@ public class SpreadPlayersCommand {
+         if (maxY < j) {
+             throw SpreadPlayersCommand.ERROR_INVALID_MAX_HEIGHT.create(maxY, j);
+         } else {
+-            RandomSource randomsource = RandomSource.create();
++            RandomSource randomsource = worldserver.plazmaLevelConfiguration().misc.reduceCreateRandomInstance ? worldserver.getRandom() : RandomSource.create(); // Plazma - Reduce create random instance
+             double d0 = (double) (center.x - maxRange);
+             double d1 = (double) (center.y - maxRange);
+             double d2 = (double) (center.x + maxRange);
+diff --git a/src/main/java/net/minecraft/server/level/ServerPlayer.java b/src/main/java/net/minecraft/server/level/ServerPlayer.java
+index 99cf8ce63316e127a5ee84cdd96df80d440dc0c3..c3bb82793ecd5333d8dbef7a90729d80616ea4ce 100644
+--- a/src/main/java/net/minecraft/server/level/ServerPlayer.java
++++ b/src/main/java/net/minecraft/server/level/ServerPlayer.java
+@@ -448,7 +448,7 @@ public class ServerPlayer extends Player {
+             long l = k * k;
+             int i1 = l > 2147483647L ? Integer.MAX_VALUE : (int) l;
+             int j1 = this.getCoprime(i1);
+-            int k1 = RandomSource.create().nextInt(i1);
++            int k1 = (worldserver.plazmaLevelConfiguration().misc.reduceCreateRandomInstance ? worldserver.getRandom() : RandomSource.create()).nextInt(i1); // Plazma - Reduce create random instance
+ 
+             for (int l1 = 0; l1 < i1; ++l1) {
+                 int i2 = (k1 + j1 * l1) % i1;
+@@ -485,7 +485,7 @@ public class ServerPlayer extends Player {
+             long l = k * k;
+             int i1 = l > 2147483647L ? Integer.MAX_VALUE : (int) l;
+             int j1 = this.getCoprime(i1);
+-            int k1 = RandomSource.create().nextInt(i1);
++            int k1 = (world.plazmaLevelConfiguration().misc.reduceCreateRandomInstance ? world.getRandom() : RandomSource.create()).nextInt(i1); // Plazma - Reduce create random instance
+ 
+             for (int l1 = 0; l1 < i1; ++l1) {
+                 int i2 = (k1 + j1 * l1) % i1;
+diff --git a/src/main/java/net/minecraft/server/network/ServerLoginPacketListenerImpl.java b/src/main/java/net/minecraft/server/network/ServerLoginPacketListenerImpl.java
+index d38685f82d2e6c4e71179bf3a85a8b183aa6c44b..1265e6a521222be0c957065f5b788d68cb3d863f 100644
+--- a/src/main/java/net/minecraft/server/network/ServerLoginPacketListenerImpl.java
++++ b/src/main/java/net/minecraft/server/network/ServerLoginPacketListenerImpl.java
+@@ -70,7 +70,7 @@ public class ServerLoginPacketListenerImpl implements ServerLoginPacketListener,
+         this.serverId = "";
+         this.server = server;
+         this.connection = connection;
+-        this.challenge = Ints.toByteArray(RandomSource.create().nextInt());
++        this.challenge = Ints.toByteArray((org.plazmamc.plazma.configurations.GlobalConfiguration.get().misc.reduceCreateRandomInstance ? server.getRandom() : RandomSource.create()).nextInt()); // Plazma - Reduce create random instance
+     }
+ 
+     @Override
+diff --git a/src/main/java/net/minecraft/server/rcon/thread/QueryThreadGs4.java b/src/main/java/net/minecraft/server/rcon/thread/QueryThreadGs4.java
+index 1ef089dbf83de35d875c00efdf468c397be56978..7f4c0827d2269baa032dac4798fe6c2a740ba7fa 100644
+--- a/src/main/java/net/minecraft/server/rcon/thread/QueryThreadGs4.java
++++ b/src/main/java/net/minecraft/server/rcon/thread/QueryThreadGs4.java
+@@ -349,7 +349,7 @@ public class QueryThreadGs4 extends GenericThread {
+             this.identBytes[2] = bs[5];
+             this.identBytes[3] = bs[6];
+             this.ident = new String(this.identBytes, StandardCharsets.UTF_8);
+-            this.challenge = RandomSource.create().nextInt(16777216);
++            this.challenge = (org.plazmamc.plazma.configurations.GlobalConfiguration.get().misc.reduceCreateRandomInstance ? net.minecraft.server.MinecraftServer.getServer().getRandom() : RandomSource.create()).nextInt(16777216); // Plazma - Reduce create random instance
+             this.challengeBytes = String.format(Locale.ROOT, "\t%s%d\u0000", this.ident, this.challenge).getBytes(StandardCharsets.UTF_8);
+         }
+ 
+diff --git a/src/main/java/net/minecraft/util/datafix/fixes/EntityZombieVillagerTypeFix.java b/src/main/java/net/minecraft/util/datafix/fixes/EntityZombieVillagerTypeFix.java
+index 8311073e44ca8a2c8ac6f6864a875d6c90338664..8e488389b41c63809993262183204b77f73c0e55 100644
+--- a/src/main/java/net/minecraft/util/datafix/fixes/EntityZombieVillagerTypeFix.java
++++ b/src/main/java/net/minecraft/util/datafix/fixes/EntityZombieVillagerTypeFix.java
+@@ -8,7 +8,7 @@ import net.minecraft.util.RandomSource;
+ 
+ public class EntityZombieVillagerTypeFix extends NamedEntityFix {
+     private static final int PROFESSION_MAX = 6;
+-    private static final RandomSource RANDOM = RandomSource.create();
++    private static final RandomSource RANDOM = org.plazmamc.plazma.PlazmaOptions.createNewRandom() ? RandomSource.create() : net.minecraft.server.MinecraftServer.getServer().getRandom(); // Plazma - Reduce create random source
+ 
+     public EntityZombieVillagerTypeFix(Schema outputSchema, boolean changesType) {
+         super(outputSchema, changesType, "EntityZombieVillagerTypeFix", References.ENTITY, "Zombie");
+diff --git a/src/main/java/net/minecraft/world/entity/ai/behavior/ShufflingList.java b/src/main/java/net/minecraft/world/entity/ai/behavior/ShufflingList.java
+index fe3ab3d388f0481fb0db06b7f730f868dbf8e8a5..265d8479b5c02994dba4288060b842789ebc7179 100644
+--- a/src/main/java/net/minecraft/world/entity/ai/behavior/ShufflingList.java
++++ b/src/main/java/net/minecraft/world/entity/ai/behavior/ShufflingList.java
+@@ -15,7 +15,7 @@ import net.minecraft.util.RandomSource;
+ 
+ public class ShufflingList<U> implements Iterable<U> {
+     public final List<ShufflingList.WeightedEntry<U>> entries; // Paper - public
+-    private final RandomSource random = RandomSource.create();
++    private final RandomSource random = org.plazmamc.plazma.configurations.GlobalConfiguration.get().misc.reduceCreateRandomInstance ? net.minecraft.server.MinecraftServer.getServer().getRandom() : RandomSource.create(); // Plazma
+     private final boolean isUnsafe; // Paper
+ 
+     public ShufflingList() {
+diff --git a/src/main/java/net/minecraft/world/entity/ai/sensing/Sensor.java b/src/main/java/net/minecraft/world/entity/ai/sensing/Sensor.java
+index 7094701d213c73ba47ace806962244c10fdf4dda..288ae299240c9626e576a7ae1c45c53d83f7f097 100644
+--- a/src/main/java/net/minecraft/world/entity/ai/sensing/Sensor.java
++++ b/src/main/java/net/minecraft/world/entity/ai/sensing/Sensor.java
+@@ -8,7 +8,7 @@ import net.minecraft.world.entity.ai.memory.MemoryModuleType;
+ import net.minecraft.world.entity.ai.targeting.TargetingConditions;
+ 
+ public abstract class Sensor<E extends LivingEntity> {
+-    private static final RandomSource RANDOM = RandomSource.createThreadSafe();
++    private static final RandomSource RANDOM = org.plazmamc.plazma.configurations.GlobalConfiguration.get().misc.reduceCreateRandomInstance && org.plazmamc.plazma.configurations.GlobalConfiguration.get().misc.suppressThreadSafeRandom ? net.minecraft.server.MinecraftServer.getServer().getRandom() : RandomSource.createThreadSafe(); // Plazma - Reduce create random instance
+     private static final int DEFAULT_SCAN_RATE = 20;
+     protected static final int TARGETING_RANGE = 16;
+     private static final TargetingConditions TARGET_CONDITIONS = TargetingConditions.forNonCombat().range(16.0D);
+diff --git a/src/main/java/net/minecraft/world/entity/monster/warden/AngerManagement.java b/src/main/java/net/minecraft/world/entity/monster/warden/AngerManagement.java
+index ece82743df21f0b776382821ad75dee96d0a0748..c25affe40eea32e1964aa4c62fdd27faa37baf28 100644
+--- a/src/main/java/net/minecraft/world/entity/monster/warden/AngerManagement.java
++++ b/src/main/java/net/minecraft/world/entity/monster/warden/AngerManagement.java
+@@ -32,7 +32,7 @@ public class AngerManagement {
+     @VisibleForTesting
+     protected static final int MAX_ANGER = 150;
+     private static final int DEFAULT_ANGER_DECREASE = 1;
+-    private int conversionDelay = Mth.randomBetweenInclusive(RandomSource.create(), 0, 2);
++    private int conversionDelay = Mth.randomBetweenInclusive((org.plazmamc.plazma.configurations.GlobalConfiguration.get().misc.reduceCreateRandomInstance ? net.minecraft.server.MinecraftServer.getServer().getRandom() : RandomSource.create()), 0, 2); // Plazma - Reduce create random instance
+     int highestAnger;
+     private static final Codec<Pair<UUID, Integer>> SUSPECT_ANGER_PAIR = RecordCodecBuilder.create((instance) -> {
+         return instance.group(UUIDUtil.CODEC.fieldOf("uuid").forGetter(Pair::getFirst), ExtraCodecs.NON_NEGATIVE_INT.fieldOf("anger").forGetter(Pair::getSecond)).apply(instance, Pair::of);
+diff --git a/src/main/java/net/minecraft/world/entity/npc/WanderingTraderSpawner.java b/src/main/java/net/minecraft/world/entity/npc/WanderingTraderSpawner.java
+index a5443f92786427c42092aec8350e7ab37704db7a..b1a44e460175b974e8830030ce61e523533bef8c 100644
+--- a/src/main/java/net/minecraft/world/entity/npc/WanderingTraderSpawner.java
++++ b/src/main/java/net/minecraft/world/entity/npc/WanderingTraderSpawner.java
+@@ -32,7 +32,7 @@ public class WanderingTraderSpawner implements CustomSpawner {
+     private static final int SPAWN_CHANCE_INCREASE = 25;
+     private static final int SPAWN_ONE_IN_X_CHANCE = 10;
+     private static final int NUMBER_OF_SPAWN_ATTEMPTS = 10;
+-    private final RandomSource random = RandomSource.create();
++    private final RandomSource random = org.plazmamc.plazma.configurations.GlobalConfiguration.get().misc.reduceCreateRandomInstance ? net.minecraft.server.MinecraftServer.getServer().getRandom() : RandomSource.create(); // Plazma - reduce create random instace
+     private final ServerLevelData serverLevelData;
+     private int tickDelay;
+     private int spawnDelay;
+diff --git a/src/main/java/net/minecraft/world/entity/projectile/FishingHook.java b/src/main/java/net/minecraft/world/entity/projectile/FishingHook.java
+index a9eaa079a43bc8a5e81deaf6df5ce2f9c53cb319..f1b0b8fd1042f2ce8a514000d95df5123223cc27 100644
+--- a/src/main/java/net/minecraft/world/entity/projectile/FishingHook.java
++++ b/src/main/java/net/minecraft/world/entity/projectile/FishingHook.java
+@@ -86,7 +86,7 @@ public class FishingHook extends Projectile {
+ 
+     private FishingHook(EntityType<? extends FishingHook> type, Level world, int luckOfTheSeaLevel, int lureLevel) {
+         super(type, world);
+-        this.syncronizedRandom = RandomSource.create();
++        this.syncronizedRandom = world.plazmaLevelConfiguration().misc.reduceCreateRandomInstance ? world.getRandom() : RandomSource.create(); // Plazma - Reduce create random instance
+         this.openWater = true;
+         this.currentState = FishingHook.FishHookState.FLYING;
+         this.noCulling = true;
+diff --git a/src/main/java/net/minecraft/world/entity/raid/Raid.java b/src/main/java/net/minecraft/world/entity/raid/Raid.java
+index eaa2943b667967f93f28d9d794d702fdaeb670ec..75ba586277ece1aa56186679d3a8ebf0b3f7a0cb 100644
+--- a/src/main/java/net/minecraft/world/entity/raid/Raid.java
++++ b/src/main/java/net/minecraft/world/entity/raid/Raid.java
+@@ -109,7 +109,7 @@ public class Raid {
+ 
+     public Raid(int id, ServerLevel world, BlockPos pos) {
+         this.raidEvent = new ServerBossEvent(Raid.RAID_NAME_COMPONENT, BossEvent.BossBarColor.RED, BossEvent.BossBarOverlay.NOTCHED_10);
+-        this.random = RandomSource.create();
++        this.random = world.plazmaLevelConfiguration().misc.reduceCreateRandomInstance ? world.getRandom() : RandomSource.create(); // Plazma - Reduce create random instace
+         this.waveSpawnPos = Optional.empty();
+         this.id = id;
+         this.level = world;
+@@ -123,7 +123,7 @@ public class Raid {
+ 
+     public Raid(ServerLevel world, CompoundTag nbt) {
+         this.raidEvent = new ServerBossEvent(Raid.RAID_NAME_COMPONENT, BossEvent.BossBarColor.RED, BossEvent.BossBarOverlay.NOTCHED_10);
+-        this.random = RandomSource.create();
++        this.random = world.plazmaLevelConfiguration().misc.reduceCreateRandomInstance ? world.getRandom() : RandomSource.create(); // Plazma - Reduce create random instace
+         this.waveSpawnPos = Optional.empty();
+         this.level = world;
+         this.id = nbt.getInt("Id");
+diff --git a/src/main/java/net/minecraft/world/inventory/EnchantmentMenu.java b/src/main/java/net/minecraft/world/inventory/EnchantmentMenu.java
+index d604b7ec46f08993647979ed220a84842e3fe325..f2a3049252a37ca6d6d5cb1cc51d512c7ebf5679 100644
+--- a/src/main/java/net/minecraft/world/inventory/EnchantmentMenu.java
++++ b/src/main/java/net/minecraft/world/inventory/EnchantmentMenu.java
+@@ -97,7 +97,7 @@ public class EnchantmentMenu extends AbstractContainerMenu {
+             }
+             // Purpur end
+         };
+-        this.random = RandomSource.create();
++        this.random = playerInventory.player.level().plazmaLevelConfiguration().misc.reduceCreateRandomInstance ? playerInventory.player.level().random : RandomSource.create(); // Plazma - Reduce create random instace
+         this.enchantmentSeed = DataSlot.standalone();
+         this.costs = new int[3];
+         this.enchantClue = new int[]{-1, -1, -1};
+diff --git a/src/main/java/net/minecraft/world/level/Explosion.java b/src/main/java/net/minecraft/world/level/Explosion.java
+index ef9b1687dd2dfda5398523140aecc678b4690642..66a1db10249995144490dac292e09fd0aa30f168 100644
+--- a/src/main/java/net/minecraft/world/level/Explosion.java
++++ b/src/main/java/net/minecraft/world/level/Explosion.java
+@@ -82,7 +82,7 @@ public class Explosion {
+     }
+ 
+     public Explosion(Level world, @Nullable Entity entity, @Nullable DamageSource damageSource, @Nullable ExplosionDamageCalculator behavior, double x, double y, double z, float power, boolean createFire, Explosion.BlockInteraction destructionType) {
+-        this.random = RandomSource.create();
++        this.random = world.plazmaLevelConfiguration().misc.reduceCreateRandomInstance ? world.getRandom() : RandomSource.create(); // Plazma - Reduce create random instace
+         this.toBlow = new ObjectArrayList();
+         this.hitPlayers = Maps.newHashMap();
+         this.level = world;
+diff --git a/src/main/java/net/minecraft/world/level/Level.java b/src/main/java/net/minecraft/world/level/Level.java
+index 1a5880ae3c3b17d49f0b083dff66e5619c08ec20..e175cde654b36d8ffc98a36ef099d22e9f1d15e9 100644
+--- a/src/main/java/net/minecraft/world/level/Level.java
++++ b/src/main/java/net/minecraft/world/level/Level.java
+@@ -124,16 +124,16 @@ public abstract class Level implements LevelAccessor, AutoCloseable {
+     public final Thread thread;
+     private final boolean isDebug;
+     private int skyDarken;
+-    protected int randValue = RandomSource.create().nextInt();
+     protected final int addend = 1013904223;
+     protected float oRainLevel;
+     public float rainLevel;
+     protected float oThunderLevel;
+     public float thunderLevel;
+     public final RandomSource random = RandomSource.create();
++    protected int randValue = org.plazmamc.plazma.configurations.GlobalConfiguration.get().misc.reduceCreateRandomInstance ? random.nextInt() : RandomSource.create().nextInt(); // Plazma - Reduce create random instace
+     /** @deprecated */
+     @Deprecated
+-    private final RandomSource threadSafeRandom = RandomSource.createThreadSafe();
++    private final RandomSource threadSafeRandom = org.plazmamc.plazma.configurations.GlobalConfiguration.get().misc.suppressThreadSafeRandom ? random : RandomSource.createThreadSafe(); // Plazma - Reduce create random instace
+     private final ResourceKey<DimensionType> dimensionTypeId;
+     private final Holder<DimensionType> dimensionTypeRegistration;
+     public final WritableLevelData levelData;
+diff --git a/src/main/java/net/minecraft/world/level/block/entity/EnchantmentTableBlockEntity.java b/src/main/java/net/minecraft/world/level/block/entity/EnchantmentTableBlockEntity.java
+index b7370e64fd0d50e8725d7d5afc30af2e8bc8455d..b8d2c91a343478d89a5242254f3379dfa2556348 100644
+--- a/src/main/java/net/minecraft/world/level/block/entity/EnchantmentTableBlockEntity.java
++++ b/src/main/java/net/minecraft/world/level/block/entity/EnchantmentTableBlockEntity.java
+@@ -22,7 +22,7 @@ public class EnchantmentTableBlockEntity extends BlockEntity implements Nameable
+     public float rot;
+     public float oRot;
+     public float tRot;
+-    private static final RandomSource RANDOM = RandomSource.create();
++    private static final RandomSource RANDOM = org.plazmamc.plazma.configurations.GlobalConfiguration.get().misc.reduceCreateRandomInstance ? net.minecraft.server.MinecraftServer.getServer().getRandom() : RandomSource.create(); // Plazma - Reduce create random instace
+     private Component name;
+     private int lapis = 0; // Purpur
+ 
+diff --git a/src/main/java/net/minecraft/world/level/block/entity/TheEndGatewayBlockEntity.java b/src/main/java/net/minecraft/world/level/block/entity/TheEndGatewayBlockEntity.java
+index 7291e4056b8e46ab59b71818388ac55fbb12993f..22faea52bc54cdcb52ff18a9d5a8c1bd1a64fa73 100644
+--- a/src/main/java/net/minecraft/world/level/block/entity/TheEndGatewayBlockEntity.java
++++ b/src/main/java/net/minecraft/world/level/block/entity/TheEndGatewayBlockEntity.java
+@@ -368,7 +368,7 @@ public class TheEndGatewayBlockEntity extends TheEndPortalBlockEntity {
+     }
+ 
+     private static void spawnGatewayPortal(ServerLevel world, BlockPos pos, EndGatewayConfiguration config) {
+-        Feature.END_GATEWAY.place(config, world, world.getChunkSource().getGenerator(), RandomSource.create(), pos);
++        Feature.END_GATEWAY.place(config, world, world.getChunkSource().getGenerator(), (world.plazmaLevelConfiguration().misc.reduceCreateRandomInstance ? world.getRandom() : RandomSource.create()), pos); // Plazma - Reduce create random instance
+     }
+ 
+     @Override
+diff --git a/src/main/java/net/minecraft/world/level/chunk/ChunkGeneratorStructureState.java b/src/main/java/net/minecraft/world/level/chunk/ChunkGeneratorStructureState.java
+index f8cd23fb6ea7909b8f30bd21d3f2c7bcc483ef21..c85340232624529d4685bf34035bb62d294695c9 100644
+--- a/src/main/java/net/minecraft/world/level/chunk/ChunkGeneratorStructureState.java
++++ b/src/main/java/net/minecraft/world/level/chunk/ChunkGeneratorStructureState.java
+@@ -221,7 +221,7 @@ public class ChunkGeneratorStructureState {
+             List<CompletableFuture<ChunkPos>> list = new ArrayList(j);
+             int k = placement.spread();
+             HolderSet<Biome> holderset = placement.preferredBiomes();
+-            RandomSource randomsource = RandomSource.create();
++            RandomSource randomsource = org.plazmamc.plazma.configurations.GlobalConfiguration.get().misc.reduceCreateRandomInstance ? net.minecraft.server.MinecraftServer.getServer().getRandom() : RandomSource.create(); // Plazma - Reduce create random instace
+ 
+             // Paper start
+             if (this.conf.strongholdSeed != null && structureSetEntry.is(net.minecraft.world.level.levelgen.structure.BuiltinStructureSets.STRONGHOLDS)) {
+diff --git a/src/main/java/net/minecraft/world/level/dimension/end/DragonRespawnAnimation.java b/src/main/java/net/minecraft/world/level/dimension/end/DragonRespawnAnimation.java
+index 18fce94f0d4b9d28e3afec61c7578f672973a71f..2dfb801ec15a372bcb997942969fec64aea9e49e 100644
+--- a/src/main/java/net/minecraft/world/level/dimension/end/DragonRespawnAnimation.java
++++ b/src/main/java/net/minecraft/world/level/dimension/end/DragonRespawnAnimation.java
+@@ -62,7 +62,7 @@ public enum DragonRespawnAnimation {
+ 
+                         world.explode((Entity)null, (double)((float)endSpike.getCenterX() + 0.5F), (double)endSpike.getHeight(), (double)((float)endSpike.getCenterZ() + 0.5F), 5.0F, Level.ExplosionInteraction.BLOCK);
+                         SpikeConfiguration spikeConfiguration = new SpikeConfiguration(true, ImmutableList.of(endSpike), new BlockPos(0, 128, 0));
+-                        Feature.END_SPIKE.place(spikeConfiguration, world, world.getChunkSource().getGenerator(), RandomSource.create(), new BlockPos(endSpike.getCenterX(), 45, endSpike.getCenterZ()));
++                        Feature.END_SPIKE.place(spikeConfiguration, world, world.getChunkSource().getGenerator(), (world.plazmaLevelConfiguration().misc.reduceCreateRandomInstance ? world.getRandom() : RandomSource.create()), new BlockPos(endSpike.getCenterX(), 45, endSpike.getCenterZ())); // Plazma - Reduce create random instance
+                     }
+                 } else if (bl) {
+                     fight.setRespawnStage(SUMMONING_DRAGON);
+diff --git a/src/main/java/net/minecraft/world/level/dimension/end/EndDragonFight.java b/src/main/java/net/minecraft/world/level/dimension/end/EndDragonFight.java
+index c1ff2e15bc5da1a642872ac0fdcdc457e8abb063..67b4a65980059b0b2d4929c619c400c48e201e18 100644
+--- a/src/main/java/net/minecraft/world/level/dimension/end/EndDragonFight.java
++++ b/src/main/java/net/minecraft/world/level/dimension/end/EndDragonFight.java
+@@ -472,7 +472,7 @@ public class EndDragonFight {
+         this.level.registryAccess().registry(Registries.CONFIGURED_FEATURE).flatMap((iregistry) -> {
+             return iregistry.getHolder(EndFeatures.END_GATEWAY_DELAYED);
+         }).ifPresent((holder_c) -> {
+-            ((ConfiguredFeature) holder_c.value()).place(this.level, this.level.getChunkSource().getGenerator(), RandomSource.create(), pos);
++            ((ConfiguredFeature) holder_c.value()).place(this.level, this.level.getChunkSource().getGenerator(), (this.level.plazmaLevelConfiguration().misc.reduceCreateRandomInstance ? this.level.getRandom() : RandomSource.create()), pos); // Plazma - Reduce create random instace
+         });
+     }
+ 
+@@ -490,7 +490,7 @@ public class EndDragonFight {
+             this.portalLocation = this.portalLocation.atY(this.level.getMinBuildHeight() + 1);
+         }
+         // Paper end
+-        if (worldgenendtrophy.place(FeatureConfiguration.NONE, this.level, this.level.getChunkSource().getGenerator(), RandomSource.create(), this.portalLocation)) {
++        if (worldgenendtrophy.place(FeatureConfiguration.NONE, this.level, this.level.getChunkSource().getGenerator(), (this.level.plazmaLevelConfiguration().misc.reduceCreateRandomInstance ? this.level.getRandom() : RandomSource.create()), this.portalLocation)) { // Plazma - Reduce create random instace
+             int i = Mth.positiveCeilDiv(4, 16);
+ 
+             this.level.getChunkSource().chunkMap.waitForLightBeforeSending(new ChunkPos(this.portalLocation), i);
+diff --git a/src/main/java/net/minecraft/world/level/levelgen/WorldOptions.java b/src/main/java/net/minecraft/world/level/levelgen/WorldOptions.java
+index d38cabc9eeb45dd863e5f87b7df3b6327ea6a4a2..d4bcdbc6ea420bdb05c0a8859d368213d87dba67 100644
+--- a/src/main/java/net/minecraft/world/level/levelgen/WorldOptions.java
++++ b/src/main/java/net/minecraft/world/level/levelgen/WorldOptions.java
+@@ -77,6 +77,6 @@ public class WorldOptions {
+     }
+ 
+     public static long randomSeed() {
+-        return RandomSource.create().nextLong();
++        return (org.plazmamc.plazma.PlazmaOptions.createNewRandom() ? RandomSource.create() : net.minecraft.server.MinecraftServer.getServer().getRandom()).nextLong(); // Plazma - Reduce create random instance
+     }
+ }
+diff --git a/src/main/java/org/bukkit/craftbukkit/entity/CraftFirework.java b/src/main/java/org/bukkit/craftbukkit/entity/CraftFirework.java
+index 68c5af9b67a2834ee6e2f80ceefa19c3a982b8ed..aabbf9ae1b772c9101e6f36236e5d34a5620a4d3 100644
+--- a/src/main/java/org/bukkit/craftbukkit/entity/CraftFirework.java
++++ b/src/main/java/org/bukkit/craftbukkit/entity/CraftFirework.java
+@@ -2,6 +2,8 @@ package org.bukkit.craftbukkit.entity;
+ 
+ import com.google.common.base.Preconditions;
+ import java.util.Random;
++
++import net.minecraft.util.RandomSource;
+ import net.minecraft.world.entity.projectile.FireworkRocketEntity;
+ import net.minecraft.world.item.ItemStack;
+ import net.minecraft.world.item.Items;
+@@ -14,11 +16,12 @@ import org.bukkit.inventory.meta.FireworkMeta;
+ 
+ public class CraftFirework extends CraftProjectile implements Firework {
+ 
+-    private final Random random = new Random();
++    private final net.minecraft.util.RandomSource random; // Plazma - Reduce create random instance
+     //private CraftItemStack item; // Paper - Remove usage, not accurate representation of current item.
+ 
+     public CraftFirework(CraftServer server, FireworkRocketEntity entity) {
+         super(server, entity);
++        this.random = this.getHandle().level().plazmaLevelConfiguration().misc.reduceCreateRandomInstance ? this.getHandle().level().getRandom() : RandomSource.create(); // Plazma - Reduce create random instance
+ 
+ //        Paper Start - Expose firework item directly
+ //        ItemStack item = this.getHandle().getEntityData().get(FireworkRocketEntity.DATA_ID_FIREWORKS_ITEM);
+diff --git a/src/main/java/org/plazmamc/plazma/PlazmaOptions.java b/src/main/java/org/plazmamc/plazma/PlazmaOptions.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..4421110e20a006c3773e922eb0facc88174ffb43
+--- /dev/null
++++ b/src/main/java/org/plazmamc/plazma/PlazmaOptions.java
+@@ -0,0 +1,10 @@
++package org.plazmamc.plazma;
++
++public class PlazmaOptions {
++
++    static final boolean DONT_CREATE_NEW_RANDOM_INSTANCE = Boolean.getBoolean("Plazma.doNotCreateRandomInstance");
++    public static boolean createNewRandom() {
++        return !DONT_CREATE_NEW_RANDOM_INSTANCE;
++    }
++
++}
+diff --git a/src/main/java/org/plazmamc/plazma/configurations/GlobalConfiguration.java b/src/main/java/org/plazmamc/plazma/configurations/GlobalConfiguration.java
+index 351379de0811b3dc610e8bb0b526b3431e856b1c..f4634cc41e1aabc1e656f6720700c580645c8709 100644
+--- a/src/main/java/org/plazmamc/plazma/configurations/GlobalConfiguration.java
++++ b/src/main/java/org/plazmamc/plazma/configurations/GlobalConfiguration.java
+@@ -24,6 +24,9 @@ public class GlobalConfiguration extends ConfigurationPart {
+     public Misc misc;
+     public class Misc extends ConfigurationPart {
+ 
++        public boolean reduceCreateRandomInstance = DO_OPTIMIZE;
++        public boolean suppressThreadSafeRandom = DO_OPTIMIZE;
++
+     }
+ 
+     public Player player;
+diff --git a/src/main/java/org/plazmamc/plazma/configurations/LevelConfigurations.java b/src/main/java/org/plazmamc/plazma/configurations/LevelConfigurations.java
+index 36c367c577e61422e51ab08c5aaa2a88c94e1636..146af5bb54da67c134485dc67e8d9a569889434a 100644
+--- a/src/main/java/org/plazmamc/plazma/configurations/LevelConfigurations.java
++++ b/src/main/java/org/plazmamc/plazma/configurations/LevelConfigurations.java
+@@ -26,6 +26,8 @@ public class LevelConfigurations extends ConfigurationPart {
+     public Misc misc;
+     public class Misc extends ConfigurationPart {
+ 
++        public boolean reduceCreateRandomInstance = DO_OPTIMIZE;
++
+     }
+ 
+     public Entity entity;

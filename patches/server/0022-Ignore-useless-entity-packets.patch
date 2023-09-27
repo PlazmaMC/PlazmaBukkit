@@ -1,0 +1,52 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: AlphaKR93 <dev@alpha93.kr>
+Date: Wed, 27 Sep 2023 22:35:19 +0900
+Subject: [PATCH] Ignore useless entity packets
+
+
+diff --git a/src/main/java/net/minecraft/server/level/ServerEntity.java b/src/main/java/net/minecraft/server/level/ServerEntity.java
+index c6d80accdac49564b5386717a92dbd5a10237f06..ddbff17499746cd370fdf18ff78606b0ac770df4 100644
+--- a/src/main/java/net/minecraft/server/level/ServerEntity.java
++++ b/src/main/java/net/minecraft/server/level/ServerEntity.java
+@@ -200,6 +200,8 @@ public class ServerEntity {
+                         flag4 = true;
+                         flag5 = true;
+                     }
++
++                    if (this.entity.level().plazmaLevelConfiguration().entity.ignoreUselessPackets && isUselessPacket(packet1)) packet1 = null; // Plazma
+                 }
+ 
+                 if ((this.trackDelta || this.entity.hasImpulse || this.entity instanceof LivingEntity && ((LivingEntity) this.entity).isFallFlying()) && this.tickCount > 0) {
+@@ -272,6 +274,19 @@ public class ServerEntity {
+         });
+     }
+ 
++    // Plazma start
++    private boolean isUselessPacket(@Nullable Packet<?> packet) {
++        if (!(packet instanceof ClientboundMoveEntityPacket p)) return false;
++        if (p instanceof ClientboundMoveEntityPacket.Pos)
++            return p.getXa() == 0 && p.getYa() == 0 && p.getZa() == 0;
++        if (p instanceof ClientboundMoveEntityPacket.Rot)
++            return p.getxRot() == 0 && p.getyRot() == 0;
++        if (p instanceof ClientboundMoveEntityPacket.PosRot)
++            return p.getXa() == 0 && p.getYa() == 0 && p.getZa() == 0 && p.getxRot() == 0 && p.getyRot() == 0;
++        return false;
++    }
++    // Plazma end
++
+     public void removePairing(ServerPlayer player) {
+         this.entity.stopSeenByPlayer(player);
+         player.connection.send(new ClientboundRemoveEntitiesPacket(new int[]{this.entity.getId()}));
+diff --git a/src/main/java/org/plazmamc/plazma/configurations/LevelConfigurations.java b/src/main/java/org/plazmamc/plazma/configurations/LevelConfigurations.java
+index 414baade911fab3450430af9378feedc419868f3..914cc4f9a5598d2d70c7338d7cfc9be0fe5f0e31 100644
+--- a/src/main/java/org/plazmamc/plazma/configurations/LevelConfigurations.java
++++ b/src/main/java/org/plazmamc/plazma/configurations/LevelConfigurations.java
+@@ -33,6 +33,8 @@ public class LevelConfigurations extends ConfigurationPart {
+     public Entity entity;
+     public class Entity extends ConfigurationPart {
+ 
++        public boolean ignoreUselessPackets = DO_OPTIMIZE;
++
+         public Player player;
+         public class Player extends ConfigurationPart {
+ 

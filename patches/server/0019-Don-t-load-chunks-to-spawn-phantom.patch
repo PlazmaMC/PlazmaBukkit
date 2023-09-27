@@ -1,0 +1,36 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: AlphaKR93 <dev@alpha93.kr>
+Date: Wed, 27 Sep 2023 22:17:11 +0900
+Subject: [PATCH] Don't load chunks to spawn phantom
+
+
+diff --git a/src/main/java/net/minecraft/world/level/levelgen/PhantomSpawner.java b/src/main/java/net/minecraft/world/level/levelgen/PhantomSpawner.java
+index f74c5eda91a3d521763ec7bc33f23e0c62458cc2..e7a9683fe6bd72e9e7644770953506195567e03b 100644
+--- a/src/main/java/net/minecraft/world/level/levelgen/PhantomSpawner.java
++++ b/src/main/java/net/minecraft/world/level/levelgen/PhantomSpawner.java
+@@ -71,6 +71,7 @@ public class PhantomSpawner implements CustomSpawner {
+ 
+                                     if (randomsource.nextInt(j) >= world.paperConfig().entities.behavior.playerInsomniaStartTicks) { // Paper
+                                         BlockPos blockposition1 = blockposition.above(20 + randomsource.nextInt(15)).east(-10 + randomsource.nextInt(21)).south(-10 + randomsource.nextInt(21));
++                                        if (world.plazmaLevelConfiguration().entity.phantom.dontLoadChunksToSpawn && world.hasChunkAt(blockposition1)) continue; // Plazma
+                                         BlockState iblockdata = world.getBlockState(blockposition1);
+                                         FluidState fluid = world.getFluidState(blockposition1);
+ 
+diff --git a/src/main/java/org/plazmamc/plazma/configurations/LevelConfigurations.java b/src/main/java/org/plazmamc/plazma/configurations/LevelConfigurations.java
+index 146af5bb54da67c134485dc67e8d9a569889434a..0a23900b18ec46ce2a7d47160dff013c7c8a8533 100644
+--- a/src/main/java/org/plazmamc/plazma/configurations/LevelConfigurations.java
++++ b/src/main/java/org/plazmamc/plazma/configurations/LevelConfigurations.java
+@@ -33,6 +33,13 @@ public class LevelConfigurations extends ConfigurationPart {
+     public Entity entity;
+     public class Entity extends ConfigurationPart {
+ 
++        public Phantom phantom;
++        public class Phantom extends ConfigurationPart {
++
++            public boolean dontLoadChunksToSpawn = DO_OPTIMIZE;
++
++        }
++
+     }
+ 
+     public Structure structure;

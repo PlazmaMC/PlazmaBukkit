@@ -1,11 +1,11 @@
 From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
 From: AlphaKR93 <dev@alpha93.kr>
-Date: Sat, 25 Mar 2023 21:50:25 +0900
-Subject: [PATCH] Apply faster random
+Date: Wed, 27 Sep 2023 22:30:49 +0900
+Subject: [PATCH] Use faster random
 
 
 diff --git a/src/main/java/com/destroystokyo/paper/loottable/PaperLootableInventoryData.java b/src/main/java/com/destroystokyo/paper/loottable/PaperLootableInventoryData.java
-index 5408cbc21fc7577a6100b5a1ca0463e899d2df8b..4f264e098e7907c397f09ee23a579ed7da494edc 100644
+index 5408cbc21fc7577a6100b5a1ca0463e899d2df8b..f17b42176e9e5148b98baf4a6a7e7528242406d9 100644
 --- a/src/main/java/com/destroystokyo/paper/loottable/PaperLootableInventoryData.java
 +++ b/src/main/java/com/destroystokyo/paper/loottable/PaperLootableInventoryData.java
 @@ -16,7 +16,7 @@ import java.util.UUID;
@@ -13,51 +13,38 @@ index 5408cbc21fc7577a6100b5a1ca0463e899d2df8b..4f264e098e7907c397f09ee23a579ed7
  public class PaperLootableInventoryData {
  
 -    private static final Random RANDOM = new Random();
-+    private static final Random RANDOM = Boolean.getBoolean("Plazma.doNotUseFasterRandom") ? new Random() : new org.plazmamc.plazma.Random(); // Plazma
++    private static final Random RANDOM = org.plazmamc.plazma.PlazmaOptions.useJavaRandom() ? new Random() : new org.plazmamc.plazma.Random(); // Plazma - use faster random
  
      private long lastFill = -1;
      private long nextRefill = -1;
 diff --git a/src/main/java/net/minecraft/server/MinecraftServer.java b/src/main/java/net/minecraft/server/MinecraftServer.java
-index 0acbaa18a61d1cfdb894c6c756d2b9bdc3599b82..93ff3ef401d4212cede5290990528988c7ca3a0c 100644
+index ee571f465ca1e83e760a4d57b3d11accb53c6cfe..1a92a7f6391df6395c11d11efdbf2f4eda5c6651 100644
 --- a/src/main/java/net/minecraft/server/MinecraftServer.java
 +++ b/src/main/java/net/minecraft/server/MinecraftServer.java
-@@ -691,7 +691,7 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
+@@ -680,7 +680,7 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
              ChunkPos chunkcoordintpair = new ChunkPos(chunkproviderserver.randomState().sampler().findSpawnPosition());
              // CraftBukkit start
              if (world.generator != null) {
 -                Random rand = new Random(world.getSeed());
-+                Random rand = Boolean.getBoolean("Plazma.doNotUseFasterRandom") ? new Random() : new org.plazmamc.plazma.Random(); rand.setSeed(world.getSeed()); // Plazma
++                Random rand = org.plazmamc.plazma.PlazmaOptions.useJavaRandom() ? new Random(world.getSeed()) : new org.plazmamc.plazma.Random((int) world.getSeed()); // Plazma - use faster random
                  org.bukkit.Location spawn = world.generator.getFixedSpawnLocation(world.getWorld(), rand);
  
                  if (spawn != null) {
 diff --git a/src/main/java/org/bukkit/craftbukkit/CraftWorld.java b/src/main/java/org/bukkit/craftbukkit/CraftWorld.java
-index 1392e483c363e25d1f16465d876cb7d7c70afa68..f4b99ffec5c84a5fa1f90060ec15d09b08239d49 100644
+index 52b48e40c3ee5f483c6cb04409459cf25abc3f0d..5ca738739507a4cb1c3b17502fa82462079cbc87 100644
 --- a/src/main/java/org/bukkit/craftbukkit/CraftWorld.java
 +++ b/src/main/java/org/bukkit/craftbukkit/CraftWorld.java
-@@ -229,7 +229,7 @@ public class CraftWorld extends CraftRegionAccessor implements World {
+@@ -228,7 +228,7 @@ public class CraftWorld extends CraftRegionAccessor implements World {
      }
      // Paper end
  
 -    private static final Random rand = new Random();
-+    private static final Random rand = Boolean.getBoolean("Plazma.doNotUseFasterRandom") ? new Random() : new org.plazmamc.plazma.Random(); // Plazma
++    private static final Random rand = org.plazmamc.plazma.PlazmaOptions.useJavaRandom() ? new Random() : new org.plazmamc.plazma.Random(); // Plazma - use faster random
  
      public CraftWorld(ServerLevel world, ChunkGenerator gen, BiomeProvider biomeProvider, Environment env) {
          this.world = world;
-diff --git a/src/main/java/org/bukkit/craftbukkit/entity/CraftFirework.java b/src/main/java/org/bukkit/craftbukkit/entity/CraftFirework.java
-index 68c5af9b67a2834ee6e2f80ceefa19c3a982b8ed..7cd8a12ad560626ad3965bd46a5a71168ce6bf80 100644
---- a/src/main/java/org/bukkit/craftbukkit/entity/CraftFirework.java
-+++ b/src/main/java/org/bukkit/craftbukkit/entity/CraftFirework.java
-@@ -14,7 +14,7 @@ import org.bukkit.inventory.meta.FireworkMeta;
- 
- public class CraftFirework extends CraftProjectile implements Firework {
- 
--    private final Random random = new Random();
-+    private final Random random = Boolean.getBoolean("Plazma.doNotUseFasterRandom") ? new Random() : new org.plazmamc.plazma.Random(); // Plazma
-     //private CraftItemStack item; // Paper - Remove usage, not accurate representation of current item.
- 
-     public CraftFirework(CraftServer server, FireworkRocketEntity entity) {
 diff --git a/src/main/java/org/bukkit/craftbukkit/generator/CustomChunkGenerator.java b/src/main/java/org/bukkit/craftbukkit/generator/CustomChunkGenerator.java
-index c3972ba41ad61af4c423e6f942ac984dc61716f0..f7b53cf1161e53d49ec2b72fed2473c1814159cd 100644
+index d46ccc3b3aaacf937631a44a7e0f91b793a83c86..0be5ab95612dc21561ffc0051880baae75117bc6 100644
 --- a/src/main/java/org/bukkit/craftbukkit/generator/CustomChunkGenerator.java
 +++ b/src/main/java/org/bukkit/craftbukkit/generator/CustomChunkGenerator.java
 @@ -48,7 +48,7 @@ public class CustomChunkGenerator extends InternalChunkGenerator {
@@ -65,16 +52,28 @@ index c3972ba41ad61af4c423e6f942ac984dc61716f0..f7b53cf1161e53d49ec2b72fed2473c1
      private final ChunkGenerator generator;
      private final ServerLevel world;
 -    private final Random random = new Random();
-+    private final Random random = Boolean.getBoolean("Plazma.doNotUseFasterRandom") ? new Random() : new org.plazmamc.plazma.Random(); // Plazma
++    private final Random random = org.plazmamc.plazma.PlazmaOptions.useJavaRandom() ? new Random() : new org.plazmamc.plazma.Random(); // Plazma - use faster random
      private boolean newApi;
      private boolean implementBaseHeight = true;
  
+diff --git a/src/main/java/org/plazmamc/plazma/PlazmaOptions.java b/src/main/java/org/plazmamc/plazma/PlazmaOptions.java
+index 4421110e20a006c3773e922eb0facc88174ffb43..f0e6933a2bf06f2bcc343c0817ca414473be19d3 100644
+--- a/src/main/java/org/plazmamc/plazma/PlazmaOptions.java
++++ b/src/main/java/org/plazmamc/plazma/PlazmaOptions.java
+@@ -7,4 +7,7 @@ public class PlazmaOptions {
+         return !DONT_CREATE_NEW_RANDOM_INSTANCE;
+     }
+ 
++    static final boolean USE_JAVA_RANDOM = Boolean.getBoolean("Plazma.useJavaRandom");
++    public static boolean useJavaRandom() { return USE_JAVA_RANDOM; }
++
+ }
 diff --git a/src/main/java/org/plazmamc/plazma/Random.java b/src/main/java/org/plazmamc/plazma/Random.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..e72e96be3938bdcc1ae1aa94f7465f644e1b3e16
+index 0000000000000000000000000000000000000000..d0aa8248c0f9dc6daab6eee6b77d3ef198d75fdb
 --- /dev/null
 +++ b/src/main/java/org/plazmamc/plazma/Random.java
-@@ -0,0 +1,394 @@
+@@ -0,0 +1,395 @@
 +package org.plazmamc.plazma;
 +
 +/**
@@ -97,7 +96,11 @@ index 0000000000000000000000000000000000000000..e72e96be3938bdcc1ae1aa94f7465f64
 +    long x, y, z, w;
 +
 +    public Random() {
-+        seed((int) System.currentTimeMillis());
++        this((int) System.currentTimeMillis());
++    }
++
++    public Random(int value) {
++        seed(value);
 +    }
 +
 +    @Override
@@ -167,9 +170,7 @@ index 0000000000000000000000000000000000000000..e72e96be3938bdcc1ae1aa94f7465f64
 +                buffer[i++] = (byte) (w >> 8);
 +                if (i < buffer.length) {
 +                    buffer[i++] = (byte) (w >> 16);
-+                    if (i < buffer.length) {
-+                        buffer[i] = (byte) (w >> 24);
-+                    }
++                    if (i < buffer.length) buffer[i] = (byte) (w >> 24);
 +                }
 +            }
 +        }
@@ -241,11 +242,10 @@ index 0000000000000000000000000000000000000000..e72e96be3938bdcc1ae1aa94f7465f64
 +        // The explicit int cast before the first multiplication gives better performance.
 +        // See comments in NextDouble.
 +        int range = upperBound - lowerBound;
-+        if (range < 0) {
++        if (range < 0)
 +            // If range is <0 then an overflow has occured and must resort to using long integer arithmetic instead (slower).
 +            // We also must use all 32 bits of precision, instead of the normal 31, which again is slower.
 +            return lowerBound + (int) ((REAL_UNIT_UINT * (double) (w = (w ^ (w >> 19)) ^ (t ^ (t >> 8)))) * (double) ((long) upperBound - (long) lowerBound));
-+        }
 +        // 31 bits of precision will suffice if range<=int.MaxValue. This allows us to cast to an int and gain
 +        // a little more performance.
 +        return lowerBound + (int) ((REAL_UNIT_INT * (double) (int) (0x7FFFFFFF & (w = (w ^ (w >> 19)) ^ (t ^ (t >> 8))))) * (double) range);

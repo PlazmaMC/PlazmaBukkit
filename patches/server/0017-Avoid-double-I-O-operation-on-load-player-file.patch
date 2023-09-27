@@ -1,0 +1,29 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: AlphaKR93 <dev@alpha93.kr>
+Date: Wed, 27 Sep 2023 22:13:07 +0900
+Subject: [PATCH] Avoid double I/O operation on load player file
+
+
+diff --git a/src/main/java/net/minecraft/world/level/storage/PlayerDataStorage.java b/src/main/java/net/minecraft/world/level/storage/PlayerDataStorage.java
+index 36af81f0957d17e170d229059c66f4eb4539dfeb..b4b74bff0579b919266e91464b36c9381342b677 100644
+--- a/src/main/java/net/minecraft/world/level/storage/PlayerDataStorage.java
++++ b/src/main/java/net/minecraft/world/level/storage/PlayerDataStorage.java
+@@ -56,7 +56,8 @@ public class PlayerDataStorage {
+             File file = new File(this.playerDir, player.getStringUUID() + ".dat");
+             // Spigot Start
+             boolean usingWrongFile = false;
+-            if ( org.bukkit.Bukkit.getOnlineMode() && !file.exists() ) // Paper - Check online mode first
++            boolean isNormalFile = file.exists() && file.isFile(); // Plazma - Avoid double I/O operation
++            if ( org.bukkit.Bukkit.getOnlineMode() && isNormalFile ) // Paper - Check online mode first // Plazma - Avoid double I/O operation
+             {
+                 file = new File( this.playerDir, java.util.UUID.nameUUIDFromBytes( ( "OfflinePlayer:" + player.getScoreboardName() ).getBytes( "UTF-8" ) ).toString() + ".dat");
+                 if ( file.exists() )
+@@ -67,7 +68,7 @@ public class PlayerDataStorage {
+             }
+             // Spigot End
+ 
+-            if (file.exists() && file.isFile()) {
++            if (isNormalFile) { // Plazma - Avoid double I/O operation
+                 nbttagcompound = NbtIo.readCompressed(file);
+             }
+             // Spigot Start
