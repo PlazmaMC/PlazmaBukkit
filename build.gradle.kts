@@ -30,6 +30,7 @@ subprojects {
     
     tasks {
         withType<JavaCompile>().configureEach {
+            options.compilerArgs.add("--add-modules=jdk.incubator.vector")
             options.encoding = "UTF-8"
             options.release.set(17)
         }

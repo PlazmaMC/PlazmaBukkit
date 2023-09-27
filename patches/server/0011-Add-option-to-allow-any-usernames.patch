@@ -1,32 +1,30 @@
 From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
 From: AlphaKR93 <dev@alpha93.kr>
-Date: Thu, 23 Mar 2023 21:20:20 +0900
+Date: Wed, 27 Sep 2023 16:59:14 +0900
 Subject: [PATCH] Add option to allow any usernames
 
 
 diff --git a/src/main/java/net/minecraft/server/network/ServerLoginPacketListenerImpl.java b/src/main/java/net/minecraft/server/network/ServerLoginPacketListenerImpl.java
-index 01d5fa265fb2818465b5a71a2e2efeec751a7a05..0f1ebdc20460da22c1ff2fee2ff6428654139969 100644
+index b875f4af9dcb45bcad0ee59a958442ba673268fe..d38685f82d2e6c4e71179bf3a85a8b183aa6c44b 100644
 --- a/src/main/java/net/minecraft/server/network/ServerLoginPacketListenerImpl.java
 +++ b/src/main/java/net/minecraft/server/network/ServerLoginPacketListenerImpl.java
-@@ -240,7 +240,7 @@ public class ServerLoginPacketListenerImpl implements ServerLoginPacketListener,
+@@ -161,6 +161,7 @@ public class ServerLoginPacketListenerImpl implements ServerLoginPacketListener,
      @Override
      public void handleHello(ServerboundHelloPacket packet) {
          Validate.validState(this.state == ServerLoginPacketListenerImpl.State.HELLO, "Unexpected hello packet", new Object[0]);
--        Validate.validState(ServerLoginPacketListenerImpl.isValidUsername(packet.name()), "Invalid characters in username", new Object[0]);
-+        if (!org.plazmamc.plazma.configurations.GlobalConfiguration.get().player.allowAnyUsername) Validate.validState(ServerLoginPacketListenerImpl.isValidUsername(packet.name()), "Invalid characters in username", new Object[0]); // Plazma
++        if (!org.plazmamc.plazma.configurations.GlobalConfiguration.get().player.allowAnyUsername) // Plazma - Add option to allow any usernames
+         Validate.validState(ServerLoginPacketListenerImpl.isValidUsername(packet.name()), "Invalid characters in username", new Object[0]);
          // Paper start - validate usernames
          if (io.papermc.paper.configuration.GlobalConfiguration.get().proxies.isProxyOnlineMode() && io.papermc.paper.configuration.GlobalConfiguration.get().unsupportedSettings.performUsernameValidation) {
-             if (!this.iKnowThisMayNotBeTheBestIdeaButPleaseDisableUsernameValidation && !validateUsername(packet.name())) {
 diff --git a/src/main/java/org/plazmamc/plazma/configurations/GlobalConfiguration.java b/src/main/java/org/plazmamc/plazma/configurations/GlobalConfiguration.java
-index 61f364abb094a1d137478c106fefa22ceb057ed2..a45ff31d08129c0d5f159615d934a4450d54146e 100644
+index aa6e455f9f94e33085a7c29ec3b5222eb24957df..1c6ab6665788ac4484ff7cda0488604a01e53214 100644
 --- a/src/main/java/org/plazmamc/plazma/configurations/GlobalConfiguration.java
 +++ b/src/main/java/org/plazmamc/plazma/configurations/GlobalConfiguration.java
-@@ -32,7 +32,7 @@ public class GlobalConfiguration extends ConfigurationPart {
+@@ -32,5 +32,7 @@ public class GlobalConfiguration extends ConfigurationPart {
      public Player player;
      public class Player extends ConfigurationPart {
  
--
 +        public boolean allowAnyUsername = false;
- 
++
      }
  }

@@ -1,65 +1,54 @@
 From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
 From: AlphaKR93 <dev@alpha93.kr>
-Date: Fri, 24 Mar 2023 23:54:51 +0900
+Date: Wed, 27 Sep 2023 16:02:29 +0900
 Subject: [PATCH] Add more metrics
 
 
 diff --git a/src/main/java/com/destroystokyo/paper/Metrics.java b/src/main/java/com/destroystokyo/paper/Metrics.java
-index 7d80d2cf5d607d6051e99e4b08bc1b76098a79da..067bcbcb81802a3a52ecff737ddf2c033696ecfb 100644
+index 7d80d2cf5d607d6051e99e4b08bc1b76098a79da..fa88d48adc3aefcd823f431f099e46c94fd071a1 100644
 --- a/src/main/java/com/destroystokyo/paper/Metrics.java
 +++ b/src/main/java/com/destroystokyo/paper/Metrics.java
-@@ -636,12 +636,63 @@ public class Metrics {
+@@ -636,16 +636,51 @@ public class Metrics {
                      return map;
                  }));
  
-+                // Plazma start
-+                metrics.addCustomChart(new Metrics.DrilldownPie("datapacks", () -> {
-+                    Map<String, Map<String, Integer>> map = new HashMap<>();
-+                    int datapacks = Bukkit.getServer().getDatapackManager().getEnabledPacks().size();
-+                    Map<String, Integer> entry = new HashMap<>();
-+                    entry.put(String.valueOf(datapacks), 1);
++                // Plazma start - Add more metrics
++                metrics.addCustomChart(new DrilldownPie("datapacks", () -> {
++                    int datapacks = Bukkit.getDatapackManager().getEnabledPacks().size();
++                    Map<String, Integer> entry = Collections.singletonMap(String.valueOf(datapacks), 1);
 +
-+                    if (datapacks == 0)
-+                        map.put("0", entry);
-+                    else if (datapacks <= 5)
-+                        map.put("1-5", entry);
-+                    else if (datapacks <= 10)
-+                        map.put("6-10", entry);
-+                    else if (datapacks <= 25)
-+                        map.put("11-25", entry);
-+                    else
-+                        map.put("26+", entry);
-+
-+                    return map;
++                    if (datapacks == 0) return Collections.singletonMap("0", entry);
++                    else if (datapacks <= 5) return Collections.singletonMap("1-5", entry);
++                    else if (datapacks <= 10) return Collections.singletonMap("6-10", entry);
++                    else if (datapacks <= 25) return Collections.singletonMap("11-25", entry);
++                    else if (datapacks <= 50) return Collections.singletonMap("26-50", entry);
++                    return Collections.singletonMap("50+", entry);
 +                }));
-+                
-+                List<Plugin> plugins = new ArrayList<>();
-+                for (Plugin plugin : Bukkit.getPluginManager().getPlugins()) {
-+                    if (plugin.isEnabled()) {
-+                        plugins.add(plugin);
-+                    }
-+                }
 +
-+                metrics.addCustomChart(new Metrics.DrilldownPie("plugins", () -> {
-+                    Map<String, Map<String, Integer>> map = new HashMap<>();
-+                    int plugins1 = plugins.size();
-+                    Map<String, Integer> entry = new HashMap<>();
-+                    entry.put(String.valueOf(plugins1), 1);
++                List<Plugin> plugins = Arrays.stream(Bukkit.getPluginManager().getPlugins()).toList();
 +
-+                    if (plugins1 == 0)
-+                        map.put("0", entry);
-+                    else if (plugins1 <= 5)
-+                        map.put("1-5", entry);
-+                    else if (plugins1 <= 10)
-+                        map.put("6-10", entry);
-+                    else if (plugins1 <= 25)
-+                        map.put("11-25", entry);
-+                    else if (plugins1 <= 50)
-+                        map.put("26-50", entry);
-+                    else
-+                        map.put("51+", entry);
++                metrics.addCustomChart(new DrilldownPie("plugins", () -> {
++                    int pluginCount = (int) plugins.stream().filter(Plugin::isEnabled).count();
++                    Map<String, Integer> entry = Collections.singletonMap(String.valueOf(pluginCount), 1);
 +
-+                    return map;
++                    if (pluginCount == 0) return Collections.singletonMap("0", entry);
++                    else if (pluginCount <= 5) return Collections.singletonMap("1-5", entry);
++                    else if (pluginCount <= 10) return Collections.singletonMap("6-10", entry);
++                    else if (pluginCount <= 25) return Collections.singletonMap("11-25", entry);
++                    else if (pluginCount <= 50) return Collections.singletonMap("26-50", entry);
++                    return Collections.singletonMap("50+", entry);
++                }));
++
++                metrics.addCustomChart(new DrilldownPie("disabled_plugins", () -> {
++                    int disabled = (int) plugins.stream().filter(java.util.function.Predicate.not(Plugin::isEnabled)).count();
++                    Map<String, Integer> entry = Collections.singletonMap(String.valueOf(disabled), 1);
++
++                    if (disabled == 0) return Collections.singletonMap("0 \uD83D\uDE0E", entry);
++                    else if (disabled <= 5) return Collections.singletonMap("1-5", entry);
++                    else if (disabled <= 10) return Collections.singletonMap("6-10", entry);
++                    else if (disabled <= 25) return Collections.singletonMap("11-25", entry);
++                    else if (disabled <= 50) return Collections.singletonMap("26-50", entry);
++                    return Collections.singletonMap("50+ \uD83D\uDE2D", entry);
 +                }));
 +                // Plazma end
 +
@@ -67,9 +56,13 @@ index 7d80d2cf5d607d6051e99e4b08bc1b76098a79da..067bcbcb81802a3a52ecff737ddf2c03
                      Map<String, Map<String, Integer>> map = new HashMap<>();
  
                      // count legacy plugins
-                     int legacy = 0;
+-                    int legacy = 0;
 -                    for (Plugin plugin : Bukkit.getPluginManager().getPlugins()) {
-+                    for (Plugin plugin : plugins) { // Plazma
-                         if (CraftMagicNumbers.isLegacy(plugin.getDescription())) {
-                             legacy++;
-                         }
+-                        if (CraftMagicNumbers.isLegacy(plugin.getDescription())) {
+-                            legacy++;
+-                        }
+-                    }
++                    int legacy = (int) plugins.stream().filter(p -> CraftMagicNumbers.isLegacy(p.getDescription())).count(); // Plazma
+ 
+                     // insert real value as lower dimension
+                     Map<String, Integer> entry = new HashMap<>();

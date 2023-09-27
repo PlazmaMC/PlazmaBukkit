@@ -4,8 +4,28 @@ Date: Tue, 30 May 2023 12:12:29 +0900
 Subject: [PATCH] MC Dev fixes
 
 
+diff --git a/src/main/java/com/destroystokyo/paper/Metrics.java b/src/main/java/com/destroystokyo/paper/Metrics.java
+index b0b2cbd8d9db1772d43a285eca9060f3879acab0..8cde30544e14f8fc2dac32966ae3c21f8cf3a551 100644
+--- a/src/main/java/com/destroystokyo/paper/Metrics.java
++++ b/src/main/java/com/destroystokyo/paper/Metrics.java
+@@ -604,15 +604,6 @@ public class Metrics {
+                 metrics.addCustomChart(new Metrics.SingleLineChart("players", () -> Bukkit.getOnlinePlayers().size()));
+                 metrics.addCustomChart(new Metrics.SimplePie("online_mode", () -> Bukkit.getOnlineMode() ? "online" : (io.papermc.paper.configuration.GlobalConfiguration.get().proxies.isProxyOnlineMode() ? "bungee" : "offline"))); // Purpur
+                 metrics.addCustomChart(new Metrics.SimplePie("purpur_version", () -> (org.bukkit.craftbukkit.Main.class.getPackage().getImplementationVersion() != null) ? org.bukkit.craftbukkit.Main.class.getPackage().getImplementationVersion() : "unknown")); // Purpur
+-                final String paperVersion;
+-                final String implVersion = org.bukkit.craftbukkit.Main.class.getPackage().getImplementationVersion();
+-                if (implVersion != null) {
+-                    final String buildOrHash = implVersion.substring(implVersion.lastIndexOf('-') + 1);
+-                    paperVersion = "git-Pufferfish-%s-%s".formatted(Bukkit.getServer().getMinecraftVersion(), buildOrHash); // Pufferfish
+-                } else {
+-                    paperVersion = "unknown";
+-                }
+-                metrics.addCustomChart(new Metrics.SimplePie("pufferfish_version", () -> paperVersion)); // Pufferfish
+ 
+                 metrics.addCustomChart(new Metrics.DrilldownPie("java_version", () -> {
+                     Map<String, Map<String, Integer>> map = new HashMap<>();
 diff --git a/src/main/java/net/minecraft/util/datafix/fixes/LeavesFix.java b/src/main/java/net/minecraft/util/datafix/fixes/LeavesFix.java
-index 11ae164cce84081843518953bbeaf29904334fa9..131a0bb93c0711cc657c5571f3d8313b4bf154a8 100644
+index 733134401fcba393053c7a2dfa1d0d44f8f79ff5..17d931ef47846b59e28dc0c5b5ae91396a1d3e7d 100644
 --- a/src/main/java/net/minecraft/util/datafix/fixes/LeavesFix.java
 +++ b/src/main/java/net/minecraft/util/datafix/fixes/LeavesFix.java
 @@ -71,14 +71,14 @@ public class LeavesFix extends DataFix {
@@ -15,15 +35,15 @@ index 11ae164cce84081843518953bbeaf29904334fa9..131a0bb93c0711cc657c5571f3d8313b
 -                    Typed<?> typed2 = typedx.updateTyped(opticFinder2, (typed) -> {
 -                        Int2ObjectMap<LeavesFix.LeavesSection> int2ObjectMap = new Int2ObjectOpenHashMap<>(typed.getAllTyped(opticFinder3).stream().map((typedx) -> {
 -                            return new LeavesFix.LeavesSection(typedx, this.getInputSchema());
-+                    Typed<?> typed2 = typedx.updateTyped(opticFinder2, (typed2x) -> {
-+                        Int2ObjectMap<LeavesFix.LeavesSection> int2ObjectMap = new Int2ObjectOpenHashMap<>(typed2x.getAllTyped(opticFinder3).stream().map((typedx2) -> {
-+                            return new LeavesFix.LeavesSection(typedx2, this.getInputSchema());
++                    Typed<?> typed2 = typedx.updateTyped(opticFinder2, (typed2x) -> { // Plazma - decompile fix
++                        Int2ObjectMap<LeavesFix.LeavesSection> int2ObjectMap = new Int2ObjectOpenHashMap<>(typed2x.getAllTyped(opticFinder3).stream().map((typedx2) -> { // Plazma - decompile fix
++                            return new LeavesFix.LeavesSection(typedx2, this.getInputSchema()); // Plazma - decompile fix
                          }).collect(Collectors.toMap(LeavesFix.Section::getIndex, (leavesSection) -> {
                              return leavesSection;
                          })));
                          if (int2ObjectMap.values().stream().allMatch(LeavesFix.Section::isSkippable)) {
 -                            return typed;
-+                            return typed2x;
++                            return typed2x; // Plazma - decompile fix
                          } else {
                              List<IntSet> list = Lists.newArrayList();
  
@@ -33,8 +53,8 @@ index 11ae164cce84081843518953bbeaf29904334fa9..131a0bb93c0711cc657c5571f3d8313b
  
 -                            return typed.updateTyped(opticFinder3, (typedx) -> {
 -                                return int2ObjectMap.get(typedx.get(DSL.remainderFinder()).get("Y").asInt(0)).write(typedx);
-+                            return typed.updateTyped(opticFinder3, (typedx2) -> {
-+                                return int2ObjectMap.get(typedx2.get(DSL.remainderFinder()).get("Y").asInt(0)).write(typedx2);
++                            return typed.updateTyped(opticFinder3, (typedx2) -> { // Plazma - decompile fix
++                                return int2ObjectMap.get(typedx2.get(DSL.remainderFinder()).get("Y").asInt(0)).write(typedx2); // Plazma - decompile fix
                              });
                          }
                      });
@@ -44,8 +64,8 @@ index 11ae164cce84081843518953bbeaf29904334fa9..131a0bb93c0711cc657c5571f3d8313b
                  Optional<List<Pair<String, Dynamic<?>>>> optional = typed.getOptional(this.paletteFinder);
 -                this.palette = optional.map((list) -> {
 -                    return list.stream().map(Pair::getSecond).collect(Collectors.toList());
-+                this.palette = (java.util.List)optional.map((list) -> {
-+                    return (java.util.List)list.stream().map(Pair::getSecond).collect(Collectors.toList());
++                this.palette = (List) optional.map((list) -> { // Plazma - decompile fix
++                    return (List) list.stream().map(Pair::getSecond).collect(Collectors.toList()); // Plazma - decompile fix
                  }).orElse(ImmutableList.of());
                  Dynamic<?> dynamic = typed.get(DSL.remainderFinder());
                  this.index = dynamic.get("Y").asInt(0);
@@ -54,22 +74,7 @@ index 11ae164cce84081843518953bbeaf29904334fa9..131a0bb93c0711cc657c5571f3d8313b
              return this.isSkippable() ? typed : typed.update(DSL.remainderFinder(), (dynamic) -> {
                  return dynamic.set("BlockStates", dynamic.createLongList(Arrays.stream(this.storage.getRaw())));
 -            }).set(this.paletteFinder, this.palette.stream().map((dynamic) -> {
-+            }).set(this.paletteFinder, (java.util.List)this.palette.stream().map((dynamic) -> {
++            }).set(this.paletteFinder, (List) this.palette.stream().map((dynamic) -> { // Plazma - decompile fix
                  return Pair.of(References.BLOCK_STATE.typeName(), dynamic);
              }).collect(Collectors.toList()));
          }
-diff --git a/src/main/java/net/minecraft/world/level/storage/loot/entries/EntryGroup.java b/src/main/java/net/minecraft/world/level/storage/loot/entries/EntryGroup.java
-index 6e971a9891e43b971d439c3ca11eff8965f3dae9..da1b5c6b68f14969b85472826d3d36ca673a0e5a 100644
---- a/src/main/java/net/minecraft/world/level/storage/loot/entries/EntryGroup.java
-+++ b/src/main/java/net/minecraft/world/level/storage/loot/entries/EntryGroup.java
-@@ -31,8 +31,8 @@ public class EntryGroup extends CompositeEntryBase {
-                 };
-             default:
-                 return (context, lootChoiceExpander) -> {
--                    for(ComposableEntryContainer composableEntryContainer : children) {
--                        composableEntryContainer.expand(context, lootChoiceExpander);
-+                    for(ComposableEntryContainer composableEntryContainer3 : children) { // Plazma - decompile fix
-+                        composableEntryContainer3.expand(context, lootChoiceExpander);
-                     }
- 
-                     return true;
