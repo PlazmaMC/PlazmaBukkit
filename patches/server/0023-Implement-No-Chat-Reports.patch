@@ -1,0 +1,150 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: AlphaKR93 <dev@alpha93.kr>
+Date: Thu, 28 Sep 2023 11:47:50 +0900
+Subject: [PATCH] Implement No Chat Reports
+
+
+diff --git a/src/main/java/net/minecraft/network/FriendlyByteBuf.java b/src/main/java/net/minecraft/network/FriendlyByteBuf.java
+index 40f51062624161892c780ddae05e22859e2cd021..b0b515b8ebeffe25a760d7d6faa87cbc1a585b2d 100644
+--- a/src/main/java/net/minecraft/network/FriendlyByteBuf.java
++++ b/src/main/java/net/minecraft/network/FriendlyByteBuf.java
+@@ -139,9 +139,13 @@ public class FriendlyByteBuf extends ByteBuf {
+     public <T> void writeJsonWithCodec(Codec<T> codec, T value) {
+         DataResult<JsonElement> dataresult = codec.encodeStart(JsonOps.INSTANCE, value);
+ 
+-        this.writeUtf(FriendlyByteBuf.GSON.toJson((JsonElement) Util.getOrThrow(dataresult, (s) -> {
+-            return new EncoderException("Failed to encode: " + s + " " + value);
+-        })));
++        // Plazma start - Implement No Chat Reports
++        JsonElement element = Util.getOrThrow(dataresult, s -> new EncoderException("Failed to encode: " + s + " " + value));
++        if (codec == net.minecraft.network.protocol.status.ServerStatus.CODEC
++                && org.plazmamc.plazma.configurations.GlobalConfiguration.get().noChatReports.queryData())
++            element.getAsJsonObject().addProperty("preventsChatReports", true);
++        this.writeUtf(GSON.toJson(element));
++        // Plazma end
+     }
+ 
+     public <T> void writeId(IdMap<T> registry, T value) {
+diff --git a/src/main/java/net/minecraft/network/protocol/game/ServerboundChatCommandPacket.java b/src/main/java/net/minecraft/network/protocol/game/ServerboundChatCommandPacket.java
+index b8c1f3b9afddc87d56541c8af63cffecfcdd2653..4f0d6ac849dda74c9180fa03d97d389cc4554b46 100644
+--- a/src/main/java/net/minecraft/network/protocol/game/ServerboundChatCommandPacket.java
++++ b/src/main/java/net/minecraft/network/protocol/game/ServerboundChatCommandPacket.java
+@@ -24,4 +24,13 @@ public record ServerboundChatCommandPacket(String command, Instant timeStamp, lo
+     public void handle(ServerGamePacketListener listener) {
+         listener.handleChatCommand(this);
+     }
++
++    // Plazma start - Implement No Chat Reports
++    @Override
++    public ArgumentSignatures argumentSignatures() {
++        if (org.plazmamc.plazma.configurations.GlobalConfiguration.get().noChatReports.enabled)
++            return ArgumentSignatures.EMPTY;
++        return this.argumentSignatures;
++    }
++    // Plazma end
+ }
+diff --git a/src/main/java/net/minecraft/network/protocol/game/ServerboundChatPacket.java b/src/main/java/net/minecraft/network/protocol/game/ServerboundChatPacket.java
+index d1d2fc0c57523c1abf1e8bfec913c78927c3dafc..b32e17ef1d7d65f2e3cf4fb5471d8182b3ba892f 100644
+--- a/src/main/java/net/minecraft/network/protocol/game/ServerboundChatPacket.java
++++ b/src/main/java/net/minecraft/network/protocol/game/ServerboundChatPacket.java
+@@ -25,4 +25,12 @@ public record ServerboundChatPacket(String message, Instant timeStamp, long salt
+     public void handle(ServerGamePacketListener listener) {
+         listener.handleChat(this);
+     }
++
++    // Plazma start - Implement No Chat Reports
++    @Override
++    public @Nullable MessageSignature signature() {
++        if (org.plazmamc.plazma.configurations.GlobalConfiguration.get().noChatReports.enabled) return null;
++        return this.signature;
++    }
++    // Plazma end
+ }
+diff --git a/src/main/java/net/minecraft/network/protocol/game/ServerboundChatSessionUpdatePacket.java b/src/main/java/net/minecraft/network/protocol/game/ServerboundChatSessionUpdatePacket.java
+index 9d6db4a378036559efab91c8b7dcf2a6b0c2cce6..4d9f73add791cef03cc7aeaf1598a73c2195809a 100644
+--- a/src/main/java/net/minecraft/network/protocol/game/ServerboundChatSessionUpdatePacket.java
++++ b/src/main/java/net/minecraft/network/protocol/game/ServerboundChatSessionUpdatePacket.java
+@@ -16,6 +16,15 @@ public record ServerboundChatSessionUpdatePacket(RemoteChatSession.Data chatSess
+ 
+     @Override
+     public void handle(ServerGamePacketListener listener) {
++        // Plazma start - Implement No Chat Reports
++        if (org.plazmamc.plazma.configurations.GlobalConfiguration.get().noChatReports.requireModInstallation()) {
++            ((net.minecraft.server.network.ServerGamePacketListenerImpl) listener).disconnect(
++                    net.kyori.adventure.text.minimessage.MiniMessage.miniMessage().deserialize(org.plazmamc.plazma.configurations.GlobalConfiguration.get().noChatReports.requireModInstallation.message),
++                    org.bukkit.event.player.PlayerKickEvent.Cause.NCR_NOT_INSTALLED
++            );
++            return;
++        }
++        // Plazma end
+         listener.handleChatSessionUpdate(this);
+     }
+ }
+diff --git a/src/main/java/net/minecraft/server/dedicated/DedicatedServer.java b/src/main/java/net/minecraft/server/dedicated/DedicatedServer.java
+index 879c090d9c4574a2cd45a0eb1bf9cb171834d940..d6e8d96372d4212c72a50602207075ccd3f5062d 100644
+--- a/src/main/java/net/minecraft/server/dedicated/DedicatedServer.java
++++ b/src/main/java/net/minecraft/server/dedicated/DedicatedServer.java
+@@ -683,6 +683,7 @@ public class DedicatedServer extends MinecraftServer implements ServerInterface
+     public boolean enforceSecureProfile() {
+         DedicatedServerProperties dedicatedserverproperties = this.getProperties();
+ 
++        if (org.plazmamc.plazma.configurations.GlobalConfiguration.get().noChatReports.enabled) return false; // Plazma - Implement No Chat Reports
+         return dedicatedserverproperties.enforceSecureProfile && dedicatedserverproperties.onlineMode && this.services.profileKeySignatureValidator() != null;
+     }
+ 
+diff --git a/src/main/java/net/minecraft/server/network/ServerCommonPacketListenerImpl.java b/src/main/java/net/minecraft/server/network/ServerCommonPacketListenerImpl.java
+index 6f6228edfe77668552a40a814ab3cebd74c4cb5a..22f26761965d3c03b109939585ff528d382eab21 100644
+--- a/src/main/java/net/minecraft/server/network/ServerCommonPacketListenerImpl.java
++++ b/src/main/java/net/minecraft/server/network/ServerCommonPacketListenerImpl.java
+@@ -270,6 +270,13 @@ public abstract class ServerCommonPacketListenerImpl implements ServerCommonPack
+     }
+ 
+     public void send(Packet<?> packet, @Nullable PacketSendListener callbacks) {
++        // Plazma start - Implement No Chat Reports
++        if (org.plazmamc.plazma.configurations.GlobalConfiguration.get().noChatReports.convertToSystemMessage()
++                && packet instanceof net.minecraft.network.protocol.game.ClientboundPlayerChatPacket p) {
++            this.send(new net.minecraft.network.protocol.game.ClientboundSystemChatPacket(null, Component.Serializer.toJson(p.chatType().resolve(this.player.level().registryAccess()).get().decorate(p.unsignedContent() != null ? p.unsignedContent() : Component.literal(p.body().content()))), false), null);
++            return;
++        }
++        // Plazma end
+         // CraftBukkit start
+         if (packet == null || this.processedDisconnect) { // Spigot
+             return;
+diff --git a/src/main/java/net/minecraft/server/players/PlayerList.java b/src/main/java/net/minecraft/server/players/PlayerList.java
+index 5c38df8170033dbfee267520991a3cc3285d219e..1ccdf0237e6246fd178ec2aefeae9f736821b770 100644
+--- a/src/main/java/net/minecraft/server/players/PlayerList.java
++++ b/src/main/java/net/minecraft/server/players/PlayerList.java
+@@ -1471,6 +1471,7 @@ public abstract class PlayerList {
+     }
+ 
+     public boolean verifyChatTrusted(PlayerChatMessage message) { // Paper - private -> public
++        if (org.plazmamc.plazma.configurations.GlobalConfiguration.get().noChatReports.enabled) return true;
+         return message.hasSignature() && !message.hasExpiredServer(Instant.now());
+     }
+ 
+diff --git a/src/main/java/org/plazmamc/plazma/configurations/GlobalConfiguration.java b/src/main/java/org/plazmamc/plazma/configurations/GlobalConfiguration.java
+index 065a4113f0b1dc1ee122af34609d0de02f62f9de..139f5adbe69fe4426d5c90cf458d94b5cc6bd823 100644
+--- a/src/main/java/org/plazmamc/plazma/configurations/GlobalConfiguration.java
++++ b/src/main/java/org/plazmamc/plazma/configurations/GlobalConfiguration.java
+@@ -48,4 +48,21 @@ public class GlobalConfiguration extends ConfigurationPart {
+         public boolean rootUserWarnings = true;
+ 
+     }
++
++    public NoChatReports noChatReports;
++    public class NoChatReports extends ConfigurationPart {
++
++        public boolean enabled = false;
++        boolean queryData = true; public boolean queryData() { return this.enabled && this.queryData; }
++        public boolean requireModInstallation() { return this.enabled && this.requireModInstallation.enabled; }
++
++        public RequireModInstallation requireModInstallation;
++        public class RequireModInstallation extends ConfigurationPart {
++
++            boolean enabled = false;
++            public String message = "You do not have No Chat Reports, and this server is configured to require it on client!";
++
++        }
++
++    }
+ }
