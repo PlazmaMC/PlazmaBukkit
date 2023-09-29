@@ -84,6 +84,7 @@ jobs:
             Plazma-API/build/docs/javadoc
       
       - name: Get Release Number
+        if: startsWith(github.ref_name, 'ver/')
         run: echo "RELEASE=$(git ls-remote --tags origin | grep "release" | wc -l)" >> $GITHUB_ENV
 
       - name: Release Artifacts
@@ -96,12 +97,22 @@ jobs:
           files: build/libs/*.jar
           prerelease: false
           
-      - name: Release Artifacts (Latest)
+      - name: Release Artifacts (Latest/Stable)
         if: startsWith(github.ref_name, 'ver/')
         uses: marvinpinto/action-automatic-releases@latest
         with:
           title: "Release #${{ env.RELEASE }}"
           automatic_release_tag: latest-${{ env.MC_VERSION }}
+          repo_token: "${{ secrets.GH_PAT }}"
+          files: build/libs/*.jar
+          prerelease: false
+
+      - name: Release Artifacts (Latest/Development)
+        if: startsWith(github.ref_name, 'dev/')
+        uses: marvinpinto/action-automatic-releases@latest
+        with:
+          title: "Development build for ${{ env.MC_VERSION }}"
+          automatic_release_tag: dev-${{ env.MC_VERSION }}
           repo_token: "${{ secrets.GH_PAT }}"
           files: build/libs/*.jar
           prerelease: false
