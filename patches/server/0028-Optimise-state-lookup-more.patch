@@ -1,27 +1,26 @@
 From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
-From: IPECTER <ipectert@gmail.com>
-Date: Wed, 10 May 2023 15:30:03 +0900
-Subject: [PATCH] More optimise state lookup
+From: AlphaKR93 <dev@alpha93.kr>
+Date: Sat, 30 Sep 2023 22:02:58 +0900
+Subject: [PATCH] Optimise state lookup more
 
 
 diff --git a/src/main/java/io/papermc/paper/util/table/ZeroCollidingReferenceStateTable.java b/src/main/java/io/papermc/paper/util/table/ZeroCollidingReferenceStateTable.java
-index 57d0cd3ad6f972e986c72a57f1a6e36003f190c2..5c03e26db0f9da992e9b0487a872e0ec8786650a 100644
+index 57d0cd3ad6f972e986c72a57f1a6e36003f190c2..0832e4fa92b6464a6206475fbceb3b36462757b3 100644
 --- a/src/main/java/io/papermc/paper/util/table/ZeroCollidingReferenceStateTable.java
 +++ b/src/main/java/io/papermc/paper/util/table/ZeroCollidingReferenceStateTable.java
-@@ -16,7 +16,7 @@ public final class ZeroCollidingReferenceStateTable {
-     protected final Comparable<?>[] this_table;
+@@ -17,6 +17,7 @@ public final class ZeroCollidingReferenceStateTable {
      protected final StateHolder<?, ?> this_state;
  
--    protected long[] index_table;
-+    protected long[] index_table; public long[] index_table() { return index_table; } // Plazma - Paper - optimise state lookup
+     protected long[] index_table;
++    public long[] index_table() { return this.index_table; } // Plazma - getter
      protected StateHolder<?, ?>[][] value_table;
  
      public ZeroCollidingReferenceStateTable(final StateHolder<?, ?> state, final Map<Property<?>, Comparable<?>> this_map) {
 diff --git a/src/main/java/net/minecraft/world/level/block/state/StateHolder.java b/src/main/java/net/minecraft/world/level/block/state/StateHolder.java
-index 5f285d190186a2ff5a61d05070593e1d633dd79a..62934ef07ef856b917862c6f58ad391984da6327 100644
+index 5f285d190186a2ff5a61d05070593e1d633dd79a..7b61a956892e90c7556db46d9277da8d252547cd 100644
 --- a/src/main/java/net/minecraft/world/level/block/state/StateHolder.java
 +++ b/src/main/java/net/minecraft/world/level/block/state/StateHolder.java
-@@ -114,21 +114,17 @@ public abstract class StateHolder<O, S> {
+@@ -114,21 +114,15 @@ public abstract class StateHolder<O, S> {
      }
  
      public <T extends Comparable<T>, V extends T> S trySetValue(Property<T> property, V value) {
@@ -35,27 +34,26 @@ index 5f285d190186a2ff5a61d05070593e1d633dd79a..62934ef07ef856b917862c6f58ad3919
 -            }
 -        } else {
 -            return (S)this;
-+        // Plazma start - Paper - optimise state lookup
-+        final S ret = (S)this.optimisedTable.get(property, value);
-+        if (ret == null) {
-+            throw new IllegalArgumentException("Cannot set property " + property + " to " + value + " on " + this.owner + ", it is not an allowed value");
-         }
+-        }
++        // Plazma start - optimise state lookup more
++        final S ret = (S) this.optimisedTable.get(property, value);
++        if (ret == null) throw new IllegalArgumentException("Cannot set property " + property + " to " + value + " on " + this.owner + ", it is not an allowed value");
 +        return ret;
-+        // Plazma end - Paper - optimise state lookup
++        // Plazma end
      }
  
      public void populateNeighbours(Map<Map<Property<?>, Comparable<?>>, S> states) {
 -        if (this.neighbours != null) {
-+        if (this.optimisedTable.index_table() != null) {
++        if (this.optimisedTable.index_table() != null) { // Plazma - optimise state lookup more
              throw new IllegalStateException();
          } else {
              Table<Property<?>, Comparable<?>, S> table = HashBasedTable.create();
-@@ -143,7 +139,7 @@ public abstract class StateHolder<O, S> {
+@@ -143,7 +137,7 @@ public abstract class StateHolder<O, S> {
                  }
              }
  
 -            this.neighbours = (Table<Property<?>, Comparable<?>, S>)(table.isEmpty() ? table : ArrayTable.create(table)); this.optimisedTable.loadInTable((Table)this.neighbours, this.values); // Paper - optimise state lookup
-+            this.optimisedTable.loadInTable((Table)(table.isEmpty() ? table : ArrayTable.create(table)), this.values); // Paper - optimise state lookup // Plazma
++            this.optimisedTable.loadInTable((Table) (table.isEmpty() ? table : ArrayTable.create(table)), this.values); // Paper - optimise state lookup // Plazma - more
          }
      }
  

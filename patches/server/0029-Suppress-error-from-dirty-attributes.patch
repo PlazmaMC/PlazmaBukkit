@@ -1,0 +1,41 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: AlphaKR93 <dev@alpha93.kr>
+Date: Sat, 30 Sep 2023 22:06:00 +0900
+Subject: [PATCH] Suppress error from dirty attributes
+
+
+diff --git a/src/main/java/net/minecraft/server/level/ServerEntity.java b/src/main/java/net/minecraft/server/level/ServerEntity.java
+index b2770e053f6db173dedbf044d67aa315e2fd7302..30b4c6bf1a0c847d00fc466ca9c997f9049bb697 100644
+--- a/src/main/java/net/minecraft/server/level/ServerEntity.java
++++ b/src/main/java/net/minecraft/server/level/ServerEntity.java
+@@ -395,7 +395,8 @@ public class ServerEntity {
+         }
+ 
+         if (this.entity instanceof LivingEntity) {
+-            Set<AttributeInstance> set = ((LivingEntity) this.entity).getAttributes().getDirtyAttributes();
++            Set<AttributeInstance> attributes = ((LivingEntity) this.entity).getAttributes().getDirtyAttributes(); // Plazma - Suppress error from dirty attributes
++            final Set<AttributeInstance> set = this.entity.level().plazmaLevelConfiguration().entity.suppressErrorFromDirtyAttributes ? java.util.Collections.synchronizedSet(attributes) : attributes; // Plazma - Suppress error from dirty attributes
+ 
+             if (!set.isEmpty()) {
+                 // CraftBukkit start - Send scaled max health
+@@ -406,7 +407,7 @@ public class ServerEntity {
+                 this.broadcastAndSend(new ClientboundUpdateAttributesPacket(this.entity.getId(), set));
+             }
+ 
+-            set.clear();
++            attributes.clear(); // Plazma - Suppress error from dirty attributes
+         }
+ 
+     }
+diff --git a/src/main/java/org/plazmamc/plazma/configurations/LevelConfigurations.java b/src/main/java/org/plazmamc/plazma/configurations/LevelConfigurations.java
+index cb21da3cff4dbb08c7786c09b39e381abdf45c33..dfd408dc42a6000eb5fa56bbdb64f2329e545078 100644
+--- a/src/main/java/org/plazmamc/plazma/configurations/LevelConfigurations.java
++++ b/src/main/java/org/plazmamc/plazma/configurations/LevelConfigurations.java
+@@ -36,6 +36,7 @@ public class LevelConfigurations extends ConfigurationPart {
+         public int sensorTick = DO_OPTIMIZE ? 10 : 1;
+ 
+         public boolean ignoreUselessPackets = DO_OPTIMIZE;
++        public boolean suppressErrorFromDirtyAttributes = false;
+ 
+         public Player player;
+         public class Player extends ConfigurationPart {

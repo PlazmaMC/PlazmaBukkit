@@ -1,6 +1,6 @@
 <div align="center">
 
-![image](https://raw.githubusercontent.com/PlazmaMC/Plazma/main/src/resources/title-900.png)
+[![image](https://raw.githubusercontent.com/PlazmaMC/Plazma/main/src/resources/title-900.png)](https://github.com/PlazmaMC/Plazma)
 
 ### A Server Platform for Minecraft: Java Edition based on [Paper](https://github.com/PaperMC/Paper)
 
@@ -19,8 +19,8 @@
 
 [main]: https://github.com/PlazmaMC/Plazma
 
-### This is the branch for Plazma 1.20.1. If you want to know more about Plazma, please check the [main branch][main].
-이곳은 플라즈마의 1.20.1용 브랜치 입니다. 플라즈마에 대해 자세히 알고 싶다면 [main 브랜치][main]를 확인해주세요.
+### This is the branch for Plazma 1.20.2. If you want to know more about Plazma, please check the [main branch][main].
+이곳은 플라즈마의 1.20.2용 브랜치 입니다. 플라즈마에 대해 자세히 알고 싶다면 [main 브랜치][main]를 확인해주세요.
 
 ## ⬇️ Downloads
 ### If you don't know about Mojmap or Bundler, download **Reobf Paperclip**
