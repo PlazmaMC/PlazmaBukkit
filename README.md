@@ -1,6 +1,6 @@
 <div align="center">
 
-![image](src/resources/title-400.png)
+[![image](src/resources/title-400.png)](https://github.com/PlazmaMC/Plazma)
 
 ### A Server Platform for Minecraft: Java Edition based on [Paper](https://github.com/PaperMC/Paper), which provides the fastest performance
 
