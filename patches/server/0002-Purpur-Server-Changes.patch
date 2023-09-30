@@ -1,6 +1,6 @@
 From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
 From: William Blake Galbreath <blake.galbreath@gmail.com>
-Date: Wed, 27 Sep 2023 05:28:53 +0000
+Date: Sat, 30 Sep 2023 09:53:53 +0000
 Subject: [PATCH] Purpur Server Changes
 
 Original: PurpurMC
@@ -2184,7 +2184,7 @@ index 390e5a4e9cead6f217de7689a47b8c3b4b042990..6255960ae70e14eb11da5043eb003575
          }
  
 diff --git a/src/main/java/net/minecraft/server/level/ServerEntity.java b/src/main/java/net/minecraft/server/level/ServerEntity.java
-index b7f2bf1fbc0217e2968805521c108cb27c178dad..c6d80accdac49564b5386717a92dbd5a10237f06 100644
+index d46e61640b241d32df05240dedd2c23f138725e6..c6ef510d335b8baea58c4491853414a52a06b66b 100644
 --- a/src/main/java/net/minecraft/server/level/ServerEntity.java
 +++ b/src/main/java/net/minecraft/server/level/ServerEntity.java
 @@ -73,7 +73,7 @@ public class ServerEntity {
@@ -4712,7 +4712,7 @@ index 1bb8b6e91c44cd13411d96d749fa64835c75a267..b18cbe85330e26de6f6cbfcc3d51a741
      protected ParticleOptions getInkParticle() {
          return ParticleTypes.GLOW_SQUID_INK;
 diff --git a/src/main/java/net/minecraft/world/entity/LivingEntity.java b/src/main/java/net/minecraft/world/entity/LivingEntity.java
-index 6806aadd18696832a8d6ada3db0cee89047acb60..82d4fd6ea1ebd3147f96501605f7990934435ec8 100644
+index 4a8a0432366f16f4a7028293bb4d33770f215ec6..df869a765ab48b4352c6355d7648754a0644671e 100644
 --- a/src/main/java/net/minecraft/world/entity/LivingEntity.java
 +++ b/src/main/java/net/minecraft/world/entity/LivingEntity.java
 @@ -218,9 +218,9 @@ public abstract class LivingEntity extends Entity implements Attackable {
@@ -10923,7 +10923,7 @@ index c65ab566c6241dd6a44bd11a449ef0c4b2f6dc65..c94a1b75593ad01e7f79fdc84818ea8e
      }
  
 diff --git a/src/main/java/net/minecraft/world/entity/decoration/ArmorStand.java b/src/main/java/net/minecraft/world/entity/decoration/ArmorStand.java
-index 9b19cca3b8231b8fbda674f080922673503b1260..b735c8029685bc4cca5998b36b52249dc51df1a2 100644
+index 1c7702a5c888846f93f8f80d3b854a26c11499be..2f64267d780fdbba1248398094bed39ed619740c 100644
 --- a/src/main/java/net/minecraft/world/entity/decoration/ArmorStand.java
 +++ b/src/main/java/net/minecraft/world/entity/decoration/ArmorStand.java
 @@ -99,10 +99,12 @@ public class ArmorStand extends LivingEntity {
@@ -19277,7 +19277,7 @@ index f13943db6f2fb923c52dcf9e8bf7000041d0a362..99ef8d7e3ee0ee9777d12ad825e728c3
                  BeaconBlockEntity.playSound(world, pos, SoundEvents.BEACON_AMBIENT);
              }
 diff --git a/src/main/java/net/minecraft/world/level/block/entity/BeehiveBlockEntity.java b/src/main/java/net/minecraft/world/level/block/entity/BeehiveBlockEntity.java
-index 41c9f074203915c31c1ae7a160ce509c13383f84..5344393f62af19c3591f54a6ebc40b2e4c3b6226 100644
+index 41c9f074203915c31c1ae7a160ce509c13383f84..82bdd430f1640e44d25af54354bba27b190fa1ba 100644
 --- a/src/main/java/net/minecraft/world/level/block/entity/BeehiveBlockEntity.java
 +++ b/src/main/java/net/minecraft/world/level/block/entity/BeehiveBlockEntity.java
 @@ -43,7 +43,7 @@ public class BeehiveBlockEntity extends BlockEntity {
@@ -19289,25 +19289,28 @@ index 41c9f074203915c31c1ae7a160ce509c13383f84..5344393f62af19c3591f54a6ebc40b2e
  
      public BeehiveBlockEntity(BlockPos pos, BlockState state) {
          super(BlockEntityType.BEEHIVE, pos, state);
-@@ -130,6 +130,36 @@ public class BeehiveBlockEntity extends BlockEntity {
+@@ -117,10 +117,15 @@ public class BeehiveBlockEntity extends BlockEntity {
+     }
+ 
+     public List<Entity> releaseBees(BlockState iblockdata, BeehiveBlockEntity.BeeReleaseStatus tileentitybeehive_releasestatus, boolean force) {
++    // Purpur start
++        return this.releaseBees(iblockdata, this.level, tileentitybeehive_releasestatus, force);
++    }
++    public List<Entity> releaseBees(BlockState iblockdata, Level level, BeehiveBlockEntity.BeeReleaseStatus tileentitybeehive_releasestatus, boolean force) {
++    // Purpur end
+         List<Entity> list = Lists.newArrayList();
+ 
+         this.stored.removeIf((tileentitybeehive_hivebee) -> {
+-            return BeehiveBlockEntity.releaseBee(this.level, this.worldPosition, iblockdata, tileentitybeehive_hivebee, list, tileentitybeehive_releasestatus, this.savedFlowerPos, force);
++            return BeehiveBlockEntity.releaseBee(level, this.worldPosition, iblockdata, tileentitybeehive_hivebee, list, tileentitybeehive_releasestatus, this.savedFlowerPos, force); // Purpur
+             // CraftBukkit end
+         });
+         if (!list.isEmpty()) {
+@@ -130,6 +135,22 @@ public class BeehiveBlockEntity extends BlockEntity {
          return list;
      }
  
 +    // Purpur start
-+    public List<Entity> releaseBees(BlockState iblockdata, Level level, BeehiveBlockEntity.BeeReleaseStatus tileentitybeehive_releasestatus, boolean force) {
-+        List<Entity> list = Lists.newArrayList();
-+
-+        this.stored.removeIf((tileentitybeehive_hivebee) -> {
-+            return BeehiveBlockEntity.releaseBee(level, this.worldPosition, iblockdata, tileentitybeehive_hivebee, list, tileentitybeehive_releasestatus, this.savedFlowerPos, force);
-+        });
-+
-+        if (!list.isEmpty()) {
-+            super.setChanged();
-+        }
-+
-+        return list;
-+    }
-+
 +    public List<Entity> releaseBee(BlockState iblockdata, Level level, BeeData data, BeehiveBlockEntity.BeeReleaseStatus tileentitybeehive_releasestatus, boolean force) {
 +        List<Entity> list = Lists.newArrayList();
 +
@@ -19326,7 +19329,7 @@ index 41c9f074203915c31c1ae7a160ce509c13383f84..5344393f62af19c3591f54a6ebc40b2e
      public void addOccupant(Entity entity, boolean hasNectar) {
          this.addOccupantWithPresetTicks(entity, hasNectar, 0);
      }
-@@ -139,6 +169,12 @@ public class BeehiveBlockEntity extends BlockEntity {
+@@ -139,6 +160,12 @@ public class BeehiveBlockEntity extends BlockEntity {
          return this.stored.size();
      }
  
@@ -19339,7 +19342,7 @@ index 41c9f074203915c31c1ae7a160ce509c13383f84..5344393f62af19c3591f54a6ebc40b2e
      // Paper start - Add EntityBlockStorage clearEntities
      public void clearBees() {
          this.stored.clear();
-@@ -203,7 +239,7 @@ public class BeehiveBlockEntity extends BlockEntity {
+@@ -203,7 +230,7 @@ public class BeehiveBlockEntity extends BlockEntity {
      }
  
      private static boolean releaseBee(Level world, BlockPos blockposition, BlockState iblockdata, BeehiveBlockEntity.BeeData tileentitybeehive_hivebee, @Nullable List<Entity> list, BeehiveBlockEntity.BeeReleaseStatus tileentitybeehive_releasestatus, @Nullable BlockPos blockposition1, boolean force) {
@@ -19348,7 +19351,7 @@ index 41c9f074203915c31c1ae7a160ce509c13383f84..5344393f62af19c3591f54a6ebc40b2e
              // CraftBukkit end
              return false;
          } else {
-@@ -425,9 +461,9 @@ public class BeehiveBlockEntity extends BlockEntity {
+@@ -425,9 +452,9 @@ public class BeehiveBlockEntity extends BlockEntity {
          private BeeReleaseStatus() {}
      }
  
@@ -20461,7 +20464,7 @@ index 0e670de77a7f9926e295e1dd63d909bed1a959ca..52b48e40c3ee5f483c6cb04409459cf2
      public PersistentDataContainer getPersistentDataContainer() {
          return this.persistentDataContainer;
 diff --git a/src/main/java/org/bukkit/craftbukkit/Main.java b/src/main/java/org/bukkit/craftbukkit/Main.java
-index e7746952417a3ca4ea97103e38568db42039f717..e006351f07356fb42e5858bb3b8a74ffee215b35 100644
+index e4cacb17f56c618bef19e1165c07aac86af61150..01f581e6c3dfacb0ec6aff05c08539bbd2e580c7 100644
 --- a/src/main/java/org/bukkit/craftbukkit/Main.java
 +++ b/src/main/java/org/bukkit/craftbukkit/Main.java
 @@ -173,6 +173,20 @@ public class Main {
@@ -20495,7 +20498,7 @@ index e7746952417a3ca4ea97103e38568db42039f717..e006351f07356fb42e5858bb3b8a74ff
  
                      Calendar deadline = Calendar.getInstance();
 diff --git a/src/main/java/org/bukkit/craftbukkit/block/CraftBeehive.java b/src/main/java/org/bukkit/craftbukkit/block/CraftBeehive.java
-index 380897c010521f368848a3e6986d307cf47ff319..3c5eae31dc229b8c5f15215be9462410bcb41f07 100644
+index 2b906fccdb0a5ecddaf487ee931d05b511f84351..2bf30db1c4af5291edc19451108437a39d9a6ec8 100644
 --- a/src/main/java/org/bukkit/craftbukkit/block/CraftBeehive.java
 +++ b/src/main/java/org/bukkit/craftbukkit/block/CraftBeehive.java
 @@ -16,8 +16,15 @@ import org.bukkit.entity.Bee;
@@ -20513,8 +20516,8 @@ index 380897c010521f368848a3e6986d307cf47ff319..3c5eae31dc229b8c5f15215be9462410
 +        // Purpur end
      }
  
-     @Override
-@@ -66,25 +73,67 @@ public class CraftBeehive extends CraftBlockEntityState<BeehiveBlockEntity> impl
+     protected CraftBeehive(CraftBeehive state) {
+@@ -70,20 +77,61 @@ public class CraftBeehive extends CraftBlockEntityState<BeehiveBlockEntity> impl
          List<Bee> bees = new ArrayList<>();
  
          if (isPlaced()) {
@@ -20522,8 +20525,8 @@ index 380897c010521f368848a3e6986d307cf47ff319..3c5eae31dc229b8c5f15215be9462410
 -            for (Entity bee : beehive.releaseBees(this.getHandle(), BeeReleaseStatus.BEE_RELEASED, true)) {
 +            // Purpur start - change which releaseBees method is called, and use beehive snapshot
 +            BeehiveBlockEntity beehive = ((BeehiveBlockEntity) this.getSnapshot());
-+            for (Entity bee : beehive.releaseBees(this.getHandle(), getWorldHandle().getMinecraftWorld(), BeeReleaseStatus.BEE_RELEASED, true)) {
-+                // Purpur end
++            for (Entity bee : beehive.releaseBees(this.getHandle(), world.getHandle(), BeeReleaseStatus.BEE_RELEASED, true)) {
++            // Purpur end
                  bees.add((Bee) bee.getBukkitEntity());
              }
          }
@@ -20577,7 +20580,9 @@ index 380897c010521f368848a3e6986d307cf47ff319..3c5eae31dc229b8c5f15215be9462410
 +        }
 +        // Purpur end
      }
-     // Paper start - Add EntityBlockStorage clearEntities
+ 
+     @Override
+@@ -95,6 +143,7 @@ public class CraftBeehive extends CraftBlockEntityState<BeehiveBlockEntity> impl
      @Override
      public void clearEntities() {
          getSnapshot().clearBees();
