@@ -1,0 +1,106 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: IPECTER <ipectert@gmail.com>
+Date: Wed, 6 Sep 2023 16:23:56 +0900
+Subject: [PATCH] CarpetFixes-Optimizations-RecipeManager
+
+Original: fxmorin/carpet-fixes
+Copyright (C) 2023 fxmorin
+
+RecipeManager optimization.
+Optimized by taking out streams & doing extra early checks to quickly remove unrelated recipes
+
+diff --git a/src/main/java/net/minecraft/world/item/crafting/RecipeManager.java b/src/main/java/net/minecraft/world/item/crafting/RecipeManager.java
+index ab6dc3449a1d3b7acf1d7bf5ac1c24224cc252c7..53756f780dd0315fc18bf93cf4607b51a8d5059e 100644
+--- a/src/main/java/net/minecraft/world/item/crafting/RecipeManager.java
++++ b/src/main/java/net/minecraft/world/item/crafting/RecipeManager.java
+@@ -103,13 +103,38 @@ public class RecipeManager extends SimpleJsonResourceReloadListener {
+     }
+ 
+     public <C extends Container, T extends Recipe<C>> Optional<T> getRecipeFor(RecipeType<T> type, C inventory, Level world) {
+-        // CraftBukkit start
+-        Optional<T> recipe = this.byType(type).values().stream().filter((irecipe) -> {
+-            return irecipe.matches(inventory, world);
+-        }).findFirst();
+-        inventory.setCurrentRecipe(recipe.orElse(null)); // CraftBukkit - Clear recipe when no recipe is found
+-        // CraftBukkit end
+-        return recipe;
++        // Plazma start - CarpetFixes - Optimized RecipeManager
++        if (world.plazmaLevelConfiguration().carpetFixes.optimizedRecipeManager() && type == RecipeType.CRAFTING) {
++            int slots = 0;
++            int count;
++            //compare size to quickly remove recipes that are not even close. Plus remove streams
++            for (int slot = 0; slot < inventory.getContainerSize(); slot++)
++                if (!inventory.getItem(slot).isEmpty()) slots++;
++            for (Recipe<C> recipe : this.byType(type).values()) {
++                count = 0;
++                if (recipe instanceof CustomRecipe) {
++                    if (recipe.matches(inventory, world)) {
++                        return (Optional<T>) Optional.of(recipe);
++                    }
++                } else {
++                    for (Ingredient ingredient : recipe.getIngredients())
++                        if (ingredient != Ingredient.EMPTY) count++;
++                    if (count == slots && recipe.matches(inventory, world)) {
++                        return (Optional<T>) Optional.of(recipe);
++                    }
++                }
++            }
++            return Optional.empty();
++        } else {
++            // CraftBukkit start
++            Optional<T> recipe = this.byType(type).values().stream().filter((irecipe) -> {
++                return irecipe.matches(inventory, world);
++            }).findFirst();
++            inventory.setCurrentRecipe(recipe.orElse(null)); // CraftBukkit - Clear recipe when no recipe is found
++            // CraftBukkit end
++            return recipe;
++        }
++        // Plazma end
+     }
+ 
+     public <C extends Container, T extends Recipe<C>> Optional<Pair<ResourceLocation, T>> getRecipeFor(RecipeType<T> type, C inventory, Level world, @Nullable ResourceLocation id) {
+@@ -131,7 +156,7 @@ public class RecipeManager extends SimpleJsonResourceReloadListener {
+     }
+ 
+     public <C extends Container, T extends Recipe<C>> List<T> getAllRecipesFor(RecipeType<T> type) {
+-        return List.copyOf(this.byType(type).values());
++        return org.plazmamc.plazma.configurations.GlobalConfiguration.get().carpetFixes.optimizedRecipeManager() ? (List<T>) new java.util.ArrayList<>(this.byType(type).values()) : List.copyOf(this.byType(type).values()); // Plazma start - CarpetFixes - Optimized RecipeManager
+     }
+ 
+     public <C extends Container, T extends Recipe<C>> List<T> getRecipesFor(RecipeType<T> type, C inventory, Level world) {
+diff --git a/src/main/java/org/plazmamc/plazma/configurations/GlobalConfiguration.java b/src/main/java/org/plazmamc/plazma/configurations/GlobalConfiguration.java
+index bf323df50bc07e19ec6e3a4a11f3b7db466064c9..e68ec6e28b0b3a1e3ced2bbcad029d6e1fac17b6 100644
+--- a/src/main/java/org/plazmamc/plazma/configurations/GlobalConfiguration.java
++++ b/src/main/java/org/plazmamc/plazma/configurations/GlobalConfiguration.java
+@@ -82,10 +82,15 @@ public class GlobalConfiguration extends ConfigurationPart {
+ 
+         public boolean enabled = DO_OPTIMIZE;
+         boolean optimizedBiomeAccess = true;
++        boolean optimizedRecipeManager = true;
+ 
+         public boolean optimizedBiomeAccess() {
+             return enabled && optimizedBiomeAccess;
+         }
+ 
++        public boolean optimizedRecipeManager() {
++            return enabled && optimizedRecipeManager;
++        }
++
+     }
+ }
+diff --git a/src/main/java/org/plazmamc/plazma/configurations/LevelConfigurations.java b/src/main/java/org/plazmamc/plazma/configurations/LevelConfigurations.java
+index b0deec445b5ea3cd3e4802eca04e99818b539bd8..e089a881600b61060bae1135b89703f6c0b5c7e8 100644
+--- a/src/main/java/org/plazmamc/plazma/configurations/LevelConfigurations.java
++++ b/src/main/java/org/plazmamc/plazma/configurations/LevelConfigurations.java
+@@ -137,6 +137,11 @@ public class LevelConfigurations extends ConfigurationPart {
+     public class CarpetFixes extends ConfigurationPart {
+ 
+         public boolean enabled = DO_OPTIMIZE;
++        boolean optimizedRecipeManager = true;
++
++        public boolean optimizedRecipeManager() {
++            return enabled && optimizedRecipeManager;
++        }
+ 
+     }
+ }
