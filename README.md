@@ -19,11 +19,13 @@
 
 [main]: https://github.com/PlazmaMC/Plazma
 
-### This is the branch for Plazma 1.19.4. If you want to know more about Plazma, please check the [main branch][main].
-이곳은 플라즈마의 1.19.4용 브랜치 입니다. 플라즈마에 대해 자세히 알고 싶다면 [main 브랜치][main]를 확인해주세요.
+> [!IMPORTANT]
+This is the branch for Plazma 1.19.4. If you want to know more about Plazma, please check the **[main branch][main]**.<br>
+이곳은 플라즈마의 1.19.4용 브랜치 입니다. 플라즈마에 대해 자세히 알고 싶다면 **[main 브랜치][main]** 를 확인해주세요.
 
 ## ⬇️ Downloads
-### If you don't know about Mojmap or Bundler, download **Reobf Paperclip**
+> [!NOTE]
+If you don't know about Mojmap or Bundler, download **Reobf Paperclip**<br>
 Mojmap 또는 Bundler에 대해 잘 알지 못한다면, **Reobf Paperclip**을 사용하세요
 
 | **Reobf Paperclip (Default)** | Mojmap Paperclip | Reobf Bundler | Mojmap Bundler |
