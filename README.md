@@ -13,18 +13,16 @@
 [![Forks](https://img.shields.io/github/forks/PlazmaMC/Plazma?label=forks&logo=data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAABhWlDQ1BJQ0MgcHJvZmlsZQAAKJF9kT1Iw0AcxV9bxSIVh1YQcYhQnSyIiuimVShChVArtOpgcukXNGlIUlwcBdeCgx+LVQcXZ10dXAVB8APE0clJ0UVK/F9SaBHjwXE/3t173L0D/PUyU82OMUDVLCOViAuZ7KrQ9YogwujDEGYkZupzopiE5/i6h4+vdzGe5X3uz9Gj5EwG+ATiWaYbFvEG8dSmpXPeJ46woqQQnxOPGnRB4keuyy6/cS447OeZESOdmieOEAuFNpbbmBUNlXiSOKqoGuX7My4rnLc4q+Uqa96TvzCU01aWuU5zEAksYgkiBMioooQyLMRo1UgxkaL9uId/wPGL5JLJVQIjxwIqUCE5fvA/+N2tmZ8Yd5NCcaDzxbY/hoGuXaBRs+3vY9tunACBZ+BKa/krdWD6k/RaS4seAb3bwMV1S5P3gMsdoP9JlwzJkQI0/fk88H5G35QFwrdA95rbW3Mfpw9AmrpK3gAHh8BIgbLXPd4dbO/t3zPN/n4Ax9dyyerighsAAAAGYktHRAAAAAAAAPlDu38AAAAJcEhZcwAADdcAAA3XAUIom3gAAAAHdElNRQfmCBMVNCYN3/YeAAAA/UlEQVQ4y7WTQUoDQRBFf01czlJcxUyOINGjjAvFHMFzZGdygOwDwTtk6UZcqLlAxCAuMigug89FamIzdAIN+qGhq/6v6qrqbumvAJwBj8AHMAQs4DJgBHy65jSW4Bl4AaZsUAbcufumrnmquSzIcSzpTtLA7XbA1fuBa9qxCob8YgUUAdcFqoC/iSXIgLELOhG+49w4nM+2BTP7ljR3M4/MufbNzYxdN1E0Sm2ialZnsVIllZKOJF24eyLpXdKtmS1S3sYMmO3THOwJziUdbrbkZvaVcnILeAh6vweylAQ9D7z2BXCS0sJS0lrSpdtrSW+pn6sPLIFX4Er/hR9C0wl1FTBzNwAAAABJRU5ErkJggg==&style=flat-square&color=green)](https://github.com/PlazmaMC/Plazma/forks)
 [![Watchers](https://img.shields.io/github/watchers/PlazmaMC/Plazma?label=watchers&logo=data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAABhWlDQ1BJQ0MgcHJvZmlsZQAAKJF9kT1Iw0AcxV9bxSIVh1YQcYhQnSyIiuimVShChVArtOpgcukXNGlIUlwcBdeCgx+LVQcXZ10dXAVB8APE0clJ0UVK/F9SaBHjwXE/3t173L0D/PUyU82OMUDVLCOViAuZ7KrQ9YogwujDEGYkZupzopiE5/i6h4+vdzGe5X3uz9Gj5EwG+ATiWaYbFvEG8dSmpXPeJ46woqQQnxOPGnRB4keuyy6/cS447OeZESOdmieOEAuFNpbbmBUNlXiSOKqoGuX7My4rnLc4q+Uqa96TvzCU01aWuU5zEAksYgkiBMioooQyLMRo1UgxkaL9uId/wPGL5JLJVQIjxwIqUCE5fvA/+N2tmZ8Yd5NCcaDzxbY/hoGuXaBRs+3vY9tunACBZ+BKa/krdWD6k/RaS4seAb3bwMV1S5P3gMsdoP9JlwzJkQI0/fk88H5G35QFwrdA95rbW3Mfpw9AmrpK3gAHh8BIgbLXPd4dbO/t3zPN/n4Ax9dyyerighsAAAAGYktHRAAAAAAAAPlDu38AAAAJcEhZcwAADdcAAA3XAUIom3gAAAAHdElNRQfmCBMVNw4TRw0nAAAA3UlEQVQ4y83SP04CURAG8I0lewHOwAFUaiwkdmAlp8CL4FHopfIvtOIJWE3opIBK489mQPKy6xYWOskkL9/MN/PNzMuyf2fIcYkZVuGzwPI68gle8Yl7jMIfAntBp4o8wAeecFgSP8I8cgZp8DwC12j8oLCBCd7R34ItbHCzT8ZZSC7QTYrcYo1WhjGWaCbdCt+2SGLN4IwPfnu07QjrkhG6oWKB0+TMd7sRAuzHYuqWmO8tsVd1xjmOS8htPEfORVWHTmweHnEVPg2sqPxIicxhFFjhLd7D2q/8J/YFHSJt9VSqQ08AAAAASUVORK5CYII=&style=flat-square&color=green)](https://github.com/PlazmaMC/Plazma/watchers)
 
-<!---
-| [#VERSION#](https://github.com/PlazmaMC/Plazma/tree/ver/#VERSION#) | Active (활성)     | Good (좋음)        | 100%             | [![Build Status](https://img.shields.io/github/actions/workflow/status/PlazmaMC/Plazma/build.yml?style=for-the-badge&label=%20&branch=ver/#VERSION#)](https://github.com/PlazmaMC/Plazma/actions/workflows/build.yml?query=branch:ver/#VERSION#) |
---->
-
 [^warn]: In most cases, it works fine, but it can sometimes cause errors, so it should be used after sufficient testing.<br>대부분의 경우 정상적으로 작동하지만 때때로 오류를 일으킬 수 있으므로, 충분한 테스트를 거친 후 사용해야 합니다.
 [^missing]: Some patches are still in development. There may be differences in functionality compared to stable versions.<br>일부 패치가 아직 개발중이므로, 안정 버전과 기능 차이가 있을 수 있습니다.
 
 | Version (버전)                                                | Support (지원상태) | Stability (안정성) | Progress (완성도) | Build Status (빌드 상태) |
 | :---:                                                        | :---:            | :---:             | :---:            | :---: |
+| 1.20.3 | Waiting (대기중) | - | - | - |
 | [1.20.2](https://github.com/PlazmaMC/Plazma/tree/dev/1.20.2) | Working (작업중) | Unstable (불안정)[^warn] | 85%[^missing] | [![Build Status](https://img.shields.io/github/actions/workflow/status/PlazmaMC/Plazma/build.yml?style=for-the-badge&label=%20&branch=dev/1.20.2)](https://github.com/PlazmaMC/Plazma/actions/workflows/build.yml?query=branch:dev/1.20.2) |
 | [1.20.1](https://github.com/PlazmaMC/Plazma/tree/ver/1.20.1) | Active (활성)     | Good (좋음)        | 100%             | [![Build Status](https://img.shields.io/github/actions/workflow/status/PlazmaMC/Plazma/build.yml?style=for-the-badge&label=%20&branch=ver/1.20.1)](https://github.com/PlazmaMC/Plazma/actions/workflows/build.yml?query=branch:ver/1.20.1) |
 | [1.19.4](https://github.com/PlazmaMC/Plazma/tree/ver/1.19.4) | Active (활성)     | Good (좋음)        | 100%             | [![Build Status](https://img.shields.io/github/actions/workflow/status/PlazmaMC/Plazma/build.yml?style=for-the-badge&label=%20&branch=ver/1.19.4)](https://github.com/PlazmaMC/Plazma/actions/workflows/build.yml?query=branch:ver/1.19.4) |
+| 1.19.2 | Working (작업중) | - | - | - |
 
 </div>
 
@@ -88,15 +86,13 @@ Plazma may cause **<u>unexpected problems</u>**, so be sure to test it thoroughl
 If you don't know about Mojmap or Bundler, download **Reobf Paperclip**<br>
 Mojmap 또는 Bundler에 대해 잘 알지 못한다면, **Reobf Paperclip**을 사용하세요
 
-<!---
-| [#VERSION#](https://github.com/PlazmaMC/Plazma/tree/ver/#VERSION#) | [Download](https://github.com/PlazmaMC/Plazma/releases/download/latest-#VERSION#/plazma-paperclip-#VERSION#-R0.1-SNAPSHOT-reobf.jar) | [Download](https://github.com/PlazmaMC/Plazma/releases/download/latest-#VERSION#/plazma-paperclip-#VERSION#-R0.1-SNAPSHOT-mojmap.jar) | [Download](https://github.com/PlazmaMC/Plazma/releases/download/latest-#VERSION#/plazma-bundler-#VERSION#-R0.1-SNAPSHOT-reobf.jar) | [Download](https://github.com/PlazmaMC/Plazma/releases/download/latest-#VERSION#/plazma-bundler#VERSION#-R0.1-SNAPSHOT-mojmap.jar) |
---->
-
 | Version (버전) | **Reobf Paperclip (Default)** | Mojmap Paperclip | Reobf Bundler | Mojmap Bundler |
 | :---:         | :---:                         | :---:            | :---:         | :---:          |
+| 1.20.3 | - | - | - | - |
 | [1.20.2 (INDEV)](https://github.com/PlazmaMC/tree/dev/1.20.2) | [Download](https://github.com/PlazmaMC/Plazma/releases/download/dev-1.20.2/plazma-paperclip-1.20.2-R0.1-SNAPSHOT-reobf.jar) | [Download](https://github.com/PlazmaMC/Plazma/releases/download/dev-1.20.2/plazma-paperclip-1.20.2-R0.1-SNAPSHOT-mojmap.jar) | [Download](https://github.com/PlazmaMC/Plazma/releases/download/dev-1.20.2/plazma-bundler-1.20.2-R0.1-SNAPSHOT-reobf.jar) | [Download](https://github.com/PlazmaMC/Plazma/releases/download/dev-1.20.2/plazma-bundler-1.20.2-R0.1-SNAPSHOT-mojmap.jar) |
 | [1.20.1](https://github.com/PlazmaMC/Plazma/tree/ver/1.20.1) | [Download](https://github.com/PlazmaMC/Plazma/releases/download/latest-1.20.1/plazma-paperclip-1.20.1-R0.1-SNAPSHOT-reobf.jar) | [Download](https://github.com/PlazmaMC/Plazma/releases/download/latest-1.20.1/plazma-paperclip-1.20.1-R0.1-SNAPSHOT-mojmap.jar) | [Download](https://github.com/PlazmaMC/Plazma/releases/download/latest-1.20.1/plazma-bundler-1.20.1-R0.1-SNAPSHOT-reobf.jar) | [Download](https://github.com/PlazmaMC/Plazma/releases/download/latest-1.20.1/plazma-bundler-1.20.1-R0.1-SNAPSHOT-mojmap.jar) |
 | [1.19.4](https://github.com/PlazmaMC/Plazma/tree/ver/1.19.4) | [Download](https://github.com/PlazmaMC/Plazma/releases/download/latest-1.19.4/plazma-paperclip-1.19.4-R0.1-SNAPSHOT-reobf.jar) | [Download](https://github.com/PlazmaMC/Plazma/releases/download/latest-1.19.4/plazma-paperclip-1.19.4-R0.1-SNAPSHOT-mojmap.jar) | [Download](https://github.com/PlazmaMC/Plazma/releases/download/latest-1.19.4/plazma-bundler-1.19.4-R0.1-SNAPSHOT-reobf.jar) | [Download](https://github.com/PlazmaMC/Plazma/releases/download/latest-1.19.4/plazma-bundler-1.19.4-R0.1-SNAPSHOT-mojmap.jar) |
+| 1.19.2 | - | - | - | - |
 
 ## ⚖️ License
 - This project and all patches are licensed under the [MIT license](LICENSE.md) unless otherwise noted in the patch headers.
