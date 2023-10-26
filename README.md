@@ -63,7 +63,7 @@
 - **Based on [Paper](https://github.com/PaperMC/Paper)** - Most plugins of Bukkit, Craft Bukkit, Spigot, and Paper are available
 - **Including [Pufferfish](https://github.com/pufferfish-gg/Pufferfish) and [Purpur](https://github.com/PurpurMC/Purpur)** - Provides multiple optimizations and customizations
 - **Support [No Chat Reports](https://github.com/Aizistral-Studios/No-Chat-Reports)** - Disable chat reporting to secure server chat (Configurable)
-  **[Automatic Upstream Updates](https://github.com/PlazmaMC/AlwaysUpToDate)** - Automatically updates the upstream through our own scripts, so it's always up to date.
+- **[Automatic Upstream Updates](https://github.com/PlazmaMC/AlwaysUpToDate)** - Automatically updates the upstream through our own scripts, so it's always up to date.
 - **Implemented many useful mods** - Stable and fast by implementing many mods
 - **[Optimized Default Configuration](https://github.com/YouHaveTrouble/minecraft-optimization)** - The default configuration file is optimized, so you do not need to modify it separately.
 - **Various Improvements** - Apply improvement patches to provide a better experience
@@ -71,7 +71,7 @@
 
 ## ✨ Use Cases
 - **It is used by server of developer IPECTER.** There are a lot of plugins that work with NMS and reflection, but they are working fine without any problems.
-- **This performed fast on the RPG server currently being tested.** A single cluster kept 100 players stable without a drop in TPS, and a total of 250 players (about 70 per cluster) were able to play in a pleasant environment in four clusters.
+- **It keeps fast performance on the RPG server that is currently being tested.** A single cluster kept 100 players stable without a drop in TPS, and a total of 250 players (about 70 per cluster) were able to play in a pleasant environment in four clusters.
 - This reduced chunk/entity lag by changing the bukkit of Skyblock/Survival server, which had previously been lagging in chunk/entity, from Purpur to Plazma.
 - With 20 heavy data packs applied, it maintained high TPS and low MSPT even if 20 players created the world at the same time.
 - It is used by many Korean Twitch streamers' servers, survival, mini games, and skyblock servers.
@@ -86,6 +86,7 @@ Mojmap 또는 Bundler에 대해 잘 알지 못한다면, **Reobf Paperclip**을 
 
 | Version (버전) | **Reobf Paperclip (Default)** | Mojmap Paperclip | Reobf Bundler | Mojmap Bundler |
 | :---:         | :---:                         | :---:            | :---:         | :---:          |
+| [1.20.2 (INDEV)](https://github.com/PlazmaMC/tree/dev/1.20.2) | [Download](https://github.com/PlazmaMC/Plazma/releases/download/dev-1.20.2/plazma-paperclip-1.20.2-R0.1-SNAPSHOT-reobf.jar) | [Download](https://github.com/PlazmaMC/Plazma/releases/download/dev-1.20.2/plazma-paperclip-1.20.2-R0.1-SNAPSHOT-mojmap.jar) | [Download](https://github.com/PlazmaMC/Plazma/releases/download/dev-1.20.2/plazma-bundler-1.20.2-R0.1-SNAPSHOT-reobf.jar) | [Download](https://github.com/PlazmaMC/Plazma/releases/download/dev-1.20.2/plazma-bundler-1.20.2-R0.1-SNAPSHOT-mojmap.jar) |
 | [1.20.1](https://github.com/PlazmaMC/Plazma/tree/ver/1.20.1) | [Download](https://github.com/PlazmaMC/Plazma/releases/download/latest-1.20.1/plazma-paperclip-1.20.1-R0.1-SNAPSHOT-reobf.jar) | [Download](https://github.com/PlazmaMC/Plazma/releases/download/latest-1.20.1/plazma-paperclip-1.20.1-R0.1-SNAPSHOT-mojmap.jar) | [Download](https://github.com/PlazmaMC/Plazma/releases/download/latest-1.20.1/plazma-bundler-1.20.1-R0.1-SNAPSHOT-reobf.jar) | [Download](https://github.com/PlazmaMC/Plazma/releases/download/latest-1.20.1/plazma-bundler-1.20.1-R0.1-SNAPSHOT-mojmap.jar) |
 | [1.19.4](https://github.com/PlazmaMC/Plazma/tree/ver/1.19.4) | [Download](https://github.com/PlazmaMC/Plazma/releases/download/latest-1.19.4/plazma-paperclip-1.19.4-R0.1-SNAPSHOT-reobf.jar) | [Download](https://github.com/PlazmaMC/Plazma/releases/download/latest-1.19.4/plazma-paperclip-1.19.4-R0.1-SNAPSHOT-mojmap.jar) | [Download](https://github.com/PlazmaMC/Plazma/releases/download/latest-1.19.4/plazma-bundler-1.19.4-R0.1-SNAPSHOT-reobf.jar) | [Download](https://github.com/PlazmaMC/Plazma/releases/download/latest-1.19.4/plazma-bundler-1.19.4-R0.1-SNAPSHOT-mojmap.jar) |
 
