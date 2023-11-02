@@ -1,0 +1,337 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: AlphaKR93 <dev@alpha93.kr>
+Date: Fri, 3 Nov 2023 00:11:50 +0900
+Subject: [PATCH] Plazma Configurations
+
+
+diff --git a/src/main/java/io/papermc/paper/configuration/Configurations.java b/src/main/java/io/papermc/paper/configuration/Configurations.java
+index 9ef6712c70fcd8912a79f3f61e351aac09572cf3..1759222a18c2a758ed85b0a996a49b7ca1059aef 100644
+--- a/src/main/java/io/papermc/paper/configuration/Configurations.java
++++ b/src/main/java/io/papermc/paper/configuration/Configurations.java
+@@ -1,14 +1,19 @@
+ package io.papermc.paper.configuration;
+ 
++import com.google.common.base.Suppliers;
+ import com.mojang.logging.LogUtils;
+ import io.leangen.geantyref.TypeToken;
+ import io.papermc.paper.configuration.constraint.Constraint;
+ import io.papermc.paper.configuration.constraint.Constraints;
+ import net.minecraft.resources.ResourceLocation;
+ import net.minecraft.server.level.ServerLevel;
++import org.apache.commons.lang3.RandomStringUtils;
+ import org.checkerframework.checker.nullness.qual.Nullable;
+ import org.jetbrains.annotations.MustBeInvokedByOverriders;
++import org.jetbrains.annotations.VisibleForTesting;
+ import org.slf4j.Logger;
++import org.spigotmc.SpigotConfig;
++import org.spigotmc.SpigotWorldConfig;
+ import org.spongepowered.configurate.CommentedConfigurationNode;
+ import org.spongepowered.configurate.ConfigurateException;
+ import org.spongepowered.configurate.ConfigurationNode;
+@@ -27,6 +32,7 @@ import java.util.HashMap;
+ import java.util.Map;
+ import java.util.NoSuchElementException;
+ import java.util.Objects;
++import java.util.function.Supplier;
+ import java.util.function.UnaryOperator;
+ 
+ public abstract class Configurations<G, W> {
+@@ -40,6 +46,18 @@ public abstract class Configurations<G, W> {
+     protected final String globalConfigFileName;
+     protected final String defaultWorldConfigFileName;
+     protected final String worldConfigFileName;
++    // Plazma start
++    public static final String CONFIG_DIR = "config";
++    protected static final ContextKey<java.util.function.Supplier<org.spigotmc.SpigotWorldConfig>> SPIGOT_WORLD_CONFIG_CONTEXT_KEY = new ContextKey<>(new TypeToken<>() {}, "spigot world config");
++
++    @VisibleForTesting
++    public static final Supplier<SpigotWorldConfig> SPIGOT_WORLD_DEFAULTS = Suppliers.memoize(() -> new SpigotWorldConfig(RandomStringUtils.randomAlphabetic(255)) {
++        @Override // override to ensure "verbose" is false
++        public void init() {
++            SpigotConfig.readConfig(SpigotWorldConfig.class, this);
++        }
++    });
++    // Plazma end
+ 
+     public Configurations(
+         final Path globalFolder,
+@@ -88,7 +106,7 @@ public abstract class Configurations<G, W> {
+         };
+     }
+ 
+-    static <T> CheckedFunction<ConfigurationNode, T, SerializationException> reloader(Class<T> type, T instance) {
++    public static <T> CheckedFunction<ConfigurationNode, T, SerializationException> reloader(Class<T> type, T instance) { // Plazma - package -> public
+         return node -> {
+             ObjectMapper.Factory factory = (ObjectMapper.Factory) Objects.requireNonNull(node.options().serializers().get(type));
+             ObjectMapper.Mutable<T> mutable = (ObjectMapper.Mutable<T>) factory.get(type);
+@@ -148,7 +166,7 @@ public abstract class Configurations<G, W> {
+         final YamlConfigurationLoader loader = result.loader();
+         final ConfigurationNode node = loader.load();
+         if (result.isNewFile()) { // add version to new files
+-            node.node(Configuration.VERSION_FIELD).raw(WorldConfiguration.CURRENT_VERSION);
++            node.node(Configuration.VERSION_FIELD).raw(getWorldConfigVersion()); // Plazma
+         }
+         this.applyWorldConfigTransformations(contextMap, node);
+         final W instance = node.require(this.worldConfigClass);
+@@ -196,7 +214,7 @@ public abstract class Configurations<G, W> {
+         final Path dir = contextMap.require(WORLD_DIRECTORY);
+         final Path worldConfigFile = dir.resolve(this.worldConfigFileName);
+         if (Files.notExists(worldConfigFile)) {
+-            PaperConfigurations.createDirectoriesSymlinkAware(dir);
++            createDirectoriesSymlinkAware(dir); // Plazma
+             Files.createFile(worldConfigFile); // create empty file as template
+             newFile = true;
+         }
+@@ -207,7 +225,7 @@ public abstract class Configurations<G, W> {
+             .build();
+         final ConfigurationNode worldNode = worldLoader.load();
+         if (newFile) { // set the version field if new file
+-            worldNode.node(Configuration.VERSION_FIELD).set(WorldConfiguration.CURRENT_VERSION);
++            worldNode.node(Configuration.VERSION_FIELD).set(getWorldConfigVersion()); // Plazma
+         }
+         this.applyWorldConfigTransformations(contextMap, worldNode);
+         this.applyDefaultsAwareWorldConfigTransformations(contextMap, worldNode, defaultsNode);
+@@ -232,6 +250,40 @@ public abstract class Configurations<G, W> {
+         return level.convertable.levelDirectory.path().resolve(this.worldConfigFileName);
+     }
+ 
++    // Plazma start
++    @Deprecated
++    public org.bukkit.configuration.file.YamlConfiguration createLegacyObject(final net.minecraft.server.MinecraftServer server) {
++        org.bukkit.configuration.file.YamlConfiguration global = org.bukkit.configuration.file.YamlConfiguration.loadConfiguration(this.globalFolder.resolve(this.globalConfigFileName).toFile());
++        org.bukkit.configuration.ConfigurationSection worlds = global.createSection("__________WORLDS__________");
++        worlds.set("__defaults__", org.bukkit.configuration.file.YamlConfiguration.loadConfiguration(this.globalFolder.resolve(this.defaultWorldConfigFileName).toFile()));
++        for (ServerLevel level : server.getAllLevels())
++            worlds.set(level.getWorld().getName(), org.bukkit.configuration.file.YamlConfiguration.loadConfiguration(getWorldConfigFile(level).toFile()));
++        return global;
++    }
++
++    // Symlinks are not correctly checked in createDirectories
++    protected static void createDirectoriesSymlinkAware(Path path) throws IOException {
++        if (!Files.isDirectory(path)) {
++            Files.createDirectories(path);
++        }
++    }
++
++    protected static ContextMap createWorldContextMap(ServerLevel level) {
++        return createWorldContextMap(level.convertable.levelDirectory.path(), level.serverLevelData.getLevelName(), level.dimension().location(), level.spigotConfig);
++    }
++
++    public static ContextMap createWorldContextMap(Path dir, String levelName, ResourceLocation worldKey, SpigotWorldConfig spigotConfig) {
++        return ContextMap.builder()
++                .put(WORLD_DIRECTORY, dir)
++                .put(WORLD_NAME, levelName)
++                .put(WORLD_KEY, worldKey)
++                .put(SPIGOT_WORLD_CONFIG_CONTEXT_KEY, Suppliers.ofInstance(spigotConfig))
++                .build();
++    }
++
++    protected abstract int getWorldConfigVersion();
++    // Plazma end
++
+     public static class ContextMap {
+         private static final Object VOID = new Object();
+ 
+diff --git a/src/main/java/io/papermc/paper/configuration/PaperConfigurations.java b/src/main/java/io/papermc/paper/configuration/PaperConfigurations.java
+index 9e8b8de907654050c51400286af971caca87d6bd..22056a8f8ae248f0a8689489ed56f0bf8d588ed2 100644
+--- a/src/main/java/io/papermc/paper/configuration/PaperConfigurations.java
++++ b/src/main/java/io/papermc/paper/configuration/PaperConfigurations.java
+@@ -77,7 +77,6 @@ public class PaperConfigurations extends Configurations<GlobalConfiguration, Wor
+     static final String GLOBAL_CONFIG_FILE_NAME = "paper-global.yml";
+     static final String WORLD_DEFAULTS_CONFIG_FILE_NAME = "paper-world-defaults.yml";
+     static final String WORLD_CONFIG_FILE_NAME = "paper-world.yml";
+-    public static final String CONFIG_DIR = "config";
+     private static final String BACKUP_DIR ="legacy-backup";
+ 
+     private static final String GLOBAL_HEADER = String.format("""
+@@ -129,15 +128,6 @@ public class PaperConfigurations extends Configurations<GlobalConfiguration, Wor
+         See https://docs.papermc.io/paper/configuration for more information.
+         """;
+ 
+-    @VisibleForTesting
+-    public static final Supplier<SpigotWorldConfig> SPIGOT_WORLD_DEFAULTS = Suppliers.memoize(() -> new SpigotWorldConfig(RandomStringUtils.randomAlphabetic(255)) {
+-        @Override // override to ensure "verbose" is false
+-        public void init() {
+-            SpigotConfig.readConfig(SpigotWorldConfig.class, this);
+-        }
+-    });
+-    public static final ContextKey<Supplier<SpigotWorldConfig>> SPIGOT_WORLD_CONFIG_CONTEXT_KEY = new ContextKey<>(new TypeToken<Supplier<SpigotWorldConfig>>() {}, "spigot world config");
+-
+ 
+     public PaperConfigurations(final Path globalFolder) {
+         super(globalFolder, GlobalConfiguration.class, WorldConfiguration.class, GLOBAL_CONFIG_FILE_NAME, WORLD_DEFAULTS_CONFIG_FILE_NAME, WORLD_CONFIG_FILE_NAME);
+@@ -315,19 +305,6 @@ public class PaperConfigurations extends Configurations<GlobalConfiguration, Wor
+         }
+     }
+ 
+-    private static ContextMap createWorldContextMap(ServerLevel level) {
+-        return createWorldContextMap(level.convertable.levelDirectory.path(), level.serverLevelData.getLevelName(), level.dimension().location(), level.spigotConfig);
+-    }
+-
+-    public static ContextMap createWorldContextMap(Path dir, String levelName, ResourceLocation worldKey, SpigotWorldConfig spigotConfig) {
+-        return ContextMap.builder()
+-            .put(WORLD_DIRECTORY, dir)
+-            .put(WORLD_NAME, levelName)
+-            .put(WORLD_KEY, worldKey)
+-            .put(SPIGOT_WORLD_CONFIG_CONTEXT_KEY, Suppliers.ofInstance(spigotConfig))
+-            .build();
+-    }
+-
+     public static PaperConfigurations setup(final Path legacyConfig, final Path configDir, final Path worldFolder, final File spigotConfig) throws Exception {
+         final Path legacy = Files.isSymbolicLink(legacyConfig) ? Files.readSymbolicLink(legacyConfig) : legacyConfig;
+         if (needsConverting(legacyConfig)) {
+@@ -416,17 +393,6 @@ public class PaperConfigurations extends Configurations<GlobalConfiguration, Wor
+         return Files.exists(legacyConfig) && Files.isRegularFile(legacyConfig);
+     }
+ 
+-    @Deprecated
+-    public YamlConfiguration createLegacyObject(final MinecraftServer server) {
+-        YamlConfiguration global = YamlConfiguration.loadConfiguration(this.globalFolder.resolve(this.globalConfigFileName).toFile());
+-        ConfigurationSection worlds = global.createSection("__________WORLDS__________");
+-        worlds.set("__defaults__", YamlConfiguration.loadConfiguration(this.globalFolder.resolve(this.defaultWorldConfigFileName).toFile()));
+-        for (ServerLevel level : server.getAllLevels()) {
+-            worlds.set(level.getWorld().getName(), YamlConfiguration.loadConfiguration(getWorldConfigFile(level).toFile()));
+-        }
+-        return global;
+-    }
+-
+     @Deprecated
+     public static YamlConfiguration loadLegacyConfigFile(File configFile) throws Exception {
+         YamlConfiguration config = new YamlConfiguration();
+@@ -448,10 +414,9 @@ public class PaperConfigurations extends Configurations<GlobalConfiguration, Wor
+         return BasicConfigurationNode.root(options);
+     }
+ 
+-    // Symlinks are not correctly checked in createDirectories
+-    static void createDirectoriesSymlinkAware(Path path) throws IOException {
+-        if (!Files.isDirectory(path)) {
+-            Files.createDirectories(path);
+-        }
++    // Plazma start
++    protected int getWorldConfigVersion() {
++        return WorldConfiguration.CURRENT_VERSION;
+     }
++    // Plazma end
+ }
+diff --git a/src/main/java/org/plazmamc/plazma/configurations/GlobalConfiguration.java b/src/main/java/org/plazmamc/plazma/configurations/GlobalConfiguration.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..d0d8d505f6e8f74941bdd6464c60ad5d152bb2e9
+--- /dev/null
++++ b/src/main/java/org/plazmamc/plazma/configurations/GlobalConfiguration.java
+@@ -0,0 +1,6 @@
++package org.plazmamc.plazma.configurations;
++
++import io.papermc.paper.configuration.ConfigurationPart;
++
++public class GlobalConfiguration extends ConfigurationPart {
++}
+diff --git a/src/main/java/org/plazmamc/plazma/configurations/PlazmaConfigurations.java b/src/main/java/org/plazmamc/plazma/configurations/PlazmaConfigurations.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..f273535a8bdb766968f1e40f1f9c97f2341b4826
+--- /dev/null
++++ b/src/main/java/org/plazmamc/plazma/configurations/PlazmaConfigurations.java
+@@ -0,0 +1,92 @@
++package org.plazmamc.plazma.configurations;
++
++import com.mojang.logging.LogUtils;
++import io.papermc.paper.configuration.Configurations;
++import org.slf4j.Logger;
++
++import java.util.function.Function;
++
++public class PlazmaConfigurations extends Configurations<GlobalConfiguration, WorldConfigurations> {
++
++    private static final Logger LOGGER = LogUtils.getLogger();
++    static final String GLOBAL_CONFIG_FILE_NAME = "plazma-global.yml";
++    static final String WORLD_DEFAULTS_CONFIG_FILE_NAME = "plazma-world-defaults.yml";
++    static final String WORLD_CONFIG_FILE_NAME = "plazma-world.yml";
++    static final boolean OPTIMIZE_CONFIG = !Boolean.getBoolean("Plazma.disableConfigOptimization");
++
++    private static final String HEADER_START = """
++            #### ENGLISH ####
++            This is the %s configuration file for Plazma.
++            As you can see, there's a lot to configure. Some options may impact gameplay,
++            so use with caution, and make sure you know what each option does before configuring.
++            
++            A description of the options can be found on the official wiki,
++            If you need help with the configuration or have any questions related to Plazma,
++            join us in our Discord for Plazma, or create issues on our GitHub repository.
++            
++            %s
++            
++            #### 한국어 ####
++            본 파일은 Plazma의 %s 설정 파일입니다.
++            보시다시피, 굉장히 많은 설정이 있습니다. 일부 설정은 게임 플레이에 영향을 줄 수 있습니다.
++            따라서 주의해서 사용하시고, 각 설정이 서버에 어떠한 작용을 하는지 숙지하고 사용하시기 바랍니다.
++            
++            구성에 대한 설명은 공식 위키에서 찾을 수 있으며,
++            만약 설정에 도움이 필요하거나, Plazma에 대 질문이 있으시다면,
++            공식 Discord 서버에 접속하거나, GitHub 레포지토리에 이슈를 생성해주시기 바랍니다.
++            
++            %s
++            
++            GitHub: https://github.com/PlazmaMC/Plazma
++            Wiki: https://github.com/PlazmaMC/Plazma/wiki
++            Discord: https://plazmamc.org/discord
++            """;
++
++    private static final String GLOBAL_HEADER = String.format(HEADER_START,
++            "global", String.format("World options can be set in the %s file.", WORLD_DEFAULTS_CONFIG_FILE_NAME),
++            "전역", String.format("월드별 설정은 %s 파일에서 설정할 수 있습니다.", WORLD_DEFAULTS_CONFIG_FILE_NAME)
++    );
++
++    private static final String WORLD_DEFAULTS_HEADER = String.format(HEADER_START,
++            "world default", String.format("""
++                    World-specific settings can be set in the %s file within each world folder,
++                    and the same settings apply to all worlds unless they are overwritten
++                    through the world-specific settings file.
++                    """, WORLD_CONFIG_FILE_NAME),
++            "월드 기본", String.format("""
++                    월드별 설정은 각 월드 폴더 내 %s 파일에서 설정할 수 있으며, 월드별 설정을 통해 값을
++                    덮어쓰지 않는 한, 모든 월드에 동일한 설정이 적용됩니다.
++                    """, WORLD_CONFIG_FILE_NAME)
++    );
++
++    private static final Function<ContextMap, String> WORLD_SPECIFIC_HEADER = map -> String.format("""
++            #### ENGLISH ####
++            This is world-specific Plazma configuration file for the world %s (%s).
++            This file may start empty, but can be filled with options to override world default configuration.
++            Some options may impact gameplay, so use with caution,
++            and make sure you know what each option does before configuring.
++            
++            A description of the options can be found on the official wiki,
++            If you need help with the configuration or have any questions related to Plazma,
++            join us in our Discord for Plazma, or create issues on our GitHub repository.
++            
++            
++            #### 한국어 ####
++            본 파일은 %s (%s) 월드 전용 Plazma 월드별 설정 파일입니다.
++            이 파일은 비어있을 수 있지만, 월드 기본 설정을 덮어쓰기 위해 옵션을 추가할 수 있습니다.
++            일부 설정은 게임 플레이에 영향을 줄 수 있으므로, 주의해서 사용하시고,
++            각 설정이 서버에 어떠한 작용을 하는지 숙지하고 사용하시기 바랍니다.
++            
++            구성에 대한 설명은 공식 위키에서 찾을 수 있으며,
++            만약 설정에 도움이 필요하거나, Plazma에 대 질문이 있으시다면,
++            공식 Discord 서버에 접속하거나, GitHub 레포지토리에 이슈를 생성해주시기 바랍니다.
++            
++            
++            World Default Config Directory: %s/%s
++            GitHub: https://github.com/PlazmaMC/Plazma
++            Wiki: https://github.com/PlazmaMC/Plazma/wiki
++            Discord: https://plazmamc.org/discord
++            """, map.require(WORLD_NAME), map.require(WORLD_KEY), map.require(WORLD_NAME), map.require(WORLD_KEY),
++            CONFIG_DIR, WORLD_DEFAULTS_CONFIG_FILE_NAME);
++
++}
+diff --git a/src/main/java/org/plazmamc/plazma/configurations/WorldConfigurations.java b/src/main/java/org/plazmamc/plazma/configurations/WorldConfigurations.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..b5259c07ad484900441029cbaa2499fde9dced66
+--- /dev/null
++++ b/src/main/java/org/plazmamc/plazma/configurations/WorldConfigurations.java
+@@ -0,0 +1,6 @@
++package org.plazmamc.plazma.configurations;
++
++import io.papermc.paper.configuration.ConfigurationPart;
++
++public class WorldConfigurations extends ConfigurationPart {
++}
