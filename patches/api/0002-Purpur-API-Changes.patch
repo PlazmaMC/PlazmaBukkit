@@ -1,6 +1,6 @@
 From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
 From: William Blake Galbreath <blake.galbreath@gmail.com>
-Date: Sat, 30 Sep 2023 09:53:53 +0000
+Date: Thu, 2 Nov 2023 11:22:34 +0000
 Subject: [PATCH] Purpur API Changes
 
 Original: PurpurMC
@@ -24,6 +24,19 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 
+diff --git a/build.gradle.kts b/build.gradle.kts
+index 0b87f34c2bb5a2f72124912a62ea393b19b1f3a3..f22c0403729b3554ff769b06f7455516b15fd974 100644
+--- a/build.gradle.kts
++++ b/build.gradle.kts
+@@ -109,6 +109,8 @@ tasks.jar {
+ }
+ 
+ tasks.withType<Javadoc> {
++    (options as StandardJavadocDocletOptions).addStringOption("-add-modules", "jdk.incubator.vector") // Purpur - our javadocs need this for pufferfish's SIMD patch
++    (options as StandardJavadocDocletOptions).addStringOption("Xdoclint:none", "-quiet") // Purpur - silence Paper's bajillion javadoc warnings
+     val options = options as StandardJavadocDocletOptions
+     options.overview = "src/main/javadoc/overview.html"
+     options.use()
 diff --git a/src/main/java/co/aikar/timings/TimedEventExecutor.java b/src/main/java/co/aikar/timings/TimedEventExecutor.java
 index 8f29c1561ba5916cb5634392edd8bd2a5a294a51..6fbc64e0f214d0c8e5afcbe385e414a4e1fe1c72 100644
 --- a/src/main/java/co/aikar/timings/TimedEventExecutor.java
@@ -711,10 +724,10 @@ index 8d8fe04e6b09d2a5b1cc05002073df5c58cdcb96..aaef58468a3c31f35e5067ed4263e9dd
 +    // Purpur end
  }
 diff --git a/src/main/java/org/bukkit/World.java b/src/main/java/org/bukkit/World.java
-index da524a71af74b02515b037f7fe09ba6988e2c8bf..3679c3b8d31ab8de08ecabd56bf92ffc062f971c 100644
+index 91eb95b04094394e8dc1e3a3343efc63690c87e4..d8ef44761148f928a671ceba74a5d1cb87af81d9 100644
 --- a/src/main/java/org/bukkit/World.java
 +++ b/src/main/java/org/bukkit/World.java
-@@ -4008,6 +4008,86 @@ public interface World extends RegionAccessor, WorldInfo, PluginMessageRecipient
+@@ -4072,6 +4072,86 @@ public interface World extends RegionAccessor, WorldInfo, PluginMessageRecipient
      @Nullable
      public DragonBattle getEnderDragonBattle();
  
@@ -964,10 +977,10 @@ index 138d2530de2410f4a9424dabd3e5ce0cd1c1dcd2..10a8d64ad2da0be2c14f34c3e7d1957c
      // Paper start
      /**
 diff --git a/src/main/java/org/bukkit/entity/Entity.java b/src/main/java/org/bukkit/entity/Entity.java
-index 762cb07861ca8ff058ce8d57ea6c15df1e588bf3..98de85d1382fe84cdc2e2c9db04bf1b4f157291c 100644
+index d340ddcf6924cc834455de3acbbac91ab9c66e39..f21a0fa8420b3fd0a3655a0af998da8f8a66c4b1 100644
 --- a/src/main/java/org/bukkit/entity/Entity.java
 +++ b/src/main/java/org/bukkit/entity/Entity.java
-@@ -1049,4 +1049,55 @@ public interface Entity extends Metadatable, CommandSender, Nameable, Persistent
+@@ -1065,4 +1065,55 @@ public interface Entity extends Metadatable, CommandSender, Nameable, Persistent
       */
      @NotNull String getScoreboardEntryName();
      // Paper end - entity scoreboard name
@@ -1187,10 +1200,10 @@ index bc84b892cae5fe7019a3ad481e9da79956efa1fe..48eb5b00c460cccde29d327cef1d63fc
 +    // Purpur end
  }
 diff --git a/src/main/java/org/bukkit/entity/Player.java b/src/main/java/org/bukkit/entity/Player.java
-index 20fa1024f9ad8f478a347be5c554b5e45b398a1c..0df709ed758401f04b3f565dc1f6492a55f5363c 100644
+index 2996db88343060624d6aab7889290ae74a973fe8..ccbde7687d67dec442bed0df72af1f36cc26d179 100644
 --- a/src/main/java/org/bukkit/entity/Player.java
 +++ b/src/main/java/org/bukkit/entity/Player.java
-@@ -3278,4 +3278,122 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
+@@ -3301,4 +3301,123 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
      @Override
      Spigot spigot();
      // Spigot end
@@ -1219,6 +1232,7 @@ index 20fa1024f9ad8f478a347be5c554b5e45b398a1c..0df709ed758401f04b3f565dc1f6492a
 +
 +    /**
 +     * Reset the idle timer back to 0
++     * @deprecated Use {@link #resetIdleDuration()} instead
 +     */
 +    void resetIdleTimer();
 +
@@ -1456,8 +1470,27 @@ index c60be4fd24c7fdf65251dd6169e5e1ac3b588d95..569deccd2f1cf21da9b5906433ac493c
 +    void setDoUnsafeEnchants(boolean canDoUnsafeEnchants);
 +    // Purpur end
  }
+diff --git a/src/main/java/org/bukkit/inventory/ItemFactory.java b/src/main/java/org/bukkit/inventory/ItemFactory.java
+index 1c4e0c7356047163a38f5ac4dd544129d0b36271..5e64f172508d928b6d74796a942ecc1077665b7b 100644
+--- a/src/main/java/org/bukkit/inventory/ItemFactory.java
++++ b/src/main/java/org/bukkit/inventory/ItemFactory.java
+@@ -299,4 +299,14 @@ public interface ItemFactory {
+     @Deprecated
+     net.md_5.bungee.api.chat.hover.content.Content hoverContentOf(@NotNull org.bukkit.entity.Entity entity, @NotNull net.md_5.bungee.api.chat.BaseComponent[] customName);
+     // Paper end - bungee hover events
++
++    // Purpur start
++    /**
++     * Returns the lines of text shown when hovering over an item
++     * @param itemStack The ItemStack
++     * @param advanced Whether advanced tooltips are shown
++     * @return the list of Components
++     */
++    @NotNull java.util.List<net.kyori.adventure.text.@NotNull Component> getHoverLines(@NotNull ItemStack itemStack, boolean advanced);
++    // Purpur end
+ }
 diff --git a/src/main/java/org/bukkit/inventory/ItemStack.java b/src/main/java/org/bukkit/inventory/ItemStack.java
-index 0af73cc04edb93b9772136d4d808f657ea40e733..c733206b769d7a55076d863757fcac1a129033b7 100644
+index 0af73cc04edb93b9772136d4d808f657ea40e733..ed168cba3692f55ac976c6ef31525e83ae36f5f9 100644
 --- a/src/main/java/org/bukkit/inventory/ItemStack.java
 +++ b/src/main/java/org/bukkit/inventory/ItemStack.java
 @@ -17,6 +17,18 @@ import org.bukkit.inventory.meta.ItemMeta;
@@ -1479,7 +1512,7 @@ index 0af73cc04edb93b9772136d4d808f657ea40e733..c733206b769d7a55076d863757fcac1a
  
  /**
   * Represents a stack of items.
-@@ -1005,4 +1017,626 @@ public class ItemStack implements Cloneable, ConfigurationSerializable, Translat
+@@ -1005,4 +1017,635 @@ public class ItemStack implements Cloneable, ConfigurationSerializable, Translat
          return type.isAir() || amount <= 0;
      }
      // Paper end
@@ -2103,6 +2136,15 @@ index 0af73cc04edb93b9772136d4d808f657ea40e733..c733206b769d7a55076d863757fcac1a
 +            return random.nextFloat() < 0.6F;
 +        }
 +        return random.nextInt(unbreaking + 1) > 0;
++    }
++
++    /**
++     * Returns the lines of text shown when hovering over the item
++     * @param advanced Whether advanced tooltips are shown
++     * @return the list of Components
++     */
++    public @NotNull List<net.kyori.adventure.text.@NotNull Component> getHoverLines(boolean advanced) {
++        return Bukkit.getItemFactory().getHoverLines(this, advanced);
 +    }
 +    // Purpur end
  }
@@ -4081,3 +4123,18 @@ index 12946bd55fcf7c40d39081779a7fa30049ee6165..9c2d605c50cbf9aefa56ec209df9f6ce
 +    public void stopTiming() { /*handler.stopTiming();*/ } // Purpur
  
  }
+diff --git a/src/test/java/org/bukkit/AnnotationTest.java b/src/test/java/org/bukkit/AnnotationTest.java
+index 88f1ca89fa640a686231b8eec87e70419b2d73ef..d6b91c49a267c89d7df2ddee7ccfe64675d117be 100644
+--- a/src/test/java/org/bukkit/AnnotationTest.java
++++ b/src/test/java/org/bukkit/AnnotationTest.java
+@@ -47,6 +47,10 @@ public class AnnotationTest {
+         "org/bukkit/plugin/java/PluginClassLoader",
+         // Generic functional interface
+         "org/bukkit/util/Consumer",
++        // Purpur start
++        "gg/pufferfish/pufferfish/sentry/SentryContext",
++        "gg/pufferfish/pufferfish/sentry/SentryContext$State",
++        // Purpur end
+         // Paper start
+         "io/papermc/paper/util/TransformingRandomAccessList",
+         "io/papermc/paper/util/TransformingRandomAccessList$TransformedListIterator",

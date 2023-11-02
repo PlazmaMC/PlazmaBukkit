@@ -5,7 +5,7 @@ plugins {
     java
     `maven-publish`
     id("com.github.johnrengelman.shadow") version "8.1.1" apply false
-    id("io.papermc.paperweight.patcher") version "1.5.7-SNAPSHOT"
+    id("io.papermc.paperweight.patcher") version "1.5.9"
 }
 
 repositories {
@@ -31,7 +31,7 @@ subprojects {
     tasks {
         withType<JavaCompile>().configureEach {
             options.compilerArgs.add("--add-modules=jdk.incubator.vector")
-            options.encoding = "UTF-8"
+            options.encoding = Charsets.UTF_8.name()
             options.release.set(17)
         }
     
@@ -80,7 +80,7 @@ paperweight {
     }
 }
 
-val upstreamTask = tasks.register("updateUpstream") {
+tasks.register("updateUpstream") {
     val tempDir = layout.cacheDir("updateUpstream");
     val file = "gradle.properties";
 

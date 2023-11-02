@@ -1,6 +1,6 @@
 From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
 From: Kevin Raneri <kevin.raneri@gmail.com>
-Date: Sat, 30 Sep 2023 09:45:48 +0000
+Date: Thu, 2 Nov 2023 11:17:29 +0000
 Subject: [PATCH] Pufferfish API Changes
 
 Original: Kevin Raneri <kevin.raneri@gmail.com>
@@ -20,7 +20,7 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 diff --git a/build.gradle.kts b/build.gradle.kts
-index 639651972fddce4dff63a0f0a7e566a15b9e2dd6..6c0df825238ca037abeb2ba619983b6f554180ea 100644
+index 639651972fddce4dff63a0f0a7e566a15b9e2dd6..0b87f34c2bb5a2f72124912a62ea393b19b1f3a3 100644
 --- a/build.gradle.kts
 +++ b/build.gradle.kts
 @@ -46,6 +46,7 @@ dependencies {
@@ -31,21 +31,26 @@ index 639651972fddce4dff63a0f0a7e566a15b9e2dd6..6c0df825238ca037abeb2ba619983b6f
  
      implementation("org.ow2.asm:asm:9.4")
      implementation("org.ow2.asm:asm-commons:9.4")
-@@ -102,6 +103,8 @@ tasks.jar {
+@@ -89,6 +90,13 @@ val generateApiVersioningFile by tasks.registering {
+     }
+ }
  
- tasks.withType<Javadoc> {
-     val options = options as StandardJavadocDocletOptions
-+    options.addStringOption("-add-modules", "jdk.incubator.vector") // Pufferfish
-+    options.addStringOption("Xdoclint:none", "-quiet") // Pufferfish
-     options.overview = "src/main/javadoc/overview.html"
-     options.use()
-     options.isDocFilesSubDirs = true
++// Pufferfish Start
++tasks.withType<JavaCompile> {
++    val compilerArgs = options.compilerArgs
++    compilerArgs.add("--add-modules=jdk.incubator.vector")
++}
++// Pufferfish End
++
+ tasks.jar {
+     from(generateApiVersioningFile.map { it.outputs.files.singleFile }) {
+         into("META-INF/maven/${project.group}/${project.name}")
 diff --git a/src/main/java/gg/pufferfish/pufferfish/sentry/SentryContext.java b/src/main/java/gg/pufferfish/pufferfish/sentry/SentryContext.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..ff42019da93c365ea1365e2e0f7c51b196a10948
+index 0000000000000000000000000000000000000000..10310fdd53de28efb8a8250f6d3b0c8eb08fb68a
 --- /dev/null
 +++ b/src/main/java/gg/pufferfish/pufferfish/sentry/SentryContext.java
-@@ -0,0 +1,162 @@
+@@ -0,0 +1,161 @@
 +package gg.pufferfish.pufferfish.sentry;
 +
 +import com.google.gson.Gson;
@@ -61,7 +66,6 @@ index 0000000000000000000000000000000000000000..ff42019da93c365ea1365e2e0f7c51b1
 +import org.bukkit.event.player.PlayerEvent;
 +import org.bukkit.plugin.Plugin;
 +import org.bukkit.plugin.RegisteredListener;
-+import org.jetbrains.annotations.NotNull;
 +import org.jetbrains.annotations.Nullable;
 +
 +public class SentryContext {
@@ -94,7 +98,7 @@ index 0000000000000000000000000000000000000000..ff42019da93c365ea1365e2e0f7c51b1
 +		ThreadContext.remove("pufferfishsentry_playerid");
 +	}
 +	
-+	public static void setEventContext(@NotNull Event event, @NotNull RegisteredListener registration) {
++	public static void setEventContext(Event event, RegisteredListener registration) {
 +		setPluginContext(registration.getPlugin());
 +		
 +		try {
@@ -167,43 +171,43 @@ index 0000000000000000000000000000000000000000..ff42019da93c365ea1365e2e0f7c51b1
 +		private Event event;
 +		private RegisteredListener registeredListener;
 +		
-+		public @Nullable Plugin getPlugin() {
++		public Plugin getPlugin() {
 +			return plugin;
 +		}
 +		
-+		public void setPlugin(@Nullable Plugin plugin) {
++		public void setPlugin(Plugin plugin) {
 +			this.plugin = plugin;
 +		}
 +		
-+		public @Nullable Command getCommand() {
++		public Command getCommand() {
 +			return command;
 +		}
 +		
-+		public void setCommand(@Nullable Command command) {
++		public void setCommand(Command command) {
 +			this.command = command;
 +		}
 +		
-+		public @Nullable String getCommandLine() {
++		public String getCommandLine() {
 +			return commandLine;
 +		}
 +		
-+		public void setCommandLine(@Nullable String commandLine) {
++		public void setCommandLine(String commandLine) {
 +			this.commandLine = commandLine;
 +		}
 +		
-+		public @Nullable Event getEvent() {
++		public Event getEvent() {
 +			return event;
 +		}
 +		
-+		public void setEvent(@Nullable Event event) {
++		public void setEvent(Event event) {
 +			this.event = event;
 +		}
 +		
-+		public @Nullable RegisteredListener getRegisteredListener() {
++		public RegisteredListener getRegisteredListener() {
 +			return registeredListener;
 +		}
 +		
-+		public void setRegisteredListener(@Nullable RegisteredListener registeredListener) {
++		public void setRegisteredListener(RegisteredListener registeredListener) {
 +			this.registeredListener = registeredListener;
 +		}
 +	}
@@ -476,10 +480,10 @@ index eaefbb00e9993d54906cc8cf35cf753c0d6c7707..301e82369603f3dd6e6c1bd380da4bac
  
              if (cloader instanceof PluginClassLoader) {
 diff --git a/src/main/java/org/bukkit/plugin/java/PluginClassLoader.java b/src/main/java/org/bukkit/plugin/java/PluginClassLoader.java
-index 13da387d3b59bc67c0d73e3fbd3a4034b1281527..7572a0bf6614b02be3cbccc7b86e52ee1b8df621 100644
+index f9b57b872780aa6b9b959494874b57c7a8ff0c53..90953bfc81168068a281be4d2d3942d5e7dd69ff 100644
 --- a/src/main/java/org/bukkit/plugin/java/PluginClassLoader.java
 +++ b/src/main/java/org/bukkit/plugin/java/PluginClassLoader.java
-@@ -48,6 +48,8 @@ public final class PluginClassLoader extends URLClassLoader implements io.paperm
+@@ -50,6 +50,8 @@ public final class PluginClassLoader extends URLClassLoader implements io.paperm
      private io.papermc.paper.plugin.provider.classloader.PluginClassLoaderGroup classLoaderGroup; // Paper
      public io.papermc.paper.plugin.provider.entrypoint.DependencyContext dependencyContext; // Paper
  
@@ -488,7 +492,7 @@ index 13da387d3b59bc67c0d73e3fbd3a4034b1281527..7572a0bf6614b02be3cbccc7b86e52ee
      static {
          ClassLoader.registerAsParallelCapable();
      }
-@@ -183,6 +185,7 @@ public final class PluginClassLoader extends URLClassLoader implements io.paperm
+@@ -197,6 +199,7 @@ public final class PluginClassLoader extends URLClassLoader implements io.paperm
          throw new ClassNotFoundException(name);
      }
  
@@ -496,7 +500,7 @@ index 13da387d3b59bc67c0d73e3fbd3a4034b1281527..7572a0bf6614b02be3cbccc7b86e52ee
      @Override
      protected Class<?> findClass(String name) throws ClassNotFoundException {
          if (name.startsWith("org.bukkit.") || name.startsWith("net.minecraft.")) {
-@@ -190,7 +193,7 @@ public final class PluginClassLoader extends URLClassLoader implements io.paperm
+@@ -204,7 +207,7 @@ public final class PluginClassLoader extends URLClassLoader implements io.paperm
          }
          Class<?> result = classes.get(name);
  
@@ -505,7 +509,7 @@ index 13da387d3b59bc67c0d73e3fbd3a4034b1281527..7572a0bf6614b02be3cbccc7b86e52ee
              String path = name.replace('.', '/').concat(".class");
              JarEntry entry = jar.getJarEntry(path);
  
-@@ -237,6 +240,7 @@ public final class PluginClassLoader extends URLClassLoader implements io.paperm
+@@ -251,6 +254,7 @@ public final class PluginClassLoader extends URLClassLoader implements io.paperm
              this.setClass(name, result); // Paper
          }
  
@@ -513,7 +517,7 @@ index 13da387d3b59bc67c0d73e3fbd3a4034b1281527..7572a0bf6614b02be3cbccc7b86e52ee
          return result;
      }
  
-@@ -251,6 +255,7 @@ public final class PluginClassLoader extends URLClassLoader implements io.paperm
+@@ -265,6 +269,7 @@ public final class PluginClassLoader extends URLClassLoader implements io.paperm
              // Paper end
              super.close();
          } finally {
