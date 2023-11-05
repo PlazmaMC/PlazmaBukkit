@@ -1,0 +1,43 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: AlphaKR93 <dev@alpha93.kr>
+Date: Sun, 5 Nov 2023 12:16:14 +0900
+Subject: [PATCH] Add option to disable moved to quickly check for specific
+ players
+
+
+diff --git a/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java b/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
+index 4b6c5ecba421b14ff07789042199ca9af5b81ea7..0f77194bd225421b78f7b307da24e1aa10ef8aad 100644
+--- a/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
++++ b/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
+@@ -1435,6 +1435,7 @@ public class ServerGamePacketListenerImpl extends ServerCommonPacketListenerImpl
+                             if (!this.player.isChangingDimension() && (!this.player.level().getGameRules().getBoolean(GameRules.RULE_DISABLE_ELYTRA_MOVEMENT_CHECK) || !this.player.isFallFlying())) {
+                                 float f2 = this.player.isFallFlying() ? 300.0F : 100.0F;
+ 
++                                if (this.player.getBukkitEntity().hasPermission("plazma.bypass-moved-to-quickly-check") || !org.plazmamc.plazma.configurations.GlobalConfiguration.get().player.checkSpectatorMovedToQuickly && this.player.isSpectator()) return; // Plazma
+                                 if (d10 - d9 > Math.max(f2, Math.pow((double) (org.spigotmc.SpigotConfig.movedTooQuicklyMultiplier * (float) i * speed), 2)) && !this.isSingleplayerOwner()) {
+                                 // CraftBukkit end
+                                     // Paper start - Add fail move event
+diff --git a/src/main/java/org/plazmamc/plazma/configurations/ChangedConfigurations.java b/src/main/java/org/plazmamc/plazma/configurations/ChangedConfigurations.java
+index 16bf2bc81d67e28ddb17187eb168b89055ea2994..5d61009f67df2de88b467d646de624e3f4e5d787 100644
+--- a/src/main/java/org/plazmamc/plazma/configurations/ChangedConfigurations.java
++++ b/src/main/java/org/plazmamc/plazma/configurations/ChangedConfigurations.java
+@@ -17,6 +17,7 @@ interface ChangedConfigurations {
+         put(path("entity", "monster", "phantom", "dont-load-chunks-to-spawn"), "entity.phantom.load-chunks-to-spawn");
+     }};
+     NodePath[] REMOVED_WORLD_PATHS = {
++            path("misc", "check-spectator-moved-to-quickly")
+     };
+ 
+     Map<NodePath, String> MOVED_GLOBAL_PATH = new HashMap<>() {{
+diff --git a/src/main/java/org/plazmamc/plazma/configurations/GlobalConfiguration.java b/src/main/java/org/plazmamc/plazma/configurations/GlobalConfiguration.java
+index ff5b557d517ca122cef041a8f9a970df5040b089..85f8ce0d912bf0c6cc8f43ffe7b1e2c3de17cd94 100644
+--- a/src/main/java/org/plazmamc/plazma/configurations/GlobalConfiguration.java
++++ b/src/main/java/org/plazmamc/plazma/configurations/GlobalConfiguration.java
+@@ -30,6 +30,7 @@ public class GlobalConfiguration extends ConfigurationPart {
+     public class Player extends ConfigurationPart {
+ 
+         public boolean allowAnyUsername = false;
++        public boolean checkSpectatorMovedToQuickly = !OPTIMIZE;
+ 
+     }
+ 

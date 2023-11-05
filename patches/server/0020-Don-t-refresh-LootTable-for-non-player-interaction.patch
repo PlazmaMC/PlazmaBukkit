@@ -1,0 +1,42 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: AlphaKR93 <dev@alpha93.kr>
+Date: Sun, 5 Nov 2023 12:03:06 +0900
+Subject: [PATCH] Don't refresh LootTable for non player interaction
+
+
+diff --git a/src/main/java/net/minecraft/world/level/block/entity/RandomizableContainerBlockEntity.java b/src/main/java/net/minecraft/world/level/block/entity/RandomizableContainerBlockEntity.java
+index 765ee7f78532a363813286ef7db2a7e48605cb06..6568aae5ac10b01ffe70ffc26d607fbb6413cbf8 100644
+--- a/src/main/java/net/minecraft/world/level/block/entity/RandomizableContainerBlockEntity.java
++++ b/src/main/java/net/minecraft/world/level/block/entity/RandomizableContainerBlockEntity.java
+@@ -70,6 +70,7 @@ public abstract class RandomizableContainerBlockEntity extends BaseContainerBloc
+     }
+ 
+     public void unpackLootTable(@Nullable Player player) {
++        if (player == null && org.plazmamc.plazma.configurations.GlobalConfiguration.get().misc.refreshLootTableForNonPlayerInteraction) return; // Plazma
+         if (this.lootableData.shouldReplenish(player) && this.level.getServer() != null) { // Paper
+             LootTable lootTable = this.level.getServer().getLootData().getLootTable(this.lootTable);
+             if (player instanceof ServerPlayer) {
+diff --git a/src/main/java/org/plazmamc/plazma/configurations/ChangedConfigurations.java b/src/main/java/org/plazmamc/plazma/configurations/ChangedConfigurations.java
+index 78e7583bca7570520264ff880cb112b52d708d5b..48096b0be09c6e99d22e0f3b330d2abf18903dce 100644
+--- a/src/main/java/org/plazmamc/plazma/configurations/ChangedConfigurations.java
++++ b/src/main/java/org/plazmamc/plazma/configurations/ChangedConfigurations.java
+@@ -19,6 +19,7 @@ interface ChangedConfigurations {
+     };
+ 
+     Map<NodePath, String> MOVED_GLOBAL_PATH = new HashMap<>() {{
++        put(path("misc", "do-not-trigger-loot-table-refresh-for-non-player-interaction"), "misc.refresh-loot-table-for-non-player-interaction");
+     }};
+     NodePath[] REMOVED_GLOBAL_PATH = {
+     };
+diff --git a/src/main/java/org/plazmamc/plazma/configurations/GlobalConfiguration.java b/src/main/java/org/plazmamc/plazma/configurations/GlobalConfiguration.java
+index b3c35038a4ac1d2ba3e8030edf53989883d351cf..ff5b557d517ca122cef041a8f9a970df5040b089 100644
+--- a/src/main/java/org/plazmamc/plazma/configurations/GlobalConfiguration.java
++++ b/src/main/java/org/plazmamc/plazma/configurations/GlobalConfiguration.java
+@@ -38,6 +38,7 @@ public class GlobalConfiguration extends ConfigurationPart {
+ 
+         public boolean reduceRandom;
+         public boolean ignoreThreadSafeRandom;
++        public boolean refreshLootTableForNonPlayerInteraction = !OPTIMIZE;
+ 
+     }
+ 

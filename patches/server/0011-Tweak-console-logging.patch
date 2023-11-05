@@ -1,11 +1,11 @@
 From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
 From: AlphaKR93 <dev@alpha93.kr>
-Date: Wed, 27 Sep 2023 16:55:12 +0900
-Subject: [PATCH] Console logging tweaks
+Date: Sun, 5 Nov 2023 10:40:49 +0900
+Subject: [PATCH] Tweak console logging
 
 
 diff --git a/src/main/java/io/papermc/paper/adventure/ChatProcessor.java b/src/main/java/io/papermc/paper/adventure/ChatProcessor.java
-index e4fd372a1d585887287253a02531cd192929377b..dae0b0e1288afe0d8eb70d0e8e2db152aad42bf4 100644
+index e4fd372a1d585887287253a02531cd192929377b..6624fb97404c3032d60167e3fb108dcfcd066784 100644
 --- a/src/main/java/io/papermc/paper/adventure/ChatProcessor.java
 +++ b/src/main/java/io/papermc/paper/adventure/ChatProcessor.java
 @@ -355,7 +355,7 @@ public final class ChatProcessor {
@@ -13,12 +13,12 @@ index e4fd372a1d585887287253a02531cd192929377b..dae0b0e1288afe0d8eb70d0e8e2db152
          private void sendToServer(final ChatType.Bound chatType, final @Nullable Function<Audience, net.minecraft.network.chat.Component> msgFunction) {
              final PlayerChatMessage toConsoleMessage = msgFunction == null ? ChatProcessor.this.message : ChatProcessor.this.message.withUnsignedContent(msgFunction.apply(ChatProcessor.this.server.console));
 -            ChatProcessor.this.server.logChatMessage(toConsoleMessage.decoratedContent(), chatType, ChatProcessor.this.server.getPlayerList().verifyChatTrusted(toConsoleMessage) ? null : "Not Secure");
-+            ChatProcessor.this.server.logChatMessage(toConsoleMessage.decoratedContent(), chatType, (!org.plazmamc.plazma.configurations.GlobalConfiguration.get().consoleLogs.notSecurePrefix || ChatProcessor.this.server.getPlayerList().verifyChatTrusted(toConsoleMessage)) ? null : "Not Secure"); // Plazma
++            ChatProcessor.this.server.logChatMessage(toConsoleMessage.decoratedContent(), chatType, (!org.plazmamc.plazma.configurations.GlobalConfiguration.get().consoleLogs.notSecurePrefix || ChatProcessor.this.server.getPlayerList().verifyChatTrusted(toConsoleMessage)) ? null : "Not Secure"); // Plazma - Tweak console logging
          }
      }
  
 diff --git a/src/main/java/net/minecraft/server/dedicated/DedicatedServer.java b/src/main/java/net/minecraft/server/dedicated/DedicatedServer.java
-index a970e00482952318c258fc406cb7c39a229b65bc..879c090d9c4574a2cd45a0eb1bf9cb171834d940 100644
+index 661f74153715d018b4bf054ddb74e2a68619fd08..bd9fc844177b7e6ea10266f122a04b7be31a591d 100644
 --- a/src/main/java/net/minecraft/server/dedicated/DedicatedServer.java
 +++ b/src/main/java/net/minecraft/server/dedicated/DedicatedServer.java
 @@ -180,16 +180,6 @@ public class DedicatedServer extends MinecraftServer implements ServerInterface
@@ -38,24 +38,19 @@ index a970e00482952318c258fc406cb7c39a229b65bc..879c090d9c4574a2cd45a0eb1bf9cb17
          DedicatedServer.LOGGER.info("Loading properties");
          DedicatedServerProperties dedicatedserverproperties = this.settings.getProperties();
  
-@@ -318,6 +308,7 @@ public class DedicatedServer extends MinecraftServer implements ServerInterface
+@@ -319,6 +309,7 @@ public class DedicatedServer extends MinecraftServer implements ServerInterface
          String proxyFlavor = (io.papermc.paper.configuration.GlobalConfiguration.get().proxies.velocity.enabled) ? "Velocity" : "BungeeCord";
          String proxyLink = (io.papermc.paper.configuration.GlobalConfiguration.get().proxies.velocity.enabled) ? "https://docs.papermc.io/velocity/security" : "http://www.spigotmc.org/wiki/firewall-guide/";
          // Paper end
-+        if (org.plazmamc.plazma.configurations.GlobalConfiguration.get().consoleLogs.offlineWarnings) // Plazma - Console logging tweaks
++        if (org.plazmamc.plazma.configurations.GlobalConfiguration.get().consoleLogs.offlineWarnings) // Plazma - Tweak console logging
          if (!this.usesAuthentication()) {
              DedicatedServer.LOGGER.warn("**** SERVER IS RUNNING IN OFFLINE/INSECURE MODE!");
              DedicatedServer.LOGGER.warn("The server will make no attempt to authenticate usernames. Beware.");
-@@ -331,9 +322,21 @@ public class DedicatedServer extends MinecraftServer implements ServerInterface
-                 DedicatedServer.LOGGER.warn("While this makes the game possible to play without internet access, it also opens up the ability for hackers to connect with any username they choose.");
-             }
-             // Spigot end
--            DedicatedServer.LOGGER.warn("To change this, set \"online-mode\" to \"true\" in the server.properties file.");
-+            DedicatedServer.LOGGER.warn("To change this, set \"online-mode\" to \"true\" in the server.properties file or set \"console-logs.offline-warning\" to \"false\" in the config/plazma-global.yml file."); // Plazma
+@@ -335,6 +326,17 @@ public class DedicatedServer extends MinecraftServer implements ServerInterface
+             DedicatedServer.LOGGER.warn("To change this, set \"online-mode\" to \"true\" in the server.properties file.");
          }
  
-+        // Plazma start - Console logging tweaks
-+        // Moved down
++        // Plazma - Moved down - Tweak console logging
 +        // Paper start - detect running as root
 +        if (org.plazmamc.plazma.configurations.GlobalConfiguration.get().consoleLogs.rootUserWarnings && io.papermc.paper.util.ServerEnvironment.userIsRootOrAdmin()) {
 +            DedicatedServer.LOGGER.warn("****************************");
@@ -70,27 +65,25 @@ index a970e00482952318c258fc406cb7c39a229b65bc..879c090d9c4574a2cd45a0eb1bf9cb17
          if (!OldUsersConverter.serverReadyAfterUserconversion(this)) {
              return false;
 diff --git a/src/main/java/net/minecraft/server/players/PlayerList.java b/src/main/java/net/minecraft/server/players/PlayerList.java
-index 5c38df8170033dbfee267520991a3cc3285d219e..58cc1bed851994fb591e9b832b98d25eda153b47 100644
+index 50720000069a4914c11ef5c402a39c469966196f..58a889fd517698c02a9f13f6018d761ceaffc1e0 100644
 --- a/src/main/java/net/minecraft/server/players/PlayerList.java
 +++ b/src/main/java/net/minecraft/server/players/PlayerList.java
-@@ -1440,7 +1440,7 @@ public abstract class PlayerList {
-     }
+@@ -1441,6 +1441,7 @@ public abstract class PlayerList {
      public void broadcastChatMessage(PlayerChatMessage message, Predicate<ServerPlayer> shouldSendFiltered, @Nullable ServerPlayer sender, ChatType.Bound params, @Nullable Function<net.kyori.adventure.audience.Audience, Component> unsignedFunction) {
          // Paper end
--        boolean flag = this.verifyChatTrusted(message);
-+        boolean flag = !org.plazmamc.plazma.configurations.GlobalConfiguration.get().consoleLogs.notSecurePrefix || this.verifyChatTrusted(message); // Plazma
+         boolean flag = this.verifyChatTrusted(message);
++        flag = flag || org.plazmamc.plazma.configurations.GlobalConfiguration.get().consoleLogs.notSecurePrefix; // Plazma - Tweak console logging
  
          this.server.logChatMessage((unsignedFunction == null ? message.decoratedContent() : unsignedFunction.apply(this.server.console)), params, flag ? null : "Not Secure"); // Paper
          OutgoingChatMessage outgoingchatmessage = OutgoingChatMessage.create(message);
 diff --git a/src/main/java/org/plazmamc/plazma/configurations/GlobalConfiguration.java b/src/main/java/org/plazmamc/plazma/configurations/GlobalConfiguration.java
-index d506e0c2b37f91e46e682652bd134ad91db28f84..44df2c0a1ed3d006b455ba2a47d6bc9059d804e1 100644
+index 902c68c78599fdce42c02ce9d93988d1266a7553..a9a15db9429b3ac08ffff4964bd32f4f3b7127be 100644
 --- a/src/main/java/org/plazmamc/plazma/configurations/GlobalConfiguration.java
 +++ b/src/main/java/org/plazmamc/plazma/configurations/GlobalConfiguration.java
-@@ -40,4 +40,13 @@ public class GlobalConfiguration extends ConfigurationPart {
-     public class Player extends ConfigurationPart {
+@@ -38,4 +38,13 @@ public class GlobalConfiguration extends ConfigurationPart {
  
      }
-+
+ 
 +    public ConsoleLogs consoleLogs;
 +    public class ConsoleLogs extends ConfigurationPart {
 +
@@ -99,4 +92,5 @@ index d506e0c2b37f91e46e682652bd134ad91db28f84..44df2c0a1ed3d006b455ba2a47d6bc90
 +        public boolean notSecurePrefix = true;
 +
 +    }
++
  }

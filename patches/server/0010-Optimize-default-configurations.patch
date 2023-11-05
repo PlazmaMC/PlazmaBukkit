@@ -6,68 +6,76 @@ Subject: [PATCH] Optimize default configurations
 Reference: YouHaveTrouble/minecraft-optimization, AkiraDevelopment/SimplyMC
 
 diff --git a/src/main/java/gg/pufferfish/pufferfish/PufferfishConfig.java b/src/main/java/gg/pufferfish/pufferfish/PufferfishConfig.java
-index 5f223856b06e901b100fcca8e6dd968e0b2e3a8e..13df89e7cc219cdb80c4114d05148c685ad2ecee 100644
+index 9ca1494497ae53e56b1f81fda51b0b8bd02a6d03..ccd7b964aa149482a129c8a45378c38db07b984e 100644
 --- a/src/main/java/gg/pufferfish/pufferfish/PufferfishConfig.java
 +++ b/src/main/java/gg/pufferfish/pufferfish/PufferfishConfig.java
-@@ -72,7 +72,7 @@ public class PufferfishConfig {
+@@ -64,7 +64,7 @@ public class PufferfishConfig {
  		getString("info.version", "1.0");
  		setComment("info",
  				"Pufferfish Configuration",
 -				"Check out Pufferfish Host for maximum performance server hosting: https://pufferfish.host",
-+				//"Check out Pufferfish Host for maximum performance server hosting: https://pufferfish.host", // Plazma - no advertisement
++				//"Check out Pufferfish Host for maximum performance server hosting: https://pufferfish.host", // Plazma - Nope
  				"Join our Discord for support: https://discord.gg/reZw4vQV9H",
  				"Download new builds at https://ci.pufferfish.host/job/Pufferfish");
  		
-@@ -219,7 +219,7 @@ public class PufferfishConfig {
+@@ -211,7 +211,7 @@ public class PufferfishConfig {
      public static int maxProjectileLoadsPerTick;
      public static int maxProjectileLoadsPerProjectile;
      private static void projectileLoading() {
 -        maxProjectileLoadsPerTick = getInt("projectile.max-loads-per-tick", 10, "Controls how many chunks are allowed", "to be sync loaded by projectiles in a tick.");
-+        maxProjectileLoadsPerTick = getInt("projectile.max-loads-per-tick", org.plazmamc.plazma.configurations.PlazmaConfigurations.doOptimize() ? 8 : 10, "Controls how many chunks are allowed", "to be sync loaded by projectiles in a tick."); // Plazma - Optimize default configurations
++        maxProjectileLoadsPerTick = getInt("projectile.max-loads-per-tick", org.plazmamc.plazma.configurations.PlazmaConfigurations.optimize() ? 8 : 10, "Controls how many chunks are allowed", "to be sync loaded by projectiles in a tick."); // Plazma - Optimize default configurations
          maxProjectileLoadsPerProjectile = getInt("projectile.max-loads-per-projectile", 10, "Controls how many chunks a projectile", "can load in its lifetime before it gets", "automatically removed.");
  
          setComment("projectile", "Optimizes projectile settings");
-@@ -233,7 +233,7 @@ public class PufferfishConfig {
+@@ -225,7 +225,7 @@ public class PufferfishConfig {
      public static int activationDistanceMod;
  
      private static void dynamicActivationOfBrains() throws IOException {
 -        dearEnabled = getBoolean("dab.enabled", "activation-range.enabled", false); // Purpur
-+        dearEnabled = getBoolean("dab.enabled", "activation-range.enabled", org.plazmamc.plazma.configurations.PlazmaConfigurations.doOptimize()); // Purpur // Plazma - Optimize default configurations
++        dearEnabled = getBoolean("dab.enabled", "activation-range.enabled", org.plazmamc.plazma.configurations.PlazmaConfigurations.optimize()); // Purpur // Plazma - Optimize default configurations
          startDistance = getInt("dab.start-distance", "activation-range.start-distance", 12,
                  "This value determines how far away an entity has to be",
                  "from the player to start being effected by DEAR.");
-@@ -241,7 +241,7 @@ public class PufferfishConfig {
+@@ -233,7 +233,7 @@ public class PufferfishConfig {
          maximumActivationPrio = getInt("dab.max-tick-freq", "activation-range.max-tick-freq", 20,
                  "This value defines how often in ticks, the furthest entity",
                  "will get their pathfinders and behaviors ticked. 20 = 1s");
 -        activationDistanceMod = getInt("dab.activation-dist-mod", "activation-range.activation-dist-mod", 8,
-+        activationDistanceMod = getInt("dab.activation-dist-mod", "activation-range.activation-dist-mod", org.plazmamc.plazma.configurations.PlazmaConfigurations.doOptimize() ? 7 : 8, // Plazma - Optimize default configurations
++        activationDistanceMod = getInt("dab.activation-dist-mod", "activation-range.activation-dist-mod", org.plazmamc.plazma.configurations.PlazmaConfigurations.optimize() ? 7 : 8, // Plazma - Optimize default configurations
                  "This value defines how much distance modifies an entity's",
                  "tick frequency. freq = (distanceToPlayer^2) / (2^value)",
                  "If you want further away entities to tick less often, use 7.",
 diff --git a/src/main/java/io/papermc/paper/configuration/GlobalConfiguration.java b/src/main/java/io/papermc/paper/configuration/GlobalConfiguration.java
-index c69892a5f31895b85e530beadd8864ac32470ba7..5f652268dadaca96a98203ad12d7a0ba0b19563b 100644
+index a6f58b3457b7477015c5c6d969e7d83017dd3fa1..28acc9a7f9defdddb2d5c28e2d1e45986636a725 100644
 --- a/src/main/java/io/papermc/paper/configuration/GlobalConfiguration.java
 +++ b/src/main/java/io/papermc/paper/configuration/GlobalConfiguration.java
-@@ -154,7 +154,7 @@ public class GlobalConfiguration extends ConfigurationPart {
+@@ -155,7 +155,7 @@ public class GlobalConfiguration extends ConfigurationPart {
  
      public class Watchdog extends ConfigurationPart {
          public int earlyWarningEvery = 5000;
 -        public int earlyWarningDelay = 10000;
-+        public int earlyWarningDelay = org.plazmamc.plazma.configurations.PlazmaConfigurations.doOptimize() ? 180000 : 10000; // Plazma - Optimize default configurations
++        public int earlyWarningDelay = org.plazmamc.plazma.configurations.PlazmaConfigurations.optimize() ? 180000 : 10000; // Plazma - Optimize default configurations
      }
  
      public SpamLimiter spamLimiter;
 diff --git a/src/main/java/io/papermc/paper/configuration/WorldConfiguration.java b/src/main/java/io/papermc/paper/configuration/WorldConfiguration.java
-index ec5e23136423e42e4f55e6ea646b8285c1ca14e2..a1d22ad65fc751fa93384f59853434ab65836133 100644
+index c9ae7e88afb1ca8349a118c6b491a1e1e83517a7..c64c26c7ad97df383d724b547247a7b1a107ffe1 100644
 --- a/src/main/java/io/papermc/paper/configuration/WorldConfiguration.java
 +++ b/src/main/java/io/papermc/paper/configuration/WorldConfiguration.java
-@@ -88,15 +88,27 @@ public class WorldConfiguration extends ConfigurationPart {
+@@ -32,6 +32,7 @@ import net.minecraft.commands.arguments.NbtPathArgument;
+ import net.minecraft.core.Holder;
+ import net.minecraft.core.registries.BuiltInRegistries;
+ import net.minecraft.resources.ResourceLocation;
++import net.minecraft.server.MinecraftServer;
+ import net.minecraft.world.Difficulty;
+ import net.minecraft.world.entity.Display;
+ import net.minecraft.world.entity.Entity;
+@@ -96,15 +97,27 @@ public class WorldConfiguration extends ConfigurationPart {
  
          public class AntiXray extends ConfigurationPart {
              public boolean enabled = false;
 -            public EngineMode engineMode = EngineMode.HIDE;
-+            public EngineMode engineMode = org.plazmamc.plazma.configurations.PlazmaConfigurations.doOptimize() ? EngineMode.OBFUSCATE_LAYER : EngineMode.HIDE; // Plazma - Optimize default configurations
++            public EngineMode engineMode = org.plazmamc.plazma.configurations.PlazmaConfigurations.optimize() ? EngineMode.OBFUSCATE_LAYER : EngineMode.HIDE; // Plazma - Optimize default configurations
              public int maxBlockHeight = 64;
              public int updateRadius = 2;
              public boolean lavaObscures = false;
@@ -77,7 +85,7 @@ index ec5e23136423e42e4f55e6ea646b8285c1ca14e2..a1d22ad65fc751fa93384f59853434ab
 -                "redstone_ore", "deepslate_redstone_ore", "clay", "emerald_ore", "deepslate_emerald_ore", "ender_chest"); // TODO update type to List<Block>
 -            public List<String> replacementBlocks = List.of("stone", "oak_planks", "deepslate"); // TODO update type to List<Block>
 +            // Plazma start - Optimize default configurations
-+            public List<String> hiddenBlocks = org.plazmamc.plazma.configurations.PlazmaConfigurations.doOptimize() ?
++            public List<String> hiddenBlocks = org.plazmamc.plazma.configurations.PlazmaConfigurations.optimize() ?
 +                    List.of("air", "copper_ore", "deepslate_copper_ore", "raw_copper_block", "iron_ore",
 +                            "deepslate_iron_ore", "raw_iron_block", "gold_ore", "deepslate_gold_ore", "raw_gold_block",
 +                            "lapis_ore", "deepslate_lapis_ore", "redstone_ore", "deepslate_redstone_ore", "diamond_ore",
@@ -86,8 +94,8 @@ index ec5e23136423e42e4f55e6ea646b8285c1ca14e2..a1d22ad65fc751fa93384f59853434ab
 +                            "iron_ore", "deepslate_iron_ore", "coal_ore", "deepslate_coal_ore", "lapis_ore",
 +                            "deepslate_lapis_ore", "mossy_cobblestone", "obsidian", "chest", "diamond_ore",
 +                            "deepslate_diamond_ore", "redstone_ore", "deepslate_redstone_ore", "clay", "emerald_ore",
-+                            "deepslate_emerald_ore", "ender_chest");; // TODO update type to List<Block>
-+            public List<String> replacementBlocks = org.plazmamc.plazma.configurations.PlazmaConfigurations.doOptimize() ?
++                            "deepslate_emerald_ore", "ender_chest"); // TODO update type to List<Block>
++            public List<String> replacementBlocks = org.plazmamc.plazma.configurations.PlazmaConfigurations.optimize() ?
 +                    List.of("chest", "amethyst_block", "andesite", "budding_amethyst", "calcite", "coal_ore",
 +                            "deepslate_coal_ore", "deepslate", "diorite", "dirt", "emerald_ore", "granite", "gravel",
 +                            "oak_planks", "smooth_basalt", "stone", "tuff") : List.of("stone", "oak_planks", "deepslate"); // TODO update type to List<Block>
@@ -95,54 +103,54 @@ index ec5e23136423e42e4f55e6ea646b8285c1ca14e2..a1d22ad65fc751fa93384f59853434ab
          }
      }
  
-@@ -150,7 +162,7 @@ public class WorldConfiguration extends ConfigurationPart {
+@@ -158,7 +171,7 @@ public class WorldConfiguration extends ConfigurationPart {
              @MergeMap
              public Reference2IntMap<MobCategory> spawnLimits = Util.make(new Reference2IntOpenHashMap<>(NaturalSpawner.SPAWNING_CATEGORIES.length), map -> Arrays.stream(NaturalSpawner.SPAWNING_CATEGORIES).forEach(mobCategory -> map.put(mobCategory, -1)));
              @MergeMap
 -            public Map<MobCategory, DespawnRange> despawnRanges = Arrays.stream(MobCategory.values()).collect(Collectors.toMap(Function.identity(), category -> new DespawnRange(category.getNoDespawnDistance(), category.getDespawnDistance())));
-+            public Map<MobCategory, DespawnRange> despawnRanges = Arrays.stream(MobCategory.values()).collect(Collectors.toMap(Function.identity(), category -> new DespawnRange(category.getNoDespawnDistance(), org.plazmamc.plazma.configurations.PlazmaConfigurations.doOptimize() ? (net.minecraft.server.MinecraftServer.getServer().server.getSimulationDistance() * 16) + 8 : category.getDespawnDistance()))); // Plazma - Optimize default configurations
++            public Map<MobCategory, DespawnRange> despawnRanges = Arrays.stream(MobCategory.values()).collect(Collectors.toMap(Function.identity(), category -> new DespawnRange(category.getNoDespawnDistance(), org.plazmamc.plazma.configurations.PlazmaConfigurations.optimize() ? (MinecraftServer.getServer().server.getSimulationDistance() * 16) + 8 : category.getDespawnDistance()))); // Plazma - Optimize default configurations
  
              @ConfigSerializable
              public record DespawnRange(@Required int soft, @Required int hard) {
-@@ -375,7 +387,7 @@ public class WorldConfiguration extends ConfigurationPart {
+@@ -380,7 +393,7 @@ public class WorldConfiguration extends ConfigurationPart {
      public class Environment extends ConfigurationPart {
          public boolean disableThunder = false;
          public boolean disableIceAndSnow = false;
 -        public boolean optimizeExplosions = false;
-+        public boolean optimizeExplosions = org.plazmamc.plazma.configurations.PlazmaConfigurations.doOptimize(); // Plazma - Optimize default configurations
++        public boolean optimizeExplosions = org.plazmamc.plazma.configurations.PlazmaConfigurations.optimize(); // Plazma - Optimize default configurations
          public boolean disableExplosionKnockback = false;
          public boolean generateFlatBedrock = false;
          public FrostedIce frostedIce;
-@@ -427,7 +439,7 @@ public class WorldConfiguration extends ConfigurationPart {
+@@ -432,7 +445,7 @@ public class WorldConfiguration extends ConfigurationPart {
      public Fixes fixes;
  
      public class Fixes extends ConfigurationPart {
 -        public boolean fixItemsMergingThroughWalls = false;
-+        public boolean fixItemsMergingThroughWalls = org.plazmamc.plazma.configurations.PlazmaConfigurations.doOptimize(); // Plazma - Optimize default configurations
++        public boolean fixItemsMergingThroughWalls = org.plazmamc.plazma.configurations.PlazmaConfigurations.optimize(); // Plazma - Optimize default configurations
          public boolean disableUnloadedChunkEnderpearlExploit = true;
          public boolean preventTntFromMovingInWater = false;
          public boolean splitOverstackedLoot = true;
-@@ -455,9 +467,9 @@ public class WorldConfiguration extends ConfigurationPart {
+@@ -460,9 +473,9 @@ public class WorldConfiguration extends ConfigurationPart {
      public class Collisions extends ConfigurationPart {
          public boolean onlyPlayersCollide = false;
          public boolean allowVehicleCollisions = true;
 -        public boolean fixClimbingBypassingCrammingRule = false;
-+        public boolean fixClimbingBypassingCrammingRule = org.plazmamc.plazma.configurations.PlazmaConfigurations.doOptimize(); // Plazma - Optimize default configurations
++        public boolean fixClimbingBypassingCrammingRule = org.plazmamc.plazma.configurations.PlazmaConfigurations.optimize(); // Plazma - Optimize default configurations
          @RequiresSpigotInitialization(MaxEntityCollisionsInitializer.class)
 -        public int maxEntityCollisions = 8;
-+        public int maxEntityCollisions = org.plazmamc.plazma.configurations.PlazmaConfigurations.doOptimize() ? 2 : 8; // Plazma - Optimize default configurations
++        public int maxEntityCollisions = org.plazmamc.plazma.configurations.PlazmaConfigurations.optimize() ? 2 : 8; // Plazma - Optimize default configurations
          public boolean allowPlayerCrammingDamage = false;
      }
  
-@@ -465,18 +477,40 @@ public class WorldConfiguration extends ConfigurationPart {
+@@ -470,18 +483,40 @@ public class WorldConfiguration extends ConfigurationPart {
  
      public class Chunks extends ConfigurationPart {
          public AutosavePeriod autoSaveInterval = AutosavePeriod.def();
 -        public int maxAutoSaveChunksPerTick = 24;
-+        public int maxAutoSaveChunksPerTick = org.plazmamc.plazma.configurations.PlazmaConfigurations.doOptimize() ? 8 : 24; // Plazma - Optimize default configurations
++        public int maxAutoSaveChunksPerTick = org.plazmamc.plazma.configurations.PlazmaConfigurations.optimize() ? 8 : 24; // Plazma - Optimize default configurations
          public int fixedChunkInhabitedTime = -1;
 -        public boolean preventMovingIntoUnloadedChunks = false;
-+        public boolean preventMovingIntoUnloadedChunks = org.plazmamc.plazma.configurations.PlazmaConfigurations.doOptimize(); // Plazma - Optimize default configurations
++        public boolean preventMovingIntoUnloadedChunks = org.plazmamc.plazma.configurations.PlazmaConfigurations.optimize(); // Plazma - Optimize default configurations
          public Duration delayChunkUnloadsBy = Duration.of("10s");
          public Reference2IntMap<EntityType<?>> entityPerChunkSaveLimit = Util.make(new Reference2IntOpenHashMap<>(BuiltInRegistries.ENTITY_TYPE.size()), map -> {
 -            map.defaultReturnValue(-1);
@@ -153,7 +161,7 @@ index ec5e23136423e42e4f55e6ea646b8285c1ca14e2..a1d22ad65fc751fa93384f59853434ab
 -            map.put(EntityType.FIREBALL, -1);
 -            map.put(EntityType.SMALL_FIREBALL, -1);
 +            // Plazma start - Optimize default configurations
-+            if (org.plazmamc.plazma.configurations.PlazmaConfigurations.doOptimize()) {
++            if (org.plazmamc.plazma.configurations.PlazmaConfigurations.optimize()) {
 +                map.put(EntityType.AREA_EFFECT_CLOUD, 8);
 +                map.put(EntityType.ARROW, 16);
 +                map.put(EntityType.DRAGON_FIREBALL, 3);
@@ -184,67 +192,57 @@ index ec5e23136423e42e4f55e6ea646b8285c1ca14e2..a1d22ad65fc751fa93384f59853434ab
          });
          public boolean flushRegionsOnSave = false;
      }
-@@ -491,9 +525,9 @@ public class WorldConfiguration extends ConfigurationPart {
+@@ -496,9 +531,9 @@ public class WorldConfiguration extends ConfigurationPart {
      public TickRates tickRates;
  
      public class TickRates extends ConfigurationPart {
 -        public int grassSpread = 1;
-+        public int grassSpread = org.plazmamc.plazma.configurations.PlazmaConfigurations.doOptimize() ? 4 : 1; // Plazma - Optimize default configurations
++        public int grassSpread = org.plazmamc.plazma.configurations.PlazmaConfigurations.optimize() ? 4 : 1; // Plazma - Optimize default configurations
          public int containerUpdate = 1;
 -        public int mobSpawner = 1;
-+        public int mobSpawner = org.plazmamc.plazma.configurations.PlazmaConfigurations.doOptimize() ? 2 : 1; // Plazma - Optimize default configurations
++        public int mobSpawner = org.plazmamc.plazma.configurations.PlazmaConfigurations.optimize() ? 2 : 1; // Plazma - Optimize default configurations
          public Table<EntityType<?>, String, Integer> sensor = Util.make(HashBasedTable.create(), table -> table.put(EntityType.VILLAGER, "secondarypoisensor", 40));
          public Table<EntityType<?>, String, Integer> behavior = Util.make(HashBasedTable.create(), table -> table.put(EntityType.VILLAGER, "validatenearbypoi", -1));
      }
-@@ -517,9 +551,9 @@ public class WorldConfiguration extends ConfigurationPart {
+@@ -523,9 +558,9 @@ public class WorldConfiguration extends ConfigurationPart {
  
      public class Misc extends ConfigurationPart {
          public int lightQueueSize = 20;
 -        public boolean updatePathfindingOnBlockUpdate = true;
-+        public boolean updatePathfindingOnBlockUpdate = !org.plazmamc.plazma.configurations.PlazmaConfigurations.doOptimize(); // Plazma - Optimize default configurations
++        public boolean updatePathfindingOnBlockUpdate = !org.plazmamc.plazma.configurations.PlazmaConfigurations.optimize(); // Plazma - Optimize default configurations
          public boolean showSignClickCommandFailureMsgsToPlayer = false;
 -        public RedstoneImplementation redstoneImplementation = RedstoneImplementation.VANILLA;
-+        public RedstoneImplementation redstoneImplementation = org.plazmamc.plazma.configurations.PlazmaConfigurations.doOptimize() ? RedstoneImplementation.ALTERNATE_CURRENT : RedstoneImplementation.VANILLA; // Plazma - Optimize default configurations
++        public RedstoneImplementation redstoneImplementation = org.plazmamc.plazma.configurations.PlazmaConfigurations.optimize() ? RedstoneImplementation.ALTERNATE_CURRENT : RedstoneImplementation.VANILLA; // Plazma - Optimize default configurations
          public boolean disableEndCredits = false;
          public float maxLeashDistance = 10f;
          public boolean disableSprintInterruptionOnAttack = false;
 diff --git a/src/main/java/io/papermc/paper/configuration/type/fallback/ArrowDespawnRate.java b/src/main/java/io/papermc/paper/configuration/type/fallback/ArrowDespawnRate.java
-index 24763d3d270c29c95e0b3e85111145234f660a62..ba7cf430cdff947a74ae067fc79020ae01e7e457 100644
+index 24763d3d270c29c95e0b3e85111145234f660a62..80ddc627e02e3c749e6b074afa93d357d9c7d62a 100644
 --- a/src/main/java/io/papermc/paper/configuration/type/fallback/ArrowDespawnRate.java
 +++ b/src/main/java/io/papermc/paper/configuration/type/fallback/ArrowDespawnRate.java
 @@ -29,6 +29,7 @@ public class ArrowDespawnRate extends FallbackValue.Int {
  
      @Override
      protected int fallback() {
-+        if (org.plazmamc.plazma.configurations.PlazmaConfigurations.doOptimize()) return 100; // Plazma - Optimize default configurations
++        if (org.plazmamc.plazma.configurations.PlazmaConfigurations.optimize()) return 100; // Plazma - Optimize default configurations
          return this.get(FallbackValue.SPIGOT_WORLD_CONFIG).arrowDespawnRate;
      }
  
 diff --git a/src/main/java/net/minecraft/server/Main.java b/src/main/java/net/minecraft/server/Main.java
-index 30fc258faa6f087cf3c91411b48116a3ac416031..a32a1787cbcacb0d3ed6f0d751a04e8fa9d11dd6 100644
+index 5068d942594f19555c6a8f88d49534aba073f722..8afa3ac6f314d0f3def7d19aedceefed424d9e11 100644
 --- a/src/main/java/net/minecraft/server/Main.java
 +++ b/src/main/java/net/minecraft/server/Main.java
-@@ -163,7 +163,7 @@ public class Main {
+@@ -162,7 +162,7 @@ public class Main {
                  File configFile = (File) optionset.valueOf("bukkit-settings");
                  YamlConfiguration configuration = YamlConfiguration.loadConfiguration(configFile);
                  configuration.options().copyDefaults(true);
 -                configuration.setDefaults(YamlConfiguration.loadConfiguration(new InputStreamReader(Main.class.getClassLoader().getResourceAsStream("configurations/bukkit.yml"), Charsets.UTF_8)));
-+                configuration.setDefaults(YamlConfiguration.loadConfiguration(new InputStreamReader(Main.class.getClassLoader().getResourceAsStream(org.plazmamc.plazma.configurations.PlazmaConfigurations.doOptimize() ? "configurations/bukkit_optimized.yml" : "configurations/bukkit.yml"), Charsets.UTF_8)));
++                configuration.setDefaults(YamlConfiguration.loadConfiguration(new InputStreamReader(Main.class.getClassLoader().getResourceAsStream(org.plazmamc.plazma.configurations.PlazmaConfigurations.optimize() ? "configurations/bukkit_optimized.yml" : "configurations/bukkit.yml"), Charsets.UTF_8))); // Plazma - Optimize default configurations
                  configuration.save(configFile);
  
                  File commandFile = (File) optionset.valueOf("commands-settings");
-@@ -177,8 +177,7 @@ public class Main {
-             }
- 
-             // Spigot Start
--            boolean eulaAgreed = Boolean.getBoolean( "com.mojang.eula.agree" );
--            eulaAgreed = eulaAgreed || Boolean.getBoolean("Paper.isRunDev");
-+            boolean eulaAgreed = Boolean.getBoolean( "com.mojang.eula.agree" ) || Boolean.getBoolean("Paper.isRunDev"); // Plazma
-             if ( eulaAgreed )
-             {
-                 System.err.println( "You have used the Spigot command line EULA agreement flag." );
 diff --git a/src/main/java/net/minecraft/server/dedicated/DedicatedServerProperties.java b/src/main/java/net/minecraft/server/dedicated/DedicatedServerProperties.java
-index cda4544ae96a4fcb5c6c4483df67a59f1b53fd27..54f2c5187322c6dea70c4e0e63cce2e68e7ac647 100644
+index cda4544ae96a4fcb5c6c4483df67a59f1b53fd27..a70b614f30be3356c2cde60a5cb28687d3ead34d 100644
 --- a/src/main/java/net/minecraft/server/dedicated/DedicatedServerProperties.java
 +++ b/src/main/java/net/minecraft/server/dedicated/DedicatedServerProperties.java
 @@ -130,15 +130,15 @@ public class DedicatedServerProperties extends Settings<DedicatedServerPropertie
@@ -253,8 +251,8 @@ index cda4544ae96a4fcb5c6c4483df67a59f1b53fd27..54f2c5187322c6dea70c4e0e63cce2e6
          this.useNativeTransport = this.get("use-native-transport", true);
 -        this.enableCommandBlock = this.get("enable-command-block", false);
 -        this.spawnProtection = this.get("spawn-protection", 16);
-+        this.enableCommandBlock = this.get("enable-command-block", org.plazmamc.plazma.configurations.PlazmaConfigurations.doOptimize()); // Plazma - Optimize default configurations
-+        this.spawnProtection = this.get("spawn-protection", org.plazmamc.plazma.configurations.PlazmaConfigurations.doOptimize() ? 0 : 16); // Plazma - Optimize default configurations
++        this.enableCommandBlock = this.get("enable-command-block", org.plazmamc.plazma.configurations.PlazmaConfigurations.optimize()); // Plazma - Optimize default configurations
++        this.spawnProtection = this.get("spawn-protection", org.plazmamc.plazma.configurations.PlazmaConfigurations.optimize() ? 0 : 16); // Plazma - Optimize default configurations
          this.opPermissionLevel = this.get("op-permission-level", 4);
          this.functionPermissionLevel = this.get("function-permission-level", 2);
          this.maxTickTime = this.get("max-tick-time", TimeUnit.MINUTES.toMillis(1L));
@@ -262,8 +260,8 @@ index cda4544ae96a4fcb5c6c4483df67a59f1b53fd27..54f2c5187322c6dea70c4e0e63cce2e6
          this.rateLimitPacketsPerSecond = this.get("rate-limit", 0);
 -        this.viewDistance = this.get("view-distance", 10);
 -        this.simulationDistance = this.get("simulation-distance", 10);
-+        this.viewDistance = this.get("view-distance", org.plazmamc.plazma.configurations.PlazmaConfigurations.doOptimize() ? 7 : 10); // Plazma - Optimize default configurations
-+        this.simulationDistance = this.get("simulation-distance", org.plazmamc.plazma.configurations.PlazmaConfigurations.doOptimize() ? 4 : 10); // Plazma - Optimize default configurations
++        this.viewDistance = this.get("view-distance", org.plazmamc.plazma.configurations.PlazmaConfigurations.optimize() ? 7 : 10); // Plazma - Optimize default configurations
++        this.simulationDistance = this.get("simulation-distance", org.plazmamc.plazma.configurations.PlazmaConfigurations.optimize() ? 4 : 10); // Plazma - Optimize default configurations
          this.maxPlayers = this.get("max-players", 20);
          this.networkCompressionThreshold = this.get("network-compression-threshold", 256);
          this.broadcastRconToOps = this.get("broadcast-rcon-to-ops", true);
@@ -277,33 +275,20 @@ index cda4544ae96a4fcb5c6c4483df67a59f1b53fd27..54f2c5187322c6dea70c4e0e63cce2e6
          this.enableStatus = this.get("enable-status", true);
          this.hideOnlinePlayers = this.get("hide-online-players", false);
 diff --git a/src/main/java/org/bukkit/craftbukkit/CraftServer.java b/src/main/java/org/bukkit/craftbukkit/CraftServer.java
-index 3e8f42811e9254567f2522e68b6018704bd63ae2..f8805e11551fddfda44aa36ba4e83f3df2f87500 100644
+index ed07d2b4828c5da233b63df2c63c448306dc41ac..05378779fb0ac95da235265468230fbe196a922d 100644
 --- a/src/main/java/org/bukkit/craftbukkit/CraftServer.java
 +++ b/src/main/java/org/bukkit/craftbukkit/CraftServer.java
 @@ -431,7 +431,7 @@ public final class CraftServer implements Server {
  
          this.configuration = YamlConfiguration.loadConfiguration(this.getConfigFile());
          this.configuration.options().copyDefaults(true);
--        this.configuration.setDefaults(YamlConfiguration.loadConfiguration(new InputStreamReader(getClass().getClassLoader().getResourceAsStream("configurations/bukkit.yml"), Charsets.UTF_8)));
-+        this.configuration.setDefaults(YamlConfiguration.loadConfiguration(new InputStreamReader(getClass().getClassLoader().getResourceAsStream(org.plazmamc.plazma.configurations.PlazmaConfigurations.doOptimize() ? "configurations/bukkit_optimized.yml" : "configurations/bukkit.yml"), Charsets.UTF_8))); // Plazma - Optimize default configurations
+-        this.configuration.setDefaults(YamlConfiguration.loadConfiguration(new InputStreamReader(this.getClass().getClassLoader().getResourceAsStream("configurations/bukkit.yml"), Charsets.UTF_8)));
++        this.configuration.setDefaults(YamlConfiguration.loadConfiguration(new InputStreamReader(this.getClass().getClassLoader().getResourceAsStream(org.plazmamc.plazma.configurations.PlazmaConfigurations.optimize() ? "configurations/bukkit_optimized.yml" : "configurations/bukkit.yml"), Charsets.UTF_8))); // Plazma - Optimize default configurations
          ConfigurationSection legacyAlias = null;
          if (!this.configuration.isString("aliases")) {
              legacyAlias = this.configuration.getConfigurationSection("aliases");
-diff --git a/src/main/java/org/plazmamc/plazma/configurations/PlazmaConfigurations.java b/src/main/java/org/plazmamc/plazma/configurations/PlazmaConfigurations.java
-index 39db772735d57e12bbb26a6505ca7a5e360cdd78..eabd643bf096786285ee21e898b2bf8460cd5a26 100644
---- a/src/main/java/org/plazmamc/plazma/configurations/PlazmaConfigurations.java
-+++ b/src/main/java/org/plazmamc/plazma/configurations/PlazmaConfigurations.java
-@@ -302,7 +302,7 @@ public class PlazmaConfigurations extends Configurations<GlobalConfiguration, Le
-         }
-     }
- 
--    public static boolean optimizeConfig() {
-+    public static boolean doOptimize() {
-         return OPTIMIZE_CONFIG;
-     }
- 
 diff --git a/src/main/java/org/purpurmc/purpur/PurpurConfig.java b/src/main/java/org/purpurmc/purpur/PurpurConfig.java
-index d0d31002562e728fa1a6c9bc81baa4534f11d365..5f0b10932f8dda09131ba68207cbfea4715e0f33 100644
+index d0d31002562e728fa1a6c9bc81baa4534f11d365..f52802e871efb73c02b9d11d914fd17d417ebc55 100644
 --- a/src/main/java/org/purpurmc/purpur/PurpurConfig.java
 +++ b/src/main/java/org/purpurmc/purpur/PurpurConfig.java
 @@ -49,6 +49,7 @@ public class PurpurConfig {
@@ -319,34 +304,34 @@ index d0d31002562e728fa1a6c9bc81baa4534f11d365..5f0b10932f8dda09131ba68207cbfea4
      }
  
 -    public static boolean useAlternateKeepAlive = false;
-+    public static boolean useAlternateKeepAlive = org.plazmamc.plazma.configurations.PlazmaConfigurations.doOptimize(); // Plazma - Optimize default configurations
++    public static boolean useAlternateKeepAlive = org.plazmamc.plazma.configurations.PlazmaConfigurations.optimize(); // Plazma - Optimize default configurations
      private static void useAlternateKeepAlive() {
          useAlternateKeepAlive = getBoolean("settings.use-alternate-keepalive", useAlternateKeepAlive);
      }
 diff --git a/src/main/java/org/purpurmc/purpur/PurpurWorldConfig.java b/src/main/java/org/purpurmc/purpur/PurpurWorldConfig.java
-index d4d9f748d259df8b6f4566efa21c15c470de5ba2..d65d3fd4572a4f5c9b3d2d4e2c0a907aae824cde 100644
+index 64e172e6cbfb8134c2b36bce8279e1ef44085257..01d74587c0f73abdb9f9096a0ecf4728589af1f8 100644
 --- a/src/main/java/org/purpurmc/purpur/PurpurWorldConfig.java
 +++ b/src/main/java/org/purpurmc/purpur/PurpurWorldConfig.java
-@@ -423,7 +423,7 @@ public class PurpurWorldConfig {
+@@ -425,7 +425,7 @@ public class PurpurWorldConfig {
      public boolean idleTimeoutTargetPlayer = true;
      public String playerDeathExpDropEquation = "expLevel * 7";
      public int playerDeathExpDropMax = 100;
 -    public boolean teleportIfOutsideBorder = false;
-+    public boolean teleportIfOutsideBorder = org.plazmamc.plazma.configurations.PlazmaConfigurations.doOptimize(); // Plazma - Optimize default configurations
++    public boolean teleportIfOutsideBorder = org.plazmamc.plazma.configurations.PlazmaConfigurations.optimize(); // Plazma - Optimize default configurations
      public boolean teleportOnNetherCeilingDamage = false;
      public boolean totemOfUndyingWorksInInventory = false;
      public boolean playerFixStuckPortal = false;
-@@ -3066,7 +3066,7 @@ public class PurpurWorldConfig {
+@@ -3068,7 +3068,7 @@ public class PurpurWorldConfig {
      public boolean zombieJockeyOnlyBaby = true;
      public double zombieJockeyChance = 0.05D;
      public boolean zombieJockeyTryExistingChickens = true;
 -    public boolean zombieAggressiveTowardsVillagerWhenLagging = true;
-+    public boolean zombieAggressiveTowardsVillagerWhenLagging = org.plazmamc.plazma.configurations.PlazmaConfigurations.doOptimize(); // Plazma - Optimize default configurations
++    public boolean zombieAggressiveTowardsVillagerWhenLagging = org.plazmamc.plazma.configurations.PlazmaConfigurations.optimize(); // Plazma - Optimize default configurations
      public boolean zombieBypassMobGriefing = false;
      public boolean zombieTakeDamageFromWater = false;
      public boolean zombieAlwaysDropExp = false;
 diff --git a/src/main/java/org/spigotmc/SpigotWorldConfig.java b/src/main/java/org/spigotmc/SpigotWorldConfig.java
-index 5b5109e942b18418b3a3a0e2109fe4ef15045fe5..e24106f0d936375f200cb82339dc03f8f6f528e6 100644
+index f9b8e2bc039f1a37e47f84909c8785f3ef530284..576e82d2cf933b307b7374b60d864e98be4afcb2 100644
 --- a/src/main/java/org/spigotmc/SpigotWorldConfig.java
 +++ b/src/main/java/org/spigotmc/SpigotWorldConfig.java
 @@ -150,14 +150,14 @@ public class SpigotWorldConfig
@@ -354,7 +339,7 @@ index 5b5109e942b18418b3a3a0e2109fe4ef15045fe5..e24106f0d936375f200cb82339dc03f8
      private void itemMerge()
      {
 -        this.itemMerge = this.getDouble("merge-radius.item", 2.5 );
-+        this.itemMerge = this.getDouble("merge-radius.item", org.plazmamc.plazma.configurations.PlazmaConfigurations.doOptimize() ? 3.5 : 2.5 ); // Plazma - Optimize default configurations
++        this.itemMerge = this.getDouble("merge-radius.item", org.plazmamc.plazma.configurations.PlazmaConfigurations.optimize() ? 3.5 : 2.5 ); // Plazma - Optimize default configurations
          this.log( "Item Merge Radius: " + this.itemMerge );
      }
  
@@ -362,7 +347,7 @@ index 5b5109e942b18418b3a3a0e2109fe4ef15045fe5..e24106f0d936375f200cb82339dc03f8
      private void expMerge()
      {
 -        this.expMerge = this.getDouble("merge-radius.exp", 3.0 );
-+        this.expMerge = this.getDouble("merge-radius.exp", org.plazmamc.plazma.configurations.PlazmaConfigurations.doOptimize() ? 4.0 : 3.0 ); // Plazma - Optimize default configurations
++        this.expMerge = this.getDouble("merge-radius.exp", org.plazmamc.plazma.configurations.PlazmaConfigurations.optimize() ? 4.0 : 3.0 ); // Plazma - Optimize default configurations
          this.log( "Experience Merge Radius: " + this.expMerge );
      }
  
@@ -371,7 +356,7 @@ index 5b5109e942b18418b3a3a0e2109fe4ef15045fe5..e24106f0d936375f200cb82339dc03f8
      private void mobSpawnRange()
      {
 -        this.mobSpawnRange = (byte) getInt( "mob-spawn-range", 8 ); // Paper - Vanilla
-+        this.mobSpawnRange = (byte) getInt( "mob-spawn-range", org.plazmamc.plazma.configurations.PlazmaConfigurations.doOptimize() ? 3 : 8 ); // Paper - Vanilla // Plazma - Optimize default configurations
++        this.mobSpawnRange = (byte) getInt( "mob-spawn-range", org.plazmamc.plazma.configurations.PlazmaConfigurations.optimize() ? 3 : 8 ); // Paper - Vanilla // Plazma - Optimize default configurations
          this.log( "Mob Spawn Range: " + this.mobSpawnRange );
      }
  
@@ -381,37 +366,37 @@ index 5b5109e942b18418b3a3a0e2109fe4ef15045fe5..e24106f0d936375f200cb82339dc03f8
  
 -    public int animalActivationRange = 32;
 -    public int monsterActivationRange = 32;
-+    public int animalActivationRange = org.plazmamc.plazma.configurations.PlazmaConfigurations.doOptimize() ? 16 : 32; // Plazma - Optimize default configurations
-+    public int monsterActivationRange = org.plazmamc.plazma.configurations.PlazmaConfigurations.doOptimize() ? 24 : 32; // Plazma - Optimize default configurations
++    public int animalActivationRange = org.plazmamc.plazma.configurations.PlazmaConfigurations.optimize() ? 16 : 32; // Plazma - Optimize default configurations
++    public int monsterActivationRange = org.plazmamc.plazma.configurations.PlazmaConfigurations.optimize() ? 24 : 32; // Plazma - Optimize default configurations
      public int raiderActivationRange = 48;
 -    public int miscActivationRange = 16;
-+    public int miscActivationRange = org.plazmamc.plazma.configurations.PlazmaConfigurations.doOptimize() ? 8 : 16; // Plazma - Optimize default configurations
++    public int miscActivationRange = org.plazmamc.plazma.configurations.PlazmaConfigurations.optimize() ? 8 : 16; // Plazma - Optimize default configurations
      // Paper start
 -    public int flyingMonsterActivationRange = 32;
 -    public int waterActivationRange = 16;
 -    public int villagerActivationRange = 32;
-+    public int flyingMonsterActivationRange = org.plazmamc.plazma.configurations.PlazmaConfigurations.doOptimize() ? 48 : 32; // Plazma - Optimize default configurations
-+    public int waterActivationRange = org.plazmamc.plazma.configurations.PlazmaConfigurations.doOptimize() ? 8 : 16; // Plazma - Optimize default configurations
-+    public int villagerActivationRange = org.plazmamc.plazma.configurations.PlazmaConfigurations.doOptimize() ? 16 : 32; // Plazma - Optimize default configurations
++    public int flyingMonsterActivationRange = org.plazmamc.plazma.configurations.PlazmaConfigurations.optimize() ? 48 : 32; // Plazma - Optimize default configurations
++    public int waterActivationRange = org.plazmamc.plazma.configurations.PlazmaConfigurations.optimize() ? 8 : 16; // Plazma - Optimize default configurations
++    public int villagerActivationRange = org.plazmamc.plazma.configurations.PlazmaConfigurations.optimize() ? 16 : 32; // Plazma - Optimize default configurations
      public int wakeUpInactiveAnimals = 4;
      public int wakeUpInactiveAnimalsEvery = 60*20;
 -    public int wakeUpInactiveAnimalsFor = 5*20;
 -    public int wakeUpInactiveMonsters = 8;
-+    public int wakeUpInactiveAnimalsFor = org.plazmamc.plazma.configurations.PlazmaConfigurations.doOptimize() ? 40 : 100; // Plazma - Optimize default configurations
-+    public int wakeUpInactiveMonsters = org.plazmamc.plazma.configurations.PlazmaConfigurations.doOptimize() ? 4 : 8; // Plazma - Optimize default configurations
++    public int wakeUpInactiveAnimalsFor = org.plazmamc.plazma.configurations.PlazmaConfigurations.optimize() ? 40 : 100; // Plazma - Optimize default configurations
++    public int wakeUpInactiveMonsters = org.plazmamc.plazma.configurations.PlazmaConfigurations.optimize() ? 4 : 8; // Plazma - Optimize default configurations
      public int wakeUpInactiveMonstersEvery = 20*20;
 -    public int wakeUpInactiveMonstersFor = 5*20;
 -    public int wakeUpInactiveVillagers = 4;
-+    public int wakeUpInactiveMonstersFor = org.plazmamc.plazma.configurations.PlazmaConfigurations.doOptimize() ? 60 : 100; // Plazma - Optimize default configurations
-+    public int wakeUpInactiveVillagers = org.plazmamc.plazma.configurations.PlazmaConfigurations.doOptimize() ? 1 : 4; // Plazma - Optimize default configurations
++    public int wakeUpInactiveMonstersFor = org.plazmamc.plazma.configurations.PlazmaConfigurations.optimize() ? 60 : 100; // Plazma - Optimize default configurations
++    public int wakeUpInactiveVillagers = org.plazmamc.plazma.configurations.PlazmaConfigurations.optimize() ? 1 : 4; // Plazma - Optimize default configurations
      public int wakeUpInactiveVillagersEvery = 30*20;
 -    public int wakeUpInactiveVillagersFor = 5*20;
 -    public int wakeUpInactiveFlying = 8;
-+    public int wakeUpInactiveVillagersFor = org.plazmamc.plazma.configurations.PlazmaConfigurations.doOptimize() ? 20 : 100; // Plazma - Optimize default configurations
-+    public int wakeUpInactiveFlying = org.plazmamc.plazma.configurations.PlazmaConfigurations.doOptimize() ? 1 : 8; // Plazma - Optimize default configurations
++    public int wakeUpInactiveVillagersFor = org.plazmamc.plazma.configurations.PlazmaConfigurations.optimize() ? 20 : 100; // Plazma - Optimize default configurations
++    public int wakeUpInactiveFlying = org.plazmamc.plazma.configurations.PlazmaConfigurations.optimize() ? 1 : 8; // Plazma - Optimize default configurations
      public int wakeUpInactiveFlyingEvery = 10*20;
 -    public int wakeUpInactiveFlyingFor = 5*20;
-+    public int wakeUpInactiveFlyingFor = org.plazmamc.plazma.configurations.PlazmaConfigurations.doOptimize() ? 60 : 100; // Plazma - Optimize default configurations
++    public int wakeUpInactiveFlyingFor = org.plazmamc.plazma.configurations.PlazmaConfigurations.optimize() ? 60 : 100; // Plazma - Optimize default configurations
      public int villagersWorkImmunityAfter = 5*20;
      public int villagersWorkImmunityFor = 20;
      public boolean villagersActiveForPanic = true;
@@ -420,7 +405,7 @@ index 5b5109e942b18418b3a3a0e2109fe4ef15045fe5..e24106f0d936375f200cb82339dc03f8
              this.set( "ticks-per.hopper-check", 1 );
          }
 -        this.hopperCheck = this.getInt( "ticks-per.hopper-check", 1 );
-+        this.hopperCheck = this.getInt( "ticks-per.hopper-check", org.plazmamc.plazma.configurations.PlazmaConfigurations.doOptimize() ? 8: 1 ); // Plazma - Optimize default configurations
++        this.hopperCheck = this.getInt( "ticks-per.hopper-check", org.plazmamc.plazma.configurations.PlazmaConfigurations.optimize() ? 8: 1 ); // Plazma - Optimize default configurations
          this.hopperAmount = this.getInt( "hopper-amount", 1 );
          this.hopperCanLoadChunks = this.getBoolean( "hopper-can-load-chunks", false );
          this.log( "Hopper Transfer: " + this.hopperTransfer + " Hopper Check: " + this.hopperCheck + " Hopper Amount: " + this.hopperAmount + " Hopper Can Load Chunks: " + this.hopperCanLoadChunks );
@@ -429,7 +414,7 @@ index 5b5109e942b18418b3a3a0e2109fe4ef15045fe5..e24106f0d936375f200cb82339dc03f8
      private void arrowDespawnRate()
      {
 -        this.arrowDespawnRate = this.getInt( "arrow-despawn-rate", 1200 );
-+        this.arrowDespawnRate = this.getInt( "arrow-despawn-rate", org.plazmamc.plazma.configurations.PlazmaConfigurations.doOptimize() ? 300 : 1200 ); // Plazma - Optimize default configurations
++        this.arrowDespawnRate = this.getInt( "arrow-despawn-rate", org.plazmamc.plazma.configurations.PlazmaConfigurations.optimize() ? 300 : 1200 ); // Plazma - Optimize default configurations
          this.tridentDespawnRate = this.getInt( "trident-despawn-rate", this.arrowDespawnRate );
          this.log( "Arrow Despawn Rate: " + this.arrowDespawnRate + " Trident Respawn Rate:" + this.tridentDespawnRate );
      }

@@ -5,7 +5,7 @@ Subject: [PATCH] Use faster random
 
 
 diff --git a/src/main/java/com/destroystokyo/paper/loottable/PaperLootableInventoryData.java b/src/main/java/com/destroystokyo/paper/loottable/PaperLootableInventoryData.java
-index 5408cbc21fc7577a6100b5a1ca0463e899d2df8b..f17b42176e9e5148b98baf4a6a7e7528242406d9 100644
+index 5408cbc21fc7577a6100b5a1ca0463e899d2df8b..253781726a586900ce8c2b5646dd634ff410508f 100644
 --- a/src/main/java/com/destroystokyo/paper/loottable/PaperLootableInventoryData.java
 +++ b/src/main/java/com/destroystokyo/paper/loottable/PaperLootableInventoryData.java
 @@ -16,7 +16,7 @@ import java.util.UUID;
@@ -13,38 +13,38 @@ index 5408cbc21fc7577a6100b5a1ca0463e899d2df8b..f17b42176e9e5148b98baf4a6a7e7528
  public class PaperLootableInventoryData {
  
 -    private static final Random RANDOM = new Random();
-+    private static final Random RANDOM = org.plazmamc.plazma.PlazmaOptions.useJavaRandom() ? new Random() : new org.plazmamc.plazma.Random(); // Plazma - use faster random
++    private static final Random RANDOM = org.plazmamc.plazma.Options.JAVA_RANDOM ? new Random() : new org.plazmamc.plazma.Random(); // Plazma - use faster random
  
      private long lastFill = -1;
      private long nextRefill = -1;
 diff --git a/src/main/java/net/minecraft/server/MinecraftServer.java b/src/main/java/net/minecraft/server/MinecraftServer.java
-index ee571f465ca1e83e760a4d57b3d11accb53c6cfe..1a92a7f6391df6395c11d11efdbf2f4eda5c6651 100644
+index 02b82020609e2b1426d26e9f073723e316846fc6..b51cde094e0464f7b2dad50aa68f33390e856659 100644
 --- a/src/main/java/net/minecraft/server/MinecraftServer.java
 +++ b/src/main/java/net/minecraft/server/MinecraftServer.java
-@@ -680,7 +680,7 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
+@@ -679,7 +679,7 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
              ChunkPos chunkcoordintpair = new ChunkPos(chunkproviderserver.randomState().sampler().findSpawnPosition());
              // CraftBukkit start
              if (world.generator != null) {
 -                Random rand = new Random(world.getSeed());
-+                Random rand = org.plazmamc.plazma.PlazmaOptions.useJavaRandom() ? new Random(world.getSeed()) : new org.plazmamc.plazma.Random((int) world.getSeed()); // Plazma - use faster random
++                Random rand = org.plazmamc.plazma.Options.JAVA_RANDOM ? new Random(world.getSeed()) : new org.plazmamc.plazma.Random((int) world.getSeed()); // Plazma - use faster random
                  org.bukkit.Location spawn = world.generator.getFixedSpawnLocation(world.getWorld(), rand);
  
                  if (spawn != null) {
 diff --git a/src/main/java/org/bukkit/craftbukkit/CraftWorld.java b/src/main/java/org/bukkit/craftbukkit/CraftWorld.java
-index 52b48e40c3ee5f483c6cb04409459cf25abc3f0d..5ca738739507a4cb1c3b17502fa82462079cbc87 100644
+index 3b153d96b08c5591b4a322a2bbd5986257d4609a..3bcab34ef76a874ad1a4ec3f9ffece5bd2ba6248 100644
 --- a/src/main/java/org/bukkit/craftbukkit/CraftWorld.java
 +++ b/src/main/java/org/bukkit/craftbukkit/CraftWorld.java
-@@ -228,7 +228,7 @@ public class CraftWorld extends CraftRegionAccessor implements World {
+@@ -229,7 +229,7 @@ public class CraftWorld extends CraftRegionAccessor implements World {
      }
      // Paper end
  
 -    private static final Random rand = new Random();
-+    private static final Random rand = org.plazmamc.plazma.PlazmaOptions.useJavaRandom() ? new Random() : new org.plazmamc.plazma.Random(); // Plazma - use faster random
++    private static final Random rand = org.plazmamc.plazma.Options.JAVA_RANDOM ? new Random() : new org.plazmamc.plazma.Random(); // Plazma - use faster random
  
      public CraftWorld(ServerLevel world, ChunkGenerator gen, BiomeProvider biomeProvider, Environment env) {
          this.world = world;
 diff --git a/src/main/java/org/bukkit/craftbukkit/generator/CustomChunkGenerator.java b/src/main/java/org/bukkit/craftbukkit/generator/CustomChunkGenerator.java
-index d46ccc3b3aaacf937631a44a7e0f91b793a83c86..0be5ab95612dc21561ffc0051880baae75117bc6 100644
+index d46ccc3b3aaacf937631a44a7e0f91b793a83c86..49ae6dcf81b03255971562b4f1fca0dbffca7fc1 100644
 --- a/src/main/java/org/bukkit/craftbukkit/generator/CustomChunkGenerator.java
 +++ b/src/main/java/org/bukkit/craftbukkit/generator/CustomChunkGenerator.java
 @@ -48,7 +48,7 @@ public class CustomChunkGenerator extends InternalChunkGenerator {
@@ -52,21 +52,20 @@ index d46ccc3b3aaacf937631a44a7e0f91b793a83c86..0be5ab95612dc21561ffc0051880baae
      private final ChunkGenerator generator;
      private final ServerLevel world;
 -    private final Random random = new Random();
-+    private final Random random = org.plazmamc.plazma.PlazmaOptions.useJavaRandom() ? new Random() : new org.plazmamc.plazma.Random(); // Plazma - use faster random
++    private final Random random = org.plazmamc.plazma.Options.JAVA_RANDOM ? new Random() : new org.plazmamc.plazma.Random(); // Plazma - use faster random
      private boolean newApi;
      private boolean implementBaseHeight = true;
  
-diff --git a/src/main/java/org/plazmamc/plazma/PlazmaOptions.java b/src/main/java/org/plazmamc/plazma/PlazmaOptions.java
-index 4421110e20a006c3773e922eb0facc88174ffb43..f0e6933a2bf06f2bcc343c0817ca414473be19d3 100644
---- a/src/main/java/org/plazmamc/plazma/PlazmaOptions.java
-+++ b/src/main/java/org/plazmamc/plazma/PlazmaOptions.java
-@@ -7,4 +7,7 @@ public class PlazmaOptions {
-         return !DONT_CREATE_NEW_RANDOM_INSTANCE;
-     }
+diff --git a/src/main/java/org/plazmamc/plazma/Options.java b/src/main/java/org/plazmamc/plazma/Options.java
+index 5573d6e7c04a3d8d398218d23081f7abbc8841d6..a6b3b170755067bc1d141406699414695f078d10 100644
+--- a/src/main/java/org/plazmamc/plazma/Options.java
++++ b/src/main/java/org/plazmamc/plazma/Options.java
+@@ -3,5 +3,6 @@ package org.plazmamc.plazma;
+ public interface Options {
  
-+    static final boolean USE_JAVA_RANDOM = Boolean.getBoolean("Plazma.useJavaRandom");
-+    public static boolean useJavaRandom() { return USE_JAVA_RANDOM; }
-+
+     boolean REDUCE_RANDOM = !Boolean.getBoolean("Plazma.doNotReduceRandom");
++    boolean JAVA_RANDOM = Boolean.getBoolean("Plazma.useJavaRandom");
+ 
  }
 diff --git a/src/main/java/org/plazmamc/plazma/Random.java b/src/main/java/org/plazmamc/plazma/Random.java
 new file mode 100644

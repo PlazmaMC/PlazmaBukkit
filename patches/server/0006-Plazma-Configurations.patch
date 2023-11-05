@@ -459,6 +459,18 @@ index f4bb177984f0c0223dbadf4fc7562040e4f74d6d..7e5c99c626194676a0501e182d553768
              }
          };
  
+diff --git a/src/main/java/org/plazmamc/plazma/Options.java b/src/main/java/org/plazmamc/plazma/Options.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..bb86260deca1a16795728b8fdec4c9e2da2c221c
+--- /dev/null
++++ b/src/main/java/org/plazmamc/plazma/Options.java
+@@ -0,0 +1,6 @@
++package org.plazmamc.plazma;
++
++public interface Options {
++
++
++}
 diff --git a/src/main/java/org/plazmamc/plazma/commands/Commands.java b/src/main/java/org/plazmamc/plazma/commands/Commands.java
 new file mode 100644
 index 0000000000000000000000000000000000000000..4497d8f8a52db0fc89ce27168b54657d172b1445
@@ -708,10 +720,10 @@ index 0000000000000000000000000000000000000000..b6664ba0fce55f5cfa0c8d3051dc8c2b
 +}
 diff --git a/src/main/java/org/plazmamc/plazma/configurations/ChangedConfigurations.java b/src/main/java/org/plazmamc/plazma/configurations/ChangedConfigurations.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..517ae4097a484c90c5225d7e6b41911e53396604
+index 0000000000000000000000000000000000000000..f6fa9e121fc7daa036219a4ac0daf711d644f8e3
 --- /dev/null
 +++ b/src/main/java/org/plazmamc/plazma/configurations/ChangedConfigurations.java
-@@ -0,0 +1,16 @@
+@@ -0,0 +1,23 @@
 +package org.plazmamc.plazma.configurations;
 +
 +import org.spongepowered.configurate.NodePath;
@@ -719,21 +731,28 @@ index 0000000000000000000000000000000000000000..517ae4097a484c90c5225d7e6b41911e
 +import java.util.HashMap;
 +import java.util.Map;
 +
++import static org.spongepowered.configurate.NodePath.path;
++
++@SuppressWarnings("EmptyClassInitializer")
 +interface ChangedConfigurations {
 +
-+    Map<NodePath, String> MOVED_WORLD_PATH = new HashMap<>() {{}};
-+    NodePath[] REMOVED_WORLD_PATHS = {};
++    Map<NodePath, String> MOVED_WORLD_PATH = new HashMap<>() {{
++    }};
++    NodePath[] REMOVED_WORLD_PATHS = {
++    };
 +
-+    Map<NodePath, String> MOVED_GLOBAL_PATH = new HashMap<>() {{}};
-+    NodePath[] REMOVED_GLOBAL_PATH = {};
++    Map<NodePath, String> MOVED_GLOBAL_PATH = new HashMap<>() {{
++    }};
++    NodePath[] REMOVED_GLOBAL_PATH = {
++    };
 +
 +}
 diff --git a/src/main/java/org/plazmamc/plazma/configurations/GlobalConfiguration.java b/src/main/java/org/plazmamc/plazma/configurations/GlobalConfiguration.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..2ab5738a34800b8f13c78b805b44362ea61add7f
+index 0000000000000000000000000000000000000000..261734da470664d55d831c801e1e297fa057a7f4
 --- /dev/null
 +++ b/src/main/java/org/plazmamc/plazma/configurations/GlobalConfiguration.java
-@@ -0,0 +1,28 @@
+@@ -0,0 +1,29 @@
 +package org.plazmamc.plazma.configurations;
 +
 +import io.papermc.paper.configuration.Configuration;
@@ -741,6 +760,7 @@ index 0000000000000000000000000000000000000000..2ab5738a34800b8f13c78b805b44362e
 +import org.jetbrains.annotations.NotNull;
 +import org.spongepowered.configurate.objectmapping.meta.Setting;
 +
++@SuppressWarnings({"CanBeFinal", "FieldCanBeLocal", "FieldMayBeFinal", "InnerClassMayBeStatic"})
 +public class GlobalConfiguration extends ConfigurationPart {
 +
 +    private static final int VERSION = 2;
@@ -1045,15 +1065,18 @@ index 0000000000000000000000000000000000000000..3ae690dfdd0fe3a74418d236805e4af0
 +}
 diff --git a/src/main/java/org/plazmamc/plazma/configurations/WorldConfigurations.java b/src/main/java/org/plazmamc/plazma/configurations/WorldConfigurations.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..9fb7f4cee90956b6e925fbad6285facfbfb143cd
+index 0000000000000000000000000000000000000000..9e76fd2548a57bbc7c884a7a152a88ca61d01285
 --- /dev/null
 +++ b/src/main/java/org/plazmamc/plazma/configurations/WorldConfigurations.java
-@@ -0,0 +1,16 @@
+@@ -0,0 +1,21 @@
 +package org.plazmamc.plazma.configurations;
 +
++import io.papermc.paper.configuration.Configuration;
 +import io.papermc.paper.configuration.ConfigurationPart;
 +import net.minecraft.resources.ResourceLocation;
++import org.spongepowered.configurate.objectmapping.meta.Setting;
 +
++@SuppressWarnings({"CanBeFinal", "FieldCanBeLocal", "FieldMayBeFinal", "InnerClassMayBeStatic"})
 +public class WorldConfigurations extends ConfigurationPart {
 +    private static final boolean OPTIMIZE = false; // TODO
 +    static final int VERSION = 2;
@@ -1063,5 +1086,7 @@ index 0000000000000000000000000000000000000000..9fb7f4cee90956b6e925fbad6285facf
 +        this.worldKey = worldKey;
 +    }
 +
++    @Setting(Configuration.VERSION_FIELD)
++    int version = VERSION;
 +
 +}

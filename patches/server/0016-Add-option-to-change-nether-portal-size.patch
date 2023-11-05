@@ -1,0 +1,75 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: AlphaKR93 <dev@alpha93.kr>
+Date: Sun, 5 Nov 2023 11:27:51 +0900
+Subject: [PATCH] Add option to change nether portal size
+
+
+diff --git a/src/main/java/net/minecraft/world/level/portal/PortalShape.java b/src/main/java/net/minecraft/world/level/portal/PortalShape.java
+index e7554ec800f321e4e34c926c53f2375a8c3aa979..fc3c0ea41563995b1b115271cda4e9ca76245c4e 100644
+--- a/src/main/java/net/minecraft/world/level/portal/PortalShape.java
++++ b/src/main/java/net/minecraft/world/level/portal/PortalShape.java
+@@ -100,7 +100,7 @@ public class PortalShape {
+     private int calculateWidth() {
+         int i = this.getDistanceUntilEdgeAboveFrame(this.bottomLeft, this.rightDir);
+ 
+-        return i >= 2 && i <= 21 ? i : 0;
++        return i >= this.level.getMinecraftWorld().plazmaConfig().structure.netherPortal.width.min() && i <= this.level.getMinecraftWorld().plazmaConfig().structure.netherPortal.width.max() ? i : 0; // Plazma - Configurable nether portal size
+     }
+ 
+     private int getDistanceUntilEdgeAboveFrame(BlockPos pos, Direction direction) {
+@@ -133,7 +133,7 @@ public class PortalShape {
+         BlockPos.MutableBlockPos blockposition_mutableblockposition = new BlockPos.MutableBlockPos();
+         int i = this.getDistanceUntilTop(blockposition_mutableblockposition);
+ 
+-        return i >= 3 && i <= 21 && this.hasTopFrame(blockposition_mutableblockposition, i) ? i : 0;
++        return i >= this.level.getMinecraftWorld().plazmaConfig().structure.netherPortal.height.min() && i <= this.level.getMinecraftWorld().plazmaConfig().structure.netherPortal.height.max() && this.hasTopFrame(blockposition_mutableblockposition, i) ? i : 0; // Plazma - Configurable nether portal size
+     }
+ 
+     private boolean hasTopFrame(BlockPos.MutableBlockPos pos, int height) {
+@@ -187,7 +187,7 @@ public class PortalShape {
+     }
+ 
+     public boolean isValid() {
+-        return this.bottomLeft != null && this.width >= 2 && this.width <= 21 && this.height >= 3 && this.height <= 21;
++        return this.bottomLeft != null && this.width >= this.level.getMinecraftWorld().plazmaConfig().structure.netherPortal.width.min() && this.width <= this.level.getMinecraftWorld().plazmaConfig().structure.netherPortal.width.max() && this.height >= this.level.getMinecraftWorld().plazmaConfig().structure.netherPortal.height.min() && this.height <= this.level.getMinecraftWorld().plazmaConfig().structure.netherPortal.height.max(); // Plazma - Configurable nether portal size
+     }
+ 
+     // CraftBukkit start - return boolean
+diff --git a/src/main/java/org/plazmamc/plazma/configurations/ChangedConfigurations.java b/src/main/java/org/plazmamc/plazma/configurations/ChangedConfigurations.java
+index f6fa9e121fc7daa036219a4ac0daf711d644f8e3..6cfdf5a745256774c714d201604d06ff1c7adf7a 100644
+--- a/src/main/java/org/plazmamc/plazma/configurations/ChangedConfigurations.java
++++ b/src/main/java/org/plazmamc/plazma/configurations/ChangedConfigurations.java
+@@ -11,6 +11,7 @@ import static org.spongepowered.configurate.NodePath.path;
+ interface ChangedConfigurations {
+ 
+     Map<NodePath, String> MOVED_WORLD_PATH = new HashMap<>() {{
++        put(path("structure", "portal", "nether-portal", "size"), "structure.nether-portal");
+     }};
+     NodePath[] REMOVED_WORLD_PATHS = {
+     };
+diff --git a/src/main/java/org/plazmamc/plazma/configurations/WorldConfigurations.java b/src/main/java/org/plazmamc/plazma/configurations/WorldConfigurations.java
+index 5e706773d2f64c81a5d3bbf41b8217a343a5d77e..0587540e7f61050d176044e005e79a9ed0e5968f 100644
+--- a/src/main/java/org/plazmamc/plazma/configurations/WorldConfigurations.java
++++ b/src/main/java/org/plazmamc/plazma/configurations/WorldConfigurations.java
+@@ -41,6 +41,21 @@ public class WorldConfigurations extends ConfigurationPart {
+         public NetherPortal netherPortal;
+         public class NetherPortal extends ConfigurationPart {
+ 
++            public Width width;
++            public class Width extends ConfigurationPart {
++
++                int min; public int min() { return Math.max(this.min, 1); }
++                int max; public int max() { return Math.max(this.min, this.max); }
++
++            }
++
++            public Height height;
++            public class Height extends ConfigurationPart {
++
++                int min; public int min() { return Math.max(this.min, 2); }
++                int max; public int max() { return Math.max(this.min, this.max); }
++
++            }
+ 
+         }
+ 
