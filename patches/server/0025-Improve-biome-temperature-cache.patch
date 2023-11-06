@@ -1,0 +1,28 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: AlphaKR93 <dev@alpha93.kr>
+Date: Mon, 6 Nov 2023 10:39:01 +0900
+Subject: [PATCH] Improve biome temperature cache
+
+
+diff --git a/src/main/java/net/minecraft/world/level/biome/Biome.java b/src/main/java/net/minecraft/world/level/biome/Biome.java
+index ed439b7e94646141c93a7dd3704d1cdeb5c27e16..642fd0e06f9ab53b4ef2cafe1dc3321a3fd7ee9e 100644
+--- a/src/main/java/net/minecraft/world/level/biome/Biome.java
++++ b/src/main/java/net/minecraft/world/level/biome/Biome.java
+@@ -67,7 +67,7 @@ public final class Biome {
+     private final MobSpawnSettings mobSettings;
+     private final BiomeSpecialEffects specialEffects;
+     // Pufferfish start - use our cache
+-    private final ThreadLocal<gg.airplane.structs.Long2FloatAgingCache> temperatureCache = ThreadLocal.withInitial(() -> {
++    private static final ThreadLocal<gg.airplane.structs.Long2FloatAgingCache> temperatureCache = ThreadLocal.withInitial(() -> { // Plazma - Improve biome temperature cache
+         return Util.make(() -> {
+             /*
+             Long2FloatLinkedOpenHashMap long2FloatLinkedOpenHashMap = new Long2FloatLinkedOpenHashMap(1024, 0.25F) {
+@@ -125,7 +125,7 @@ public final class Biome {
+     public float getTemperature(BlockPos blockPos) {
+         long l = blockPos.asLong();
+         // Pufferfish start
+-        gg.airplane.structs.Long2FloatAgingCache cache = this.temperatureCache.get();
++        gg.airplane.structs.Long2FloatAgingCache cache = temperatureCache.get(); // Plazma - Improve biome temperature cache
+         float f = cache.getValue(l);
+         if (!Float.isNaN(f)) {
+             return f;

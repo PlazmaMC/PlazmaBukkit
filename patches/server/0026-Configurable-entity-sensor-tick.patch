@@ -1,0 +1,46 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: AlphaKR93 <dev@alpha93.kr>
+Date: Mon, 6 Nov 2023 11:36:08 +0900
+Subject: [PATCH] Configurable entity sensor tick
+
+
+diff --git a/src/main/java/net/minecraft/world/entity/Mob.java b/src/main/java/net/minecraft/world/entity/Mob.java
+index 620b5011a675e456ac685d4323df233b5b8f8799..86c1ca70ebd4b764102a59b3772e0ca799a923b2 100644
+--- a/src/main/java/net/minecraft/world/entity/Mob.java
++++ b/src/main/java/net/minecraft/world/entity/Mob.java
+@@ -938,10 +938,10 @@ public abstract class Mob extends LivingEntity implements Targeting {
+         }
+         // Paper end
+         //this.level().getProfiler().push("sensing"); // Purpur
+-        this.sensing.tick();
+         //this.level().getProfiler().pop(); // Purpur
+         int i = this.level().getServer().getTickCount() + this.getId();
+ 
++        if (i % this.level().plazmaConfig().entity.sensorTick == 0) this.sensing.tick(); // Plazma - Configurable entity sensor tick
+         if (i % 2 != 0 && this.tickCount > 1) {
+             //this.level().getProfiler().push("targetSelector"); // Purpur
+             if (this.targetSelector.inactiveTick(this.activatedPriority, false)) // Pufferfish - use this to alternate ticking
+diff --git a/src/main/java/org/plazmamc/plazma/configurations/ChangedConfigurations.java b/src/main/java/org/plazmamc/plazma/configurations/ChangedConfigurations.java
+index 5d61009f67df2de88b467d646de624e3f4e5d787..908b0a185a262f1a8db5ff566605123d36ba48cb 100644
+--- a/src/main/java/org/plazmamc/plazma/configurations/ChangedConfigurations.java
++++ b/src/main/java/org/plazmamc/plazma/configurations/ChangedConfigurations.java
+@@ -15,6 +15,7 @@ interface ChangedConfigurations {
+         put(path("misc", "reduce-create-random-instance"), "misc.reduce-random");
+         put(path("misc", "suppress-thread-safe-random"), "misc.ignore-thread-safe-random");
+         put(path("entity", "monster", "phantom", "dont-load-chunks-to-spawn"), "entity.phantom.load-chunks-to-spawn");
++        put(path("entity", "sensor", "tick"), "entity.sensor-tick");
+     }};
+     NodePath[] REMOVED_WORLD_PATHS = {
+             path("misc", "check-spectator-moved-to-quickly")
+diff --git a/src/main/java/org/plazmamc/plazma/configurations/WorldConfigurations.java b/src/main/java/org/plazmamc/plazma/configurations/WorldConfigurations.java
+index 59d0b5f605435e8a231ea1dfef05f75b5f46b791..fae1913ec6b3689388f14f4b9c925dd53954cf62 100644
+--- a/src/main/java/org/plazmamc/plazma/configurations/WorldConfigurations.java
++++ b/src/main/java/org/plazmamc/plazma/configurations/WorldConfigurations.java
+@@ -29,6 +29,7 @@ public class WorldConfigurations extends ConfigurationPart {
+     public class Entity extends ConfigurationPart {
+ 
+         public boolean ignoreUselessPackets = OPTIMIZE;
++        public int sensorTick = 1;
+ 
+         public Phantom phantom;
+         public class Phantom extends ConfigurationPart {
