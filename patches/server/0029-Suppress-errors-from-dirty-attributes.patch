@@ -1,0 +1,41 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: AlphaKR93 <dev@alpha93.kr>
+Date: Tue, 7 Nov 2023 15:52:24 +0900
+Subject: [PATCH] Suppress errors from dirty attributes
+
+
+diff --git a/src/main/java/net/minecraft/server/level/ServerEntity.java b/src/main/java/net/minecraft/server/level/ServerEntity.java
+index e2dcdc9f317a4ab1a9b30e482607dc041abb7035..46e489dd059bc3bf8f1c5efa073fbcd892bc389d 100644
+--- a/src/main/java/net/minecraft/server/level/ServerEntity.java
++++ b/src/main/java/net/minecraft/server/level/ServerEntity.java
+@@ -395,7 +395,8 @@ public class ServerEntity {
+         }
+ 
+         if (this.entity instanceof LivingEntity) {
+-            Set<AttributeInstance> set = ((LivingEntity) this.entity).getAttributes().getDirtyAttributes();
++            Set<AttributeInstance> attributes = ((LivingEntity) this.entity).getAttributes().getDirtyAttributes(); // Plazma - Suppress error from dirty attributes
++            final Set<AttributeInstance> set = this.level.plazmaConfig().entity.suppressErrorsFromDirtyAttributes ? Collections.synchronizedSet(attributes) : attributes; // Plazma - Suppress error from dirty attributes
+ 
+             if (!set.isEmpty()) {
+                 // CraftBukkit start - Send scaled max health
+@@ -406,7 +407,7 @@ public class ServerEntity {
+                 this.broadcastAndSend(new ClientboundUpdateAttributesPacket(this.entity.getId(), set));
+             }
+ 
+-            set.clear();
++            attributes.clear(); // Plazma - Suppress error from dirty attributes
+         }
+ 
+     }
+diff --git a/src/main/java/org/plazmamc/plazma/configurations/WorldConfigurations.java b/src/main/java/org/plazmamc/plazma/configurations/WorldConfigurations.java
+index fae1913ec6b3689388f14f4b9c925dd53954cf62..ee84ac47adc29c54d668fc9e1729444e51649659 100644
+--- a/src/main/java/org/plazmamc/plazma/configurations/WorldConfigurations.java
++++ b/src/main/java/org/plazmamc/plazma/configurations/WorldConfigurations.java
+@@ -30,6 +30,7 @@ public class WorldConfigurations extends ConfigurationPart {
+ 
+         public boolean ignoreUselessPackets = OPTIMIZE;
+         public int sensorTick = 1;
++        public boolean suppressErrorsFromDirtyAttributes = OPTIMIZE;
+ 
+         public Phantom phantom;
+         public class Phantom extends ConfigurationPart {

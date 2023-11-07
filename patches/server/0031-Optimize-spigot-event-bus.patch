@@ -1,23 +1,25 @@
 From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
 From: AlphaKR93 <dev@alpha93.kr>
-Date: Sat, 30 Sep 2023 22:17:02 +0900
-Subject: [PATCH] Optimize Spigot event bus
+Date: Tue, 7 Nov 2023 15:59:07 +0900
+Subject: [PATCH] Optimize spigot event bus
 
 
 diff --git a/src/main/java/io/papermc/paper/plugin/manager/PaperEventManager.java b/src/main/java/io/papermc/paper/plugin/manager/PaperEventManager.java
-index 6016c304ddbeb6ffbd591f30914c85fcb6371e80..482e2cdbd4f76f2a56c62bec12bfc39d7193b6ce 100644
+index fb4135cb5d9e4162336c43d3b61c9d9a175a4dd5..b0ea2013433429cb0ae0314d8c483e4536a8d04f 100644
 --- a/src/main/java/io/papermc/paper/plugin/manager/PaperEventManager.java
 +++ b/src/main/java/io/papermc/paper/plugin/manager/PaperEventManager.java
-@@ -41,11 +41,14 @@ public class PaperEventManager { // Plazma - package -> public
+@@ -40,13 +40,15 @@ class PaperEventManager {
+         HandlerList handlers = event.getHandlers();
          RegisteredListener[] listeners = handlers.getRegisteredListeners();
          if (listeners.length == 0) return;
-         // Plazma end
+-        // Plazma end
+ 
 -        if (event.isAsynchronous() && this.server.isPrimaryThread()) {
 -            throw new IllegalStateException(event.getEventName() + " may only be triggered asynchronously.");
 -        } else if (!event.isAsynchronous() && !this.server.isPrimaryThread() && !this.server.isStopping()) {
 -            throw new IllegalStateException(event.getEventName() + " may only be triggered synchronously.");
-+        // Plazma start - Optimize Spigot event bus
-+        if (event.asynchronous() != net.kyori.adventure.util.TriState.NOT_SET) {
++        // Optimize Spigot event bus
++        if (event.asynchronous() == net.kyori.adventure.util.TriState.NOT_SET) {
 +            final boolean async = event.isAsynchronous();
 +            final boolean primary = this.server.isPrimaryThread();
 +            if (async && primary) throw new IllegalStateException(event.getEventName() + " may only be triggered asynchronously.");
