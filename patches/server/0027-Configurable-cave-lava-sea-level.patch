@@ -1,0 +1,57 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: AlphaKR93 <dev@alpha93.kr>
+Date: Tue, 7 Nov 2023 15:32:24 +0900
+Subject: [PATCH] Configurable cave lava sea level
+
+This patch also fix MC-237017.
+
+diff --git a/src/main/java/net/minecraft/world/level/levelgen/NoiseBasedChunkGenerator.java b/src/main/java/net/minecraft/world/level/levelgen/NoiseBasedChunkGenerator.java
+index 58609a0911c4e32b6f80f050cd3d23f70ad75b1b..2db6c1b9530b4b082ef6f6ec17c542ba8ad7fa5f 100644
+--- a/src/main/java/net/minecraft/world/level/levelgen/NoiseBasedChunkGenerator.java
++++ b/src/main/java/net/minecraft/world/level/levelgen/NoiseBasedChunkGenerator.java
+@@ -72,6 +72,15 @@ public final class NoiseBasedChunkGenerator extends ChunkGenerator {
+     }
+ 
+     private static Aquifer.FluidPicker createFluidPicker(NoiseGeneratorSettings settings) {
++        // Plazma start
++        if (true) {
++            org.plazmamc.plazma.configurations.GlobalConfiguration config = org.plazmamc.plazma.configurations.GlobalConfiguration.get();
++            return (x, y, z) -> new Aquifer.FluidStatus(
++                    config.worldgen.caveLavaSeaLevel.useCustomSeaLevel ? config.worldgen.caveLavaSeaLevel.customSeaLevel : settings.seaLevel(),
++                    config.worldgen.caveLavaSeaLevel.customSeaLevel(settings)
++            );
++        }
++        // Plazma end
+         Aquifer.FluidStatus aquifer_b = new Aquifer.FluidStatus(-54, Blocks.LAVA.defaultBlockState());
+         int i = settings.seaLevel();
+         Aquifer.FluidStatus aquifer_b1 = new Aquifer.FluidStatus(i, settings.defaultFluid());
+diff --git a/src/main/java/org/plazmamc/plazma/configurations/GlobalConfiguration.java b/src/main/java/org/plazmamc/plazma/configurations/GlobalConfiguration.java
+index e053ac807246f9ab636270feb62ac36308012110..f417219c70173279536aa33188c56dc39984d44e 100644
+--- a/src/main/java/org/plazmamc/plazma/configurations/GlobalConfiguration.java
++++ b/src/main/java/org/plazmamc/plazma/configurations/GlobalConfiguration.java
+@@ -38,6 +38,25 @@ public class GlobalConfiguration extends ConfigurationPart {
+     public WorldGeneration worldgen;
+     public class WorldGeneration extends ConfigurationPart {
+ 
++        public CaveLavaSeaLevel caveLavaSeaLevel;
++        public class CaveLavaSeaLevel extends ConfigurationPart {
++
++            public boolean useCustomSeaLevel = false;
++            public int customSeaLevel = -54;
++            String customSeaBlock = "default";
++
++            public net.minecraft.world.level.block.state.BlockState customSeaLevel(net.minecraft.world.level.levelgen.NoiseGeneratorSettings settings) {
++                if (this.customSeaBlock.equalsIgnoreCase("default")) return settings.defaultFluid();
++                return net.minecraft.core.registries.BuiltInRegistries.BLOCK
++                        .getOptional(new net.minecraft.resources.ResourceLocation(this.customSeaBlock))
++                        .orElseGet(() -> {
++                            PlazmaConfigurations.LOGGER.warn("Invalid custom sea level block: " + this.customSeaBlock, ", defaulting to lava");
++                            return net.minecraft.world.level.block.Blocks.LAVA;
++                        })
++                        .defaultBlockState();
++            }
++
++        }
+ 
+     }
+ 
