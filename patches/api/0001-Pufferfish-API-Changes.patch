@@ -1,6 +1,6 @@
 From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
 From: Kevin Raneri <kevin.raneri@gmail.com>
-Date: Thu, 9 Nov 2023 09:51:58 +0000
+Date: Sat, 30 Sep 2023 09:45:48 +0000
 Subject: [PATCH] Pufferfish API Changes
 
 Original: Kevin Raneri <kevin.raneri@gmail.com>
@@ -20,10 +20,10 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 diff --git a/build.gradle.kts b/build.gradle.kts
-index 639651972fddce4dff63a0f0a7e566a15b9e2dd6..0b87f34c2bb5a2f72124912a62ea393b19b1f3a3 100644
+index e827ee211e3c65dc68ac5867fd8476639df63645..fa07b780ba33597b6bb8068c3c43e6a9c782f842 100644
 --- a/build.gradle.kts
 +++ b/build.gradle.kts
-@@ -46,6 +46,7 @@ dependencies {
+@@ -47,6 +47,7 @@ dependencies {
      apiAndDocs("net.kyori:adventure-text-logger-slf4j")
      api("org.apache.logging.log4j:log4j-api:$log4jVersion")
      api("org.slf4j:slf4j-api:$slf4jVersion")
@@ -31,26 +31,21 @@ index 639651972fddce4dff63a0f0a7e566a15b9e2dd6..0b87f34c2bb5a2f72124912a62ea393b
  
      implementation("org.ow2.asm:asm:9.4")
      implementation("org.ow2.asm:asm-commons:9.4")
-@@ -89,6 +90,13 @@ val generateApiVersioningFile by tasks.registering {
-     }
- }
+@@ -119,6 +120,8 @@ tasks.jar {
  
-+// Pufferfish Start
-+tasks.withType<JavaCompile> {
-+    val compilerArgs = options.compilerArgs
-+    compilerArgs.add("--add-modules=jdk.incubator.vector")
-+}
-+// Pufferfish End
-+
- tasks.jar {
-     from(generateApiVersioningFile.map { it.outputs.files.singleFile }) {
-         into("META-INF/maven/${project.group}/${project.name}")
+ tasks.withType<Javadoc> {
+     val options = options as StandardJavadocDocletOptions
++    options.addStringOption("-add-modules", "jdk.incubator.vector") // Pufferfish
++    options.addStringOption("Xdoclint:none", "-quiet") // Pufferfish
+     options.overview = "src/main/javadoc/overview.html"
+     options.use()
+     options.isDocFilesSubDirs = true
 diff --git a/src/main/java/gg/pufferfish/pufferfish/sentry/SentryContext.java b/src/main/java/gg/pufferfish/pufferfish/sentry/SentryContext.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..10310fdd53de28efb8a8250f6d3b0c8eb08fb68a
+index 0000000000000000000000000000000000000000..ff42019da93c365ea1365e2e0f7c51b196a10948
 --- /dev/null
 +++ b/src/main/java/gg/pufferfish/pufferfish/sentry/SentryContext.java
-@@ -0,0 +1,161 @@
+@@ -0,0 +1,162 @@
 +package gg.pufferfish.pufferfish.sentry;
 +
 +import com.google.gson.Gson;
@@ -66,6 +61,7 @@ index 0000000000000000000000000000000000000000..10310fdd53de28efb8a8250f6d3b0c8e
 +import org.bukkit.event.player.PlayerEvent;
 +import org.bukkit.plugin.Plugin;
 +import org.bukkit.plugin.RegisteredListener;
++import org.jetbrains.annotations.NotNull;
 +import org.jetbrains.annotations.Nullable;
 +
 +public class SentryContext {
@@ -98,7 +94,7 @@ index 0000000000000000000000000000000000000000..10310fdd53de28efb8a8250f6d3b0c8e
 +		ThreadContext.remove("pufferfishsentry_playerid");
 +	}
 +	
-+	public static void setEventContext(Event event, RegisteredListener registration) {
++	public static void setEventContext(@NotNull Event event, @NotNull RegisteredListener registration) {
 +		setPluginContext(registration.getPlugin());
 +		
 +		try {
@@ -171,43 +167,43 @@ index 0000000000000000000000000000000000000000..10310fdd53de28efb8a8250f6d3b0c8e
 +		private Event event;
 +		private RegisteredListener registeredListener;
 +		
-+		public Plugin getPlugin() {
++		public @Nullable Plugin getPlugin() {
 +			return plugin;
 +		}
 +		
-+		public void setPlugin(Plugin plugin) {
++		public void setPlugin(@Nullable Plugin plugin) {
 +			this.plugin = plugin;
 +		}
 +		
-+		public Command getCommand() {
++		public @Nullable Command getCommand() {
 +			return command;
 +		}
 +		
-+		public void setCommand(Command command) {
++		public void setCommand(@Nullable Command command) {
 +			this.command = command;
 +		}
 +		
-+		public String getCommandLine() {
++		public @Nullable String getCommandLine() {
 +			return commandLine;
 +		}
 +		
-+		public void setCommandLine(String commandLine) {
++		public void setCommandLine(@Nullable String commandLine) {
 +			this.commandLine = commandLine;
 +		}
 +		
-+		public Event getEvent() {
++		public @Nullable Event getEvent() {
 +			return event;
 +		}
 +		
-+		public void setEvent(Event event) {
++		public void setEvent(@Nullable Event event) {
 +			this.event = event;
 +		}
 +		
-+		public RegisteredListener getRegisteredListener() {
++		public @Nullable RegisteredListener getRegisteredListener() {
 +			return registeredListener;
 +		}
 +		
-+		public void setRegisteredListener(RegisteredListener registeredListener) {
++		public void setRegisteredListener(@Nullable RegisteredListener registeredListener) {
 +			this.registeredListener = registeredListener;
 +		}
 +	}
@@ -389,7 +385,7 @@ index 0000000000000000000000000000000000000000..ae2464920c9412ac90b819a540ee58be
 +	
 +}
 diff --git a/src/main/java/org/bukkit/map/MapPalette.java b/src/main/java/org/bukkit/map/MapPalette.java
-index 3a9aaca2e76411a9c27f9f5e0f22d060d5a66d06..9584e245144b561b4f6745b2f26a4f69a6f92891 100644
+index c80faa079eca1564847070f0338fc98024639829..e632d51d3487eb4807243b6705999ad124466bf5 100644
 --- a/src/main/java/org/bukkit/map/MapPalette.java
 +++ b/src/main/java/org/bukkit/map/MapPalette.java
 @@ -1,6 +1,7 @@
