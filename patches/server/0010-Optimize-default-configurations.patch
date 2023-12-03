@@ -59,18 +59,10 @@ index a6f58b3457b7477015c5c6d969e7d83017dd3fa1..28acc9a7f9defdddb2d5c28e2d1e4598
  
      public SpamLimiter spamLimiter;
 diff --git a/src/main/java/io/papermc/paper/configuration/WorldConfiguration.java b/src/main/java/io/papermc/paper/configuration/WorldConfiguration.java
-index ed79d30f33b2674863b2d73b1abdb48433c33412..11856e9cbb56869eba10ed25e72be8b32d245cb1 100644
+index 071d3877e..1f0540adf 100644
 --- a/src/main/java/io/papermc/paper/configuration/WorldConfiguration.java
 +++ b/src/main/java/io/papermc/paper/configuration/WorldConfiguration.java
-@@ -32,6 +32,7 @@ import net.minecraft.commands.arguments.NbtPathArgument;
- import net.minecraft.core.Holder;
- import net.minecraft.core.registries.BuiltInRegistries;
- import net.minecraft.resources.ResourceLocation;
-+import net.minecraft.server.MinecraftServer;
- import net.minecraft.world.Difficulty;
- import net.minecraft.world.entity.Display;
- import net.minecraft.world.entity.Entity;
-@@ -96,15 +97,27 @@ public class WorldConfiguration extends ConfigurationPart {
+@@ -96,12 +96,32 @@ public class WorldConfiguration extends ConfigurationPart {
  
          public class AntiXray extends ConfigurationPart {
              public boolean enabled = false;
@@ -80,39 +72,71 @@ index ed79d30f33b2674863b2d73b1abdb48433c33412..11856e9cbb56869eba10ed25e72be8b3
              public int updateRadius = 2;
              public boolean lavaObscures = false;
              public boolean usePermission = false;
--            public List<String> hiddenBlocks = List.of("copper_ore", "deepslate_copper_ore", "raw_copper_block", "gold_ore", "deepslate_gold_ore", "iron_ore", "deepslate_iron_ore", "raw_iron_block",
--                "coal_ore", "deepslate_coal_ore", "lapis_ore", "deepslate_lapis_ore", "mossy_cobblestone", "obsidian", "chest", "diamond_ore", "deepslate_diamond_ore",
--                "redstone_ore", "deepslate_redstone_ore", "clay", "emerald_ore", "deepslate_emerald_ore", "ender_chest"); // TODO update type to List<Block>
--            public List<String> replacementBlocks = List.of("stone", "oak_planks", "deepslate"); // TODO update type to List<Block>
+-            public List<Block> hiddenBlocks = List.of(
 +            // Plazma start - Optimize default configurations
-+            public List<String> hiddenBlocks = org.plazmamc.plazma.configurations.PlazmaConfigurations.optimize() ?
-+                    List.of("air", "copper_ore", "deepslate_copper_ore", "raw_copper_block", "iron_ore",
-+                            "deepslate_iron_ore", "raw_iron_block", "gold_ore", "deepslate_gold_ore", "raw_gold_block",
-+                            "lapis_ore", "deepslate_lapis_ore", "redstone_ore", "deepslate_redstone_ore", "diamond_ore",
-+                            "deepslate_diamond_ore") :
-+                    List.of("copper_ore", "deepslate_copper_ore","gold_ore", "deepslate_gold_ore",
-+                            "iron_ore", "deepslate_iron_ore", "coal_ore", "deepslate_coal_ore", "lapis_ore",
-+                            "deepslate_lapis_ore", "mossy_cobblestone", "obsidian", "chest", "diamond_ore",
-+                            "deepslate_diamond_ore", "redstone_ore", "deepslate_redstone_ore", "clay", "emerald_ore",
-+                            "deepslate_emerald_ore", "ender_chest"); // TODO update type to List<Block>
-+            public List<String> replacementBlocks = org.plazmamc.plazma.configurations.PlazmaConfigurations.optimize() ?
-+                    List.of("chest", "amethyst_block", "andesite", "budding_amethyst", "calcite", "coal_ore",
-+                            "deepslate_coal_ore", "deepslate", "diorite", "dirt", "emerald_ore", "granite", "gravel",
-+                            "oak_planks", "smooth_basalt", "stone", "tuff") : List.of("stone", "oak_planks", "deepslate"); // TODO update type to List<Block>
++            public List<Block> hiddenBlocks = org.plazmamc.plazma.configurations.PlazmaConfigurations.optimize() ? List.of(
++                    //<editor-fold desc="Anti-Xray Hidden Blocks" defaultstate="collapsed">
++                    Blocks.AIR,
++                    Blocks.COPPER_ORE,
++                    Blocks.DEEPSLATE_COPPER_ORE,
++                    Blocks.RAW_COPPER_BLOCK,
++                    Blocks.IRON_ORE,
++                    Blocks.DEEPSLATE_IRON_ORE,
++                    Blocks.RAW_IRON_BLOCK,
++                    Blocks.GOLD_ORE,
++                    Blocks.DEEPSLATE_GOLD_ORE,
++                    Blocks.RAW_GOLD_BLOCK,
++                    Blocks.REDSTONE_ORE,
++                    Blocks.DEEPSLATE_REDSTONE_ORE,
++                    Blocks.LAPIS_ORE,
++                    Blocks.DEEPSLATE_LAPIS_ORE,
++                    Blocks.DIAMOND_ORE,
++                    Blocks.DEEPSLATE_DIAMOND_ORE
++                    //</editor-fold>
++            ) : List.of(
+                 //<editor-fold desc="Anti-Xray Hidden Blocks" defaultstate="collapsed">
+                 Blocks.COPPER_ORE,
+                 Blocks.DEEPSLATE_COPPER_ORE,
+@@ -128,7 +148,28 @@ public class WorldConfiguration extends ConfigurationPart {
+                 Blocks.ENDER_CHEST
+                 //</editor-fold>
+             );
+-            public List<Block> replacementBlocks = List.of(Blocks.STONE, Blocks.OAK_PLANKS, Blocks.DEEPSLATE);
++            public List<Block> replacementBlocks = org.plazmamc.plazma.configurations.PlazmaConfigurations.optimize() ? List.of(
++                    //<editor-fold desc="Anti-Xray Hidden Blocks" defaultstate="collapsed">
++                    Blocks.CHEST,
++                    Blocks.AMETHYST_BLOCK,
++                    Blocks.ANDESITE,
++                    Blocks.BUDDING_AMETHYST,
++                    Blocks.CALCITE,
++                    Blocks.COAL_ORE,
++                    Blocks.DEEPSLATE_COAL_ORE,
++                    Blocks.DEEPSLATE,
++                    Blocks.DIORITE,
++                    Blocks.DIRT,
++                    Blocks.EMERALD_ORE,
++                    Blocks.GRANITE,
++                    Blocks.GRAVEL,
++                    Blocks.OAK_PLANKS,
++                    Blocks.SMOOTH_BASALT,
++                    Blocks.STONE,
++                    Blocks.TUFF
++                    //</editor-fold>
++            ) : List.of(Blocks.STONE, Blocks.OAK_PLANKS, Blocks.DEEPSLATE);
 +            // Plazma end
          }
      }
  
-@@ -158,7 +171,7 @@ public class WorldConfiguration extends ConfigurationPart {
+@@ -182,7 +223,7 @@ public class WorldConfiguration extends ConfigurationPart {
              @MergeMap
              public Reference2IntMap<MobCategory> spawnLimits = Util.make(new Reference2IntOpenHashMap<>(NaturalSpawner.SPAWNING_CATEGORIES.length), map -> Arrays.stream(NaturalSpawner.SPAWNING_CATEGORIES).forEach(mobCategory -> map.put(mobCategory, -1)));
              @MergeMap
 -            public Map<MobCategory, DespawnRange> despawnRanges = Arrays.stream(MobCategory.values()).collect(Collectors.toMap(Function.identity(), category -> new DespawnRange(category.getNoDespawnDistance(), category.getDespawnDistance())));
-+            public Map<MobCategory, DespawnRange> despawnRanges = Arrays.stream(MobCategory.values()).collect(Collectors.toMap(Function.identity(), category -> new DespawnRange(category.getNoDespawnDistance(), org.plazmamc.plazma.configurations.PlazmaConfigurations.optimize() ? (MinecraftServer.getServer().server.getSimulationDistance() * 16) + 8 : category.getDespawnDistance()))); // Plazma - Optimize default configurations
++            public Map<MobCategory, DespawnRange> despawnRanges = Arrays.stream(MobCategory.values()).collect(Collectors.toMap(Function.identity(), category -> new DespawnRange(category.getNoDespawnDistance(), org.plazmamc.plazma.configurations.PlazmaConfigurations.optimize() ? (net.minecraft.server.MinecraftServer.getServer().server.getSimulationDistance() * 16) + 8 : category.getDespawnDistance()))); // Plazma - Optimize default configurations
  
              @ConfigSerializable
              public record DespawnRange(@Required int soft, @Required int hard) {
-@@ -380,7 +393,7 @@ public class WorldConfiguration extends ConfigurationPart {
+@@ -381,7 +422,7 @@ public class WorldConfiguration extends ConfigurationPart {
      public class Environment extends ConfigurationPart {
          public boolean disableThunder = false;
          public boolean disableIceAndSnow = false;
@@ -121,7 +145,7 @@ index ed79d30f33b2674863b2d73b1abdb48433c33412..11856e9cbb56869eba10ed25e72be8b3
          public boolean disableExplosionKnockback = false;
          public boolean generateFlatBedrock = false;
          public FrostedIce frostedIce;
-@@ -432,7 +445,7 @@ public class WorldConfiguration extends ConfigurationPart {
+@@ -433,7 +474,7 @@ public class WorldConfiguration extends ConfigurationPart {
      public Fixes fixes;
  
      public class Fixes extends ConfigurationPart {
@@ -130,7 +154,7 @@ index ed79d30f33b2674863b2d73b1abdb48433c33412..11856e9cbb56869eba10ed25e72be8b3
          public boolean disableUnloadedChunkEnderpearlExploit = true;
          public boolean preventTntFromMovingInWater = false;
          public boolean splitOverstackedLoot = true;
-@@ -459,9 +472,9 @@ public class WorldConfiguration extends ConfigurationPart {
+@@ -460,9 +501,9 @@ public class WorldConfiguration extends ConfigurationPart {
      public class Collisions extends ConfigurationPart {
          public boolean onlyPlayersCollide = false;
          public boolean allowVehicleCollisions = true;
@@ -142,7 +166,7 @@ index ed79d30f33b2674863b2d73b1abdb48433c33412..11856e9cbb56869eba10ed25e72be8b3
          public boolean allowPlayerCrammingDamage = false;
      }
  
-@@ -469,18 +482,40 @@ public class WorldConfiguration extends ConfigurationPart {
+@@ -470,18 +511,41 @@ public class WorldConfiguration extends ConfigurationPart {
  
      public class Chunks extends ConfigurationPart {
          public AutosavePeriod autoSaveInterval = AutosavePeriod.def();
@@ -153,7 +177,7 @@ index ed79d30f33b2674863b2d73b1abdb48433c33412..11856e9cbb56869eba10ed25e72be8b3
 +        public boolean preventMovingIntoUnloadedChunks = org.plazmamc.plazma.configurations.PlazmaConfigurations.optimize(); // Plazma - Optimize default configurations
          public Duration delayChunkUnloadsBy = Duration.of("10s");
          public Reference2IntMap<EntityType<?>> entityPerChunkSaveLimit = Util.make(new Reference2IntOpenHashMap<>(BuiltInRegistries.ENTITY_TYPE.size()), map -> {
--            map.defaultReturnValue(-1);
+             map.defaultReturnValue(-1);
 -            map.put(EntityType.EXPERIENCE_ORB, -1);
 -            map.put(EntityType.SNOWBALL, -1);
 -            map.put(EntityType.ENDER_PEARL, -1);
@@ -192,7 +216,7 @@ index ed79d30f33b2674863b2d73b1abdb48433c33412..11856e9cbb56869eba10ed25e72be8b3
          });
          public boolean flushRegionsOnSave = false;
      }
-@@ -495,9 +530,9 @@ public class WorldConfiguration extends ConfigurationPart {
+@@ -496,9 +560,9 @@ public class WorldConfiguration extends ConfigurationPart {
      public TickRates tickRates;
  
      public class TickRates extends ConfigurationPart {
@@ -201,10 +225,10 @@ index ed79d30f33b2674863b2d73b1abdb48433c33412..11856e9cbb56869eba10ed25e72be8b3
          public int containerUpdate = 1;
 -        public int mobSpawner = 1;
 +        public int mobSpawner = org.plazmamc.plazma.configurations.PlazmaConfigurations.optimize() ? 2 : 1; // Plazma - Optimize default configurations
+         public int wetFarmland = 1;
+         public int dryFarmland = 1;
          public Table<EntityType<?>, String, Integer> sensor = Util.make(HashBasedTable.create(), table -> table.put(EntityType.VILLAGER, "secondarypoisensor", 40));
-         public Table<EntityType<?>, String, Integer> behavior = Util.make(HashBasedTable.create(), table -> table.put(EntityType.VILLAGER, "validatenearbypoi", -1));
-     }
-@@ -522,9 +557,9 @@ public class WorldConfiguration extends ConfigurationPart {
+@@ -525,9 +589,9 @@ public class WorldConfiguration extends ConfigurationPart {
  
      public class Misc extends ConfigurationPart {
          public int lightQueueSize = 20;
