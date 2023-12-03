@@ -2,34 +2,34 @@ name: Build Plazma
 
 on:
   push:
-    branches: [ "ver/*", "feat/*", "dev/*", "expr/*", "ench/*", "impl/*" ]
+    branches: [ "ver/*", "dev/*", "feat/**/*" ]
   workflow_dispatch:
 
 env:
   ORG_NAME: PlazmaMC
   MC_VERSION: 1.20.2
   MAIN_BRANCH: ver/1.20.1
-  DEBUG: 'false'
 
 jobs:
   release:
     strategy:
       matrix:
-        base_jdk: [17]
-        graal: [latest]
+        base_jdk: [21]
         os: [ubuntu-22.04]
 
     if: "!startsWith(github.event.commits[0].message, '[CI-Skip]')"
     runs-on: ${{ matrix.os }}
     steps:
-      - name: Checkout action
-        uses: actions/checkout@v3
+      - name: Checkout repository
+        uses: actions/checkout@v4
 
-      - name: Checkout pages
-        uses: actions/checkout@v3
+      - name: Checkout javadocs
+        uses: actions/checkout@v4
+        if: github.ref_name == env.MAIN_BRANCH
         with:
+          repository: PlazmaMC/Javadocs
           path: javadoc
-          ref: gh-pages
+          ref: main
           token: ${{ secrets.GH_PAT }}
 
       - name: Validate Gradle Wrapper
@@ -40,7 +40,7 @@ jobs:
         with:
           github-token: ${{ secrets.GH_PAT }}
           java-version: ${{ matrix.base_jdk }}
-          version: ${{ matrix.graal }}
+          version: latest
           cache: 'gradle'
 
       - name: Configure Git
@@ -75,7 +75,7 @@ jobs:
           ./gradlew publish --stacktrace
 
       - name: Upload Artifacts
-        if: env.DEBUG == 'true' || !startsWith(github.ref_name, 'ver/')
+        if: !startsWith(github.ref_name, 'ver/')
         uses: actions/upload-artifact@v3
         with:
           name: Artifacts
