@@ -1,6 +1,6 @@
 From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
 From: Kevin Raneri <kevin.raneri@gmail.com>
-Date: Sat, 30 Sep 2023 09:45:48 +0000
+Date: Sun, 26 Nov 2023 23:32:01 +0000
 Subject: [PATCH] Pufferfish API Changes
 
 Original: Kevin Raneri <kevin.raneri@gmail.com>
@@ -20,7 +20,7 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 diff --git a/build.gradle.kts b/build.gradle.kts
-index e827ee211e3c65dc68ac5867fd8476639df63645..fa07b780ba33597b6bb8068c3c43e6a9c782f842 100644
+index e827ee211e3c65dc68ac5867fd8476639df63645..b9c75a190dbd7a90ac5ef0fbc6e6fe34806acc4e 100644
 --- a/build.gradle.kts
 +++ b/build.gradle.kts
 @@ -47,6 +47,7 @@ dependencies {
@@ -31,21 +31,26 @@ index e827ee211e3c65dc68ac5867fd8476639df63645..fa07b780ba33597b6bb8068c3c43e6a9
  
      implementation("org.ow2.asm:asm:9.4")
      implementation("org.ow2.asm:asm-commons:9.4")
-@@ -119,6 +120,8 @@ tasks.jar {
+@@ -106,6 +107,13 @@ val generateApiVersioningFile by tasks.registering {
+     }
+ }
  
- tasks.withType<Javadoc> {
-     val options = options as StandardJavadocDocletOptions
-+    options.addStringOption("-add-modules", "jdk.incubator.vector") // Pufferfish
-+    options.addStringOption("Xdoclint:none", "-quiet") // Pufferfish
-     options.overview = "src/main/javadoc/overview.html"
-     options.use()
-     options.isDocFilesSubDirs = true
++// Pufferfish Start
++tasks.withType<JavaCompile> {
++    val compilerArgs = options.compilerArgs
++    compilerArgs.add("--add-modules=jdk.incubator.vector")
++}
++// Pufferfish End
++
+ tasks.jar {
+     from(generateApiVersioningFile.map { it.outputs.files.singleFile }) {
+         into("META-INF/maven/${project.group}/${project.name}")
 diff --git a/src/main/java/gg/pufferfish/pufferfish/sentry/SentryContext.java b/src/main/java/gg/pufferfish/pufferfish/sentry/SentryContext.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..ff42019da93c365ea1365e2e0f7c51b196a10948
+index 0000000000000000000000000000000000000000..10310fdd53de28efb8a8250f6d3b0c8eb08fb68a
 --- /dev/null
 +++ b/src/main/java/gg/pufferfish/pufferfish/sentry/SentryContext.java
-@@ -0,0 +1,162 @@
+@@ -0,0 +1,161 @@
 +package gg.pufferfish.pufferfish.sentry;
 +
 +import com.google.gson.Gson;
@@ -61,7 +66,6 @@ index 0000000000000000000000000000000000000000..ff42019da93c365ea1365e2e0f7c51b1
 +import org.bukkit.event.player.PlayerEvent;
 +import org.bukkit.plugin.Plugin;
 +import org.bukkit.plugin.RegisteredListener;
-+import org.jetbrains.annotations.NotNull;
 +import org.jetbrains.annotations.Nullable;
 +
 +public class SentryContext {
@@ -94,7 +98,7 @@ index 0000000000000000000000000000000000000000..ff42019da93c365ea1365e2e0f7c51b1
 +		ThreadContext.remove("pufferfishsentry_playerid");
 +	}
 +	
-+	public static void setEventContext(@NotNull Event event, @NotNull RegisteredListener registration) {
++	public static void setEventContext(Event event, RegisteredListener registration) {
 +		setPluginContext(registration.getPlugin());
 +		
 +		try {
@@ -167,43 +171,43 @@ index 0000000000000000000000000000000000000000..ff42019da93c365ea1365e2e0f7c51b1
 +		private Event event;
 +		private RegisteredListener registeredListener;
 +		
-+		public @Nullable Plugin getPlugin() {
++		public Plugin getPlugin() {
 +			return plugin;
 +		}
 +		
-+		public void setPlugin(@Nullable Plugin plugin) {
++		public void setPlugin(Plugin plugin) {
 +			this.plugin = plugin;
 +		}
 +		
-+		public @Nullable Command getCommand() {
++		public Command getCommand() {
 +			return command;
 +		}
 +		
-+		public void setCommand(@Nullable Command command) {
++		public void setCommand(Command command) {
 +			this.command = command;
 +		}
 +		
-+		public @Nullable String getCommandLine() {
++		public String getCommandLine() {
 +			return commandLine;
 +		}
 +		
-+		public void setCommandLine(@Nullable String commandLine) {
++		public void setCommandLine(String commandLine) {
 +			this.commandLine = commandLine;
 +		}
 +		
-+		public @Nullable Event getEvent() {
++		public Event getEvent() {
 +			return event;
 +		}
 +		
-+		public void setEvent(@Nullable Event event) {
++		public void setEvent(Event event) {
 +			this.event = event;
 +		}
 +		
-+		public @Nullable RegisteredListener getRegisteredListener() {
++		public RegisteredListener getRegisteredListener() {
 +			return registeredListener;
 +		}
 +		
-+		public void setRegisteredListener(@Nullable RegisteredListener registeredListener) {
++		public void setRegisteredListener(RegisteredListener registeredListener) {
 +			this.registeredListener = registeredListener;
 +		}
 +	}
