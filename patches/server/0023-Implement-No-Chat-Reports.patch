@@ -3,6 +3,7 @@ From: AlphaKR93 <dev@alpha93.kr>
 Date: Thu, 28 Sep 2023 11:47:50 +0900
 Subject: [PATCH] Implement No Chat Reports
 
+Implemented: 62fbdef42dfbfec551d8324b7084c4ccf248bab7
 
 diff --git a/src/main/java/net/minecraft/network/FriendlyByteBuf.java b/src/main/java/net/minecraft/network/FriendlyByteBuf.java
 index 40f51062624161892c780ddae05e22859e2cd021..b0b515b8ebeffe25a760d7d6faa87cbc1a585b2d 100644
@@ -81,22 +82,22 @@ index 9d6db4a378036559efab91c8b7dcf2a6b0c2cce6..4d9f73add791cef03cc7aeaf1598a73c
      }
  }
 diff --git a/src/main/java/net/minecraft/server/dedicated/DedicatedServer.java b/src/main/java/net/minecraft/server/dedicated/DedicatedServer.java
-index 879c090d9c4574a2cd45a0eb1bf9cb171834d940..d6e8d96372d4212c72a50602207075ccd3f5062d 100644
+index 770b959d9e51ef0645415d5a0d7d79b7031abd66..82670c8bc74cbb208a91cec433498b823e86ce2e 100644
 --- a/src/main/java/net/minecraft/server/dedicated/DedicatedServer.java
 +++ b/src/main/java/net/minecraft/server/dedicated/DedicatedServer.java
-@@ -683,6 +683,7 @@ public class DedicatedServer extends MinecraftServer implements ServerInterface
+@@ -682,6 +682,7 @@ public class DedicatedServer extends MinecraftServer implements ServerInterface
+     @Override
      public boolean enforceSecureProfile() {
          DedicatedServerProperties dedicatedserverproperties = this.getProperties();
- 
 +        if (org.plazmamc.plazma.configurations.GlobalConfiguration.get().noChatReports.enabled) return false; // Plazma - Implement No Chat Reports
-         return dedicatedserverproperties.enforceSecureProfile && dedicatedserverproperties.onlineMode && this.services.profileKeySignatureValidator() != null;
-     }
- 
+         // Paper start - fix secure profile with proxy online mode
+         return dedicatedserverproperties.enforceSecureProfile
+             && io.papermc.paper.configuration.GlobalConfiguration.get().proxies.isProxyOnlineMode()
 diff --git a/src/main/java/net/minecraft/server/network/ServerCommonPacketListenerImpl.java b/src/main/java/net/minecraft/server/network/ServerCommonPacketListenerImpl.java
-index 6f6228edfe77668552a40a814ab3cebd74c4cb5a..22f26761965d3c03b109939585ff528d382eab21 100644
+index b19c59a87d4136da583a0b687f6b27fef3456f09..b54372c32845d2bc340951c0ea88d480efc1dd6a 100644
 --- a/src/main/java/net/minecraft/server/network/ServerCommonPacketListenerImpl.java
 +++ b/src/main/java/net/minecraft/server/network/ServerCommonPacketListenerImpl.java
-@@ -270,6 +270,13 @@ public abstract class ServerCommonPacketListenerImpl implements ServerCommonPack
+@@ -262,6 +262,13 @@ public abstract class ServerCommonPacketListenerImpl implements ServerCommonPack
      }
  
      public void send(Packet<?> packet, @Nullable PacketSendListener callbacks) {
@@ -111,10 +112,10 @@ index 6f6228edfe77668552a40a814ab3cebd74c4cb5a..22f26761965d3c03b109939585ff528d
          if (packet == null || this.processedDisconnect) { // Spigot
              return;
 diff --git a/src/main/java/net/minecraft/server/players/PlayerList.java b/src/main/java/net/minecraft/server/players/PlayerList.java
-index 58cc1bed851994fb591e9b832b98d25eda153b47..4fbe96813067d3ccf1d8f29151ac3fac0840d76f 100644
+index e8de78f8b7c90a719e10c483991f45a7886256be..0ff64fc50768a4bed9c871fed1089753912b89d2 100644
 --- a/src/main/java/net/minecraft/server/players/PlayerList.java
 +++ b/src/main/java/net/minecraft/server/players/PlayerList.java
-@@ -1471,6 +1471,7 @@ public abstract class PlayerList {
+@@ -1493,6 +1493,7 @@ public abstract class PlayerList {
      }
  
      public boolean verifyChatTrusted(PlayerChatMessage message) { // Paper - private -> public
@@ -123,14 +124,13 @@ index 58cc1bed851994fb591e9b832b98d25eda153b47..4fbe96813067d3ccf1d8f29151ac3fac
      }
  
 diff --git a/src/main/java/org/plazmamc/plazma/configurations/GlobalConfiguration.java b/src/main/java/org/plazmamc/plazma/configurations/GlobalConfiguration.java
-index 5a62bffe495002b3bbf5fd995df135c5d174458a..989aa0aeb05a878945849adc6fb6663027e15927 100644
+index ca4f71597118742f3fbbcae24f8a1b3389795996..deae4276dc876b14fa137e24b2d67ad43dea0c3c 100644
 --- a/src/main/java/org/plazmamc/plazma/configurations/GlobalConfiguration.java
 +++ b/src/main/java/org/plazmamc/plazma/configurations/GlobalConfiguration.java
 @@ -55,4 +55,22 @@ public class GlobalConfiguration extends ConfigurationPart {
-         public boolean notSecurePrefix = true;
  
      }
-+
+ 
 +    public NoChatReports noChatReports;
 +    public class NoChatReports extends ConfigurationPart {
 +
@@ -148,4 +148,5 @@ index 5a62bffe495002b3bbf5fd995df135c5d174458a..989aa0aeb05a878945849adc6fb66630
 +        }
 +
 +    }
++
  }

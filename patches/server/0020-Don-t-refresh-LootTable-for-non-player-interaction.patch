@@ -5,7 +5,7 @@ Subject: [PATCH] Don't refresh LootTable for non player interaction
 
 
 diff --git a/src/main/java/net/minecraft/world/level/block/entity/RandomizableContainerBlockEntity.java b/src/main/java/net/minecraft/world/level/block/entity/RandomizableContainerBlockEntity.java
-index 765ee7f78532a363813286ef7db2a7e48605cb06..6568aae5ac10b01ffe70ffc26d607fbb6413cbf8 100644
+index 02364a148b347e3669275553004391e31d77c0b5..cd2d3707c8e4a313ad15958b2f926be6e05bcd4d 100644
 --- a/src/main/java/net/minecraft/world/level/block/entity/RandomizableContainerBlockEntity.java
 +++ b/src/main/java/net/minecraft/world/level/block/entity/RandomizableContainerBlockEntity.java
 @@ -70,6 +70,7 @@ public abstract class RandomizableContainerBlockEntity extends BaseContainerBloc
@@ -13,26 +13,14 @@ index 765ee7f78532a363813286ef7db2a7e48605cb06..6568aae5ac10b01ffe70ffc26d607fbb
  
      public void unpackLootTable(@Nullable Player player) {
 +        if (player == null && org.plazmamc.plazma.configurations.GlobalConfiguration.get().misc.refreshLootTableForNonPlayerInteraction) return; // Plazma
-         if (this.lootableData.shouldReplenish(player) && this.level.getServer() != null) { // Paper
+         if (this.level != null && this.lootableData.shouldReplenish(player) && this.level.getServer() != null) { // Paper - don't unpack loot table if not in world
              LootTable lootTable = this.level.getServer().getLootData().getLootTable(this.lootTable);
              if (player instanceof ServerPlayer) {
-diff --git a/src/main/java/org/plazmamc/plazma/configurations/ChangedConfigurations.java b/src/main/java/org/plazmamc/plazma/configurations/ChangedConfigurations.java
-index 78e7583bca7570520264ff880cb112b52d708d5b..48096b0be09c6e99d22e0f3b330d2abf18903dce 100644
---- a/src/main/java/org/plazmamc/plazma/configurations/ChangedConfigurations.java
-+++ b/src/main/java/org/plazmamc/plazma/configurations/ChangedConfigurations.java
-@@ -19,6 +19,7 @@ interface ChangedConfigurations {
-     };
- 
-     Map<NodePath, String> MOVED_GLOBAL_PATH = new HashMap<>() {{
-+        put(path("misc", "do-not-trigger-loot-table-refresh-for-non-player-interaction"), "misc.refresh-loot-table-for-non-player-interaction");
-     }};
-     NodePath[] REMOVED_GLOBAL_PATH = {
-     };
 diff --git a/src/main/java/org/plazmamc/plazma/configurations/GlobalConfiguration.java b/src/main/java/org/plazmamc/plazma/configurations/GlobalConfiguration.java
-index 71da49901756e379d56a5f24c436a3782d2c230f..2ce8bcb92360f5c93494ccbb21133d980934cbc7 100644
+index 1b5be3caf97c260799abd7cadec35f776f8890e8..4e1780d7d6dda6cc38b7d7f7fb735a36352ffb28 100644
 --- a/src/main/java/org/plazmamc/plazma/configurations/GlobalConfiguration.java
 +++ b/src/main/java/org/plazmamc/plazma/configurations/GlobalConfiguration.java
-@@ -45,6 +45,7 @@ public class GlobalConfiguration extends ConfigurationPart {
+@@ -41,6 +41,7 @@ public class GlobalConfiguration extends ConfigurationPart {
  
          public boolean reduceRandom = OPTIMIZE;
          public boolean ignoreThreadSafeRandom = false;
