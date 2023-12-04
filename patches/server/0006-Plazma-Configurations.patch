@@ -259,7 +259,7 @@ index fa1c0aee8c3a4d0868482cf5c703bbfd08e09874..da05e8a339857daa96b062ee64d79655
 +     */ // Plazma
  }
 diff --git a/src/main/java/net/minecraft/server/MinecraftServer.java b/src/main/java/net/minecraft/server/MinecraftServer.java
-index b4d5bca6e3a39186a988098fb5d4cae97a776e79..8e5492bbdddb199bee021d79769ed2ee051128cf 100644
+index b4d5bca6e3a39186a988098fb5d4cae97a776e79..389322d3ca9b1f3789271936a7e6c60bd7c27893 100644
 --- a/src/main/java/net/minecraft/server/MinecraftServer.java
 +++ b/src/main/java/net/minecraft/server/MinecraftServer.java
 @@ -301,6 +301,7 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
@@ -278,6 +278,20 @@ index b4d5bca6e3a39186a988098fb5d4cae97a776e79..8e5492bbdddb199bee021d79769ed2ee
      }
  
      private void readScoreboard(DimensionDataStorage persistentStateManager) {
+@@ -2849,4 +2851,13 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
+         }
+     }
+     // Paper end - execute chunk tasks mid tick
++
++    // Plazma start
++    public static void setServer(MinecraftServer server) {
++        if (SERVER != null)
++            throw new UnsupportedOperationException("Cannot redefine singleton Server");
++
++        SERVER = server;
++    }
++    // Plazma end
+ }
 diff --git a/src/main/java/net/minecraft/server/Services.java b/src/main/java/net/minecraft/server/Services.java
 index a9b2c8cd4dcd3f884e4306bebee9334d3848fce5..261f61904d84455061af8d367b12903c7251a5cb 100644
 --- a/src/main/java/net/minecraft/server/Services.java
@@ -351,6 +365,19 @@ index 1c8724fb56e790922c7e8fc73bc97442b7a6df83..e46207a250a5456589da06fd5fad2a38
          this.pvpMode = minecraftserver.isPvpAllowed();
          this.convertable = convertable_conversionsession;
          this.uuid = WorldUUID.getUUID(convertable_conversionsession.levelDirectory.path().toFile());
+diff --git a/src/main/java/net/minecraft/world/item/ItemStack.java b/src/main/java/net/minecraft/world/item/ItemStack.java
+index 2776b124dd15e4c84edcfbf98ba44d53ef149e43..0ee4bd3a7faa0ca7ab3b5ecdbe90c2e6729a8fc9 100644
+--- a/src/main/java/net/minecraft/world/item/ItemStack.java
++++ b/src/main/java/net/minecraft/world/item/ItemStack.java
+@@ -247,7 +247,7 @@ public final class ItemStack {
+         if (0 < version && version < CraftMagicNumbers.INSTANCE.getDataVersion() && MinecraftServer.getServer() != null) { // Paper - skip conversion if the server doesn't exist (for tests)
+             CompoundTag savedStack = new CompoundTag();
+             this.save(savedStack);
+-            savedStack = (CompoundTag) MinecraftServer.getServer().fixerUpper.update(References.ITEM_STACK, new Dynamic(NbtOps.INSTANCE, savedStack), version, CraftMagicNumbers.INSTANCE.getDataVersion()).getValue();
++            savedStack = (CompoundTag) MinecraftServer.getServer().getFixerUpper().update(References.ITEM_STACK, new Dynamic(NbtOps.INSTANCE, savedStack), version, CraftMagicNumbers.INSTANCE.getDataVersion()).getValue(); // Plazma - Fix test
+             this.load(savedStack);
+         }
+     }
 diff --git a/src/main/java/net/minecraft/world/level/Level.java b/src/main/java/net/minecraft/world/level/Level.java
 index 36a1ac09bec7b4139d1cd44e6ecda72fc30fa8c4..af4eb54d99b67d059534e5e55e952aa41bb87bc7 100644
 --- a/src/main/java/net/minecraft/world/level/Level.java
@@ -1059,6 +1086,32 @@ index 6dd31027808cd309b6ee5ece9fe73d251c03b7cf..a5880e8697bade842a599f3b7b03a835
  
          CraftRegistry.setMinecraftRegistry(REGISTRY_CUSTOM);
  
+diff --git a/src/test/java/org/bukkit/support/DummyServer.java b/src/test/java/org/bukkit/support/DummyServer.java
+index c20d5ed12efed109f3702a994188ac4af66c8b9a..dd5c15f4969f15a5eeef1fa068be5643197504be 100644
+--- a/src/test/java/org/bukkit/support/DummyServer.java
++++ b/src/test/java/org/bukkit/support/DummyServer.java
+@@ -2,6 +2,7 @@ package org.bukkit.support;
+ 
+ import static org.mockito.Mockito.*;
+ import java.util.logging.Logger;
++import net.minecraft.server.MinecraftServer;
+ import org.bukkit.Bukkit;
+ import org.bukkit.Material;
+ import org.bukkit.Server;
+@@ -47,6 +48,13 @@ public final class DummyServer {
+             when(instance.getTag(anyString(), any(org.bukkit.NamespacedKey.class), any())).thenAnswer(ignored -> new io.papermc.paper.util.EmptyTag());
+             // paper end - testing additions
+ 
++            // Plazma start - Fix tests
++            net.minecraft.server.MinecraftServer handle = mock(withSettings().stubOnly());
++            when(handle.random()).thenReturn(net.minecraft.util.RandomSource.create());
++            when(handle.getFixerUpper()).thenReturn(net.minecraft.util.datafix.DataFixers.getDataFixer());
++            MinecraftServer.setServer(handle);
++            // Plazma end
++
+             Bukkit.setServer(instance);
+         } catch (Throwable t) {
+             throw new Error(t);
 diff --git a/src/test/java/org/plazmamc/plazma/configurations/GlobalConfigurationTestingBase.java b/src/test/java/org/plazmamc/plazma/configurations/GlobalConfigurationTestingBase.java
 new file mode 100644
 index 0000000000000000000000000000000000000000..c63942e2dc00ed6d6b4119f418bdaa5a64b4c0fe
