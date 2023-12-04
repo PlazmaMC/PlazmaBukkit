@@ -1,29 +1,33 @@
 From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
 From: AlphaKR93 <dev@alpha93.kr>
-Date: Tue, 7 Nov 2023 15:59:07 +0900
+Date: Mon, 4 Dec 2023 23:19:46 +0900
 Subject: [PATCH] Optimize spigot event bus
 
 
 diff --git a/src/main/java/io/papermc/paper/plugin/manager/PaperEventManager.java b/src/main/java/io/papermc/paper/plugin/manager/PaperEventManager.java
-index fb4135cb5d9e4162336c43d3b61c9d9a175a4dd5..b0ea2013433429cb0ae0314d8c483e4536a8d04f 100644
+index 23594fb7eb4b2f33146592866608c2858ef23937..94eecf374f1e6b00556a380fd28376f720d61e8e 100644
 --- a/src/main/java/io/papermc/paper/plugin/manager/PaperEventManager.java
 +++ b/src/main/java/io/papermc/paper/plugin/manager/PaperEventManager.java
-@@ -40,13 +40,15 @@ class PaperEventManager {
-         HandlerList handlers = event.getHandlers();
-         RegisteredListener[] listeners = handlers.getRegisteredListeners();
+@@ -39,12 +39,19 @@ class PaperEventManager {
+         // Plazma start - Skip event if no listeners
+         RegisteredListener[] listeners = event.getHandlers().getRegisteredListeners();
          if (listeners.length == 0) return;
 -        // Plazma end
- 
 -        if (event.isAsynchronous() && this.server.isPrimaryThread()) {
 -            throw new IllegalStateException(event.getEventName() + " may only be triggered asynchronously.");
 -        } else if (!event.isAsynchronous() && !this.server.isPrimaryThread() && !this.server.isStopping()) {
 -            throw new IllegalStateException(event.getEventName() + " may only be triggered synchronously.");
++
 +        // Optimize Spigot event bus
 +        if (event.asynchronous() == net.kyori.adventure.util.TriState.NOT_SET) {
-+            final boolean async = event.isAsynchronous();
-+            final boolean primary = this.server.isPrimaryThread();
-+            if (async && primary) throw new IllegalStateException(event.getEventName() + " may only be triggered asynchronously.");
-+            if (!async && !primary && !this.server.isStopping()) throw new IllegalStateException(event.getEventName() + " may only be triggered synchronously.");
++            boolean async = event.isAsynchronous();
++            boolean primary = this.server.isPrimaryThread();
++
++            if (async && primary)
++                throw new IllegalStateException(event.getEventName() + " may only be triggered asynchronously.");
++
++            if (!async && !primary && !this.server.isStopping())
++                throw new IllegalStateException(event.getEventName() + " may only be triggered synchronously.");
          }
 +        // Plazma end
  

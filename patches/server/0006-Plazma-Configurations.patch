@@ -686,10 +686,10 @@ index 0000000000000000000000000000000000000000..b6664ba0fce55f5cfa0c8d3051dc8c2b
 +}
 diff --git a/src/main/java/org/plazmamc/plazma/configurations/GlobalConfiguration.java b/src/main/java/org/plazmamc/plazma/configurations/GlobalConfiguration.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..37dfa58c0fa2b3c3a419cfdb96c4d1c84bdbde25
+index 0000000000000000000000000000000000000000..69c4d9cb0532621018f6cd99916c409fc150ab7e
 --- /dev/null
 +++ b/src/main/java/org/plazmamc/plazma/configurations/GlobalConfiguration.java
-@@ -0,0 +1,25 @@
+@@ -0,0 +1,26 @@
 +package org.plazmamc.plazma.configurations;
 +
 +import io.papermc.paper.configuration.Configuration;
@@ -702,6 +702,7 @@ index 0000000000000000000000000000000000000000..37dfa58c0fa2b3c3a419cfdb96c4d1c8
 +
 +    private static GlobalConfiguration INSTANCE;
 +    static final int VERSION = 2;
++    static final boolean OPTIMIZE = org.plazmamc.plazma.configurations.PlazmaConfigurations.optimize();
 +
 +    public static GlobalConfiguration get() {
 +        return INSTANCE;
@@ -717,7 +718,7 @@ index 0000000000000000000000000000000000000000..37dfa58c0fa2b3c3a419cfdb96c4d1c8
 +}
 diff --git a/src/main/java/org/plazmamc/plazma/configurations/PlazmaConfigurations.java b/src/main/java/org/plazmamc/plazma/configurations/PlazmaConfigurations.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..5698cca650d35d697c02247f378da3156049a6e9
+index 0000000000000000000000000000000000000000..8a22550e19cc3ec00b1db85af5685b75674d3594
 --- /dev/null
 +++ b/src/main/java/org/plazmamc/plazma/configurations/PlazmaConfigurations.java
 @@ -0,0 +1,278 @@
@@ -883,7 +884,7 @@ index 0000000000000000000000000000000000000000..5698cca650d35d697c02247f378da315
 +    protected void applyGlobalConfigTransformations(final ConfigurationNode node) throws ConfigurateException {
 +        ConfigurationTransformation.Builder builder = ConfigurationTransformation.builder();
 +
-+        for (NodePath path : RemovedConfigurations.REMOVED_GLOBAL_PATH)
++        for (NodePath path : RemovedConfigurations.GLOBAL_PATHS)
 +            builder.addAction(path, TransformAction.remove());
 +
 +        builder.build().apply(node);
@@ -950,7 +951,7 @@ index 0000000000000000000000000000000000000000..5698cca650d35d697c02247f378da315
 +            version.raw(WorldConfigurations.VERSION);
 +        }
 +
-+        for (NodePath path : RemovedConfigurations.REMOVED_WORLD_PATHS)
++        for (NodePath path : RemovedConfigurations.WORLD_PATHS)
 +            builder.addAction(path, TransformAction.remove());
 +
 +        builder.build().apply(node);
@@ -1001,7 +1002,7 @@ index 0000000000000000000000000000000000000000..5698cca650d35d697c02247f378da315
 +}
 diff --git a/src/main/java/org/plazmamc/plazma/configurations/RemovedConfigurations.java b/src/main/java/org/plazmamc/plazma/configurations/RemovedConfigurations.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..9ee49ab311f4052df76648b90e4179833924658e
+index 0000000000000000000000000000000000000000..25c0f5d28107b45677aa7b19bc0d5238512d9826
 --- /dev/null
 +++ b/src/main/java/org/plazmamc/plazma/configurations/RemovedConfigurations.java
 @@ -0,0 +1,13 @@
@@ -1011,19 +1012,19 @@ index 0000000000000000000000000000000000000000..9ee49ab311f4052df76648b90e417983
 +
 +interface RemovedConfigurations {
 +
-+    NodePath[] REMOVED_WORLD_PATHS = {
++    NodePath[] WORLD_PATHS = {
 +    };
 +
-+    NodePath[] REMOVED_GLOBAL_PATH = {
++    NodePath[] GLOBAL_PATHS = {
 +    };
 +
 +}
 diff --git a/src/main/java/org/plazmamc/plazma/configurations/WorldConfigurations.java b/src/main/java/org/plazmamc/plazma/configurations/WorldConfigurations.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..fcdd21f96240baa1dc19ea1279c1dd02fc64c468
+index 0000000000000000000000000000000000000000..842fb520a2d638aaa5bd0a7198190dbe3ecbe14c
 --- /dev/null
 +++ b/src/main/java/org/plazmamc/plazma/configurations/WorldConfigurations.java
-@@ -0,0 +1,21 @@
+@@ -0,0 +1,22 @@
 +package org.plazmamc.plazma.configurations;
 +
 +import io.papermc.paper.configuration.Configuration;
@@ -1035,6 +1036,7 @@ index 0000000000000000000000000000000000000000..fcdd21f96240baa1dc19ea1279c1dd02
 +public class WorldConfigurations extends ConfigurationPart {
 +
 +    static final int VERSION = 2;
++    static final boolean OPTIMIZE = org.plazmamc.plazma.configurations.PlazmaConfigurations.optimize();
 +
 +    private transient final ResourceLocation worldKey;
 +    public WorldConfigurations(ResourceLocation worldKey) {

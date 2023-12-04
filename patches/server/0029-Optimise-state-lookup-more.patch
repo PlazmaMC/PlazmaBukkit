@@ -1,6 +1,6 @@
 From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
 From: AlphaKR93 <dev@alpha93.kr>
-Date: Tue, 7 Nov 2023 15:47:45 +0900
+Date: Mon, 4 Dec 2023 23:12:47 +0900
 Subject: [PATCH] Optimise state lookup more
 
 
@@ -17,29 +17,32 @@ index 57d0cd3ad6f972e986c72a57f1a6e36003f190c2..50d97c5ab33f33b81dbafd7cf42da5af
  
      public ZeroCollidingReferenceStateTable(final StateHolder<?, ?> state, final Map<Property<?>, Comparable<?>> this_map) {
 diff --git a/src/main/java/net/minecraft/world/level/block/state/StateHolder.java b/src/main/java/net/minecraft/world/level/block/state/StateHolder.java
-index 5f285d190186a2ff5a61d05070593e1d633dd79a..25a2d70ce34fe57dc3838d4351ac88794acb7109 100644
+index 5f285d190186a2ff5a61d05070593e1d633dd79a..669c42f1598e2a06bb0b95aa0bc413911346f3ff 100644
 --- a/src/main/java/net/minecraft/world/level/block/state/StateHolder.java
 +++ b/src/main/java/net/minecraft/world/level/block/state/StateHolder.java
-@@ -114,6 +114,13 @@ public abstract class StateHolder<O, S> {
+@@ -114,6 +114,12 @@ public abstract class StateHolder<O, S> {
      }
  
      public <T extends Comparable<T>, V extends T> S trySetValue(Property<T> property, V value) {
 +        // Plazma start - Optimise state lookup more
-+        if (true) {
-+            final S ret = (S) this.optimisedTable.get(property, value);
-+            if (ret == null) throw new IllegalArgumentException("Cannot set property " + property + " to " + value + " on " + this.owner + ", it is not an allowed value");
-+            return ret;
-+        }
++        final S ret = (S) this.optimisedTable.get(property, value);
++        if (ret == null) throw new IllegalArgumentException("Cannot set property " + property + " to " + value + " on " + this.owner + ", it is not an allowed value");
++        return ret;
++        /*
 +        // Plazma end
          Comparable<?> comparable = this.values.get(property);
          if (comparable != null && !comparable.equals(value)) {
              S object = this.neighbours.get(property, value);
-@@ -128,7 +135,7 @@ public abstract class StateHolder<O, S> {
+@@ -125,10 +131,11 @@ public abstract class StateHolder<O, S> {
+         } else {
+             return (S)this;
+         }
++         */ // Plazma - Optimise state lookup more
      }
  
      public void populateNeighbours(Map<Map<Property<?>, Comparable<?>>, S> states) {
 -        if (this.neighbours != null) {
-+        if (this.optimisedTable.index_table() != null) { // Plazma - Optimise state holder more
++        if (this.optimisedTable.index_table() != null) { // Plazma - optimise state lookup
              throw new IllegalStateException();
          } else {
              Table<Property<?>, Comparable<?>, S> table = HashBasedTable.create();
