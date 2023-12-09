@@ -30,7 +30,7 @@ jobs:
           repository: PlazmaMC/Javadocs
           path: javadoc
           ref: main
-          token: ${{ secrets.GH_PAT }}
+          token: $GITHUB_TOKEN
 
       - name: Validate Gradle Wrapper
         uses: gradle/wrapper-validation-action@v1
@@ -38,7 +38,7 @@ jobs:
       - name: Set up GraalVM ${{ matrix.base_jdk }}
         uses: graalvm/setup-graalvm@v1
         with:
-          github-token: ${{ secrets.GH_PAT }}
+          github-token: $GITHUB_TOKEN
           java-version: ${{ matrix.base_jdk }}
           version: latest
           cache: 'gradle'
@@ -71,7 +71,7 @@ jobs:
         if: github.ref_name == env.MAIN_BRANCH
         run: |
           export GITHUB_USERNAME=${{ env.ORG_NAME }}
-          export GITHUB_TOKEN=${{ secrets.GH_PAT }}
+          export GITHUB_TOKEN=$GITHUB_TOKEN
           ./gradlew publish --stacktrace
 
       - name: Upload Artifacts
@@ -93,7 +93,7 @@ jobs:
         with:
           title: "Release #${{ env.RELEASE }}"
           automatic_release_tag: release-${{ env.RELEASE }}
-          repo_token: "${{ secrets.GH_PAT }}"
+          repo_token: "$GITHUB_TOKEN"
           files: build/libs/*.jar
           prerelease: false
           
@@ -103,7 +103,7 @@ jobs:
         with:
           title: "Release #${{ env.RELEASE }}"
           automatic_release_tag: latest-${{ env.MC_VERSION }}
-          repo_token: "${{ secrets.GH_PAT }}"
+          repo_token: "$GITHUB_TOKEN"
           files: build/libs/*.jar
           prerelease: false
 
@@ -113,6 +113,6 @@ jobs:
         with:
           title: "Development build for ${{ env.MC_VERSION }}"
           automatic_release_tag: dev-${{ env.MC_VERSION }}
-          repo_token: "${{ secrets.GH_PAT }}"
+          repo_token: "$GITHUB_TOKEN"
           files: build/libs/*.jar
           prerelease: true
