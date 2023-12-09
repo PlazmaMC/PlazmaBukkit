@@ -30,7 +30,7 @@ jobs:
           repository: PlazmaMC/Javadocs
           path: javadoc
           ref: main
-          token: $GITHUB_TOKEN
+          token: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Validate Gradle Wrapper
         uses: gradle/wrapper-validation-action@v1
@@ -38,7 +38,7 @@ jobs:
       - name: Set up GraalVM ${{ matrix.base_jdk }}
         uses: graalvm/setup-graalvm@v1
         with:
-          github-token: $GITHUB_TOKEN
+          github-token: ${{ secrets.GITHUB_TOKEN }}
           java-version: ${{ matrix.base_jdk }}
           version: latest
           cache: 'gradle'
@@ -71,7 +71,7 @@ jobs:
         if: github.ref_name == env.MAIN_BRANCH
         run: |
           export GITHUB_USERNAME=${{ env.ORG_NAME }}
-          export GITHUB_TOKEN=$GITHUB_TOKEN
+          export GITHUB_TOKEN=${{ secrets.GITHUB_TOKEN }}
           ./gradlew publish --stacktrace
 
       - name: Upload Artifacts
@@ -85,34 +85,37 @@ jobs:
       
       - name: Get Release Number
         if: startsWith(github.ref_name, 'ver/')
-        run: echo "RELEASE=$(git ls-remote --tags origin | grep "release" | wc -l)" >> $GITHUB_ENV
+        run: echo "RELEASE=$(git ls-remote --tags origin | grep "build/${{ env.MC_VERSION }}" | wc -l)" >> $GITHUB_ENV
 
       - name: Release Artifacts
         if: startsWith(github.ref_name, 'ver/')
-        uses: marvinpinto/action-automatic-releases@latest
+        uses: softprops/action-gh-release@latest
         with:
-          title: "Release #${{ env.RELEASE }}"
-          automatic_release_tag: release-${{ env.RELEASE }}
-          repo_token: "$GITHUB_TOKEN"
+          name: "Build #${{ env.RELEASE }} for ${{ env.MC_VERSION }}"
+          tag_name: build/${{ env.MC_VERSION }}/${{ env.RELEASE }}
+          target_commitish: ${{ github.ref_name }}
+          generate_release_notes: true
+          fail_on_unmatched_files: true
           files: build/libs/*.jar
-          prerelease: false
           
       - name: Release Artifacts (Latest/Stable)
         if: startsWith(github.ref_name, 'ver/')
-        uses: marvinpinto/action-automatic-releases@latest
+        uses: softprops/action-gh-release@latest
         with:
-          title: "Release #${{ env.RELEASE }}"
-          automatic_release_tag: latest-${{ env.MC_VERSION }}
-          repo_token: "$GITHUB_TOKEN"
+          name: "Build #${{ env.RELEASE }} for ${{ env.MC_VERSION }}"
+          tag_name: build/${{ env.MC_VERSION }}/latest
+          target_commitish: ${{ github.ref_name }}
+          generate_release_notes: true
+          fail_on_unmatched_files: true
           files: build/libs/*.jar
-          prerelease: false
 
       - name: Release Artifacts (Latest/Development)
         if: startsWith(github.ref_name, 'dev/')
-        uses: marvinpinto/action-automatic-releases@latest
+        uses: softprops/action-gh-release@latest
         with:
-          title: "Development build for ${{ env.MC_VERSION }}"
-          automatic_release_tag: dev-${{ env.MC_VERSION }}
-          repo_token: "$GITHUB_TOKEN"
+          name: "Development Build for ${{ env.MC_VERSION }}"
+          tag_name: build/${{ env.MC_VERSION }}/latest
+          target_commitish: ${{ github.ref_name }}
+          generate_release_notes: true
+          fail_on_unmatched_files: true
           files: build/libs/*.jar
-          prerelease: true
