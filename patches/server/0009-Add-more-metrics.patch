@@ -1,18 +1,18 @@
 From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
 From: AlphaKR93 <dev@alpha93.kr>
-Date: Wed, 27 Sep 2023 16:02:29 +0900
+Date: Sun, 5 Nov 2023 10:26:26 +0900
 Subject: [PATCH] Add more metrics
 
 
 diff --git a/src/main/java/com/destroystokyo/paper/Metrics.java b/src/main/java/com/destroystokyo/paper/Metrics.java
-index 7d80d2cf5d607d6051e99e4b08bc1b76098a79da..fa88d48adc3aefcd823f431f099e46c94fd071a1 100644
+index 7d80d2cf5d607d6051e99e4b08bc1b76098a79da..f006c867ad0765e0f52a629729ab131acec5c2fc 100644
 --- a/src/main/java/com/destroystokyo/paper/Metrics.java
 +++ b/src/main/java/com/destroystokyo/paper/Metrics.java
-@@ -636,16 +636,51 @@ public class Metrics {
+@@ -636,16 +636,52 @@ public class Metrics {
                      return map;
                  }));
  
-+                // Plazma start - Add more metrics
++                // Plazma start
 +                metrics.addCustomChart(new DrilldownPie("datapacks", () -> {
 +                    int datapacks = Bukkit.getDatapackManager().getEnabledPacks().size();
 +                    Map<String, Integer> entry = Collections.singletonMap(String.valueOf(datapacks), 1);
@@ -22,7 +22,7 @@ index 7d80d2cf5d607d6051e99e4b08bc1b76098a79da..fa88d48adc3aefcd823f431f099e46c9
 +                    else if (datapacks <= 10) return Collections.singletonMap("6-10", entry);
 +                    else if (datapacks <= 25) return Collections.singletonMap("11-25", entry);
 +                    else if (datapacks <= 50) return Collections.singletonMap("26-50", entry);
-+                    return Collections.singletonMap("50+", entry);
++                    else return Collections.singletonMap("50+", entry);
 +                }));
 +
 +                List<Plugin> plugins = Arrays.stream(Bukkit.getPluginManager().getPlugins()).toList();
@@ -36,19 +36,20 @@ index 7d80d2cf5d607d6051e99e4b08bc1b76098a79da..fa88d48adc3aefcd823f431f099e46c9
 +                    else if (pluginCount <= 10) return Collections.singletonMap("6-10", entry);
 +                    else if (pluginCount <= 25) return Collections.singletonMap("11-25", entry);
 +                    else if (pluginCount <= 50) return Collections.singletonMap("26-50", entry);
-+                    return Collections.singletonMap("50+", entry);
++                    else return Collections.singletonMap("50+", entry);
 +                }));
 +
 +                metrics.addCustomChart(new DrilldownPie("disabled_plugins", () -> {
 +                    int disabled = (int) plugins.stream().filter(java.util.function.Predicate.not(Plugin::isEnabled)).count();
 +                    Map<String, Integer> entry = Collections.singletonMap(String.valueOf(disabled), 1);
 +
-+                    if (disabled == 0) return Collections.singletonMap("0 \uD83D\uDE0E", entry);
++                    if (disabled == 0) return Collections.singletonMap("0 \uD83D\uDE0E", entry); // :sunglasses:
 +                    else if (disabled <= 5) return Collections.singletonMap("1-5", entry);
 +                    else if (disabled <= 10) return Collections.singletonMap("6-10", entry);
 +                    else if (disabled <= 25) return Collections.singletonMap("11-25", entry);
 +                    else if (disabled <= 50) return Collections.singletonMap("26-50", entry);
-+                    return Collections.singletonMap("50+ \uD83D\uDE2D", entry);
++                    else if (disabled <= 100) return Collections.singletonMap("50-100 \uD83D\uDE2D", entry); // :cry:
++                    else return Collections.singletonMap("101+ \uD83D\uDC80", entry); // :skull:
 +                }));
 +                // Plazma end
 +

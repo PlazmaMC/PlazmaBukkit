@@ -1,0 +1,31 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: AlphaKR93 <dev@alpha93.kr>
+Date: Sun, 5 Nov 2023 12:16:14 +0900
+Subject: [PATCH] Add option to disable moved to quickly check for specific
+ players
+
+
+diff --git a/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java b/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
+index a7e82f95db5c6c054175192f019072006a3ef31f..21def42f813f00c9fbc9c920b9ba61efc5928ef6 100644
+--- a/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
++++ b/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
+@@ -1439,6 +1439,7 @@ public class ServerGamePacketListenerImpl extends ServerCommonPacketListenerImpl
+                             if (!this.player.isChangingDimension() && (!this.player.level().getGameRules().getBoolean(GameRules.RULE_DISABLE_ELYTRA_MOVEMENT_CHECK) || !this.player.isFallFlying())) {
+                                 float f2 = this.player.isFallFlying() ? 300.0F : 100.0F;
+ 
++                                if (!this.player.getBukkitEntity().hasPermission("plazma.bypass-moved-to-quickly-check") || !(org.plazmamc.plazma.configurations.GlobalConfiguration.get().player.checkSpectatorMovedToQuickly && this.player.isSpectator())) // Plazma
+                                 if (d10 - d9 > Math.max(f2, Math.pow((double) (org.spigotmc.SpigotConfig.movedTooQuicklyMultiplier * (float) i * speed), 2)) && !this.isSingleplayerOwner()) {
+                                 // CraftBukkit end
+                                     // Paper start - Add fail move event
+diff --git a/src/main/java/org/plazmamc/plazma/configurations/GlobalConfiguration.java b/src/main/java/org/plazmamc/plazma/configurations/GlobalConfiguration.java
+index c687f448761a591900ae5ebad9c8dfca572e9b31..f3cf7634a5fd470e7fb295ae1f88e14f0c4a0d1d 100644
+--- a/src/main/java/org/plazmamc/plazma/configurations/GlobalConfiguration.java
++++ b/src/main/java/org/plazmamc/plazma/configurations/GlobalConfiguration.java
+@@ -27,6 +27,7 @@ public class GlobalConfiguration extends ConfigurationPart {
+     public class Player extends ConfigurationPart {
+ 
+         public boolean allowAnyUsername = false;
++        public boolean checkSpectatorMovedToQuickly = !OPTIMIZE;
+ 
+     }
+ 

@@ -1,0 +1,34 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: AlphaKR93 <dev@alpha93.kr>
+Date: Mon, 6 Nov 2023 11:36:08 +0900
+Subject: [PATCH] Configurable entity sensor tick
+
+
+diff --git a/src/main/java/net/minecraft/world/entity/Mob.java b/src/main/java/net/minecraft/world/entity/Mob.java
+index aeae6117b398b84d5c8ecaa175a72867416ff166..c9df97eebe3635009737be83a28f36d291fcce79 100644
+--- a/src/main/java/net/minecraft/world/entity/Mob.java
++++ b/src/main/java/net/minecraft/world/entity/Mob.java
+@@ -936,10 +936,10 @@ public abstract class Mob extends LivingEntity implements Targeting {
+         }
+         // Paper end
+         //this.level().getProfiler().push("sensing"); // Purpur
+-        this.sensing.tick();
+         //this.level().getProfiler().pop(); // Purpur
+         int i = this.level().getServer().getTickCount() + this.getId();
+ 
++        if (i % this.level().plazmaConfig().entity.sensorTick == 0) this.sensing.tick(); // Plazma - Configurable entity sensor tick
+         if (i % 2 != 0 && this.tickCount > 1) {
+             //this.level().getProfiler().push("targetSelector"); // Purpur
+             if (this.targetSelector.inactiveTick(this.activatedPriority, false)) // Pufferfish - use this to alternate ticking
+diff --git a/src/main/java/org/plazmamc/plazma/configurations/WorldConfigurations.java b/src/main/java/org/plazmamc/plazma/configurations/WorldConfigurations.java
+index 909a74c19501d9440f3d2435b6514d738efcfc05..b036b54d551c892cc48d0a6816382bce5e38efd4 100644
+--- a/src/main/java/org/plazmamc/plazma/configurations/WorldConfigurations.java
++++ b/src/main/java/org/plazmamc/plazma/configurations/WorldConfigurations.java
+@@ -30,6 +30,7 @@ public class WorldConfigurations extends ConfigurationPart {
+     public class Entity extends ConfigurationPart {
+ 
+         public boolean ignoreUselessPackets = OPTIMIZE;
++        public int sensorTick = 1;
+ 
+         public Phantom phantom;
+         public class Phantom extends ConfigurationPart {

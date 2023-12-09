@@ -5,7 +5,7 @@ Subject: [PATCH] Ignore useless entity packets
 
 
 diff --git a/src/main/java/net/minecraft/server/level/ServerEntity.java b/src/main/java/net/minecraft/server/level/ServerEntity.java
-index c6d80accdac49564b5386717a92dbd5a10237f06..ddbff17499746cd370fdf18ff78606b0ac770df4 100644
+index c6ef510d335b8baea58c4491853414a52a06b66b..e2dcdc9f317a4ab1a9b30e482607dc041abb7035 100644
 --- a/src/main/java/net/minecraft/server/level/ServerEntity.java
 +++ b/src/main/java/net/minecraft/server/level/ServerEntity.java
 @@ -200,6 +200,8 @@ public class ServerEntity {
@@ -13,7 +13,7 @@ index c6d80accdac49564b5386717a92dbd5a10237f06..ddbff17499746cd370fdf18ff78606b0
                          flag5 = true;
                      }
 +
-+                    if (this.entity.level().plazmaLevelConfiguration().entity.ignoreUselessPackets && isUselessPacket(packet1)) packet1 = null; // Plazma
++                    if (this.level.plazmaConfig().entity.ignoreUselessPackets && isUselessPacket(packet1)) packet1 = null; // Plazma
                  }
  
                  if ((this.trackDelta || this.entity.hasImpulse || this.entity instanceof LivingEntity && ((LivingEntity) this.entity).isFallFlying()) && this.tickCount > 0) {
@@ -37,16 +37,16 @@ index c6d80accdac49564b5386717a92dbd5a10237f06..ddbff17499746cd370fdf18ff78606b0
      public void removePairing(ServerPlayer player) {
          this.entity.stopSeenByPlayer(player);
          player.connection.send(new ClientboundRemoveEntitiesPacket(new int[]{this.entity.getId()}));
-diff --git a/src/main/java/org/plazmamc/plazma/configurations/LevelConfigurations.java b/src/main/java/org/plazmamc/plazma/configurations/LevelConfigurations.java
-index 414baade911fab3450430af9378feedc419868f3..914cc4f9a5598d2d70c7338d7cfc9be0fe5f0e31 100644
---- a/src/main/java/org/plazmamc/plazma/configurations/LevelConfigurations.java
-+++ b/src/main/java/org/plazmamc/plazma/configurations/LevelConfigurations.java
-@@ -33,6 +33,8 @@ public class LevelConfigurations extends ConfigurationPart {
+diff --git a/src/main/java/org/plazmamc/plazma/configurations/WorldConfigurations.java b/src/main/java/org/plazmamc/plazma/configurations/WorldConfigurations.java
+index 036c0b12553ae203e8c73d44dc2e3d625b812af5..909a74c19501d9440f3d2435b6514d738efcfc05 100644
+--- a/src/main/java/org/plazmamc/plazma/configurations/WorldConfigurations.java
++++ b/src/main/java/org/plazmamc/plazma/configurations/WorldConfigurations.java
+@@ -29,6 +29,8 @@ public class WorldConfigurations extends ConfigurationPart {
      public Entity entity;
      public class Entity extends ConfigurationPart {
  
-+        public boolean ignoreUselessPackets = DO_OPTIMIZE;
++        public boolean ignoreUselessPackets = OPTIMIZE;
 +
-         public Player player;
-         public class Player extends ConfigurationPart {
+         public Phantom phantom;
+         public class Phantom extends ConfigurationPart {
  

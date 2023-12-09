@@ -1,30 +1,30 @@
 From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
 From: AlphaKR93 <dev@alpha93.kr>
-Date: Wed, 27 Sep 2023 22:15:39 +0900
+Date: Sun, 5 Nov 2023 12:03:06 +0900
 Subject: [PATCH] Don't refresh LootTable for non player interaction
 
 
 diff --git a/src/main/java/net/minecraft/world/level/block/entity/RandomizableContainerBlockEntity.java b/src/main/java/net/minecraft/world/level/block/entity/RandomizableContainerBlockEntity.java
-index 081691f9710ff1115e4308f79ed49fbc38941193..79a27755534384ab94e79e422c0a5e9ccecacd8c 100644
+index 02364a148b347e3669275553004391e31d77c0b5..cd2d3707c8e4a313ad15958b2f926be6e05bcd4d 100644
 --- a/src/main/java/net/minecraft/world/level/block/entity/RandomizableContainerBlockEntity.java
 +++ b/src/main/java/net/minecraft/world/level/block/entity/RandomizableContainerBlockEntity.java
 @@ -70,6 +70,7 @@ public abstract class RandomizableContainerBlockEntity extends BaseContainerBloc
      }
  
      public void unpackLootTable(@Nullable Player player) {
-+        if (org.plazmamc.plazma.configurations.GlobalConfiguration.get().misc.dontRefreshLootTableForNonPlayerInteraction && player == null) return; // Plazma
-         if (this.lootableData.shouldReplenish(player) && this.level.getServer() != null) { // Paper
++        if (player == null && org.plazmamc.plazma.configurations.GlobalConfiguration.get().misc.refreshLootTableForNonPlayerInteraction) return; // Plazma
+         if (this.level != null && this.lootableData.shouldReplenish(player) && this.level.getServer() != null) { // Paper - don't unpack loot table if not in world
              LootTable lootTable = this.level.getServer().getLootData().getLootTable(this.lootTable);
              if (player instanceof ServerPlayer) {
 diff --git a/src/main/java/org/plazmamc/plazma/configurations/GlobalConfiguration.java b/src/main/java/org/plazmamc/plazma/configurations/GlobalConfiguration.java
-index 9e26e598d7c381368de422ab0c3cc7936e3bbb6d..5a62bffe495002b3bbf5fd995df135c5d174458a 100644
+index d88208cb454d1042440803c817d99c5dcb775330..c687f448761a591900ae5ebad9c8dfca572e9b31 100644
 --- a/src/main/java/org/plazmamc/plazma/configurations/GlobalConfiguration.java
 +++ b/src/main/java/org/plazmamc/plazma/configurations/GlobalConfiguration.java
-@@ -36,6 +36,7 @@ public class GlobalConfiguration extends ConfigurationPart {
+@@ -42,6 +42,7 @@ public class GlobalConfiguration extends ConfigurationPart {
  
-         public boolean reduceCreateRandomInstance = DO_OPTIMIZE;
-         public boolean suppressThreadSafeRandom = DO_OPTIMIZE;
-+        public boolean dontRefreshLootTableForNonPlayerInteraction = DO_OPTIMIZE;
+         public boolean reduceRandom = OPTIMIZE;
+         public boolean ignoreThreadSafeRandom = false;
++        public boolean refreshLootTableForNonPlayerInteraction = !OPTIMIZE;
  
      }
  
