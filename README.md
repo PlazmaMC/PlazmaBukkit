@@ -18,7 +18,7 @@
 
 | Version (버전)                                                | Support (지원상태) | Stability (안정성) | Progress (완성도) | Build Status (빌드 상태) |
 | :---:                                                        | :---:            | :---:             | :---:            | :---: |
-| 1.20.3 | Waiting (대기중) | - | - | - |
+| 1.20.4 | Waiting (대기중) | - | - | - |
 | [1.20.2](https://github.com/PlazmaMC/Plazma/tree/dev/1.20.2) | Working (작업중) | Unstable (불안정)[^warn] | 85%[^missing] | [![Build Status](https://img.shields.io/github/actions/workflow/status/PlazmaMC/Plazma/build.yml?style=for-the-badge&label=%20&branch=dev/1.20.2)](https://github.com/PlazmaMC/Plazma/actions/workflows/build.yml?query=branch:dev/1.20.2) |
 | [1.20.1](https://github.com/PlazmaMC/Plazma/tree/ver/1.20.1) | Active (활성)     | Good (좋음)        | 100%             | [![Build Status](https://img.shields.io/github/actions/workflow/status/PlazmaMC/Plazma/build.yml?style=for-the-badge&label=%20&branch=ver/1.20.1)](https://github.com/PlazmaMC/Plazma/actions/workflows/build.yml?query=branch:ver/1.20.1) |
 | [1.19.4](https://github.com/PlazmaMC/Plazma/tree/ver/1.19.4) | Active (활성)     | Good (좋음)        | 100%             | [![Build Status](https://img.shields.io/github/actions/workflow/status/PlazmaMC/Plazma/build.yml?style=for-the-badge&label=%20&branch=ver/1.19.4)](https://github.com/PlazmaMC/Plazma/actions/workflows/build.yml?query=branch:ver/1.19.4) |
@@ -88,7 +88,7 @@ Mojmap 또는 Bundler에 대해 잘 알지 못한다면, **Reobf Paperclip**을 
 
 | Version (버전) | **Reobf Paperclip (Default)** | Mojmap Paperclip | Reobf Bundler | Mojmap Bundler |
 | :---:         | :---:                         | :---:            | :---:         | :---:          |
-| 1.20.3 | - | - | - | - |
+| 1.20.4 | - | - | - | - |
 | [1.20.2 (INDEV)](https://github.com/PlazmaMC/Plazma/tree/dev/1.20.2) | [Download](https://github.com/PlazmaMC/Plazma/releases/download/dev-1.20.2/plazma-paperclip-1.20.2-R0.1-SNAPSHOT-reobf.jar) | [Download](https://github.com/PlazmaMC/Plazma/releases/download/dev-1.20.2/plazma-paperclip-1.20.2-R0.1-SNAPSHOT-mojmap.jar) | [Download](https://github.com/PlazmaMC/Plazma/releases/download/dev-1.20.2/plazma-bundler-1.20.2-R0.1-SNAPSHOT-reobf.jar) | [Download](https://github.com/PlazmaMC/Plazma/releases/download/dev-1.20.2/plazma-bundler-1.20.2-R0.1-SNAPSHOT-mojmap.jar) |
 | [1.20.1](https://github.com/PlazmaMC/Plazma/tree/ver/1.20.1) | [Download](https://github.com/PlazmaMC/Plazma/releases/download/latest-1.20.1/plazma-paperclip-1.20.1-R0.1-SNAPSHOT-reobf.jar) | [Download](https://github.com/PlazmaMC/Plazma/releases/download/latest-1.20.1/plazma-paperclip-1.20.1-R0.1-SNAPSHOT-mojmap.jar) | [Download](https://github.com/PlazmaMC/Plazma/releases/download/latest-1.20.1/plazma-bundler-1.20.1-R0.1-SNAPSHOT-reobf.jar) | [Download](https://github.com/PlazmaMC/Plazma/releases/download/latest-1.20.1/plazma-bundler-1.20.1-R0.1-SNAPSHOT-mojmap.jar) |
 | [1.19.4](https://github.com/PlazmaMC/Plazma/tree/ver/1.19.4) | [Download](https://github.com/PlazmaMC/Plazma/releases/download/latest-1.19.4/plazma-paperclip-1.19.4-R0.1-SNAPSHOT-reobf.jar) | [Download](https://github.com/PlazmaMC/Plazma/releases/download/latest-1.19.4/plazma-paperclip-1.19.4-R0.1-SNAPSHOT-mojmap.jar) | [Download](https://github.com/PlazmaMC/Plazma/releases/download/latest-1.19.4/plazma-bundler-1.19.4-R0.1-SNAPSHOT-reobf.jar) | [Download](https://github.com/PlazmaMC/Plazma/releases/download/latest-1.19.4/plazma-bundler-1.19.4-R0.1-SNAPSHOT-mojmap.jar) |
