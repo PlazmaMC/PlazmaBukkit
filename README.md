@@ -18,17 +18,14 @@
 
 | Version (버전)                                                | Support (지원상태) | Stability (안정성) | Progress (완성도) | Build Status (빌드 상태) |
 | :---:                                                        | :---:            | :---:             | :---:            | :---: |
-| 1.20.4 | Waiting (대기중) | - | - | - |
-| [1.20.2](https://github.com/PlazmaMC/Plazma/tree/dev/1.20.2) | Working (작업중) | Unstable (불안정)[^warn] | 85%[^missing] | [![Build Status](https://img.shields.io/github/actions/workflow/status/PlazmaMC/Plazma/build.yml?style=for-the-badge&label=%20&branch=dev/1.20.2)](https://github.com/PlazmaMC/Plazma/actions/workflows/build.yml?query=branch:dev/1.20.2) |
+| 1.20.5 | Waiting (대기중) | - | - | - |
+| 1.20.4 | Working (작업중) | - | - | - |
+| [1.20.2](https://github.com/PlazmaMC/Plazma/tree/dev/1.20.2) | Working (작업중) | Normal (보통) | 85%[^missing] | [![Build Status](https://img.shields.io/github/actions/workflow/status/PlazmaMC/Plazma/build.yml?style=for-the-badge&label=%20&branch=dev/1.20.2)](https://github.com/PlazmaMC/Plazma/actions/workflows/build.yml?query=branch:dev/1.20.2) |
 | [1.20.1](https://github.com/PlazmaMC/Plazma/tree/ver/1.20.1) | Active (활성)     | Good (좋음)        | 100%             | [![Build Status](https://img.shields.io/github/actions/workflow/status/PlazmaMC/Plazma/build.yml?style=for-the-badge&label=%20&branch=ver/1.20.1)](https://github.com/PlazmaMC/Plazma/actions/workflows/build.yml?query=branch:ver/1.20.1) |
 | [1.19.4](https://github.com/PlazmaMC/Plazma/tree/ver/1.19.4) | Active (활성)     | Good (좋음)        | 100%             | [![Build Status](https://img.shields.io/github/actions/workflow/status/PlazmaMC/Plazma/build.yml?style=for-the-badge&label=%20&branch=ver/1.19.4)](https://github.com/PlazmaMC/Plazma/actions/workflows/build.yml?query=branch:ver/1.19.4) |
 | 1.19.2 | Working (작업중) | - | - | - |
 
 </div>
-
-> [!IMPORTANT]
-The 1.20.2 update is delayed due to a change in the API used for the configuration system in Plazma. We are trying to release the stable version of 1.20.2 as soon as possible.<br>
-Plazma의 구성 파일 시스템에 사용되는 API가 변경되어 1.20.2 업데이트가 지연되고 있습니다. 1.20.2 안정 버전을 빠른 시일 내 공개하기 위하여 노력하고 있습니다.
 
 > [!WARNING]
 Plazma may cause **<u>unexpected problems</u>**, so be sure to test it thoroughly before using it on a public server.<br>
