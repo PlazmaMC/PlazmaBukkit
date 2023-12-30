@@ -1,0 +1,27 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: IPECTER <ipectert@gmail.com>
+Date: Sat, 30 Dec 2023 21:56:47 +0900
+Subject: [PATCH] Paper-Add-another-slot-sanity-check
+
+Backport of Paper ver/1.20.2 8493340
+
+diff --git a/src/main/java/net/minecraft/world/inventory/AbstractContainerMenu.java b/src/main/java/net/minecraft/world/inventory/AbstractContainerMenu.java
+index 20b328704981c088597359fe18c1d67c339c1c0f..af4951fdfa08dfff22df03950c26fdfc28c5a3cd 100644
+--- a/src/main/java/net/minecraft/world/inventory/AbstractContainerMenu.java
++++ b/src/main/java/net/minecraft/world/inventory/AbstractContainerMenu.java
+@@ -424,6 +424,7 @@ public abstract class AbstractContainerMenu {
+                     this.resetQuickCraft();
+                 }
+             } else if (this.quickcraftStatus == 1) {
++                if (slotIndex < 0) return; // Paper
+                 slot = (Slot) this.slots.get(slotIndex);
+                 itemstack = this.getCarried();
+                 if (AbstractContainerMenu.canItemQuickReplace(slot, itemstack, true) && slot.mayPlace(itemstack) && (this.quickcraftType == 2 || itemstack.getCount() > this.quickcraftSlots.size()) && this.canDragTo(slot)) {
+@@ -600,6 +601,7 @@ public abstract class AbstractContainerMenu {
+                 int i2;
+ 
+                 if (actionType == ClickType.SWAP) {
++                    if (slotIndex < 0 || button < 0) return; // Paper
+                     slot2 = (Slot) this.slots.get(slotIndex);
+                     itemstack1 = playerinventory.getItem(button);
+                     itemstack = slot2.getItem();
