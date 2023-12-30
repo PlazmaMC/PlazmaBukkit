@@ -23,33 +23,53 @@ dependencies {
     paperclip("io.papermc:paperclip:3.0.3")
 }
 
-subprojects {
+allprojects {
     apply(plugin = "java")
+    apply(plugin = "maven-publish")
 
-    java {
-        toolchain {
-            languageVersion.set(JavaLanguageVersion.of(17))
+    java.toolchain.languageVersion.set(JavaLanguageVersion.of(17))
+
+    publishing {
+        repositories {
+            maven {
+                name = "githubPackage"
+                url = uri("https://maven.pkg.github.com/PlazmaMC/Plazma")
+
+                credentials {
+                    username = System.getenv("GITHUB_USERNAME")
+                    password = System.getenv("GITHUB_TOKEN")
+                }
+            }
+
+            publications.register<MavenPublication>("gpr") {
+                from(components["java"])
+            }
         }
     }
 }
 
 subprojects {
-    tasks.withType<JavaCompile>().configureEach {
-        options.encoding = "UTF-8"
-        options.release.set(17)
-    }
+    apply(plugin = "java")
 
-    tasks.withType<Javadoc> {
-        options.encoding = Charsets.UTF_8.name()
-    }
+    tasks {
+        withType<JavaCompile>().configureEach {
+            options.compilerArgs.add("--add-modules=jdk.incubator.vector")
+            options.encoding = Charsets.UTF_8.name()
+            options.release.set(17)
+        }
 
-    tasks.withType<ProcessResources> {
-        filteringCharset = Charsets.UTF_8.name()
-    }
+        withType<Javadoc> {
+            options.encoding = Charsets.UTF_8.name()
+        }
 
-    tasks.withType<Test> {
-        minHeapSize = "2g"
-        maxHeapSize = "2g"
+        withType<ProcessResources> {
+            filteringCharset = Charsets.UTF_8.name()
+        }
+
+        withType<Test> {
+            minHeapSize = "2g"
+            maxHeapSize = "2g"
+        }
     }
 
     repositories {
@@ -83,28 +103,39 @@ paperweight {
     }
 }
 
-val upstreamTask = tasks.register("updateUpstream") {
-    val tempDir = layout.cacheDir("updateUpstream");
-    val file = "gradle.properties";
-
-    doFirst {
-        val apiResponse = layout.cache.resolve("apiResponse.json");
-        download.get().download("https://api.github.com/repos/PaperMC/Paper/commits/master", apiResponse);
-        val latestCommit = gson.fromJson<paper.libs.com.google.gson.JsonObject>(apiResponse)["sha"].asString;
-
-        copy {
-            from(file)
-            into(tempDir)
-            filter { line: String ->
-                line.replace("paperCommit = .*".toRegex(), "paperCommit = $latestCommit")
-            }
-        }
+tasks {
+    generateDevelopmentBundle {
+        apiCoordinates.set("org.plazmamc.plazma:plazma-api")
+        mojangApiCoordinates.set("io.papermc.paper:paper-mojangapi")
+        libraryRepositories.addAll(
+            "https://repo.maven.apache.org/maven2/",
+            "https://papermc.io/repo/repository/maven-public/"
+        )
     }
 
-    doLast {
-        copy {
-            from(tempDir.file("gradle.properties"))
-            into(project.file(file).parent)
+    register("updateUpstream") {
+        val tempDir = layout.cacheDir("updateUpstream");
+        val file = "gradle.properties";
+
+        doFirst {
+            val apiResponse = layout.cache.resolve("apiResponse.json");
+            download.get().download("https://api.github.com/repos/PaperMC/Paper/commits/master", apiResponse);
+            val latestCommit = gson.fromJson<paper.libs.com.google.gson.JsonObject>(apiResponse)["sha"].asString;
+
+            copy {
+                from(file)
+                into(tempDir)
+                filter { line: String ->
+                    line.replace("paperCommit = .*".toRegex(), "paperCommit = $latestCommit")
+                }
+            }
+        }
+
+        doLast {
+            copy {
+                from(tempDir.file("gradle.properties"))
+                into(project.file(file).parent)
+            }
         }
     }
 }
