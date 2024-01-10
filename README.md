@@ -37,7 +37,7 @@ Plazma may cause **<u>unexpected problems</u>**, so be sure to test it thoroughl
 - **여러 최적화 모드 적용** - 여러 모드를 적용하여 안정적이고 높은 성능을 제공합니다.
 - **[기본 구성 파일 최적화](https://github.com/YouHaveTrouble/minecraft-optimization)** - 기본 구성 파일이 최적화 되어 있어 따로 구성 파일을 최적화 하지 않아도 됩니다.
 - **자체 개선 적용** - 여러 개선 패치를 적용하여 더 나은 환경을 제공합니다.
-- **[더 알아보기](src/main/features.md)**
+- **[더 알아보기](https://github.com/PlazmaMC/PlazmaBukkit/wiki/추가된-패치)**
 
 ## ✨ 활용 사례
 - **공동 개발자 IPECTER 이팩터의 서버에 사용되고 있습니다.** NMS 및 리플렉션으로 작동하는 플러그인이 굉장히 많지만, 아무런 문제 없이 정상 작동하고 있습니다.
@@ -60,7 +60,7 @@ Plazma may cause **<u>unexpected problems</u>**, so be sure to test it thoroughl
 - **Implemented many useful mods** - Stable and fast by implementing many mods
 - **[Optimized Default Configuration](https://github.com/YouHaveTrouble/minecraft-optimization)** - The default configuration file is optimized, so you do not need to modify it separately.
 - **Various Improvements** - Apply improvement patches to provide a better experience
-- **[... and More!](src/main/features.md)**
+- **[... and More!](https://github.com/PlazmaMC/PlazmaBukkit/wiki/Implemented-Patches)**
 
 ## ✨ Use Cases
 - **It is used by server of developer IPECTER.** There are a lot of plugins that work with NMS and reflection, but they are working fine without any problems.
