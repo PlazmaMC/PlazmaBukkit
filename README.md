@@ -28,10 +28,10 @@ If you don't know about Mojmap or Bundler, download **Reobf Paperclip**<br>
 Mojmap 또는 Bundler에 대해 잘 알지 못한다면, **Reobf Paperclip**을 사용하세요
 
 <!--- LINKS --->
-[paperReobf]: https://github.com/PlazmaMC/Plazma/releases/download/latest-1.20.1/plazma-paperclip-1.20.1-R0.1-SNAPSHOT-reobf.jar
-[paperMojmap]: https://github.com/PlazmaMC/Plazma/releases/download/latest-1.20.1/plazma-paperclip-1.20.1-R0.1-SNAPSHOT-mojmap.jar
-[bundlerReobf]: https://github.com/PlazmaMC/Plazma/releases/download/latest-1.20.1/plazma-bundler-1.20.1-R0.1-SNAPSHOT-reobf.jar
-[bundlerMojmap]: https://github.com/PlazmaMC/Plazma/releases/download/latest-1.20.1/plazma-bundler-1.20.1-R0.1-SNAPSHOT-mojmap.jar
+[paperReobf]: https://github.com/PlazmaMC/Plazma/releases/download/build/1.20.2/latest/plazma-paperclip-1.20.2-R0.1-SNAPSHOT-reobf.jar
+[paperMojmap]: https://github.com/PlazmaMC/Plazma/releases/download/build/1.20.2/latest/plazma-paperclip-1.20.2-R0.1-SNAPSHOT-mojmap.jar
+[bundlerReobf]: https://github.com/PlazmaMC/Plazma/releases/download/build/1.20.2/latest/plazma-bundler-1.20.2-R0.1-SNAPSHOT-reobf.jar
+[bundlerMojmap]: https://github.com/PlazmaMC/Plazma/releases/download/build/1.20.2/latest/plazma-bundler-1.20.2-R0.1-SNAPSHOT-mojmap.jar
 
 | **Reobf Paperclip (Default)** |    Mojmap Paperclip     |      Reobf Bundler       |      Mojmap Bundler       |
 |:-----------------------------:|:-----------------------:|:------------------------:|:-------------------------:|
