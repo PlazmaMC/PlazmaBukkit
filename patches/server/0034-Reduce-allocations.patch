@@ -1,0 +1,1123 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: AlphaKR93 <dev@alpha93.kr>
+Date: Wed, 10 Jan 2024 12:43:26 +0900
+Subject: [PATCH] Reduce allocations
+
+
+diff --git a/src/main/java/ca/spottedleaf/starlight/common/light/StarLightEngine.java b/src/main/java/ca/spottedleaf/starlight/common/light/StarLightEngine.java
+index ad1eeebe6de219143492b94da309cb54ae9e0a5b..f83bdcf5d2d6f676b2dc83bc1fc0a7453fc2b36a 100644
+--- a/src/main/java/ca/spottedleaf/starlight/common/light/StarLightEngine.java
++++ b/src/main/java/ca/spottedleaf/starlight/common/light/StarLightEngine.java
+@@ -38,6 +38,7 @@ public abstract class StarLightEngine {
+             AxisDirection.POSITIVE_X, AxisDirection.NEGATIVE_X,
+             AxisDirection.POSITIVE_Z, AxisDirection.NEGATIVE_Z
+     };
++    private static final AxisDirection[] EMPTY_DIRECTIONS = new AxisDirection[0]; // Plazma - Reduce allocations
+ 
+     protected static enum AxisDirection {
+ 
+@@ -1094,7 +1095,7 @@ public abstract class StarLightEngine {
+             for (int bitset = i, len = Integer.bitCount(i), index = 0; index < len; ++index, bitset ^= IntegerUtil.getTrailingBit(bitset)) {
+                 directions.add(AXIS_DIRECTIONS[IntegerUtil.trailingZeros(bitset)]);
+             }
+-            OLD_CHECK_DIRECTIONS[i] = directions.toArray(new AxisDirection[0]);
++            OLD_CHECK_DIRECTIONS[i] = directions.toArray(EMPTY_DIRECTIONS); // Plazma - Reduce allocations
+         }
+     }
+ 
+diff --git a/src/main/java/com/destroystokyo/paper/antixray/ChunkPacketBlockControllerAntiXray.java b/src/main/java/com/destroystokyo/paper/antixray/ChunkPacketBlockControllerAntiXray.java
+index e7fe98ea30ae6d0baea3ec1f9f98a89502a49a12..7663ccd247b9942ccfb7a320b047ee621fc1bebe 100644
+--- a/src/main/java/com/destroystokyo/paper/antixray/ChunkPacketBlockControllerAntiXray.java
++++ b/src/main/java/com/destroystokyo/paper/antixray/ChunkPacketBlockControllerAntiXray.java
+@@ -97,8 +97,8 @@ public final class ChunkPacketBlockControllerAntiXray extends ChunkPacketBlockCo
+             Set<BlockState> presetBlockStateSet = new LinkedHashSet<>();
+             // Therefore addAll(Collection<? extends E>) is used, which guarantees this order in the doc
+             presetBlockStateSet.addAll(presetBlockStateList);
+-            presetBlockStates = presetBlockStateSet.isEmpty() ? new BlockState[]{Blocks.DIAMOND_ORE.defaultBlockState()} : presetBlockStateSet.toArray(new BlockState[0]);
+-            presetBlockStatesFull = presetBlockStateSet.isEmpty() ? new BlockState[]{Blocks.DIAMOND_ORE.defaultBlockState()} : presetBlockStateList.toArray(new BlockState[0]);
++            presetBlockStates = presetBlockStateSet.isEmpty() ? new BlockState[]{Blocks.DIAMOND_ORE.defaultBlockState()} : presetBlockStateSet.toArray(org.plazmamc.plazma.constants.Empty.BLOCK_STATE); // Plazma - Reduce allocations
++            presetBlockStatesFull = presetBlockStateSet.isEmpty() ? new BlockState[]{Blocks.DIAMOND_ORE.defaultBlockState()} : presetBlockStateList.toArray(org.plazmamc.plazma.constants.Empty.BLOCK_STATE); // Plazma - Reduce allocations
+             presetBlockStatesStone = null;
+             presetBlockStatesDeepslate = null;
+             presetBlockStatesNetherrack = null;
+diff --git a/src/main/java/com/destroystokyo/paper/util/maplist/EntityList.java b/src/main/java/com/destroystokyo/paper/util/maplist/EntityList.java
+index 0133ea6feb1ab88f021f66855669f58367e7420b..a04049bc7738225633ac0b01c470cfbfde86c032 100644
+--- a/src/main/java/com/destroystokyo/paper/util/maplist/EntityList.java
++++ b/src/main/java/com/destroystokyo/paper/util/maplist/EntityList.java
+@@ -17,9 +17,9 @@ public final class EntityList implements Iterable<Entity> {
+         this.entityToIndex.defaultReturnValue(Integer.MIN_VALUE);
+     }
+ 
+-    protected static final Entity[] EMPTY_LIST = new Entity[0];
++    //protected static final Entity[] EMPTY_LIST = new Entity[0]; // Plazma - Reduce allocations
+ 
+-    protected Entity[] entities = EMPTY_LIST;
++    protected Entity[] entities = org.plazmamc.plazma.constants.Empty.ENTITY; // Plazma - Reduce allocations
+     protected int count;
+ 
+     public int size() {
+diff --git a/src/main/java/com/destroystokyo/paper/util/maplist/IBlockDataList.java b/src/main/java/com/destroystokyo/paper/util/maplist/IBlockDataList.java
+index 277cfd9d1e8fff5d9b5e534b75c3c5162d58b0b7..30d8d9c2dce5e4eb26cc52a03bc395c16c04c256 100644
+--- a/src/main/java/com/destroystokyo/paper/util/maplist/IBlockDataList.java
++++ b/src/main/java/com/destroystokyo/paper/util/maplist/IBlockDataList.java
+@@ -20,9 +20,9 @@ public final class IBlockDataList {
+         this.map.defaultReturnValue(Long.MAX_VALUE);
+     }
+ 
+-    private static final long[] EMPTY_LIST = new long[0];
++    //private static final long[] EMPTY_LIST = new long[0]; // Plazma - Reduce allocations
+ 
+-    private long[] byIndex = EMPTY_LIST;
++    private long[] byIndex = org.plazmamc.plazma.constants.Empty.LONG; // Plazma - Reduce allocations
+     private int size;
+ 
+     public static int getLocationKey(final int x, final int y, final int z) {
+diff --git a/src/main/java/com/destroystokyo/paper/util/maplist/ReferenceList.java b/src/main/java/com/destroystokyo/paper/util/maplist/ReferenceList.java
+index 190c5f0b02a3d99054704ae1afbffb3498ddffe1..042ea49ec61ee327c0f67ddcf080774042e44c02 100644
+--- a/src/main/java/com/destroystokyo/paper/util/maplist/ReferenceList.java
++++ b/src/main/java/com/destroystokyo/paper/util/maplist/ReferenceList.java
+@@ -15,9 +15,9 @@ public final class ReferenceList<E> implements Iterable<E> {
+         this.referenceToIndex.defaultReturnValue(Integer.MIN_VALUE);
+     }
+ 
+-    protected static final Object[] EMPTY_LIST = new Object[0];
++    //protected static final Object[] EMPTY_LIST = new Object[0]; // Plazma - Reduce allocations
+ 
+-    protected Object[] references = EMPTY_LIST;
++    protected Object[] references = org.plazmamc.plazma.constants.Empty.OBJECT; // Plazma - Reduce allocations
+     protected int count;
+ 
+     public int size() {
+diff --git a/src/main/java/io/papermc/paper/chunk/system/scheduling/ChunkTaskScheduler.java b/src/main/java/io/papermc/paper/chunk/system/scheduling/ChunkTaskScheduler.java
+index f975cb93716e137d973ff2f9011acdbef58859a2..2e4c87596fe3f15d25c07c1a2b590f892cbb78c0 100644
+--- a/src/main/java/io/papermc/paper/chunk/system/scheduling/ChunkTaskScheduler.java
++++ b/src/main/java/io/papermc/paper/chunk/system/scheduling/ChunkTaskScheduler.java
+@@ -41,6 +41,7 @@ import java.util.function.Consumer;
+ public final class ChunkTaskScheduler {
+ 
+     private static final Logger LOGGER = LogUtils.getClassLogger();
++    private static final ChunkInfo[] EMPTY_INFO = new ChunkInfo[0]; // Plazma - Reduce allocations
+ 
+     static int newChunkSystemIOThreads;
+     static int newChunkSystemWorkerThreads;
+@@ -851,7 +852,7 @@ public final class ChunkTaskScheduler {
+ 
+     public static ChunkInfo[] getChunkInfos() {
+         synchronized (WAITING_CHUNKS) {
+-            return WAITING_CHUNKS.toArray(new ChunkInfo[0]);
++            return WAITING_CHUNKS.toArray(EMPTY_INFO); // Plazma - Reduce allocations
+         }
+     }
+ 
+diff --git a/src/main/java/io/papermc/paper/command/subcommands/VersionCommand.java b/src/main/java/io/papermc/paper/command/subcommands/VersionCommand.java
+index ae60bd96b5284d54676d8e7e4dd5d170b526ec1e..359c4b080bd47234e569dce7055da03ddb7b1e90 100644
+--- a/src/main/java/io/papermc/paper/command/subcommands/VersionCommand.java
++++ b/src/main/java/io/papermc/paper/command/subcommands/VersionCommand.java
+@@ -14,7 +14,7 @@ public final class VersionCommand implements PaperSubcommand {
+     public boolean execute(final CommandSender sender, final String subCommand, final String[] args) {
+         final @Nullable Command ver = MinecraftServer.getServer().server.getCommandMap().getCommand("version");
+         if (ver != null) {
+-            ver.execute(sender, "paper", new String[0]);
++            ver.execute(sender, "paper", org.plazmamc.plazma.constants.Empty.STRING); // Plazma - Reduce allocations
+         }
+         return true;
+     }
+diff --git a/src/main/java/io/papermc/paper/plugin/manager/PaperPluginInstanceManager.java b/src/main/java/io/papermc/paper/plugin/manager/PaperPluginInstanceManager.java
+index 08b1aab5d37a56dc42542ce15ba1f7ccd1b08400..a5634b36946bf63e54638a249d4de8c260e2b6cd 100644
+--- a/src/main/java/io/papermc/paper/plugin/manager/PaperPluginInstanceManager.java
++++ b/src/main/java/io/papermc/paper/plugin/manager/PaperPluginInstanceManager.java
+@@ -48,6 +48,8 @@ class PaperPluginInstanceManager {
+ 
+     private static final FileProviderSource FILE_PROVIDER_SOURCE = new FileProviderSource("File '%s'"::formatted);
+     private static final DirectoryProviderSource DIRECTORY_PROVIDER_SOURCE = new DirectoryProviderSource();
++    private static final Plugin[] EMPTY_PLUGIN = new Plugin[0]; // Plazma - Reduce allocations
++    private static final JavaPlugin[] EMPTY_JAVA_PLUGIN = new JavaPlugin[0]; // Plazma - Reduce allocations
+ 
+     private final List<Plugin> plugins = new ArrayList<>();
+     private final Map<String, Plugin> lookupNames = new HashMap<>();
+@@ -69,7 +71,7 @@ class PaperPluginInstanceManager {
+     }
+ 
+     public @NotNull Plugin[] getPlugins() {
+-        return this.plugins.toArray(new Plugin[0]);
++        return this.plugins.toArray(EMPTY_PLUGIN); // Plazma - Reduce allocations
+     }
+ 
+     public boolean isPluginEnabled(@NotNull String name) {
+@@ -138,7 +140,7 @@ class PaperPluginInstanceManager {
+             this.server.getLogger().log(Level.SEVERE, "Unknown error occurred while loading plugins through PluginManager.", e);
+         }
+ 
+-        return runtimePluginEntrypointHandler.getPluginProviderStorage().getLoaded().toArray(new JavaPlugin[0]);
++        return runtimePluginEntrypointHandler.getPluginProviderStorage().getLoaded().toArray(EMPTY_JAVA_PLUGIN); // Plazma - Reduce allocations
+     }
+ 
+     // Plugins are disabled in order like this inorder to "rougly" prevent
+diff --git a/src/main/java/io/papermc/paper/util/CollisionUtil.java b/src/main/java/io/papermc/paper/util/CollisionUtil.java
+index bfb1de19f53d5d7c7b65e25a606fabfa416706b3..4a5d622d6b4c71f498488cb5712c4fdf73f957ef 100644
+--- a/src/main/java/io/papermc/paper/util/CollisionUtil.java
++++ b/src/main/java/io/papermc/paper/util/CollisionUtil.java
+@@ -1149,7 +1149,7 @@ public final class CollisionUtil {
+         }
+ 
+         private static final MergedVoxelCoordinateList EMPTY = new MergedVoxelCoordinateList(
+-                new double[] { 0.0 }, 0.0, new int[0], new int[0], 0
++                new double[] { 0.0 }, 0.0, org.plazmamc.plazma.constants.Empty.INT, org.plazmamc.plazma.constants.Empty.INT, 0 // Plazma - Reduce allocations
+         );
+ 
+         private static int[] getIndices(final int length) {
+diff --git a/src/main/java/io/papermc/paper/world/ChunkEntitySlices.java b/src/main/java/io/papermc/paper/world/ChunkEntitySlices.java
+index 7e8dc9e8f381abfdcce2746edc93122d623622d1..bf882040399015b38b917c7982f01e74137945f7 100644
+--- a/src/main/java/io/papermc/paper/world/ChunkEntitySlices.java
++++ b/src/main/java/io/papermc/paper/world/ChunkEntitySlices.java
+@@ -303,7 +303,7 @@ public final class ChunkEntitySlices {
+ 
+     protected static final class BasicEntityList<E extends Entity> {
+ 
+-        protected static final Entity[] EMPTY = new Entity[0];
++        protected static final Entity[] EMPTY = org.plazmamc.plazma.constants.Empty.ENTITY; // Plazma - Reduce allocations
+         protected static final int DEFAULT_CAPACITY = 4;
+ 
+         protected E[] storage;
+diff --git a/src/main/java/net/minecraft/CrashReport.java b/src/main/java/net/minecraft/CrashReport.java
+index ae02c029f0169d30a34d4a4e65ea6cb4fa498111..dba579b63fcbe3a7256496e523ae45df62f0db79 100644
+--- a/src/main/java/net/minecraft/CrashReport.java
++++ b/src/main/java/net/minecraft/CrashReport.java
+@@ -28,7 +28,7 @@ public class CrashReport {
+     private final List<CrashReportCategory> details = Lists.newArrayList();
+     private File saveFile;
+     private boolean trackingStackTrace = true;
+-    private StackTraceElement[] uncategorizedStackTrace = new StackTraceElement[0];
++    private StackTraceElement[] uncategorizedStackTrace = org.plazmamc.plazma.constants.Empty.TRACE; // Plazma - Reduce allocations
+     private final SystemReport systemReport = new SystemReport();
+ 
+     public CrashReport(String message, Throwable cause) {
+diff --git a/src/main/java/net/minecraft/CrashReportCategory.java b/src/main/java/net/minecraft/CrashReportCategory.java
+index b54ddd0ba0b001fbcb1838a838ca4890df936f1b..2bfe33ed7e602ada8638d71ed8e9112569f34cef 100644
+--- a/src/main/java/net/minecraft/CrashReportCategory.java
++++ b/src/main/java/net/minecraft/CrashReportCategory.java
+@@ -12,7 +12,7 @@ import net.minecraft.world.level.block.state.BlockState;
+ public class CrashReportCategory {
+     private final String title;
+     private final List<CrashReportCategory.Entry> entries = Lists.newArrayList();
+-    private StackTraceElement[] stackTrace = new StackTraceElement[0];
++    private StackTraceElement[] stackTrace = org.plazmamc.plazma.constants.Empty.TRACE; // Plazma - Reduce allocations
+ 
+     public CrashReportCategory(String title) {
+         this.title = title;
+diff --git a/src/main/java/net/minecraft/Util.java b/src/main/java/net/minecraft/Util.java
+index 5c1503f5b173138fc9e918d5562a981ca8b66d06..f499f1d9da1f6ea8ecc19b55520b22ba770a4f4b 100644
+--- a/src/main/java/net/minecraft/Util.java
++++ b/src/main/java/net/minecraft/Util.java
+@@ -402,7 +402,7 @@ public class Util {
+         } else if (futures.size() == 1) {
+             return futures.get(0).thenApply(List::of);
+         } else {
+-            CompletableFuture<Void> completableFuture = CompletableFuture.allOf(futures.toArray(new CompletableFuture[0]));
++            CompletableFuture<Void> completableFuture = CompletableFuture.allOf(futures.toArray(org.plazmamc.plazma.constants.Empty.FUTURE)); // Plazma - Reduce allocations
+             return completableFuture.thenApply((void_) -> {
+                 return futures.stream().map(CompletableFuture::join).toList();
+             });
+diff --git a/src/main/java/net/minecraft/nbt/ByteArrayTag.java b/src/main/java/net/minecraft/nbt/ByteArrayTag.java
+index 06648f9751fd8a322d0809ffebf6a544596ee1a4..b0ea87e2ed8f9bf04b33c2ff8a827d4f6f57a435 100644
+--- a/src/main/java/net/minecraft/nbt/ByteArrayTag.java
++++ b/src/main/java/net/minecraft/nbt/ByteArrayTag.java
+@@ -175,7 +175,7 @@ public class ByteArrayTag extends CollectionTag<ByteTag> {
+     }
+ 
+     public void clear() {
+-        this.data = new byte[0];
++        this.data = org.plazmamc.plazma.constants.Empty.BYTE; // Plazma - Reduce allocations
+     }
+ 
+     @Override
+diff --git a/src/main/java/net/minecraft/nbt/CompoundTag.java b/src/main/java/net/minecraft/nbt/CompoundTag.java
+index 84fc2adf591f02a14862f7c1cd645c2efde55c3d..104081261f46692baf5c977e5419311d1d5c1a9d 100644
+--- a/src/main/java/net/minecraft/nbt/CompoundTag.java
++++ b/src/main/java/net/minecraft/nbt/CompoundTag.java
+@@ -416,7 +416,7 @@ public class CompoundTag implements Tag {
+             throw new ReportedException(this.createReport(key, ByteArrayTag.TYPE, var3));
+         }
+ 
+-        return new byte[0];
++        return org.plazmamc.plazma.constants.Empty.BYTE; // Plazma - Reduce allocations
+     }
+ 
+     public int[] getIntArray(String key) {
+@@ -428,7 +428,7 @@ public class CompoundTag implements Tag {
+             throw new ReportedException(this.createReport(key, IntArrayTag.TYPE, var3));
+         }
+ 
+-        return new int[0];
++        return org.plazmamc.plazma.constants.Empty.INT; // Plazma - Reduce allocations
+     }
+ 
+     public long[] getLongArray(String key) {
+@@ -440,7 +440,7 @@ public class CompoundTag implements Tag {
+             throw new ReportedException(this.createReport(key, LongArrayTag.TYPE, var3));
+         }
+ 
+-        return new long[0];
++        return org.plazmamc.plazma.constants.Empty.LONG; // Plazma - Reduce allocations
+     }
+ 
+     public CompoundTag getCompound(String key) {
+diff --git a/src/main/java/net/minecraft/nbt/IntArrayTag.java b/src/main/java/net/minecraft/nbt/IntArrayTag.java
+index ff13d67151c50ea11a45117e524c7524e2b1a202..5048ec707c147b9a5b2dd8736d518d938ba95df0 100644
+--- a/src/main/java/net/minecraft/nbt/IntArrayTag.java
++++ b/src/main/java/net/minecraft/nbt/IntArrayTag.java
+@@ -186,7 +186,7 @@ public class IntArrayTag extends CollectionTag<IntTag> {
+     }
+ 
+     public void clear() {
+-        this.data = new int[0];
++        this.data = org.plazmamc.plazma.constants.Empty.INT; // Plazma - Reduce allocations
+     }
+ 
+     @Override
+diff --git a/src/main/java/net/minecraft/nbt/ListTag.java b/src/main/java/net/minecraft/nbt/ListTag.java
+index 0ef36f5cfebf60c491d021b77b55c393f26feab5..84602e16f321d99b09aa63866e2246cfc0f06634 100644
+--- a/src/main/java/net/minecraft/nbt/ListTag.java
++++ b/src/main/java/net/minecraft/nbt/ListTag.java
+@@ -261,7 +261,7 @@ public class ListTag extends CollectionTag<Tag> {
+             }
+         }
+ 
+-        return new int[0];
++        return org.plazmamc.plazma.constants.Empty.INT; // Plazma - Reduce allocations
+     }
+ 
+     public long[] getLongArray(int index) {
+@@ -272,7 +272,7 @@ public class ListTag extends CollectionTag<Tag> {
+             }
+         }
+ 
+-        return new long[0];
++        return org.plazmamc.plazma.constants.Empty.LONG; // Plazma - Reduce allocations
+     }
+ 
+     public double getDouble(int index) {
+diff --git a/src/main/java/net/minecraft/nbt/LongArrayTag.java b/src/main/java/net/minecraft/nbt/LongArrayTag.java
+index 3604e22f593275140d706c296355ee06ca8ec888..6974ca1efbef05c845dc41e643bfed6d1c1c8e28 100644
+--- a/src/main/java/net/minecraft/nbt/LongArrayTag.java
++++ b/src/main/java/net/minecraft/nbt/LongArrayTag.java
+@@ -190,7 +190,7 @@ public class LongArrayTag extends CollectionTag<LongTag> {
+ 
+     @Override
+     public void clear() {
+-        this.data = new long[0];
++        this.data = org.plazmamc.plazma.constants.Empty.LONG; // Plazma - Reduce allocations
+     }
+ 
+     @Override
+diff --git a/src/main/java/net/minecraft/network/CipherBase.java b/src/main/java/net/minecraft/network/CipherBase.java
+index a2920b8a9eff77d9c5d1d7f70ad3abdacba8f0fa..70d776d5cfdb0612f65d92333d6f872afedc2207 100644
+--- a/src/main/java/net/minecraft/network/CipherBase.java
++++ b/src/main/java/net/minecraft/network/CipherBase.java
+@@ -7,8 +7,8 @@ import javax.crypto.ShortBufferException;
+ 
+ public class CipherBase {
+     private final Cipher cipher;
+-    private byte[] heapIn = new byte[0];
+-    private byte[] heapOut = new byte[0];
++    private byte[] heapIn = org.plazmamc.plazma.constants.Empty.BYTE; // Plazma - Reduce allocations
++    private byte[] heapOut = org.plazmamc.plazma.constants.Empty.BYTE; // Plazma - Reduce allocations
+ 
+     protected CipherBase(Cipher cipher) {
+         this.cipher = cipher;
+diff --git a/src/main/java/net/minecraft/network/Connection.java b/src/main/java/net/minecraft/network/Connection.java
+index ff99d6fa919391d43b7737a2819cf9ebb7e134da..f99eae21d07d09229eb5d8467022f373e47c0b51 100644
+--- a/src/main/java/net/minecraft/network/Connection.java
++++ b/src/main/java/net/minecraft/network/Connection.java
+@@ -321,7 +321,7 @@ public class Connection extends SimpleChannelInboundHandler<Packet<?>> {
+     }
+ 
+     public void setListener(PacketListener packetListener) {
+-        Validate.notNull(packetListener, "packetListener", new Object[0]);
++        Validate.notNull(packetListener, "packetListener"/*, new Object[0]*/); // Plazma - Reduce allocations
+         PacketFlow enumprotocoldirection = packetListener.flow();
+ 
+         if (enumprotocoldirection != this.receiving) {
+diff --git a/src/main/java/net/minecraft/network/chat/Component.java b/src/main/java/net/minecraft/network/chat/Component.java
+index b540ce21c65ad52ad7e94d2ca2b3926c0875bee1..601ce6010a9fe5359fab933e9a00c787f14a5643 100644
+--- a/src/main/java/net/minecraft/network/chat/Component.java
++++ b/src/main/java/net/minecraft/network/chat/Component.java
+@@ -184,7 +184,7 @@ public interface Component extends Message, FormattedText, Iterable<Component> {
+     }
+ 
+     static MutableComponent translatable(String key) {
+-        return MutableComponent.create(new TranslatableContents(key, (String) null, TranslatableContents.NO_ARGS));
++        return MutableComponent.create(new TranslatableContents(key, (String) null, org.plazmamc.plazma.constants.Empty.OBJECT)); // Plazma - Reduce allocations
+     }
+ 
+     static MutableComponent translatable(String key, Object... args) {
+@@ -192,7 +192,7 @@ public interface Component extends Message, FormattedText, Iterable<Component> {
+     }
+ 
+     static MutableComponent translatableWithFallback(String key, @Nullable String fallback) {
+-        return MutableComponent.create(new TranslatableContents(key, fallback, TranslatableContents.NO_ARGS));
++        return MutableComponent.create(new TranslatableContents(key, fallback, org.plazmamc.plazma.constants.Empty.OBJECT)); // Plazma - Reduce allocations
+     }
+ 
+     static MutableComponent translatableWithFallback(String key, @Nullable String fallback, Object... args) {
+diff --git a/src/main/java/net/minecraft/network/chat/contents/TranslatableContents.java b/src/main/java/net/minecraft/network/chat/contents/TranslatableContents.java
+index 8a68baf6bd46b59cf57c94ffe5651d47a7cae99c..3d747a0dbe88b88e8df07a594db48cdcc9fb7717 100644
+--- a/src/main/java/net/minecraft/network/chat/contents/TranslatableContents.java
++++ b/src/main/java/net/minecraft/network/chat/contents/TranslatableContents.java
+@@ -21,7 +21,7 @@ import net.minecraft.network.chat.Style;
+ import net.minecraft.world.entity.Entity;
+ 
+ public class TranslatableContents implements ComponentContents {
+-    public static final Object[] NO_ARGS = new Object[0];
++    //public static final Object[] NO_ARGS = new Object[0]; // Plazma - Reduce allocations
+     private static final FormattedText TEXT_PERCENT = FormattedText.of("%");
+     private static final FormattedText TEXT_NULL = FormattedText.of("null");
+     private final String key;
+diff --git a/src/main/java/net/minecraft/network/protocol/game/ClientboundSectionBlocksUpdatePacket.java b/src/main/java/net/minecraft/network/protocol/game/ClientboundSectionBlocksUpdatePacket.java
+index e3f355c85eb7cc8c1683e3009502c10a5ed32daa..838f07692c8e34c21c5a93611ab0f01b5059ab5e 100644
+--- a/src/main/java/net/minecraft/network/protocol/game/ClientboundSectionBlocksUpdatePacket.java
++++ b/src/main/java/net/minecraft/network/protocol/game/ClientboundSectionBlocksUpdatePacket.java
+@@ -63,7 +63,7 @@ public class ClientboundSectionBlocksUpdatePacket implements Packet<ClientGamePa
+     public ClientboundSectionBlocksUpdatePacket(SectionPos sectionPos, it.unimi.dsi.fastutil.shorts.Short2ObjectMap<BlockState> blockChanges) {
+         this.sectionPos = sectionPos;
+         this.positions = blockChanges.keySet().toShortArray();
+-        this.states = blockChanges.values().toArray(new BlockState[0]);
++        this.states = blockChanges.values().toArray(org.plazmamc.plazma.constants.Empty.BLOCK_STATE); // Plazma - Reduce allocations
+     }
+     // Paper end
+ 
+diff --git a/src/main/java/net/minecraft/server/MinecraftServer.java b/src/main/java/net/minecraft/server/MinecraftServer.java
+index cda99102949ae9d722c347e0dd610dfff625b5b8..0ece8ab1136d300dcf22c0ab2221b1781aa95ee3 100644
+--- a/src/main/java/net/minecraft/server/MinecraftServer.java
++++ b/src/main/java/net/minecraft/server/MinecraftServer.java
+@@ -1354,13 +1354,10 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
+     }
+ 
+     private Optional<ServerStatus.Favicon> loadStatusIcon() {
+-        Optional<Path> optional = Optional.of(this.getFile("server-icon.png").toPath()).filter((path) -> {
+-            return Files.isRegularFile(path, new LinkOption[0]);
+-        }).or(() -> {
+-            return this.storageSource.getIconFile().filter((path) -> {
+-                return Files.isRegularFile(path, new LinkOption[0]);
+-            });
+-        });
++        // Plazma start - Reduce allocations
++        Optional<Path> optional = Optional.of(this.getFile("server-icon.png").toPath()).filter(Files::isRegularFile)
++            .or(() -> this.storageSource.getIconFile().filter(Files::isRegularFile));
++        // Plazma end
+ 
+         return optional.flatMap((path) -> {
+             try {
+diff --git a/src/main/java/net/minecraft/server/PlayerAdvancements.java b/src/main/java/net/minecraft/server/PlayerAdvancements.java
+index 533a348acb53c8e7590f3d81c19e53a655101713..95ead2443ad161d46e476c6b3fbe6463d0f077fe 100644
+--- a/src/main/java/net/minecraft/server/PlayerAdvancements.java
++++ b/src/main/java/net/minecraft/server/PlayerAdvancements.java
+@@ -131,7 +131,7 @@ public class PlayerAdvancements {
+     }
+ 
+     private void load(ServerAdvancementManager advancementLoader) {
+-        if (Files.isRegularFile(this.playerSavePath, new LinkOption[0])) {
++        if (Files.isRegularFile(this.playerSavePath/*, new LinkOption[0]*/)) { // Plazma - Reduce allocations
+             try {
+                 JsonReader jsonreader = new JsonReader(Files.newBufferedReader(this.playerSavePath, StandardCharsets.UTF_8));
+ 
+diff --git a/src/main/java/net/minecraft/server/RunningOnDifferentThreadException.java b/src/main/java/net/minecraft/server/RunningOnDifferentThreadException.java
+index 0f52e8a61ca7e57e9f52473dceb9cc3464c0c86d..f54bde32760541a653460682e5a3ddd0b2ceec51 100644
+--- a/src/main/java/net/minecraft/server/RunningOnDifferentThreadException.java
++++ b/src/main/java/net/minecraft/server/RunningOnDifferentThreadException.java
+@@ -4,12 +4,12 @@ public final class RunningOnDifferentThreadException extends RuntimeException {
+     public static final RunningOnDifferentThreadException RUNNING_ON_DIFFERENT_THREAD = new RunningOnDifferentThreadException();
+ 
+     private RunningOnDifferentThreadException() {
+-        this.setStackTrace(new StackTraceElement[0]);
++        this.setStackTrace(org.plazmamc.plazma.constants.Empty.TRACE); // Plazma - Reduce allocations
+     }
+ 
+     @Override
+     public synchronized Throwable fillInStackTrace() {
+-        this.setStackTrace(new StackTraceElement[0]);
++        this.setStackTrace(org.plazmamc.plazma.constants.Empty.TRACE); // Plazma - Reduce allocations
+         return this;
+     }
+ }
+diff --git a/src/main/java/net/minecraft/server/ServerFunctionLibrary.java b/src/main/java/net/minecraft/server/ServerFunctionLibrary.java
+index 6783dc11a321c244296e84223c51cd1a489a9b96..39e5dd4718a59c13afc0da2b73e9adde3786463f 100644
+--- a/src/main/java/net/minecraft/server/ServerFunctionLibrary.java
++++ b/src/main/java/net/minecraft/server/ServerFunctionLibrary.java
+@@ -81,7 +81,7 @@ public class ServerFunctionLibrary implements PreparableReloadListener {
+                 }, prepareExecutor));
+             }
+ 
+-            CompletableFuture<?>[] completableFutures = map.values().toArray(new CompletableFuture[0]);
++            CompletableFuture<?>[] completableFutures = map.values().toArray(org.plazmamc.plazma.constants.Empty.FUTURE); // Plazma - Reduce allocations
+             return CompletableFuture.allOf(completableFutures).handle((unused, ex) -> {
+                 return map;
+             });
+diff --git a/src/main/java/net/minecraft/server/level/ChunkMap.java b/src/main/java/net/minecraft/server/level/ChunkMap.java
+index a88f6bbed191b6fd3ef2da625df45520331cf7d7..38fac04cea98ed93586280dae25b7386d15d8b89 100644
+--- a/src/main/java/net/minecraft/server/level/ChunkMap.java
++++ b/src/main/java/net/minecraft/server/level/ChunkMap.java
+@@ -142,6 +142,7 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
+     private final Long2LongMap chunkSaveCooldowns;
+     private final Queue<Runnable> unloadQueue;
+     private int serverViewDistance;
++    private static final ServerPlayerConnection[] EMPTY_CONNECTION = new ServerPlayerConnection[0]; // Plazma - Reduce allocations
+ 
+     // Paper - rewrite chunk system
+ 
+@@ -1362,7 +1363,7 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
+             // stuff could have been removed, so we need to check the trackedPlayers set
+             // for players that were removed
+ 
+-            for (ServerPlayerConnection conn : this.seenBy.toArray(new ServerPlayerConnection[0])) { // avoid CME
++            for (ServerPlayerConnection conn : this.seenBy.toArray(EMPTY_CONNECTION)) { // avoid CME // Plazma - Reduce allocations
+                 if (newTrackerCandidates == null || !newTrackerCandidates.contains(conn.getPlayer())) {
+                     this.updatePlayer(conn.getPlayer());
+                 }
+diff --git a/src/main/java/net/minecraft/server/level/ServerLevel.java b/src/main/java/net/minecraft/server/level/ServerLevel.java
+index 9301ec8142fbf5c5112cac75aef1b8e35737ce43..46edffe5604924c13d0c76fcdceed7a377147abe 100644
+--- a/src/main/java/net/minecraft/server/level/ServerLevel.java
++++ b/src/main/java/net/minecraft/server/level/ServerLevel.java
+@@ -1426,7 +1426,7 @@ public class ServerLevel extends Level implements WorldGenLevel {
+ 
+     public static List<Entity> getCurrentlyTickingEntities() {
+         Entity ticking = currentlyTickingEntity.get();
+-        List<Entity> ret = java.util.Arrays.asList(ticking == null ? new Entity[0] : new Entity[] { ticking });
++        List<Entity> ret = java.util.Arrays.asList(ticking == null ? org.plazmamc.plazma.constants.Empty.ENTITY : new Entity[] { ticking }); // Plazma - Reduce allocations
+ 
+         return ret;
+     }
+diff --git a/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java b/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
+index 21def42f813f00c9fbc9c920b9ba61efc5928ef6..73f7c82aa9efb81698d6b95df28c47ee467b8a44 100644
+--- a/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
++++ b/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
+@@ -794,13 +794,13 @@ public class ServerGamePacketListenerImpl extends ServerCommonPacketListenerImpl
+         // PacketUtils.ensureRunningOnSameThread(packet, this, this.player.serverLevel()); // Paper - run this async
+         // CraftBukkit start
+         if (this.chatSpamTickCount.addAndGet(io.papermc.paper.configuration.GlobalConfiguration.get().spamLimiter.tabSpamIncrement) > io.papermc.paper.configuration.GlobalConfiguration.get().spamLimiter.tabSpamLimit && !this.server.getPlayerList().isOp(this.player.getGameProfile())) { // Paper start - split and make configurable
+-            server.scheduleOnMain(() -> this.disconnect(Component.translatable("disconnect.spam", new Object[0]), org.bukkit.event.player.PlayerKickEvent.Cause.SPAM)); // Paper - kick event cause
++            server.scheduleOnMain(() -> this.disconnect(Component.translatable("disconnect.spam"/*, new Object[0]*/), org.bukkit.event.player.PlayerKickEvent.Cause.SPAM)); // Paper - kick event cause // Plazma - Reduce allocations
+             return;
+         }
+         // Paper start
+         String str = packet.getCommand(); int index = -1;
+         if (str.length() > 64 && ((index = str.indexOf(' ')) == -1 || index >= 64)) {
+-            server.scheduleOnMain(() -> this.disconnect(Component.translatable("disconnect.spam", new Object[0]))); // Paper
++            server.scheduleOnMain(() -> this.disconnect(Component.translatable("disconnect.spam"/*, new Object[0]*/))); // Paper // Plazma - Reduce allocations
+             return;
+         }
+         // Paper end
+@@ -3274,7 +3274,7 @@ public class ServerGamePacketListenerImpl extends ServerCommonPacketListenerImpl
+         // Paper start
+         if (!org.bukkit.Bukkit.isPrimaryThread()) {
+             if (this.recipeSpamPackets.addAndGet(io.papermc.paper.configuration.GlobalConfiguration.get().spamLimiter.recipeSpamIncrement) > io.papermc.paper.configuration.GlobalConfiguration.get().spamLimiter.recipeSpamLimit) {
+-                this.server.scheduleOnMain(() -> this.disconnect(net.minecraft.network.chat.Component.translatable("disconnect.spam", new Object[0]), org.bukkit.event.player.PlayerKickEvent.Cause.SPAM)); // Paper - kick event cause
++                this.server.scheduleOnMain(() -> this.disconnect(net.minecraft.network.chat.Component.translatable("disconnect.spam"/*, new Object[0]*/), org.bukkit.event.player.PlayerKickEvent.Cause.SPAM)); // Paper - kick event cause // Plazma - Reduce allocations
+                 return;
+             }
+         }
+diff --git a/src/main/java/net/minecraft/server/network/ServerLoginPacketListenerImpl.java b/src/main/java/net/minecraft/server/network/ServerLoginPacketListenerImpl.java
+index 05ef30ecdb68d1d254246431e7d5cecf9a38427e..f6320b7c987361612792b0c47edeeb1bc2fc6ab0 100644
+--- a/src/main/java/net/minecraft/server/network/ServerLoginPacketListenerImpl.java
++++ b/src/main/java/net/minecraft/server/network/ServerLoginPacketListenerImpl.java
+@@ -159,9 +159,9 @@ public class ServerLoginPacketListenerImpl implements ServerLoginPacketListener,
+ 
+     @Override
+     public void handleHello(ServerboundHelloPacket packet) {
+-        Validate.validState(this.state == ServerLoginPacketListenerImpl.State.HELLO, "Unexpected hello packet", new Object[0]);
++        Validate.validState(this.state == ServerLoginPacketListenerImpl.State.HELLO, "Unexpected hello packet"/*, new Object[0]*/); // Plazma - Reduce allocations
+         if (!org.plazmamc.plazma.configurations.GlobalConfiguration.get().player.allowAnyUsername) // Plazma - Add option to allow any usernames
+-        Validate.validState(ServerLoginPacketListenerImpl.isValidUsername(packet.name()), "Invalid characters in username", new Object[0]);
++        Validate.validState(ServerLoginPacketListenerImpl.isValidUsername(packet.name()), "Invalid characters in username"/*, new Object[0]*/); // Plazma - Reduce allocations
+         // Paper start - validate usernames
+         if (io.papermc.paper.configuration.GlobalConfiguration.get().proxies.isProxyOnlineMode() && io.papermc.paper.configuration.GlobalConfiguration.get().unsupportedSettings.performUsernameValidation) {
+             if (!this.iKnowThisMayNotBeTheBestIdeaButPleaseDisableUsernameValidation && !validateUsername(packet.name())) {
+@@ -254,7 +254,7 @@ public class ServerLoginPacketListenerImpl implements ServerLoginPacketListener,
+ 
+     @Override
+     public void handleKey(ServerboundKeyPacket packet) {
+-        Validate.validState(this.state == ServerLoginPacketListenerImpl.State.KEY, "Unexpected key packet", new Object[0]);
++        Validate.validState(this.state == ServerLoginPacketListenerImpl.State.KEY, "Unexpected key packet"/*, new Object[0]*/); // Plazma - Reduce allocations
+ 
+         final String s;
+ 
+@@ -436,7 +436,7 @@ public class ServerLoginPacketListenerImpl implements ServerLoginPacketListener,
+ 
+     @Override
+     public void handleLoginAcknowledgement(ServerboundLoginAcknowledgedPacket packet) {
+-        Validate.validState(this.state == ServerLoginPacketListenerImpl.State.PROTOCOL_SWITCHING, "Unexpected login acknowledgement packet", new Object[0]);
++        Validate.validState(this.state == ServerLoginPacketListenerImpl.State.PROTOCOL_SWITCHING, "Unexpected login acknowledgement packet"/*, new Object[0]*/); // Plazma - Reduce allocations
+         CommonListenerCookie commonlistenercookie = CommonListenerCookie.createInitial((GameProfile) Objects.requireNonNull(this.authenticatedProfile));
+         ServerConfigurationPacketListenerImpl serverconfigurationpacketlistenerimpl = new ServerConfigurationPacketListenerImpl(this.server, this.connection, commonlistenercookie, this.player); // CraftBukkit
+ 
+diff --git a/src/main/java/net/minecraft/server/players/PlayerList.java b/src/main/java/net/minecraft/server/players/PlayerList.java
+index 0ff64fc50768a4bed9c871fed1089753912b89d2..24efc55e41bf9d741f78b35ac5cf3d5741c43f34 100644
+--- a/src/main/java/net/minecraft/server/players/PlayerList.java
++++ b/src/main/java/net/minecraft/server/players/PlayerList.java
+@@ -718,7 +718,7 @@ public abstract class PlayerList {
+         while (iterator.hasNext()) {
+             entityplayer = (ServerPlayer) iterator.next();
+             this.save(entityplayer); // CraftBukkit - Force the player's inventory to be saved
+-            entityplayer.connection.disconnect(Component.translatable("multiplayer.disconnect.duplicate_login", new Object[0]), org.bukkit.event.player.PlayerKickEvent.Cause.DUPLICATE_LOGIN); // Paper - kick event cause
++            entityplayer.connection.disconnect(Component.translatable("multiplayer.disconnect.duplicate_login"/*, new Object[0]*/), org.bukkit.event.player.PlayerKickEvent.Cause.DUPLICATE_LOGIN); // Paper - kick event cause // Plazma - Reduce allocations
+         }
+ 
+         // Instead of kicking then returning, we need to store the kick reason
+diff --git a/src/main/java/net/minecraft/server/players/StoredUserList.java b/src/main/java/net/minecraft/server/players/StoredUserList.java
+index 09fc086548b9d0f97849f56f41e3a5be87f5091a..34b7c5421da93f14050425b0fc16bbc27e5f3eba 100644
+--- a/src/main/java/net/minecraft/server/players/StoredUserList.java
++++ b/src/main/java/net/minecraft/server/players/StoredUserList.java
+@@ -96,7 +96,7 @@ public abstract class StoredUserList<K, V extends StoredUserEntry<K>> {
+     }
+ 
+     public String[] getUserList() {
+-        return (String[]) this.map.keySet().toArray(new String[0]);
++        return this.map.keySet().toArray(org.plazmamc.plazma.constants.Empty.STRING); // Plazma - Reduce allocations
+     }
+ 
+     public boolean isEmpty() {
+diff --git a/src/main/java/net/minecraft/util/MemoryReserve.java b/src/main/java/net/minecraft/util/MemoryReserve.java
+index 0ee04fe6ff6a4d09754f326526ae04fe7226bab2..5663ce568a1daa638b7387bee8b9917ce1f64d14 100644
+--- a/src/main/java/net/minecraft/util/MemoryReserve.java
++++ b/src/main/java/net/minecraft/util/MemoryReserve.java
+@@ -11,6 +11,6 @@ public class MemoryReserve {
+     }
+ 
+     public static void release() {
+-        reserve = new byte[0];
++        reserve = org.plazmamc.plazma.constants.Empty.BYTE; // Plazma - Reduce allocations
+     }
+ }
+diff --git a/src/main/java/net/minecraft/util/ZeroBitStorage.java b/src/main/java/net/minecraft/util/ZeroBitStorage.java
+index 311625277a26c9c187025a1036978229241b965f..33d70d547f614704e7ac36b9f49bbb7ca13d968c 100644
+--- a/src/main/java/net/minecraft/util/ZeroBitStorage.java
++++ b/src/main/java/net/minecraft/util/ZeroBitStorage.java
+@@ -5,7 +5,7 @@ import java.util.function.IntConsumer;
+ import org.apache.commons.lang3.Validate;
+ 
+ public class ZeroBitStorage implements BitStorage {
+-    public static final long[] RAW = new long[0];
++    public static final long[] RAW = org.plazmamc.plazma.constants.Empty.LONG; // Plazma - Reduce allocations
+     private final int size;
+ 
+     public ZeroBitStorage(int size) {
+diff --git a/src/main/java/net/minecraft/world/entity/animal/Bee.java b/src/main/java/net/minecraft/world/entity/animal/Bee.java
+index 38a3dcec138d9233a46e5d523bcc6d64bc7fffd0..8424a7f7066fb3f8a4007b063db05ec0b8270ea3 100644
+--- a/src/main/java/net/minecraft/world/entity/animal/Bee.java
++++ b/src/main/java/net/minecraft/world/entity/animal/Bee.java
+@@ -251,7 +251,7 @@ public class Bee extends Animal implements NeutralMob, FlyingAnimal {
+         this.goalSelector.addGoal(8, new Bee.BeeWanderGoal());
+         this.goalSelector.addGoal(9, new FloatGoal(this));
+         this.targetSelector.addGoal(0, new org.purpurmc.purpur.entity.ai.HasRider(this)); // Purpur
+-        this.targetSelector.addGoal(1, (new Bee.BeeHurtByOtherGoal(this)).setAlertOthers(new Class[0]));
++        this.targetSelector.addGoal(1, (new Bee.BeeHurtByOtherGoal(this)).setAlertOthers(/*new Class[0]*/)); // Plazma - Reduce allocations
+         this.targetSelector.addGoal(2, new Bee.BeeBecomeAngryTargetGoal(this));
+         this.targetSelector.addGoal(3, new ResetUniversalAngerTargetGoal<>(this, true));
+     }
+diff --git a/src/main/java/net/minecraft/world/entity/animal/IronGolem.java b/src/main/java/net/minecraft/world/entity/animal/IronGolem.java
+index 64aba511e615983988cdb6a0fd45b7d9d4f2f16d..e335c936f1f286c9bf8f19aff7202c5f7e413bbe 100644
+--- a/src/main/java/net/minecraft/world/entity/animal/IronGolem.java
++++ b/src/main/java/net/minecraft/world/entity/animal/IronGolem.java
+@@ -122,7 +122,7 @@ public class IronGolem extends AbstractGolem implements NeutralMob {
+         this.goalSelector.addGoal(8, new RandomLookAroundGoal(this));
+         this.targetSelector.addGoal(0, new org.purpurmc.purpur.entity.ai.HasRider(this)); // Purpur
+         this.targetSelector.addGoal(1, new DefendVillageTargetGoal(this));
+-        this.targetSelector.addGoal(2, new HurtByTargetGoal(this, new Class[0]));
++        this.targetSelector.addGoal(2, new HurtByTargetGoal(this/*, new Class[0]*/)); // Plazma - Reduce allocations
+         this.targetSelector.addGoal(3, new NearestAttackableTargetGoal<>(this, Player.class, 10, true, false, this::isAngryAt));
+         this.targetSelector.addGoal(3, new NearestAttackableTargetGoal<>(this, Mob.class, 5, false, false, (entityliving) -> {
+             return entityliving instanceof Enemy && !(entityliving instanceof Creeper);
+diff --git a/src/main/java/net/minecraft/world/entity/animal/Panda.java b/src/main/java/net/minecraft/world/entity/animal/Panda.java
+index 97c38b72b998bdf397c72d3ea08fd93186585f30..f3d3c4ca36e9a965047440e572c41674f063a89f 100644
+--- a/src/main/java/net/minecraft/world/entity/animal/Panda.java
++++ b/src/main/java/net/minecraft/world/entity/animal/Panda.java
+@@ -339,7 +339,7 @@ public class Panda extends Animal {
+         this.goalSelector.addGoal(13, new FollowParentGoal(this, 1.25D));
+         this.goalSelector.addGoal(14, new WaterAvoidingRandomStrollGoal(this, 1.0D));
+         this.targetSelector.addGoal(0, new org.purpurmc.purpur.entity.ai.HasRider(this)); // Purpur
+-        this.targetSelector.addGoal(1, (new Panda.PandaHurtByTargetGoal(this, new Class[0])).setAlertOthers(new Class[0]));
++        this.targetSelector.addGoal(1, (new Panda.PandaHurtByTargetGoal(this/*, new Class[0]*/)).setAlertOthers()); // Plazma - Reduce allocations
+     }
+ 
+     public static AttributeSupplier.Builder createAttributes() {
+diff --git a/src/main/java/net/minecraft/world/entity/animal/Rabbit.java b/src/main/java/net/minecraft/world/entity/animal/Rabbit.java
+index eae2488f2a46e543b496b7a2919aabbb55dcb825..3383d61551f28b44943c0e935aedfa3cc9ac7e93 100644
+--- a/src/main/java/net/minecraft/world/entity/animal/Rabbit.java
++++ b/src/main/java/net/minecraft/world/entity/animal/Rabbit.java
+@@ -461,7 +461,7 @@ public class Rabbit extends Animal implements VariantHolder<Rabbit.Variant> {
+         if (variant == Rabbit.Variant.EVIL) {
+             this.getAttribute(Attributes.ARMOR).setBaseValue(8.0D);
+             this.goalSelector.addGoal(4, new MeleeAttackGoal(this, 1.4D, true));
+-            this.targetSelector.addGoal(1, (new HurtByTargetGoal(this, new Class[0])).setAlertOthers());
++            this.targetSelector.addGoal(1, (new HurtByTargetGoal(this/*,new Class[0]*/)).setAlertOthers()); // Plazma - Reduce allocations
+             this.targetSelector.addGoal(2, new NearestAttackableTargetGoal<>(this, Player.class, true));
+             this.targetSelector.addGoal(2, new NearestAttackableTargetGoal<>(this, Wolf.class, true));
+             if (!this.hasCustomName()) {
+diff --git a/src/main/java/net/minecraft/world/entity/animal/Wolf.java b/src/main/java/net/minecraft/world/entity/animal/Wolf.java
+index 5d49ed7ddf44a3d549b178ae548664194967776b..28131075d6cfd04e11a0ea24ac1466e34247b60e 100644
+--- a/src/main/java/net/minecraft/world/entity/animal/Wolf.java
++++ b/src/main/java/net/minecraft/world/entity/animal/Wolf.java
+@@ -241,7 +241,7 @@ public class Wolf extends TamableAnimal implements NeutralMob {
+         this.targetSelector.addGoal(0, new org.purpurmc.purpur.entity.ai.HasRider(this)); // Purpur
+         this.targetSelector.addGoal(1, new OwnerHurtByTargetGoal(this));
+         this.targetSelector.addGoal(2, new OwnerHurtTargetGoal(this));
+-        this.targetSelector.addGoal(3, (new HurtByTargetGoal(this, new Class[0])).setAlertOthers());
++        this.targetSelector.addGoal(3, (new HurtByTargetGoal(this/*,new Class[0]*/)).setAlertOthers()); // Plazma - Reduce allocations
+         this.targetSelector.addGoal(4, new NearestAttackableTargetGoal<>(this, Player.class, 10, true, false, this::isAngryAt));
+         // this.targetSelector.addGoal(5, new NonTameRandomTargetGoal<>(this, Animal.class, false, Wolf.PREY_SELECTOR)); // Purpur - moved to updatePathfinders()
+         this.targetSelector.addGoal(6, new NonTameRandomTargetGoal<>(this, Turtle.class, false, Turtle.BABY_ON_LAND_SELECTOR));
+diff --git a/src/main/java/net/minecraft/world/entity/animal/allay/Allay.java b/src/main/java/net/minecraft/world/entity/animal/allay/Allay.java
+index 3f36eedeae4b94ca684c57f4ec8d2d1ab5c51aae..b9650c83324165fa9c50f4f51bb889b165d4a260 100644
+--- a/src/main/java/net/minecraft/world/entity/animal/allay/Allay.java
++++ b/src/main/java/net/minecraft/world/entity/animal/allay/Allay.java
+@@ -84,7 +84,7 @@ public class Allay extends PathfinderMob implements InventoryCarrier, VibrationS
+     private static final EntityDataAccessor<Boolean> DATA_DANCING = SynchedEntityData.defineId(Allay.class, EntityDataSerializers.BOOLEAN);
+     private static final EntityDataAccessor<Boolean> DATA_CAN_DUPLICATE = SynchedEntityData.defineId(Allay.class, EntityDataSerializers.BOOLEAN);
+     protected static final ImmutableList<SensorType<? extends Sensor<? super Allay>>> SENSOR_TYPES = ImmutableList.of(SensorType.NEAREST_LIVING_ENTITIES, SensorType.NEAREST_PLAYERS, SensorType.HURT_BY, SensorType.NEAREST_ITEMS);
+-    protected static final ImmutableList<MemoryModuleType<?>> MEMORY_TYPES = ImmutableList.of(MemoryModuleType.PATH, MemoryModuleType.LOOK_TARGET, MemoryModuleType.NEAREST_VISIBLE_LIVING_ENTITIES, MemoryModuleType.WALK_TARGET, MemoryModuleType.CANT_REACH_WALK_TARGET_SINCE, MemoryModuleType.HURT_BY, MemoryModuleType.NEAREST_VISIBLE_WANTED_ITEM, MemoryModuleType.LIKED_PLAYER, MemoryModuleType.LIKED_NOTEBLOCK_POSITION, MemoryModuleType.LIKED_NOTEBLOCK_COOLDOWN_TICKS, MemoryModuleType.ITEM_PICKUP_COOLDOWN_TICKS, MemoryModuleType.IS_PANICKING, new MemoryModuleType[0]);
++    protected static final ImmutableList<MemoryModuleType<?>> MEMORY_TYPES = ImmutableList.of(MemoryModuleType.PATH, MemoryModuleType.LOOK_TARGET, MemoryModuleType.NEAREST_VISIBLE_LIVING_ENTITIES, MemoryModuleType.WALK_TARGET, MemoryModuleType.CANT_REACH_WALK_TARGET_SINCE, MemoryModuleType.HURT_BY, MemoryModuleType.NEAREST_VISIBLE_WANTED_ITEM, MemoryModuleType.LIKED_PLAYER, MemoryModuleType.LIKED_NOTEBLOCK_POSITION, MemoryModuleType.LIKED_NOTEBLOCK_COOLDOWN_TICKS, MemoryModuleType.ITEM_PICKUP_COOLDOWN_TICKS, MemoryModuleType.IS_PANICKING/*, new MemoryModuleType[0]*/); // Plazma - Reduce allocations
+     public static final ImmutableList<Float> THROW_SOUND_PITCHES = ImmutableList.of(0.5625F, 0.625F, 0.75F, 0.9375F, 1.0F, 1.0F, 1.125F, 1.25F, 1.5F, 1.875F, 2.0F, 2.25F, new Float[]{2.5F, 3.0F, 3.75F, 4.0F});
+     private final DynamicGameEventListener<VibrationSystem.Listener> dynamicVibrationListener;
+     private VibrationSystem.Data vibrationData;
+diff --git a/src/main/java/net/minecraft/world/entity/boss/wither/WitherBoss.java b/src/main/java/net/minecraft/world/entity/boss/wither/WitherBoss.java
+index b300ebd589f2ce7393dd435cab5b80f3ec9289ee..b34f5e8137c082da776e52b7a42cdcce158bc7b2 100644
+--- a/src/main/java/net/minecraft/world/entity/boss/wither/WitherBoss.java
++++ b/src/main/java/net/minecraft/world/entity/boss/wither/WitherBoss.java
+@@ -254,7 +254,7 @@ public class WitherBoss extends Monster implements PowerableMob, RangedAttackMob
+         this.goalSelector.addGoal(6, new LookAtPlayerGoal(this, Player.class, 8.0F));
+         this.goalSelector.addGoal(7, new RandomLookAroundGoal(this));
+         this.targetSelector.addGoal(0, new org.purpurmc.purpur.entity.ai.HasRider(this)); // Purpur
+-        this.targetSelector.addGoal(1, new HurtByTargetGoal(this, new Class[0]));
++        this.targetSelector.addGoal(1, new HurtByTargetGoal(this/*,new Class[0]*/)); // Plazma - Reduce allocations
+         this.targetSelector.addGoal(2, new NearestAttackableTargetGoal<>(this, LivingEntity.class, 0, false, false, WitherBoss.LIVING_ENTITY_SELECTOR));
+     }
+ 
+diff --git a/src/main/java/net/minecraft/world/entity/monster/AbstractSkeleton.java b/src/main/java/net/minecraft/world/entity/monster/AbstractSkeleton.java
+index 28eb98d383d6846a25c29f8cd8ff211c360a56dc..a7de6f15ea81b9e3718c06b020c6eac71718b2a7 100644
+--- a/src/main/java/net/minecraft/world/entity/monster/AbstractSkeleton.java
++++ b/src/main/java/net/minecraft/world/entity/monster/AbstractSkeleton.java
+@@ -79,7 +79,7 @@ public abstract class AbstractSkeleton extends Monster implements RangedAttackMo
+         this.goalSelector.addGoal(6, new LookAtPlayerGoal(this, Player.class, 8.0F));
+         this.goalSelector.addGoal(6, new RandomLookAroundGoal(this));
+         this.targetSelector.addGoal(0, new org.purpurmc.purpur.entity.ai.HasRider(this)); // Purpur
+-        this.targetSelector.addGoal(1, new HurtByTargetGoal(this, new Class[0]));
++        this.targetSelector.addGoal(1, new HurtByTargetGoal(this/*,new Class[0]*/)); // Plazma - Reduce allocations
+         this.targetSelector.addGoal(2, new NearestAttackableTargetGoal<>(this, Player.class, true));
+         this.targetSelector.addGoal(3, new NearestAttackableTargetGoal<>(this, IronGolem.class, true));
+         this.targetSelector.addGoal(3, new NearestAttackableTargetGoal<>(this, Turtle.class, 10, true, false, Turtle.BABY_ON_LAND_SELECTOR));
+diff --git a/src/main/java/net/minecraft/world/entity/monster/Creeper.java b/src/main/java/net/minecraft/world/entity/monster/Creeper.java
+index 304ea7fdcd410a7c88ec61143364e14de8db0b0c..5d324a1d3d8f7a990b6caa724d31e2ad8a42ee13 100644
+--- a/src/main/java/net/minecraft/world/entity/monster/Creeper.java
++++ b/src/main/java/net/minecraft/world/entity/monster/Creeper.java
+@@ -153,7 +153,7 @@ public class Creeper extends Monster implements PowerableMob {
+         this.goalSelector.addGoal(6, new RandomLookAroundGoal(this));
+         this.targetSelector.addGoal(0, new org.purpurmc.purpur.entity.ai.HasRider(this)); // Purpur
+         this.targetSelector.addGoal(1, new NearestAttackableTargetGoal<>(this, Player.class, true));
+-        this.targetSelector.addGoal(2, new HurtByTargetGoal(this, new Class[0]));
++        this.targetSelector.addGoal(2, new HurtByTargetGoal(this/*,new Class[0]*/)); // Plazma - Reduce allocations
+     }
+ 
+     public static AttributeSupplier.Builder createAttributes() {
+diff --git a/src/main/java/net/minecraft/world/entity/monster/EnderMan.java b/src/main/java/net/minecraft/world/entity/monster/EnderMan.java
+index 4c9ffa8e1ab97d8156ead0ed189c769ffd9b4aae..7f06da7e9ecc99ddd7e7c6ef38281fdcda50b7fe 100644
+--- a/src/main/java/net/minecraft/world/entity/monster/EnderMan.java
++++ b/src/main/java/net/minecraft/world/entity/monster/EnderMan.java
+@@ -138,7 +138,7 @@ public class EnderMan extends Monster implements NeutralMob {
+         this.goalSelector.addGoal(11, new EnderMan.EndermanTakeBlockGoal(this));
+         this.targetSelector.addGoal(0, new org.purpurmc.purpur.entity.ai.HasRider(this)); // Purpur
+         this.targetSelector.addGoal(1, new EnderMan.EndermanLookForPlayerGoal(this, this::isAngryAt));
+-        this.targetSelector.addGoal(2, new HurtByTargetGoal(this, new Class[0]));
++        this.targetSelector.addGoal(2, new HurtByTargetGoal(this/*,new Class[0]*/)); // Plazma - Reduce allocations
+         this.targetSelector.addGoal(3, new NearestAttackableTargetGoal<>(this, Endermite.class, 10, true, false, (entityliving) -> entityliving.level().purpurConfig.endermanAggroEndermites && entityliving instanceof Endermite endermite && (!entityliving.level().purpurConfig.endermanAggroEndermitesOnlyIfPlayerSpawned || endermite.isPlayerSpawned()))); // Purpur
+         this.targetSelector.addGoal(4, new ResetUniversalAngerTargetGoal<>(this, false));
+     }
+diff --git a/src/main/java/net/minecraft/world/entity/monster/Silverfish.java b/src/main/java/net/minecraft/world/entity/monster/Silverfish.java
+index dbc27afbccb027963ae3f035c268835adedbb933..320916acbf22cd5d9a7aff7d3550de756bafeccd 100644
+--- a/src/main/java/net/minecraft/world/entity/monster/Silverfish.java
++++ b/src/main/java/net/minecraft/world/entity/monster/Silverfish.java
+@@ -89,7 +89,7 @@ public class Silverfish extends Monster {
+         this.goalSelector.addGoal(4, new MeleeAttackGoal(this, 1.0D, false));
+         this.goalSelector.addGoal(5, new Silverfish.SilverfishMergeWithStoneGoal(this));
+         this.targetSelector.addGoal(0, new org.purpurmc.purpur.entity.ai.HasRider(this)); // Purpur
+-        this.targetSelector.addGoal(1, (new HurtByTargetGoal(this, new Class[0])).setAlertOthers());
++        this.targetSelector.addGoal(1, (new HurtByTargetGoal(this/*,new Class[0]*/)).setAlertOthers()); // Plazma - Reduce allocations
+         this.targetSelector.addGoal(2, new NearestAttackableTargetGoal<>(this, Player.class, true));
+     }
+ 
+diff --git a/src/main/java/net/minecraft/world/entity/monster/Spider.java b/src/main/java/net/minecraft/world/entity/monster/Spider.java
+index 43ce5ffc6fc1853875f446b543d5b57502a21dc7..91504d3f3ce76d6cda743ced6d713a63092da6e6 100644
+--- a/src/main/java/net/minecraft/world/entity/monster/Spider.java
++++ b/src/main/java/net/minecraft/world/entity/monster/Spider.java
+@@ -95,7 +95,7 @@ public class Spider extends Monster {
+         this.goalSelector.addGoal(6, new LookAtPlayerGoal(this, Player.class, 8.0F));
+         this.goalSelector.addGoal(6, new RandomLookAroundGoal(this));
+         this.targetSelector.addGoal(0, new org.purpurmc.purpur.entity.ai.HasRider(this)); // Purpur
+-        this.targetSelector.addGoal(1, new HurtByTargetGoal(this, new Class[0]));
++        this.targetSelector.addGoal(1, new HurtByTargetGoal(this/*,new Class[0]*/)); // Plazma - Reduce allocations
+         this.targetSelector.addGoal(2, new Spider.SpiderTargetGoal<>(this, Player.class));
+         this.targetSelector.addGoal(3, new Spider.SpiderTargetGoal<>(this, IronGolem.class));
+     }
+diff --git a/src/main/java/net/minecraft/world/entity/monster/Zombie.java b/src/main/java/net/minecraft/world/entity/monster/Zombie.java
+index 1be1bfb831198b68d8e20bf5ff922edff8832114..ff93e2b0360953884475e336dd1e786f8ae0288b 100644
+--- a/src/main/java/net/minecraft/world/entity/monster/Zombie.java
++++ b/src/main/java/net/minecraft/world/entity/monster/Zombie.java
+@@ -166,7 +166,7 @@ public class Zombie extends Monster {
+         this.goalSelector.addGoal(2, new ZombieAttackGoal(this, 1.0D, false));
+         this.goalSelector.addGoal(6, new MoveThroughVillageGoal(this, 1.0D, true, 4, this::canBreakDoors));
+         this.goalSelector.addGoal(7, new WaterAvoidingRandomStrollGoal(this, 1.0D));
+-        this.targetSelector.addGoal(1, (new HurtByTargetGoal(this, new Class[0])).setAlertOthers(ZombifiedPiglin.class));
++        this.targetSelector.addGoal(1, (new HurtByTargetGoal(this/*,new Class[0]*/)).setAlertOthers(ZombifiedPiglin.class)); // Plazma - Reduce allocations
+         this.targetSelector.addGoal(2, new NearestAttackableTargetGoal<>(this, Player.class, true));
+         // Purpur start
+         if ( this.level().spigotConfig.zombieAggressiveTowardsVillager ) this.targetSelector.addGoal(3, new NearestAttackableTargetGoal<>(this, AbstractVillager.class, false) { // Spigot
+diff --git a/src/main/java/net/minecraft/world/entity/monster/ZombifiedPiglin.java b/src/main/java/net/minecraft/world/entity/monster/ZombifiedPiglin.java
+index df8c7a45eb49a8c667030eb67d6d49dcbaef4fcf..9aa3a54dcbcc2c62b3b816fbf6c0cbd62202cd57 100644
+--- a/src/main/java/net/minecraft/world/entity/monster/ZombifiedPiglin.java
++++ b/src/main/java/net/minecraft/world/entity/monster/ZombifiedPiglin.java
+@@ -120,7 +120,7 @@ public class ZombifiedPiglin extends Zombie implements NeutralMob {
+     protected void addBehaviourGoals() {
+         this.goalSelector.addGoal(2, new ZombieAttackGoal(this, 1.0D, false));
+         this.goalSelector.addGoal(7, new WaterAvoidingRandomStrollGoal(this, 1.0D));
+-        this.targetSelector.addGoal(1, pathfinderGoalHurtByTarget = (new HurtByTargetGoal(this, new Class[0])).setAlertOthers()); // Paper - assign field
++        this.targetSelector.addGoal(1, pathfinderGoalHurtByTarget = (new HurtByTargetGoal(this/*,new Class[0]*/)).setAlertOthers()); // Paper - assign field // Plazma - Reduce allocations
+         this.targetSelector.addGoal(2, new NearestAttackableTargetGoal<>(this, Player.class, 10, true, false, this::isAngryAt));
+         this.targetSelector.addGoal(3, new ResetUniversalAngerTargetGoal<>(this, true));
+     }
+diff --git a/src/main/java/net/minecraft/world/item/crafting/ShapedRecipe.java b/src/main/java/net/minecraft/world/item/crafting/ShapedRecipe.java
+index 17bef91546fa85d401b263c3a69fbf464f290eca..2b89f633c25927a3d6a8d7dd0beafdd3ed718d5d 100644
+--- a/src/main/java/net/minecraft/world/item/crafting/ShapedRecipe.java
++++ b/src/main/java/net/minecraft/world/item/crafting/ShapedRecipe.java
+@@ -226,7 +226,7 @@ public class ShapedRecipe extends io.papermc.paper.inventory.recipe.RecipeBookEx
+         }
+ 
+         if (pattern.size() == l) {
+-            return new String[0];
++            return org.plazmamc.plazma.constants.Empty.STRING; // Plazma - Reduce allocations
+         } else {
+             String[] astring = new String[pattern.size() - l - k];
+ 
+diff --git a/src/main/java/net/minecraft/world/item/crafting/ShapelessRecipe.java b/src/main/java/net/minecraft/world/item/crafting/ShapelessRecipe.java
+index 252fc22844682c0f67dc02a87478e01e49b6430d..d61dfdb192dd8bfa9c669573f645682519e51c15 100644
+--- a/src/main/java/net/minecraft/world/item/crafting/ShapelessRecipe.java
++++ b/src/main/java/net/minecraft/world/item/crafting/ShapelessRecipe.java
+@@ -27,6 +27,7 @@ public class ShapelessRecipe extends io.papermc.paper.inventory.recipe.RecipeBoo
+     final ItemStack result;
+     final NonNullList<Ingredient> ingredients;
+     private final boolean isBukkit; // Pufferfish
++    private static final Ingredient[] EMPTY_INGREDIENT = new Ingredient[0]; // Plazma - Reduce allocations
+ 
+     // Pufferfish start
+     public ShapelessRecipe(String group, CraftingBookCategory category, ItemStack result, NonNullList<Ingredient> ingredients) {
+@@ -84,7 +85,7 @@ public class ShapelessRecipe extends io.papermc.paper.inventory.recipe.RecipeBoo
+     public boolean matches(CraftingContainer inventory, Level world) {
+         // Pufferfish start
+         if (!this.isBukkit) {
+-            java.util.List<Ingredient> ingredients = com.google.common.collect.Lists.newArrayList(this.ingredients.toArray(new Ingredient[0]));
++            java.util.List<Ingredient> ingredients = com.google.common.collect.Lists.newArrayList(this.ingredients.toArray(EMPTY_INGREDIENT)); // Plazma - Reduce allocations
+ 
+             inventory: for (int index = 0; index < inventory.getContainerSize(); index++) {
+                 ItemStack itemStack = inventory.getItem(index);
+diff --git a/src/main/java/net/minecraft/world/level/block/ComposterBlock.java b/src/main/java/net/minecraft/world/level/block/ComposterBlock.java
+index 596b77306f690a2298835f0f0fea1abee2a7c85d..18c5f56796388bc27d796000b14ca595c20d7a98 100644
+--- a/src/main/java/net/minecraft/world/level/block/ComposterBlock.java
++++ b/src/main/java/net/minecraft/world/level/block/ComposterBlock.java
+@@ -60,6 +60,7 @@ public class ComposterBlock extends Block implements WorldlyContainerHolder {
+ 
+         avoxelshape[8] = avoxelshape[7];
+     });
++    private static final int[] ZERO_INT = new int[]{0}; // Plazma - Reduce allocations // Plazma - Reduce allocations
+ 
+     public static void bootStrap() {
+         ComposterBlock.COMPOSTABLES.defaultReturnValue(-1.0F);
+@@ -443,7 +444,7 @@ public class ComposterBlock extends Block implements WorldlyContainerHolder {
+ 
+         @Override
+         public int[] getSlotsForFace(Direction side) {
+-            return side == Direction.DOWN ? new int[]{0} : new int[0];
++            return side == Direction.DOWN ? ZERO_INT : org.plazmamc.plazma.constants.Empty.INT; // Plazma - Reduce allocations
+         }
+ 
+         @Override
+@@ -492,7 +493,7 @@ public class ComposterBlock extends Block implements WorldlyContainerHolder {
+ 
+         @Override
+         public int[] getSlotsForFace(Direction side) {
+-            return side == Direction.UP ? new int[]{0} : new int[0];
++            return side == Direction.UP ? ZERO_INT : org.plazmamc.plazma.constants.Empty.INT; // Plazma - Reduce allocations
+         }
+ 
+         @Override
+@@ -534,7 +535,7 @@ public class ComposterBlock extends Block implements WorldlyContainerHolder {
+ 
+         @Override
+         public int[] getSlotsForFace(Direction side) {
+-            return new int[0];
++            return org.plazmamc.plazma.constants.Empty.INT; // Plazma - Reduce allocations
+         }
+ 
+         @Override
+diff --git a/src/main/java/net/minecraft/world/level/chunk/ChunkStatus.java b/src/main/java/net/minecraft/world/level/chunk/ChunkStatus.java
+index a907b79fd8291a0e92db138f37239d17424188a1..a402db6baa4b24b4c6750b01b8b2f56e213ecf78 100644
+--- a/src/main/java/net/minecraft/world/level/chunk/ChunkStatus.java
++++ b/src/main/java/net/minecraft/world/level/chunk/ChunkStatus.java
+@@ -148,7 +148,7 @@ public class ChunkStatus {
+     }, (chunkstatus, worldserver, structuretemplatemanager, lightenginethreaded, function, ichunkaccess) -> {
+         return (CompletableFuture) function.apply(ichunkaccess);
+     });
+-    private static final List<ChunkStatus> STATUS_BY_RANGE = ImmutableList.of(ChunkStatus.FULL, ChunkStatus.INITIALIZE_LIGHT, ChunkStatus.CARVERS, ChunkStatus.BIOMES, ChunkStatus.STRUCTURE_STARTS, ChunkStatus.STRUCTURE_STARTS, ChunkStatus.STRUCTURE_STARTS, ChunkStatus.STRUCTURE_STARTS, ChunkStatus.STRUCTURE_STARTS, ChunkStatus.STRUCTURE_STARTS, ChunkStatus.STRUCTURE_STARTS, ChunkStatus.STRUCTURE_STARTS, new ChunkStatus[0]);
++    private static final List<ChunkStatus> STATUS_BY_RANGE = ImmutableList.of(ChunkStatus.FULL, ChunkStatus.INITIALIZE_LIGHT, ChunkStatus.CARVERS, ChunkStatus.BIOMES, ChunkStatus.STRUCTURE_STARTS, ChunkStatus.STRUCTURE_STARTS, ChunkStatus.STRUCTURE_STARTS, ChunkStatus.STRUCTURE_STARTS, ChunkStatus.STRUCTURE_STARTS, ChunkStatus.STRUCTURE_STARTS, ChunkStatus.STRUCTURE_STARTS, ChunkStatus.STRUCTURE_STARTS/*, new ChunkStatus[0]*/); // Plazma - Reduce allocations
+     private static final IntList RANGE_BY_STATUS = (IntList) Util.make(new IntArrayList(ChunkStatus.getStatusList().size()), (intarraylist) -> {
+         int i = 0;
+ 
+diff --git a/src/main/java/net/minecraft/world/level/chunk/storage/RegionFile.java b/src/main/java/net/minecraft/world/level/chunk/storage/RegionFile.java
+index 9248769e6d357f6eec68945fd7700e79b2942c41..931806f365cf9a0587b18d115d98f5308a2f9407 100644
+--- a/src/main/java/net/minecraft/world/level/chunk/storage/RegionFile.java
++++ b/src/main/java/net/minecraft/world/level/chunk/storage/RegionFile.java
+@@ -444,7 +444,7 @@ public class RegionFile implements AutoCloseable {
+         initOversizedState(); // Paper
+         this.usedSectors = new RegionBitmap();
+         this.version = outputChunkStreamVersion;
+-        if (!Files.isDirectory(directory, new LinkOption[0])) {
++        if (!Files.isDirectory(directory/*, new LinkOption[0]*/)) { // Plazma - Reduce allocations
+             throw new IllegalArgumentException("Expected directory, got " + directory.toAbsolutePath());
+         } else {
+             this.externalFileDir = directory;
+@@ -700,7 +700,7 @@ public class RegionFile implements AutoCloseable {
+     private DataInputStream createExternalChunkInputStream(ChunkPos pos, byte flags) throws IOException {
+         Path path = this.getExternalChunkPath(pos);
+ 
+-        if (!Files.isRegularFile(path, new LinkOption[0])) {
++        if (!Files.isRegularFile(path/*, new LinkOption[0]*/)) { // Plazma - Reduce allocations
+             RegionFile.LOGGER.error("External chunk path {} is not file", path);
+             return null;
+         } else {
+@@ -752,7 +752,7 @@ public class RegionFile implements AutoCloseable {
+                             return false;
+                         }
+ 
+-                        if (!Files.isRegularFile(this.getExternalChunkPath(pos), new LinkOption[0])) {
++                        if (!Files.isRegularFile(this.getExternalChunkPath(pos)/*, new LinkOption[0]*/)) { // Plazma - Reduce allocations
+                             return false;
+                         }
+                     } else {
+diff --git a/src/main/java/net/minecraft/world/level/levelgen/DebugLevelSource.java b/src/main/java/net/minecraft/world/level/levelgen/DebugLevelSource.java
+index c68736b023127c7b395835f4fa82d9062110697b..71ca67be643254b49afa963068b5813c8abee8f0 100644
+--- a/src/main/java/net/minecraft/world/level/levelgen/DebugLevelSource.java
++++ b/src/main/java/net/minecraft/world/level/levelgen/DebugLevelSource.java
+@@ -88,7 +88,7 @@ public class DebugLevelSource extends ChunkGenerator {
+ 
+     @Override
+     public NoiseColumn getBaseColumn(int x, int z, LevelHeightAccessor world, RandomState noiseConfig) {
+-        return new NoiseColumn(0, new BlockState[0]);
++        return new NoiseColumn(0, org.plazmamc.plazma.constants.Empty.BLOCK_STATE); // Plazma - Reduce allocations
+     }
+ 
+     @Override
+diff --git a/src/main/java/net/minecraft/world/level/storage/LevelStorageSource.java b/src/main/java/net/minecraft/world/level/storage/LevelStorageSource.java
+index 4bcecf2aaab3aed5daa96e1897fb105f013c82cc..c176150191809eaa9d44d7a5f4528c0e11cb52f4 100644
+--- a/src/main/java/net/minecraft/world/level/storage/LevelStorageSource.java
++++ b/src/main/java/net/minecraft/world/level/storage/LevelStorageSource.java
+@@ -110,7 +110,7 @@ public class LevelStorageSource {
+     }
+ 
+     public static DirectoryValidator parseValidator(Path allowedSymlinksFile) {
+-        if (Files.exists(allowedSymlinksFile, new LinkOption[0])) {
++        if (Files.exists(allowedSymlinksFile/*, new LinkOption[0]*/)) { // Plazma - Reduce allocations
+             try {
+                 BufferedReader bufferedreader = Files.newBufferedReader(allowedSymlinksFile);
+ 
+@@ -180,7 +180,7 @@ public class LevelStorageSource {
+     }
+ 
+     public LevelStorageSource.LevelCandidates findLevelCandidates() throws LevelStorageException {
+-        if (!Files.isDirectory(this.baseDir, new LinkOption[0])) {
++        if (!Files.isDirectory(this.baseDir/*, new LinkOption[0]*/)) { // Plazma - Reduce allocations
+             throw new LevelStorageException(Component.translatable("selectWorld.load_folder_access"));
+         } else {
+             try {
+@@ -189,11 +189,12 @@ public class LevelStorageSource {
+                 LevelStorageSource.LevelCandidates convertable_a;
+ 
+                 try {
+-                    List<LevelStorageSource.LevelDirectory> list = stream.filter((path) -> {
+-                        return Files.isDirectory(path, new LinkOption[0]);
+-                    }).map(LevelStorageSource.LevelDirectory::new).filter((convertable_b) -> {
+-                        return Files.isRegularFile(convertable_b.dataFile(), new LinkOption[0]) || Files.isRegularFile(convertable_b.oldDataFile(), new LinkOption[0]);
+-                    }).toList();
++                    // Plazma start - Reduce allocations
++                    List<LevelStorageSource.LevelDirectory> list = stream.filter(Files::isDirectory)
++                        .map(LevelStorageSource.LevelDirectory::new)
++                        .filter(convertable_b -> Files.isRegularFile(convertable_b.dataFile()) || Files.isRegularFile(convertable_b.oldDataFile()))
++                        .toList();
++                    // Plazma end
+ 
+                     convertable_a = new LevelStorageSource.LevelCandidates(list);
+                 } catch (Throwable throwable) {
+@@ -278,12 +279,12 @@ public class LevelStorageSource {
+ 
+     @Nullable
+     <T> T readLevelData(LevelStorageSource.LevelDirectory levelSave, BiFunction<Path, DataFixer, T> levelDataParser) {
+-        if (!Files.exists(levelSave.path(), new LinkOption[0])) {
++        if (!Files.exists(levelSave.path()/*, new LinkOption[0]*/)) { // Plazma - Reduce allocations
+             return null;
+         } else {
+             Path path = levelSave.dataFile();
+ 
+-            if (Files.exists(path, new LinkOption[0])) {
++            if (Files.exists(path)/*, new LinkOption[0]*/) { // Plazma - Reduce allocations
+                 T t0 = levelDataParser.apply(path, this.fixerUpper);
+ 
+                 if (t0 != null) {
+@@ -292,7 +293,7 @@ public class LevelStorageSource {
+             }
+ 
+             path = levelSave.oldDataFile();
+-            return Files.exists(path, new LinkOption[0]) ? levelDataParser.apply(path, this.fixerUpper) : null;
++            return Files.exists(path/*, new LinkOption[0]*/) ? levelDataParser.apply(path, this.fixerUpper) : null; // Plazma - Reduce allocations
+         }
+     }
+ 
+@@ -423,7 +424,7 @@ public class LevelStorageSource {
+ 
+     public boolean levelExists(String name) {
+         try {
+-            return Files.isDirectory(this.getLevelPath(name), new LinkOption[0]);
++            return Files.isDirectory(this.getLevelPath(name)/*, new LinkOption[0]*/); // Plazma - Reduce allocations
+         } catch (InvalidPathException invalidpathexception) {
+             return false;
+         }
+@@ -675,7 +676,7 @@ public class LevelStorageSource {
+             this.checkLock();
+             Path path = this.levelDirectory.dataFile();
+ 
+-            if (Files.exists(path, new LinkOption[0])) {
++            if (Files.exists(path)/*, new LinkOption[0]*/) { // Plazma - Reduce allocations
+                 CompoundTag nbttagcompound = NbtIo.readCompressed(path.toFile());
+                 CompoundTag nbttagcompound1 = nbttagcompound.getCompound("Data");
+ 
+diff --git a/src/main/java/net/minecraft/world/level/storage/PlayerDataStorage.java b/src/main/java/net/minecraft/world/level/storage/PlayerDataStorage.java
+index b4b74bff0579b919266e91464b36c9381342b677..5d521f0f614cdaaba68f64b9ee4051e347b28426 100644
+--- a/src/main/java/net/minecraft/world/level/storage/PlayerDataStorage.java
++++ b/src/main/java/net/minecraft/world/level/storage/PlayerDataStorage.java
+@@ -120,7 +120,7 @@ public class PlayerDataStorage {
+         String[] astring = this.playerDir.list();
+ 
+         if (astring == null) {
+-            astring = new String[0];
++            astring = org.plazmamc.plazma.constants.Empty.STRING; // Plazma - Reduce allocations
+         }
+ 
+         for (int i = 0; i < astring.length; ++i) {
+diff --git a/src/main/java/net/minecraft/world/scores/Team.java b/src/main/java/net/minecraft/world/scores/Team.java
+index 16d2aa4556bc9f32a2def7f9ca282aa3fa23fb87..8514da343ce287298477f2c977e49491e621ddde 100644
+--- a/src/main/java/net/minecraft/world/scores/Team.java
++++ b/src/main/java/net/minecraft/world/scores/Team.java
+@@ -80,7 +80,7 @@ public abstract class Team {
+         public final int id;
+ 
+         public static String[] getAllNames() {
+-            return BY_NAME.keySet().toArray(new String[0]);
++            return BY_NAME.keySet().toArray(org.plazmamc.plazma.constants.Empty.STRING); // Plazma - Reduce allocations
+         }
+ 
+         @Nullable
+diff --git a/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java b/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java
+index 3b3bbeda831f82b6d9b284d85a31a1fff578a64f..ce591f0ea9d135280fda83011b05cc74caf3b695 100644
+--- a/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java
++++ b/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java
+@@ -457,7 +457,7 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
+     public void sendTitle(Title title) {
+         Preconditions.checkNotNull(title, "Title is null");
+         setTitleTimes(title.getFadeIn(), title.getStay(), title.getFadeOut());
+-        setSubtitle(title.getSubtitle() == null ? new BaseComponent[0] : title.getSubtitle());
++        setSubtitle(title.getSubtitle() == null ? org.plazmamc.plazma.constants.Empty.BASE_COMPONENT : title.getSubtitle()); // Plazma - Reduce allocations
+         showTitle(title.getTitle());
+     }
+ 
+diff --git a/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaBook.java b/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaBook.java
+index 6d85237b21650edf1d2dc71abaf0edbe7a8aef6b..be71bfb63970d21e9b79f6b1b26138d5cd4ca0b1 100644
+--- a/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaBook.java
++++ b/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaBook.java
+@@ -609,7 +609,7 @@ public class CraftMetaBook extends CraftMetaItem implements BookMeta {
+                 throw new IllegalArgumentException("Invalid page number " + page + "/" + CraftMetaBook.this.getPageCount());
+             }
+ 
+-            BaseComponent[] newText = text == null ? new BaseComponent[0] : text;
++            BaseComponent[] newText = text == null ? org.plazmamc.plazma.constants.Empty.BASE_COMPONENT : text; // Plazma - Reduce allocations
+             CraftMetaBook.this.pages.set(page - 1, this.componentsToPage(newText));
+         }
+ 
+@@ -622,7 +622,7 @@ public class CraftMetaBook extends CraftMetaItem implements BookMeta {
+         public void addPage(final BaseComponent[]... pages) {
+             for (BaseComponent[] page : pages) {
+                 if (page == null) {
+-                    page = new BaseComponent[0];
++                    page = org.plazmamc.plazma.constants.Empty.BASE_COMPONENT; // Plazma - Reduce allocations
+                 }
+ 
+                 CraftMetaBook.this.internalAddPage(this.componentsToPage(page));
+diff --git a/src/main/java/org/bukkit/craftbukkit/util/WeakCollection.java b/src/main/java/org/bukkit/craftbukkit/util/WeakCollection.java
+index b25dc23b81687dd4d4e70b3615ffb91f8c03c68b..acb98770b9d01e930642a5794f9179660b411c02 100644
+--- a/src/main/java/org/bukkit/craftbukkit/util/WeakCollection.java
++++ b/src/main/java/org/bukkit/craftbukkit/util/WeakCollection.java
+@@ -164,7 +164,7 @@ public final class WeakCollection<T> implements Collection<T> {
+ 
+     @Override
+     public Object[] toArray() {
+-        return this.toArray(new Object[0]);
++        return this.toArray(org.plazmamc.plazma.constants.Empty.OBJECT); // Plazma - Reduce allocations
+     }
+ 
+     @Override
+diff --git a/src/main/java/org/plazmamc/plazma/commands/plazma/subcommand/VersionCommand.java b/src/main/java/org/plazmamc/plazma/commands/plazma/subcommand/VersionCommand.java
+index b6664ba0fce55f5cfa0c8d3051dc8c2be0fd0703..7c4ac7748ab93a0c8a706d74c4d442f803a4cc97 100644
+--- a/src/main/java/org/plazmamc/plazma/commands/plazma/subcommand/VersionCommand.java
++++ b/src/main/java/org/plazmamc/plazma/commands/plazma/subcommand/VersionCommand.java
+@@ -14,7 +14,7 @@ public class VersionCommand implements PlazmaSubCommand {
+     @Override
+     public boolean execute(final CommandSender sender, final String subCommand, final String[] args) {
+         final @Nullable Command ver = MinecraftServer.getServer().server.getCommandMap().getCommand("version");
+-        if (ver != null) return ver.execute(sender, "plazma", new String[0]);
++        if (ver != null) return ver.execute(sender, "plazma", org.plazmamc.plazma.constants.Empty.STRING); // Plazma - Reduce allocations
+         return false;
+     }
+ 
+diff --git a/src/main/java/org/plazmamc/plazma/constants/Empty.java b/src/main/java/org/plazmamc/plazma/constants/Empty.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..2b6eb7997986ab73ccb3b1baca945a3234ae916e
+--- /dev/null
++++ b/src/main/java/org/plazmamc/plazma/constants/Empty.java
+@@ -0,0 +1,20 @@
++package org.plazmamc.plazma.constants;
++
++public interface Empty {
++
++    int[] INT = new int[0];
++    long[] LONG = new long[0];
++    byte[] BYTE = new byte[0];
++
++    Object[] OBJECT = new Object[0];
++    String[] STRING = new String[0];
++    StackTraceElement[] TRACE = new StackTraceElement[0];
++    java.util.concurrent.CompletableFuture<?>[] FUTURE = new java.util.concurrent.CompletableFuture[0];
++
++    net.minecraft.world.level.block.state.BlockState[] BLOCK_STATE = new net.minecraft.world.level.block.state.BlockState[0];
++    net.minecraft.world.entity.Entity[] ENTITY = new net.minecraft.world.entity.Entity[0];
++
++    @SuppressWarnings("deprecation")
++    net.md_5.bungee.api.chat.BaseComponent[] BASE_COMPONENT = new net.md_5.bungee.api.chat.BaseComponent[0];
++
++}
+diff --git a/src/main/java/org/purpurmc/purpur/command/PurpurCommand.java b/src/main/java/org/purpurmc/purpur/command/PurpurCommand.java
+index 2621e54879e9ab0029a875f1d09eee67878b90d5..e7e959368c01de69261618d1eb749bebba3527af 100644
+--- a/src/main/java/org/purpurmc/purpur/command/PurpurCommand.java
++++ b/src/main/java/org/purpurmc/purpur/command/PurpurCommand.java
+@@ -57,7 +57,7 @@ public class PurpurCommand extends Command {
+         } else if (args[0].equalsIgnoreCase("version")) {
+             Command verCmd = org.bukkit.Bukkit.getServer().getCommandMap().getCommand("version");
+             if (verCmd != null) {
+-                return verCmd.execute(sender, commandLabel, new String[0]);
++                return verCmd.execute(sender, commandLabel, org.plazmamc.plazma.constants.Empty.STRING); // Plazma - Reduce allocations
+             }
+         }
+ 
