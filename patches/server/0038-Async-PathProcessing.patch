@@ -1,0 +1,1178 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: AlphaKR93 <dev@alpha93.kr>
+Date: Thu, 11 Jan 2024 14:06:28 +0900
+Subject: [PATCH] Async PathProcessing
+
+
+diff --git a/src/main/java/net/minecraft/world/entity/ai/behavior/AcquirePoi.java b/src/main/java/net/minecraft/world/entity/ai/behavior/AcquirePoi.java
+index 8f8b29f80d1573981ccffd207dd6e0941e71a352..5b74ad5cbfc874af29293ec3a7bb17c737cff32f 100644
+--- a/src/main/java/net/minecraft/world/entity/ai/behavior/AcquirePoi.java
++++ b/src/main/java/net/minecraft/world/entity/ai/behavior/AcquirePoi.java
+@@ -68,6 +68,31 @@ public class AcquirePoi {
+                         io.papermc.paper.util.PoiAccess.findNearestPoiPositions(poiManager, poiPredicate, predicate2, entity.blockPosition(), 48, 48*48, PoiManager.Occupancy.HAS_SPACE, false, 5, poiposes);
+                         Set<Pair<Holder<PoiType>, BlockPos>> set = new java.util.HashSet<>(poiposes);
+                         // Paper end - optimise POI access
++                        // Plazma start - Async PathProcessing
++                        if (entity.level().plazmaConfig().entity.pathProcessing.enabled) {
++                            org.plazmamc.plazma.entity.path.AsyncPathProcessor.await(findPathToPois(entity, set), path -> {
++                                if (path == null || !path.canReach()) {
++                                    for (Pair<Holder<PoiType>, BlockPos> pair : set) {
++                                        long2ObjectMap.computeIfAbsent(
++                                            pair.getSecond().asLong(),
++                                            m -> new JitteredLinearRetry(entity.level().getRandom(), time)
++                                        );
++                                    }
++                                    return;
++                                }
++
++                                BlockPos pos = path.getTarget();
++                                poiManager.getType(pos).ifPresent(type -> {
++                                    poiManager.take(poiPredicate, (holder, blockPos2) -> blockPos2.equals(pos), pos, 1);
++                                    queryResult.set(GlobalPos.of(world.dimension(), pos));
++                                    entityStatus.ifPresent(status -> world.broadcastEntityEvent(entity, status));
++                                    long2ObjectMap.clear();
++                                    DebugPackets.sendPoiTicketCountPacket(world, pos);
++                                });
++                            });
++                            return true;
++                        }
++                        // Plazma end
+                         Path path = findPathToPois(entity, set);
+                         if (path != null && path.canReach()) {
+                             BlockPos blockPos = path.getTarget();
+diff --git a/src/main/java/net/minecraft/world/entity/ai/behavior/MoveToTargetSink.java b/src/main/java/net/minecraft/world/entity/ai/behavior/MoveToTargetSink.java
+index 1ab77f3518d1df30f66ae44d7d4fa69e5b32d93a..a5e202a1bca5648cc42912c0bbe6f8610a8c0aaf 100644
+--- a/src/main/java/net/minecraft/world/entity/ai/behavior/MoveToTargetSink.java
++++ b/src/main/java/net/minecraft/world/entity/ai/behavior/MoveToTargetSink.java
+@@ -1,6 +1,8 @@
+ package net.minecraft.world.entity.ai.behavior;
+ 
+ import com.google.common.collect.ImmutableMap;
++
++import java.util.Objects;
+ import java.util.Optional;
+ import javax.annotation.Nullable;
+ import net.minecraft.core.BlockPos;
+@@ -21,6 +23,7 @@ public class MoveToTargetSink extends Behavior<Mob> {
+     private int remainingCooldown;
+     @Nullable
+     private Path path;
++    private boolean finishedProcess; // Plazma
+     @Nullable
+     private BlockPos lastTargetPos;
+     private float speedModifier;
+@@ -42,9 +45,11 @@ public class MoveToTargetSink extends Behavior<Mob> {
+             Brain<?> brain = entity.getBrain();
+             WalkTarget walkTarget = brain.getMemory(MemoryModuleType.WALK_TARGET).get();
+             boolean bl = this.reachedTarget(entity, walkTarget);
+-            if (!bl && this.tryComputePath(entity, walkTarget, world.getGameTime())) {
++            if (!world.plazmaConfig().entity.pathProcessing.enabled && !bl && this.tryComputePath(entity, walkTarget, world.getGameTime())) { // Plazma
+                 this.lastTargetPos = walkTarget.getTarget().currentBlockPosition();
+                 return true;
++            } else if (world.plazmaConfig().entity.pathProcessing.enabled && !bl) { // Plazma
++                return true; // Plazma
+             } else {
+                 brain.eraseMemory(MemoryModuleType.WALK_TARGET);
+                 if (bl) {
+@@ -58,6 +63,7 @@ public class MoveToTargetSink extends Behavior<Mob> {
+ 
+     @Override
+     protected boolean canStillUse(ServerLevel world, Mob entity, long time) {
++        if (world.plazmaConfig().entity.pathProcessing.enabled && !this.finishedProcess) return true; // Plazma
+         if (this.path != null && this.lastTargetPos != null) {
+             Optional<WalkTarget> optional = entity.getBrain().getMemory(MemoryModuleType.WALK_TARGET);
+             boolean bl = optional.map(MoveToTargetSink::isWalkTargetSpectator).orElse(false);
+@@ -82,12 +88,66 @@ public class MoveToTargetSink extends Behavior<Mob> {
+ 
+     @Override
+     protected void start(ServerLevel serverLevel, Mob mob, long l) {
++        // Plazma start
++        if (serverLevel.plazmaConfig().entity.pathProcessing.enabled) {
++            Brain<?> brain = mob.getBrain();
++            WalkTarget target = brain.getMemory(MemoryModuleType.WALK_TARGET).orElse(null);
++
++            this.finishedProcess = false;
++            this.lastTargetPos = Objects.requireNonNull(target).getTarget().currentBlockPosition();
++            this.path = this.computePath(mob, target);
++            return;
++        }
++        // Plazma end
+         mob.getBrain().setMemory(MemoryModuleType.PATH, this.path);
+         mob.getNavigation().moveTo(this.path, (double)this.speedModifier);
+     }
+ 
+     @Override
+     protected void tick(ServerLevel serverLevel, Mob mob, long l) {
++        // Plazma start - Async PathProcessing
++        if (serverLevel.plazmaConfig().entity.pathProcessing.enabled) {
++            if (this.path != null && !this.path.isProcessed()) return; // wait for processing
++
++            Brain<?> brain = mob.getBrain();
++            if (!this.finishedProcess) {
++                this.finishedProcess = true;
++
++                boolean canReach = this.path != null && this.path.canReach();
++
++                if (canReach)
++                    brain.eraseMemory(MemoryModuleType.CANT_REACH_WALK_TARGET_SINCE);
++                else {
++                    if (brain.hasMemoryValue(MemoryModuleType.CANT_REACH_WALK_TARGET_SINCE))
++                        brain.setMemory(MemoryModuleType.CANT_REACH_WALK_TARGET_SINCE, l);
++
++                    Optional<WalkTarget> target = brain.getMemory(MemoryModuleType.WALK_TARGET);
++                    if (target.isEmpty()) return;
++
++                    BlockPos pos = target.get().getTarget().currentBlockPosition();
++                    Vec3 vec3 = DefaultRandomPos.getPosTowards((PathfinderMob)mob, 10, 7, Vec3.atBottomCenterOf(pos), (float)Math.PI / 2F);
++
++                    if (vec3 != null) {
++                        this.path = mob.getNavigation().createPath(vec3.x, vec3.y, vec3.z, 0);
++                        this.finishedProcess = false;
++                        return;
++                    }
++                }
++
++                mob.getBrain().setMemory(MemoryModuleType.PATH, this.path);
++                mob.getNavigation().moveTo(this.path, this.speedModifier);
++            }
++
++            Path path = mob.getNavigation().getPath();
++            if (path != null && this.lastTargetPos != null && brain.hasMemoryValue(MemoryModuleType.WALK_TARGET)) {
++                WalkTarget target = brain.getMemory(MemoryModuleType.WALK_TARGET).orElseThrow(); // should be present
++                if (target.getTarget().currentBlockPosition().distSqr(this.lastTargetPos) > 4.0D)
++                    this.start(serverLevel, mob, l);
++            }
++            return;
++        }
++        // Plazma end
++
+         Path path = mob.getNavigation().getPath();
+         Brain<?> brain = mob.getBrain();
+         if (this.path != path) {
+@@ -105,6 +165,20 @@ public class MoveToTargetSink extends Behavior<Mob> {
+         }
+     }
+ 
++    // Plazma start - Async PathProcessing
++    @Nullable
++    private Path computePath(Mob entity, WalkTarget target) {
++        BlockPos pos = target.getTarget().currentBlockPosition();
++        this.speedModifier = target.getSpeedModifier();
++
++        Brain<?> brain = entity.getBrain();
++        if (this.reachedTarget(entity, target))
++            brain.eraseMemory(MemoryModuleType.CANT_REACH_WALK_TARGET_SINCE);
++
++        return entity.getNavigation().createPath(pos, 0);
++    }
++    // Plazma end
++
+     private boolean tryComputePath(Mob entity, WalkTarget walkTarget, long time) {
+         BlockPos blockPos = walkTarget.getTarget().currentBlockPosition();
+         this.path = entity.getNavigation().createPath(blockPos, 0);
+diff --git a/src/main/java/net/minecraft/world/entity/ai/behavior/SetClosestHomeAsWalkTarget.java b/src/main/java/net/minecraft/world/entity/ai/behavior/SetClosestHomeAsWalkTarget.java
+index 271efbb027f6f5d69ac5bc5dc51102a1eb00ab31..4924b9d921455c061d9ff0e5f291f0df3c27a2c8 100644
+--- a/src/main/java/net/minecraft/world/entity/ai/behavior/SetClosestHomeAsWalkTarget.java
++++ b/src/main/java/net/minecraft/world/entity/ai/behavior/SetClosestHomeAsWalkTarget.java
+@@ -57,6 +57,23 @@ public class SetClosestHomeAsWalkTarget {
+                             Set<Pair<Holder<PoiType>, BlockPos>> set = poiManager.findAllWithType((poiType) -> {
+                                 return poiType.is(PoiTypes.HOME);
+                             }, predicate, entity.blockPosition(), 48, PoiManager.Occupancy.ANY).collect(Collectors.toSet());
++                            // Plazma start - Async PathProcessing
++                            if (entity.level().plazmaConfig().entity.pathProcessing.enabled) {
++                                org.plazmamc.plazma.entity.path.AsyncPathProcessor.await(AcquirePoi.findPathToPois(entity, set), path -> {
++                                    if (path == null || !path.canReach() || mutableInt.getValue() < 5) {
++                                        long2LongMap.long2LongEntrySet().removeIf(entry -> entry.getLongValue() < mutableLong.getValue());
++                                        return;
++                                    }
++                                    BlockPos pos = path.getTarget();
++                                    Optional<Holder<PoiType>> optionalPoi = poiManager.getType(pos);
++                                    if (optionalPoi.isPresent()) {
++                                        walkTarget.set(new WalkTarget(pos, speed, 1));
++                                        DebugPackets.sendPoiTicketCountPacket(world, pos);
++                                    }
++                                });
++                                return true;
++                            }
++                            // Plazma end
+                             Path path = AcquirePoi.findPathToPois(entity, set);
+                             if (path != null && path.canReach()) {
+                                 BlockPos blockPos = path.getTarget();
+diff --git a/src/main/java/net/minecraft/world/entity/ai/goal/DoorInteractGoal.java b/src/main/java/net/minecraft/world/entity/ai/goal/DoorInteractGoal.java
+index 6771f2dc974317b6b152288bf41d1a95bc78a8e4..788008b36cb18a3a6ff0182570e38393828bfe3a 100644
+--- a/src/main/java/net/minecraft/world/entity/ai/goal/DoorInteractGoal.java
++++ b/src/main/java/net/minecraft/world/entity/ai/goal/DoorInteractGoal.java
+@@ -57,7 +57,7 @@ public abstract class DoorInteractGoal extends Goal {
+         } else {
+             GroundPathNavigation groundPathNavigation = (GroundPathNavigation)this.mob.getNavigation();
+             Path path = groundPathNavigation.getPath();
+-            if (path != null && !path.isDone() && groundPathNavigation.canOpenDoors()) {
++            if (path != null && path.isProcessed() && !path.isDone() && groundPathNavigation.canOpenDoors()) { // Plazma - Async PathProcessing
+                 for(int i = 0; i < Math.min(path.getNextNodeIndex() + 2, path.getNodeCount()); ++i) {
+                     Node node = path.getNode(i);
+                     this.doorPos = new BlockPos(node.x, node.y + 1, node.z);
+diff --git a/src/main/java/net/minecraft/world/entity/ai/navigation/AmphibiousPathNavigation.java b/src/main/java/net/minecraft/world/entity/ai/navigation/AmphibiousPathNavigation.java
+index 9d3b32c852d660356e0f16d4cc10072b1c603e64..4a998ec6153de462f43380b5efa31946337cc226 100644
+--- a/src/main/java/net/minecraft/world/entity/ai/navigation/AmphibiousPathNavigation.java
++++ b/src/main/java/net/minecraft/world/entity/ai/navigation/AmphibiousPathNavigation.java
+@@ -12,10 +12,23 @@ public class AmphibiousPathNavigation extends PathNavigation {
+         super(mob, world);
+     }
+ 
++    // Plazma start - Async PathProcessing
++    private static final org.plazmamc.plazma.entity.path.evaluator.NodeEvaluatorGenerator generator =
++        (org.plazmamc.plazma.entity.path.evaluator.NodeEvaluatorFeatures features) -> {
++            AmphibiousNodeEvaluator evaluator = new AmphibiousNodeEvaluator(false);
++            evaluator.setCanPassDoors(features.canPassDoors());
++            evaluator.setCanFloat(features.canFloat());
++            evaluator.setCanWalkOverFences(features.canWalkOverFences());
++            evaluator.setCanOpenDoors(features.canOpenDoors());
++            return evaluator;
++        };
++    // Plazma end
++
+     @Override
+     protected PathFinder createPathFinder(int range) {
+         this.nodeEvaluator = new AmphibiousNodeEvaluator(false);
+         this.nodeEvaluator.setCanPassDoors(true);
++        if (this.level.plazmaConfig().entity.pathProcessing.enabled) return new PathFinder(this.nodeEvaluator, range, generator); // Plazma
+         return new PathFinder(this.nodeEvaluator, range);
+     }
+ 
+diff --git a/src/main/java/net/minecraft/world/entity/ai/navigation/FlyingPathNavigation.java b/src/main/java/net/minecraft/world/entity/ai/navigation/FlyingPathNavigation.java
+index 027eef4ace908147285c8d72b612d16e4f925672..83db744d95a106c52381485d6d8d51db4ca17685 100644
+--- a/src/main/java/net/minecraft/world/entity/ai/navigation/FlyingPathNavigation.java
++++ b/src/main/java/net/minecraft/world/entity/ai/navigation/FlyingPathNavigation.java
+@@ -16,10 +16,23 @@ public class FlyingPathNavigation extends PathNavigation {
+         super(entity, world);
+     }
+ 
++    // Plazma start
++    private static final org.plazmamc.plazma.entity.path.evaluator.NodeEvaluatorGenerator generator =
++        (org.plazmamc.plazma.entity.path.evaluator.NodeEvaluatorFeatures features) -> {
++            FlyNodeEvaluator evaluator = new FlyNodeEvaluator();
++            evaluator.setCanPassDoors(features.canPassDoors());
++            evaluator.setCanOpenDoors(features.canOpenDoors());
++            evaluator.setCanFloat(features.canFloat());
++            evaluator.setCanWalkOverFences(features.canWalkOverFences());
++            return evaluator;
++        };
++    // Plazma end
++
+     @Override
+     protected PathFinder createPathFinder(int range) {
+         this.nodeEvaluator = new FlyNodeEvaluator();
+         this.nodeEvaluator.setCanPassDoors(true);
++        if (this.level.plazmaConfig().entity.pathProcessing.enabled) return new PathFinder(this.nodeEvaluator, range, generator); // Plazma
+         return new PathFinder(this.nodeEvaluator, range);
+     }
+ 
+@@ -50,6 +63,7 @@ public class FlyingPathNavigation extends PathNavigation {
+             this.recomputePath();
+         }
+ 
++        if (this.path != null && !this.path.isProcessed()) return; // Plazma
+         if (!this.isDone()) {
+             if (this.canUpdatePath()) {
+                 this.followThePath();
+diff --git a/src/main/java/net/minecraft/world/entity/ai/navigation/GroundPathNavigation.java b/src/main/java/net/minecraft/world/entity/ai/navigation/GroundPathNavigation.java
+index ac996b066415e461af1fcb71b19807401179c7f8..e9bcbd5a99462e8c8d1ab3029bcaaaddbb42e365 100644
+--- a/src/main/java/net/minecraft/world/entity/ai/navigation/GroundPathNavigation.java
++++ b/src/main/java/net/minecraft/world/entity/ai/navigation/GroundPathNavigation.java
+@@ -23,10 +23,26 @@ public class GroundPathNavigation extends PathNavigation {
+         super(entity, world);
+     }
+ 
++    // Plazma start - Async PathProcessing
++    protected static org.plazmamc.plazma.entity.path.evaluator.NodeEvaluatorGenerator evaluatorGenerator() {
++        return generator;
++    }
++    private static final org.plazmamc.plazma.entity.path.evaluator.NodeEvaluatorGenerator generator =
++        (org.plazmamc.plazma.entity.path.evaluator.NodeEvaluatorFeatures features) -> {
++            WalkNodeEvaluator evaluator = new WalkNodeEvaluator();
++            evaluator.setCanPassDoors(features.canPassDoors());
++            evaluator.setCanOpenDoors(features.canOpenDoors());
++            evaluator.setCanFloat(features.canFloat());
++            evaluator.setCanWalkOverFences(features.canWalkOverFences());
++            return evaluator;
++        };
++    // Plazma end
++
+     @Override
+     protected PathFinder createPathFinder(int range) {
+         this.nodeEvaluator = new WalkNodeEvaluator();
+         this.nodeEvaluator.setCanPassDoors(true);
++        if (this.level.plazmaConfig().entity.pathProcessing.enabled) return new PathFinder(this.nodeEvaluator, range, generator); // Plazma
+         return new PathFinder(this.nodeEvaluator, range);
+     }
+ 
+diff --git a/src/main/java/net/minecraft/world/entity/ai/navigation/PathNavigation.java b/src/main/java/net/minecraft/world/entity/ai/navigation/PathNavigation.java
+index 0e36e3e672de4c806e2d534b437489a3a349a722..e1c89b31ac928afe9dffdc857cfa246e3db40114 100644
+--- a/src/main/java/net/minecraft/world/entity/ai/navigation/PathNavigation.java
++++ b/src/main/java/net/minecraft/world/entity/ai/navigation/PathNavigation.java
+@@ -152,6 +152,8 @@ public abstract class PathNavigation {
+             return null;
+         } else if (!this.canUpdatePath()) {
+             return null;
++        } else if (this.path instanceof org.plazmamc.plazma.entity.path.AsyncPath async && !async.isProcessed() && async.hasSamePositions(positions)) { // Plazma
++            return this.path; // Plazma
+         } else if (this.path != null && !this.path.isDone() && positions.contains(this.targetPos)) {
+             return this.path;
+         } else {
+@@ -177,6 +179,23 @@ public abstract class PathNavigation {
+             int i = (int)(followRange + (float)range);
+             PathNavigationRegion pathNavigationRegion = new PathNavigationRegion(this.level, blockPos.offset(-i, -i, -i), blockPos.offset(i, i, i));
+             Path path = this.pathFinder.findPath(pathNavigationRegion, this.mob, positions, followRange, distance, this.maxVisitedNodesMultiplier);
++            // Plazma start
++            if (this.level.plazmaConfig().entity.pathProcessing.enabled) {
++                if (!positions.isEmpty()) this.targetPos = positions.iterator().next();
++
++                org.plazmamc.plazma.entity.path.AsyncPathProcessor.await(path, processed -> {
++                    if (processed != this.path) return;
++
++                    //noinspection ConstantValue
++                    if (processed != null && processed.getTarget() != null) {
++                        this.targetPos = processed.getTarget();
++                        this.reachRange = distance;
++                        this.resetStuckTimeout();
++                    }
++                });
++                return path;
++            }
++            // Plazma end
+             //this.level.getProfiler().pop(); // Purpur
+             if (path != null && path.getTarget() != null) {
+                 this.targetPos = path.getTarget();
+@@ -229,8 +248,8 @@ public abstract class PathNavigation {
+             if (this.isDone()) {
+                 return false;
+             } else {
+-                this.trimPath();
+-                if (this.path.getNodeCount() <= 0) {
++                if (path.isProcessed()) this.trimPath(); // Plazma
++                if (path.isProcessed() && this.path.getNodeCount() <= 0) { // Plazma
+                     return false;
+                 } else {
+                     this.speedModifier = speed;
+@@ -254,6 +273,7 @@ public abstract class PathNavigation {
+             this.recomputePath();
+         }
+ 
++        if (this.path != null && !this.path.isProcessed()) return; // Plazma
+         if (!this.isDone()) {
+             if (this.canUpdatePath()) {
+                 this.followThePath();
+@@ -279,6 +299,7 @@ public abstract class PathNavigation {
+     }
+ 
+     protected void followThePath() {
++        if (!this.path.isProcessed()) return; // Plazma
+         Vec3 vec3 = this.getTempMobPos();
+         this.maxDistanceToWaypoint = this.mob.getBbWidth() > 0.75F ? this.mob.getBbWidth() / 2.0F : 0.75F - this.mob.getBbWidth() / 2.0F;
+         Vec3i vec3i = this.path.getNextNodePos();
+@@ -434,7 +455,7 @@ public abstract class PathNavigation {
+     public boolean shouldRecomputePath(BlockPos pos) {
+         if (this.hasDelayedRecomputation) {
+             return false;
+-        } else if (this.path != null && !this.path.isDone() && this.path.getNodeCount() != 0) {
++        } else if (this.path != null && this.path.isProcessed() && !this.path.isDone() && this.path.getNodeCount() != 0) { // Plazma
+             Node node = this.path.getEndNode();
+             Vec3 vec3 = new Vec3(((double)node.x + this.mob.getX()) / 2.0D, ((double)node.y + this.mob.getY()) / 2.0D, ((double)node.z + this.mob.getZ()) / 2.0D);
+             return pos.closerToCenterThan(vec3, (double)(this.path.getNodeCount() - this.path.getNextNodeIndex()));
+diff --git a/src/main/java/net/minecraft/world/entity/ai/navigation/WaterBoundPathNavigation.java b/src/main/java/net/minecraft/world/entity/ai/navigation/WaterBoundPathNavigation.java
+index ee8543afbbd681bf327a353530a7a635aa5ef592..ac685819a1ebbd6db6685c7de11ed75b325e9f6a 100644
+--- a/src/main/java/net/minecraft/world/entity/ai/navigation/WaterBoundPathNavigation.java
++++ b/src/main/java/net/minecraft/world/entity/ai/navigation/WaterBoundPathNavigation.java
+@@ -15,10 +15,23 @@ public class WaterBoundPathNavigation extends PathNavigation {
+         super(entity, world);
+     }
+ 
++    // Plazma start - Async PathProcessing
++    private static final org.plazmamc.plazma.entity.path.evaluator.NodeEvaluatorGenerator generator =
++        (org.plazmamc.plazma.entity.path.evaluator.NodeEvaluatorFeatures features) -> {
++            SwimNodeEvaluator evaluator = new SwimNodeEvaluator(features.allowBreaching());
++            evaluator.setCanPassDoors(features.canPassDoors());
++            evaluator.setCanFloat(features.canFloat());
++            evaluator.setCanWalkOverFences(features.canWalkOverFences());
++            evaluator.setCanOpenDoors(features.canOpenDoors());
++            return evaluator;
++        };
++    // Plazma end
++
+     @Override
+     protected PathFinder createPathFinder(int range) {
+         this.allowBreaching = this.mob.getType() == EntityType.DOLPHIN;
+         this.nodeEvaluator = new SwimNodeEvaluator(this.allowBreaching);
++        if (this.level.plazmaConfig().entity.pathProcessing.enabled) return new PathFinder(this.nodeEvaluator, range, generator); // Plazma - Async PathProcessing
+         return new PathFinder(this.nodeEvaluator, range);
+     }
+ 
+diff --git a/src/main/java/net/minecraft/world/entity/ai/sensing/NearestBedSensor.java b/src/main/java/net/minecraft/world/entity/ai/sensing/NearestBedSensor.java
+index 8db20db72cd51046213625fac46c35854c59ec5d..51755c966cc9c778f746bc0f972d88870821c180 100644
+--- a/src/main/java/net/minecraft/world/entity/ai/sensing/NearestBedSensor.java
++++ b/src/main/java/net/minecraft/world/entity/ai/sensing/NearestBedSensor.java
+@@ -57,6 +57,27 @@ public class NearestBedSensor extends Sensor<Mob> {
+             java.util.List<Pair<Holder<PoiType>, BlockPos>> poiposes = new java.util.ArrayList<>();
+             // don't ask me why it's unbounded. ask mojang.
+             io.papermc.paper.util.PoiAccess.findAnyPoiPositions(poiManager, type -> type.is(PoiTypes.HOME), predicate, entity.blockPosition(), 48, PoiManager.Occupancy.ANY, false, Integer.MAX_VALUE, poiposes);
++
++            // Plazma start
++            if (world.plazmaConfig().entity.pathProcessing.enabled) {
++                Path possible = AcquirePoi.findPathToPois(entity, new java.util.HashSet<>(poiposes));
++                org.plazmamc.plazma.entity.path.AsyncPathProcessor.await(possible, path -> {
++                    //read canReach check
++                    if ((path == null || !path.canReach()) && this.triedCount < 5) {
++                        this.batchCache.long2LongEntrySet().removeIf(entry -> entry.getLongValue() < this.lastUpdate);
++                        return;
++                    }
++                    if (path == null) return;
++
++                    BlockPos pos = path.getTarget();
++                    Optional<Holder<PoiType>> optional = poiManager.getType(pos);
++
++                    if (optional.isPresent()) entity.getBrain().setMemory(MemoryModuleType.NEAREST_BED, pos);
++                });
++                return;
++            }
++            // Plazma end
++
+             Path path = AcquirePoi.findPathToPois(entity, new java.util.HashSet<>(poiposes));
+             // Paper end - optimise POI access
+             if (path != null && path.canReach()) {
+diff --git a/src/main/java/net/minecraft/world/entity/animal/Bee.java b/src/main/java/net/minecraft/world/entity/animal/Bee.java
+index 8424a7f7066fb3f8a4007b063db05ec0b8270ea3..a28bd4eb001466750ad78bf98a843265cf8e2f0b 100644
+--- a/src/main/java/net/minecraft/world/entity/animal/Bee.java
++++ b/src/main/java/net/minecraft/world/entity/animal/Bee.java
+@@ -1148,6 +1148,7 @@ public class Bee extends Animal implements NeutralMob, FlyingAnimal {
+                             Bee.this.pathfindRandomlyTowards(Bee.this.hivePos);
+                         }
+                     } else {
++                        if (navigation.getPath() == null || !navigation.getPath().isProcessed()) return; // Plazma
+                         boolean flag = this.pathfindDirectlyTowards(Bee.this.hivePos);
+ 
+                         if (!flag) {
+@@ -1209,7 +1210,7 @@ public class Bee extends Animal implements NeutralMob, FlyingAnimal {
+             } else {
+                 Path pathentity = Bee.this.navigation.getPath();
+ 
+-                return pathentity != null && pathentity.getTarget().equals(pos) && pathentity.canReach() && pathentity.isDone();
++                return pathentity != null && pathentity.isProcessed() && pathentity.getTarget().equals(pos) && pathentity.canReach() && pathentity.isDone(); // Plazma - Async PathProcessing
+             }
+         }
+     }
+diff --git a/src/main/java/net/minecraft/world/entity/animal/frog/Frog.java b/src/main/java/net/minecraft/world/entity/animal/frog/Frog.java
+index 4e471e4a259a64c44da5ab450f0137691428ff6a..34c69053708d26ca94ae6619b06c2cbf09e427e1 100644
+--- a/src/main/java/net/minecraft/world/entity/animal/frog/Frog.java
++++ b/src/main/java/net/minecraft/world/entity/animal/frog/Frog.java
+@@ -460,6 +460,18 @@ public class Frog extends Animal implements VariantHolder<FrogVariant> {
+             super(frog, world);
+         }
+ 
++        // Plazma start - Async PathProcessing
++        private static final org.plazmamc.plazma.entity.path.evaluator.NodeEvaluatorGenerator generator =
++            (org.plazmamc.plazma.entity.path.evaluator.NodeEvaluatorFeatures features) -> {
++                FrogNodeEvaluator evaluator = new FrogNodeEvaluator(true);
++                evaluator.setCanPassDoors(features.canPassDoors());
++                evaluator.setCanFloat(features.canFloat());
++                evaluator.setCanWalkOverFences(features.canWalkOverFences());
++                evaluator.setCanOpenDoors(features.canOpenDoors());
++                return evaluator;
++            };
++        // Plazma end
++
+         @Override
+         public boolean canCutCorner(BlockPathTypes nodeType) {
+             return nodeType != BlockPathTypes.WATER_BORDER && super.canCutCorner(nodeType);
+@@ -469,6 +481,7 @@ public class Frog extends Animal implements VariantHolder<FrogVariant> {
+         protected PathFinder createPathFinder(int range) {
+             this.nodeEvaluator = new Frog.FrogNodeEvaluator(true);
+             this.nodeEvaluator.setCanPassDoors(true);
++            if (this.level.plazmaConfig().entity.pathProcessing.enabled) return new PathFinder(this.nodeEvaluator, range, generator); // Plazma
+             return new PathFinder(this.nodeEvaluator, range);
+         }
+     }
+diff --git a/src/main/java/net/minecraft/world/entity/monster/Drowned.java b/src/main/java/net/minecraft/world/entity/monster/Drowned.java
+index 63a1cf5604c14025171d7be7434e2d6b64c98107..c6153ee51da405c02b53b9820a9bb424068ccbde 100644
+--- a/src/main/java/net/minecraft/world/entity/monster/Drowned.java
++++ b/src/main/java/net/minecraft/world/entity/monster/Drowned.java
+@@ -293,7 +293,7 @@ public class Drowned extends Zombie implements RangedAttackMob {
+     protected boolean closeToNextPos() {
+         Path pathentity = this.getNavigation().getPath();
+ 
+-        if (pathentity != null) {
++        if (pathentity != null && pathentity.isProcessed()) { // Plazma - Async PathProcessing
+             BlockPos blockposition = pathentity.getTarget();
+ 
+             if (blockposition != null) {
+diff --git a/src/main/java/net/minecraft/world/entity/monster/Strider.java b/src/main/java/net/minecraft/world/entity/monster/Strider.java
+index 2f49b528601a1feb7246fe7a9b83ce828c2d78fc..23d3eb11ac84a1eac53690f6d5acceed01fb5f05 100644
+--- a/src/main/java/net/minecraft/world/entity/monster/Strider.java
++++ b/src/main/java/net/minecraft/world/entity/monster/Strider.java
+@@ -100,6 +100,18 @@ public class Strider extends Animal implements ItemSteerable, Saddleable {
+         this.setPathfindingMalus(BlockPathTypes.DAMAGE_FIRE, 0.0F);
+     }
+ 
++    // Plazma start
++    private static final org.plazmamc.plazma.entity.path.evaluator.NodeEvaluatorGenerator generator =
++        (org.plazmamc.plazma.entity.path.evaluator.NodeEvaluatorFeatures features) -> {
++            WalkNodeEvaluator evaluator = new WalkNodeEvaluator();
++            evaluator.setCanPassDoors(features.canPassDoors());
++            evaluator.setCanFloat(features.canFloat());
++            evaluator.setCanWalkOverFences(features.canWalkOverFences());
++            evaluator.setCanOpenDoors(features.canOpenDoors());
++            return evaluator;
++        };
++    // Plazma end
++
+     // Purpur start
+     @Override
+     public boolean isRidable() {
+@@ -613,6 +625,7 @@ public class Strider extends Animal implements ItemSteerable, Saddleable {
+         protected PathFinder createPathFinder(int range) {
+             this.nodeEvaluator = new WalkNodeEvaluator();
+             this.nodeEvaluator.setCanPassDoors(true);
++            if (this.level.plazmaConfig().entity.pathProcessing.enabled) return new PathFinder(this.nodeEvaluator, range, generator); // Plazma - Async PathProcessing
+             return new PathFinder(this.nodeEvaluator, range);
+         }
+ 
+diff --git a/src/main/java/net/minecraft/world/entity/monster/warden/Warden.java b/src/main/java/net/minecraft/world/entity/monster/warden/Warden.java
+index 8a5d8f9ad1bd94ca53c1ffd1872275c07a52f0b7..9aedb96f7eeaa73150010ec320e2677a105b5ac0 100644
+--- a/src/main/java/net/minecraft/world/entity/monster/warden/Warden.java
++++ b/src/main/java/net/minecraft/world/entity/monster/warden/Warden.java
+@@ -641,6 +641,15 @@ public class Warden extends Monster implements VibrationSystem {
+             protected PathFinder createPathFinder(int range) {
+                 this.nodeEvaluator = new WalkNodeEvaluator();
+                 this.nodeEvaluator.setCanPassDoors(true);
++                // Plazma start
++                if (this.level.plazmaConfig().entity.pathProcessing.enabled)
++                    return new PathFinder(this.nodeEvaluator, range, GroundPathNavigation.evaluatorGenerator()) {
++                        @Override
++                        protected float distance(Node a, Node b) {
++                            return a.distanceToXZ(b);
++                        }
++                    };
++                // Plazma end
+                 return new PathFinder(this.nodeEvaluator, range) {
+                     @Override
+                     protected float distance(Node a, Node b) {
+diff --git a/src/main/java/net/minecraft/world/level/pathfinder/Path.java b/src/main/java/net/minecraft/world/level/pathfinder/Path.java
+index eea4c932d909145e7af848cf76e3f49dbb2deff2..8983dfdf3644d353462714c99809c99d66f8a7df 100644
+--- a/src/main/java/net/minecraft/world/level/pathfinder/Path.java
++++ b/src/main/java/net/minecraft/world/level/pathfinder/Path.java
+@@ -27,6 +27,12 @@ public class Path {
+         this.reached = reachesTarget;
+     }
+ 
++    // Plazma start - Async PathProcessing
++    public boolean isProcessed() {
++        return true;
++    }
++    // Plazma end
++
+     public void advance() {
+         ++this.nextNodeIndex;
+     }
+@@ -101,6 +107,7 @@ public class Path {
+     }
+ 
+     public boolean sameAs(@Nullable Path o) {
++        if (o == this) return true; // Plazma
+         if (o == null) {
+             return false;
+         } else if (o.nodes.size() != this.nodes.size()) {
+diff --git a/src/main/java/net/minecraft/world/level/pathfinder/PathFinder.java b/src/main/java/net/minecraft/world/level/pathfinder/PathFinder.java
+index b9689131a7a46b46c0b75b86f2bb163d7de74921..1e718cfbb826d617bb724a41047327a53ffbdedf 100644
+--- a/src/main/java/net/minecraft/world/level/pathfinder/PathFinder.java
++++ b/src/main/java/net/minecraft/world/level/pathfinder/PathFinder.java
+@@ -24,35 +24,71 @@ public class PathFinder {
+     public final NodeEvaluator nodeEvaluator;
+     private static final boolean DEBUG = false;
+     private final BinaryHeap openSet = new BinaryHeap();
++    // Plazma start - Support NodeEvaluatorGenerator
++    private final @Nullable org.plazmamc.plazma.entity.path.evaluator.NodeEvaluatorGenerator generator; // we use this later to generate an evaluator
+ 
+     public PathFinder(NodeEvaluator pathNodeMaker, int range) {
++        this(pathNodeMaker, range, null);
++    }
++
++    public PathFinder(NodeEvaluator pathNodeMaker, int range, @Nullable org.plazmamc.plazma.entity.path.evaluator.NodeEvaluatorGenerator generator) {
+         this.nodeEvaluator = pathNodeMaker;
+         this.maxVisitedNodes = range;
++        this.generator = generator;
+     }
++    // Plazma end
+ 
+     @Nullable
+     public Path findPath(PathNavigationRegion world, Mob mob, Set<BlockPos> positions, float followRange, int distance, float rangeMultiplier) {
+-        this.openSet.clear();
+-        this.nodeEvaluator.prepare(world, mob);
+-        Node node = this.nodeEvaluator.getStart();
++        // Plazma start
++        //noinspection resource
++        if (!mob.level().plazmaConfig().entity.pathProcessing.enabled) this.openSet.clear();
++        NodeEvaluator evaluator = this.generator == null ? this.nodeEvaluator : org.plazmamc.plazma.entity.path.evaluator.NodeEvaluatorCache.takeEvaluator(this.generator, this.nodeEvaluator);
++        evaluator.prepare(world, mob);
++        Node node = evaluator.getStart();
++        //noinspection ConstantValue
+         if (node == null) {
++            org.plazmamc.plazma.entity.path.evaluator.NodeEvaluatorCache.returnEvaluator(evaluator);
++        // Plazma end
+             return null;
+         } else {
+             // Paper start - remove streams - and optimize collection
+             List<Map.Entry<Target, BlockPos>> map = Lists.newArrayList();
+             for (BlockPos pos : positions) {
+-                map.add(new java.util.AbstractMap.SimpleEntry<>(this.nodeEvaluator.getGoal(pos.getX(), pos.getY(), pos.getZ()), pos));
++                map.add(new java.util.AbstractMap.SimpleEntry<>(evaluator.getGoal(pos.getX(), pos.getY(), pos.getZ()), pos)); // Plazma
+             }
+             // Paper end
+-            Path path = this.findPath(/*world.getProfiler(), */node, map, followRange, distance, rangeMultiplier); // Plazma - Completely remove profiler
+-            this.nodeEvaluator.done();
+-            return path;
++
++            if (this.generator == null) {
++                // it needs sync :(
++                org.plazmamc.plazma.entity.path.evaluator.NodeEvaluatorCache.removeEvaluator(evaluator);
++                return this.findPath(/*world.getProfiler(), */node, map, followRange, distance, rangeMultiplier); // Plazma - Completely remove profiler
++            }
++
++            return new org.plazmamc.plazma.entity.path.AsyncPath(Lists.newArrayList(), positions, () -> {
++                try {
++                    return this.processPath(evaluator, node, map, followRange, distance, rangeMultiplier);
++                } finally {
++                    this.nodeEvaluator.done();
++                }
++            });
+         }
+     }
+ 
+-    @Nullable
++    // Plazma start - Async PathProcessing
++    //@Nullable // Plazma - Always not null
+     // Paper start - optimize collection
+     private Path findPath(/*ProfilerFiller profiler, */Node startNode, List<Map.Entry<Target, BlockPos>> positions, float followRange, int distance, float rangeMultiplier) { // Plazma - Completely remove profiler
++        try {
++            return this.processPath(this.nodeEvaluator, startNode, positions, followRange, distance, rangeMultiplier);
++        } finally {
++            this.nodeEvaluator.done();
++        }
++    }
++
++    private synchronized Path processPath(NodeEvaluator evaluator, Node startNode, List<Map.Entry<Target, BlockPos>> positions, float followRange, int distance, float rangeMultiplier) {
++        org.apache.commons.lang3.Validate.isTrue(!positions.isEmpty()); // ensure that we have at least one position, which means we'll always return a path
++    // Plazma end
+         //profiler.push("find_path"); // Purpur
+         //profiler.markForCharting(MetricCategory.PATH_FINDING); // Purpur
+         // Set<Target> set = positions.keySet();
+@@ -76,8 +112,7 @@ public class PathFinder {
+             node.closed = true;
+ 
+             // Paper start - optimize collection
+-            for(int i1 = 0; i1 < positions.size(); i1++) {
+-                final Map.Entry<Target, BlockPos> entry = positions.get(i1);
++            for (final Map.Entry<Target, BlockPos> entry : positions) { // Plazma - Improved for loop
+                 Target target = entry.getKey();
+                 if (node.distanceManhattan(target) <= (float)distance) {
+                     target.setReached();
+@@ -91,7 +126,7 @@ public class PathFinder {
+             }
+ 
+             if (!(node.distanceTo(startNode) >= followRange)) {
+-                int k = this.nodeEvaluator.getNeighbors(this.neighbors, node);
++                int k = evaluator.getNeighbors(this.neighbors, node); // Plazma
+ 
+                 for(int l = 0; l < k; ++l) {
+                     Node node2 = this.neighbors[l];
+@@ -123,7 +158,7 @@ public class PathFinder {
+             if (best == null || comparator.compare(path, best) < 0)
+                 best = path;
+         }
+-        return best;
++        return java.util.Objects.requireNonNull(best); // Plazma - NotNull
+         // Paper end
+     }
+ 
+@@ -135,8 +170,8 @@ public class PathFinder {
+         float f = Float.MAX_VALUE;
+ 
+         // Paper start - optimize collection
+-        for (int i = 0, targetsSize = targets.size(); i < targetsSize; i++) {
+-            final Target target = targets.get(i).getKey();
++        for (Map.Entry<Target, BlockPos> targetBlockPosEntry : targets) { // Plazma - Improved for loop
++            final Target target = targetBlockPosEntry.getKey();
+             // Paper end
+             float g = node.distanceTo(target);
+             target.updateBest(g, node);
+diff --git a/src/main/java/net/minecraft/world/level/pathfinder/SwimNodeEvaluator.java b/src/main/java/net/minecraft/world/level/pathfinder/SwimNodeEvaluator.java
+index 0e2b14e7dfedf209d63279c81723fd7955122d78..49bc50ea74a59e67a6d43ff9a68c17e97a30fbe4 100644
+--- a/src/main/java/net/minecraft/world/level/pathfinder/SwimNodeEvaluator.java
++++ b/src/main/java/net/minecraft/world/level/pathfinder/SwimNodeEvaluator.java
+@@ -18,6 +18,7 @@ import net.minecraft.world.level.material.FluidState;
+ public class SwimNodeEvaluator extends NodeEvaluator {
+     private final boolean allowBreaching;
+     private final Long2ObjectMap<BlockPathTypes> pathTypesByPosCache = new Long2ObjectOpenHashMap<>();
++    public boolean canJumpOutOfWater() { return this.allowBreaching; } // Plazma - Getter
+ 
+     public SwimNodeEvaluator(boolean canJumpOutOfWater) {
+         this.allowBreaching = canJumpOutOfWater;
+diff --git a/src/main/java/org/plazmamc/plazma/configurations/GlobalConfiguration.java b/src/main/java/org/plazmamc/plazma/configurations/GlobalConfiguration.java
+index 3cfb9357d0c61e84488c2c60f073fa12df942b8e..c8948dca6c8325d16f4d8f2184d7490bf1265a49 100644
+--- a/src/main/java/org/plazmamc/plazma/configurations/GlobalConfiguration.java
++++ b/src/main/java/org/plazmamc/plazma/configurations/GlobalConfiguration.java
+@@ -3,6 +3,7 @@ package org.plazmamc.plazma.configurations;
+ import io.papermc.paper.configuration.Configuration;
+ import io.papermc.paper.configuration.ConfigurationPart;
+ import org.jetbrains.annotations.NotNull;
++import org.spongepowered.configurate.objectmapping.meta.PostProcess;
+ import org.spongepowered.configurate.objectmapping.meta.Setting;
+ 
+ @SuppressWarnings({"CanBeFinal", "FieldCanBeLocal", "FieldMayBeFinal", "InnerClassMayBeStatic"})
+@@ -66,6 +67,35 @@ public class GlobalConfiguration extends ConfigurationPart {
+ 
+     }
+ 
++    public Entity entity;
++    public class Entity extends ConfigurationPart {
++
++        public AsyncPathProcessing pathProcessing;
++        public class AsyncPathProcessing extends ConfigurationPart {
++
++            public boolean enabled = OPTIMIZE;
++            public int maxThreads = 0;
++            public int keepAlive = 60;
++
++            @PostProcess
++            public void post() {
++
++                if (maxThreads < 0)
++                    maxThreads = Math.max(Runtime.getRuntime().availableProcessors() + maxThreads, 1);
++                else if (maxThreads == 0)
++                    maxThreads = Math.max(Runtime.getRuntime().availableProcessors() / 4, 1);
++
++                if (!enabled)
++                    maxThreads = 0;
++                else
++                    org.bukkit.Bukkit.getLogger().log(java.util.logging.Level.INFO, "Using " + maxThreads + " threads for async path processing");
++
++            }
++
++        }
++
++    }
++
+     public ConsoleLogs consoleLogs;
+     public class ConsoleLogs extends ConfigurationPart {
+ 
+diff --git a/src/main/java/org/plazmamc/plazma/configurations/WorldConfigurations.java b/src/main/java/org/plazmamc/plazma/configurations/WorldConfigurations.java
+index e5e0b0f0bd3b2249dc1db029682b8957b0addcac..1514ed0bed4189f0ad631cb7d9b70d63e88db1da 100644
+--- a/src/main/java/org/plazmamc/plazma/configurations/WorldConfigurations.java
++++ b/src/main/java/org/plazmamc/plazma/configurations/WorldConfigurations.java
+@@ -3,6 +3,7 @@ package org.plazmamc.plazma.configurations;
+ import io.papermc.paper.configuration.Configuration;
+ import io.papermc.paper.configuration.ConfigurationPart;
+ import net.minecraft.resources.ResourceLocation;
++import org.spongepowered.configurate.objectmapping.meta.PostProcess;
+ import org.spongepowered.configurate.objectmapping.meta.Setting;
+ 
+ @SuppressWarnings({"CanBeFinal", "FieldCanBeLocal", "FieldMayBeFinal", "InnerClassMayBeStatic"})
+@@ -62,6 +63,18 @@ public class WorldConfigurations extends ConfigurationPart {
+ 
+         }
+ 
++        public AsyncPathProcessing pathProcessing;
++        public class AsyncPathProcessing extends ConfigurationPart {
++
++            public boolean enabled = GlobalConfiguration.get().entity.pathProcessing.enabled;
++
++            @PostProcess
++            public void post() {
++                this.enabled = this.enabled && GlobalConfiguration.get().entity.pathProcessing.enabled;
++            }
++
++        }
++
+     }
+ 
+     public Structure structure;
+diff --git a/src/main/java/org/plazmamc/plazma/entity/path/AsyncPath.java b/src/main/java/org/plazmamc/plazma/entity/path/AsyncPath.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..cc694930e2c307d15cf951be33567657b27bb3d7
+--- /dev/null
++++ b/src/main/java/org/plazmamc/plazma/entity/path/AsyncPath.java
+@@ -0,0 +1,196 @@
++package org.plazmamc.plazma.entity.path;
++
++import net.minecraft.core.BlockPos;
++import net.minecraft.world.entity.Entity;
++import net.minecraft.world.level.pathfinder.Node;
++import net.minecraft.world.level.pathfinder.Path;
++import net.minecraft.world.phys.Vec3;
++import org.checkerframework.framework.qual.DefaultQualifier;
++import org.jetbrains.annotations.NotNull;
++import org.jetbrains.annotations.Nullable;
++import java.util.ArrayList;
++import java.util.List;
++import java.util.Objects;
++import java.util.Set;
++import java.util.function.Supplier;
++
++@DefaultQualifier(NotNull.class)
++public class AsyncPath extends Path {
++
++    private final List<Runnable> postProcessors = new ArrayList<>();
++    private final Set<BlockPos> positions;
++    private final Supplier<Path> supplier;
++    private final List<Node> nodes;
++
++    private volatile boolean processed = false;
++    private @Nullable BlockPos target;
++    private boolean canReach = true;
++    private float distToTarget = 0;
++
++    public AsyncPath(final List<Node> emptyNodes, final Set<BlockPos> positions, final Supplier<Path> supplier) {
++        //noinspection DataFlowIssue
++        super(emptyNodes, null, false);
++
++        this.nodes = emptyNodes;
++        this.positions = positions;
++        this.supplier = supplier;
++
++        AsyncPathProcessor.queue(this);
++    }
++
++    @Override
++    public boolean isProcessed() {
++        return this.processed;
++    }
++
++    public synchronized void postProcess(Runnable runnable) {
++        if (this.processed) runnable.run();
++        else this.postProcessors.add(runnable);
++    }
++
++    public boolean hasSamePositions(final Set<BlockPos> positions) {
++        if (this.positions.size() != positions.size()) return false;
++        return this.positions.containsAll(positions);
++    }
++
++    public synchronized void process() {
++        if (this.processed) return;
++
++        final Path best = this.supplier.get();
++
++        this.nodes.addAll(best.nodes);
++        this.target = best.getTarget();
++        this.distToTarget = best.getDistToTarget();
++        this.canReach = best.canReach();
++
++        this.processed = true;
++
++        this.postProcessors.forEach(Runnable::run);
++    }
++
++    private void checkProcessed() {
++        if (!this.processed) this.process();
++    }
++
++    @Override
++    public BlockPos getTarget() {
++        this.checkProcessed();
++        return Objects.requireNonNull(this.target);
++    }
++
++    @Override
++    public float getDistToTarget() {
++        this.checkProcessed();
++        return this.distToTarget;
++    }
++
++    @Override
++    public boolean canReach() {
++        this.checkProcessed();
++        return this.canReach;
++    }
++
++    @Override
++    public boolean isDone() {
++        return this.isProcessed() && super.isDone();
++    }
++
++    @Override
++    public void advance() {
++        this.checkProcessed();
++        super.advance();
++    }
++
++    @Override
++    public boolean notStarted() {
++        this.checkProcessed();
++        return super.notStarted();
++    }
++
++    @Override
++    @Nullable
++    public Node getEndNode() {
++        this.checkProcessed();
++        return super.getEndNode();
++    }
++
++    @Override
++    public Node getNode(final int index) {
++        this.checkProcessed();
++        return super.getNode(index);
++    }
++
++    @Override
++    public void truncateNodes(final int length) {
++        this.checkProcessed();
++        super.truncateNodes(length);
++    }
++
++    @Override
++    public void replaceNode(final int index, final Node node) {
++        this.checkProcessed();
++        super.replaceNode(index, node);
++    }
++
++    @Override
++    public int getNodeCount() {
++        this.checkProcessed();
++        return super.getNodeCount();
++    }
++
++    @Override
++    public int getNextNodeIndex() {
++        this.checkProcessed();
++        return super.getNextNodeIndex();
++    }
++
++    @Override
++    public void setNextNodeIndex(final int nodeIndex) {
++        this.checkProcessed();
++        super.setNextNodeIndex(nodeIndex);
++    }
++
++    @Override
++    public Vec3 getEntityPosAtNode(final Entity entity, final int index) {
++        this.checkProcessed();
++        return super.getEntityPosAtNode(entity, index);
++    }
++
++    @Override
++    public BlockPos getNodePos(final int index) {
++        this.checkProcessed();
++        return super.getNodePos(index);
++    }
++
++    @Override
++    public Vec3 getNextEntityPos(final Entity entity) {
++        this.checkProcessed();
++        return super.getNextEntityPos(entity);
++    }
++
++    @Override
++    public BlockPos getNextNodePos() {
++        this.checkProcessed();
++        return super.getNextNodePos();
++    }
++
++    @Override
++    public Node getNextNode() {
++        this.checkProcessed();
++        return super.getNextNode();
++    }
++
++    @Override
++    @Nullable
++    public Node getPreviousNode() {
++        this.checkProcessed();
++        return super.getPreviousNode();
++    }
++
++    @Override
++    public boolean hasNext() {
++        this.checkProcessed();
++        return super.hasNext();
++    }
++
++}
+diff --git a/src/main/java/org/plazmamc/plazma/entity/path/AsyncPathProcessor.java b/src/main/java/org/plazmamc/plazma/entity/path/AsyncPathProcessor.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..5226688dc961ab7588cd2f6e7ef80eac7df53118
+--- /dev/null
++++ b/src/main/java/org/plazmamc/plazma/entity/path/AsyncPathProcessor.java
+@@ -0,0 +1,43 @@
++package org.plazmamc.plazma.entity.path;
++
++import com.google.common.util.concurrent.ThreadFactoryBuilder;
++import net.minecraft.server.MinecraftServer;
++import net.minecraft.world.level.pathfinder.Path;
++import org.checkerframework.framework.qual.DefaultQualifier;
++import org.jetbrains.annotations.NotNull;
++import org.jetbrains.annotations.Nullable;
++import org.plazmamc.plazma.configurations.GlobalConfiguration;
++import java.util.concurrent.CompletableFuture;
++import java.util.concurrent.Executor;
++import java.util.concurrent.LinkedBlockingQueue;
++import java.util.concurrent.ThreadPoolExecutor;
++import java.util.concurrent.TimeUnit;
++import java.util.function.Consumer;
++
++@DefaultQualifier(NotNull.class)
++public class AsyncPathProcessor {
++
++    private static final Executor mainExecutor = MinecraftServer.getServer();
++    private static final Executor pathExecutor = new ThreadPoolExecutor(
++        1,
++        GlobalConfiguration.get().entity.pathProcessing.maxThreads,
++        GlobalConfiguration.get().entity.pathProcessing.keepAlive, TimeUnit.SECONDS,
++        new LinkedBlockingQueue<>(),
++        new ThreadFactoryBuilder()
++            .setNameFormat("plazma-path-processor-%d")
++            .setPriority(Thread.NORM_PRIORITY - 2)
++            .build()
++    );
++
++    protected static CompletableFuture<Void> queue(AsyncPath path) {
++        return CompletableFuture.runAsync(path::process, pathExecutor);
++    }
++
++    public static void await(@Nullable Path path, Consumer<@Nullable Path> after) {
++        if (path != null && !path.isProcessed() && path instanceof AsyncPath async)
++            async.postProcess(() -> mainExecutor.execute(() -> after.accept(path)));
++        else
++            after.accept(path);
++    }
++
++}
+diff --git a/src/main/java/org/plazmamc/plazma/entity/path/evaluator/NodeEvaluatorCache.java b/src/main/java/org/plazmamc/plazma/entity/path/evaluator/NodeEvaluatorCache.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..9acfa55778419ad86dbff5c70a2944c7e31818dd
+--- /dev/null
++++ b/src/main/java/org/plazmamc/plazma/entity/path/evaluator/NodeEvaluatorCache.java
+@@ -0,0 +1,44 @@
++package org.plazmamc.plazma.entity.path.evaluator;
++
++import net.minecraft.world.level.pathfinder.NodeEvaluator;
++import org.checkerframework.framework.qual.DefaultQualifier;
++import org.jetbrains.annotations.NotNull;
++import org.jetbrains.annotations.Nullable;
++import java.util.Map;
++import java.util.Queue;
++import java.util.concurrent.ConcurrentHashMap;
++import java.util.concurrent.ConcurrentLinkedQueue;
++
++@DefaultQualifier(NotNull.class)
++public class NodeEvaluatorCache {
++
++    private static final Map<NodeEvaluatorFeatures, ConcurrentLinkedQueue<NodeEvaluator>> threadLocalEvaluators = new ConcurrentHashMap<>();
++    private static final Map<NodeEvaluator, NodeEvaluatorGenerator> evaluatorGenerator = new ConcurrentHashMap<>();
++
++    private static Queue<NodeEvaluator> getQueue(final NodeEvaluatorFeatures features) {
++        return threadLocalEvaluators.computeIfAbsent(features, f -> new ConcurrentLinkedQueue<>());
++    }
++
++    public static NodeEvaluator takeEvaluator(final NodeEvaluatorGenerator generator, final NodeEvaluator localEvaluator) {
++        final NodeEvaluatorFeatures features = NodeEvaluatorFeatures.fromEvaluator(localEvaluator);
++
++        @Nullable NodeEvaluator evaluator = getQueue(features).poll();
++        if (evaluator == null) evaluator = generator.generate(features);
++
++        evaluatorGenerator.put(evaluator, generator);
++        return evaluator;
++    }
++
++    public static void returnEvaluator(final NodeEvaluator evaluator) {
++        final NodeEvaluatorGenerator generator = evaluatorGenerator.remove(evaluator);
++        if (generator == null) return;
++
++        final NodeEvaluatorFeatures features = NodeEvaluatorFeatures.fromEvaluator(evaluator);
++        getQueue(features).offer(evaluator);
++    }
++
++    public static void removeEvaluator(final NodeEvaluator evaluator) {
++        evaluatorGenerator.remove(evaluator);
++    }
++
++}
+diff --git a/src/main/java/org/plazmamc/plazma/entity/path/evaluator/NodeEvaluatorFeatures.java b/src/main/java/org/plazmamc/plazma/entity/path/evaluator/NodeEvaluatorFeatures.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..dc238f15e1a93b18188d6e22ecbef30dcb741e12
+--- /dev/null
++++ b/src/main/java/org/plazmamc/plazma/entity/path/evaluator/NodeEvaluatorFeatures.java
+@@ -0,0 +1,31 @@
++package org.plazmamc.plazma.entity.path.evaluator;
++
++import net.minecraft.world.level.pathfinder.NodeEvaluator;
++import net.minecraft.world.level.pathfinder.SwimNodeEvaluator;
++import org.jetbrains.annotations.Contract;
++import org.jetbrains.annotations.NotNull;
++
++public record NodeEvaluatorFeatures(
++    NodeEvaluatorType type,
++    boolean canPassDoors,
++    boolean canFloat,
++    boolean canWalkOverFences,
++    boolean canOpenDoors,
++    boolean allowBreaching
++) {
++
++    @Contract("_ -> new")
++    public static @NotNull NodeEvaluatorFeatures fromEvaluator(NodeEvaluator evaluator) {
++
++        return new NodeEvaluatorFeatures(
++            NodeEvaluatorType.fromEvaluator(evaluator),
++            evaluator.canPassDoors(),
++            evaluator.canFloat(),
++            evaluator.canWalkOverFences(),
++            evaluator.canOpenDoors(),
++            evaluator instanceof SwimNodeEvaluator swim && swim.canJumpOutOfWater()
++        );
++
++    }
++
++}
+diff --git a/src/main/java/org/plazmamc/plazma/entity/path/evaluator/NodeEvaluatorGenerator.java b/src/main/java/org/plazmamc/plazma/entity/path/evaluator/NodeEvaluatorGenerator.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..17282ff1d7a13c0f0dac2dbbd53e3cdd7817b882
+--- /dev/null
++++ b/src/main/java/org/plazmamc/plazma/entity/path/evaluator/NodeEvaluatorGenerator.java
+@@ -0,0 +1,10 @@
++package org.plazmamc.plazma.entity.path.evaluator;
++
++import net.minecraft.world.level.pathfinder.NodeEvaluator;
++import org.jetbrains.annotations.NotNull;
++
++public interface NodeEvaluatorGenerator {
++
++    @NotNull NodeEvaluator generate(NodeEvaluatorFeatures features);
++
++}
+diff --git a/src/main/java/org/plazmamc/plazma/entity/path/evaluator/NodeEvaluatorType.java b/src/main/java/org/plazmamc/plazma/entity/path/evaluator/NodeEvaluatorType.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..5e0eed93f376e26dd84c970198dc022dcfdb2c7b
+--- /dev/null
++++ b/src/main/java/org/plazmamc/plazma/entity/path/evaluator/NodeEvaluatorType.java
+@@ -0,0 +1,22 @@
++package org.plazmamc.plazma.entity.path.evaluator;
++
++import net.minecraft.world.level.pathfinder.AmphibiousNodeEvaluator;
++import net.minecraft.world.level.pathfinder.FlyNodeEvaluator;
++import net.minecraft.world.level.pathfinder.NodeEvaluator;
++import net.minecraft.world.level.pathfinder.SwimNodeEvaluator;
++import net.minecraft.world.level.pathfinder.WalkNodeEvaluator;
++
++public enum NodeEvaluatorType {
++    WALK,
++    SWIM,
++    AMPHIBIOUS,
++    FLY;
++
++    public static NodeEvaluatorType fromEvaluator(NodeEvaluator evaluator) {
++        if (evaluator instanceof SwimNodeEvaluator) return SWIM;
++        if (evaluator instanceof FlyNodeEvaluator) return FLY;
++        if (evaluator instanceof AmphibiousNodeEvaluator) return AMPHIBIOUS;
++        if (evaluator instanceof WalkNodeEvaluator) return WALK;
++        throw new IllegalArgumentException("Unknown evaluator type");
++    }
++}

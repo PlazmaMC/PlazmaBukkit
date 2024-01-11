@@ -53,7 +53,7 @@ subprojects {
     
     tasks {
         withType<JavaCompile>().configureEach {
-            options.compilerArgs.add("--add-modules=jdk.incubator.vector")
+            options.compilerArgs.addAll(listOf("--add-modules=jdk.incubator.vector", "-Xmaxwarns", "1"))
             options.encoding = Charsets.UTF_8.name()
             options.release.set(17)
         }
