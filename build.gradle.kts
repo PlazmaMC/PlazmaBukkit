@@ -114,13 +114,13 @@ tasks {
     }
 
     register("updateUpstream") {
-        val tempDir = layout.cacheDir("updateUpstream");
-        val file = "gradle.properties";
+        val tempDir = layout.cacheDir("updateUpstream")
+        val file = "gradle.properties"
 
         doFirst {
-            val apiResponse = layout.cache.resolve("apiResponse.json");
-            download.get().download("https://api.github.com/repos/PaperMC/Paper/commits/master", apiResponse);
-            val latestCommit = gson.fromJson<paper.libs.com.google.gson.JsonObject>(apiResponse)["sha"].asString;
+            val apiResponse = layout.cache.resolve("apiResponse.json")
+            download.get().download("https://api.github.com/repos/PaperMC/Paper/commits/master", apiResponse)
+            val latestCommit = gson.fromJson<paper.libs.com.google.gson.JsonObject>(apiResponse)["sha"].asString
 
             copy {
                 from(file)
