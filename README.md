@@ -80,10 +80,15 @@ Mojmap 또는 Bundler에 대해 잘 알지 못한다면, **Reobf Paperclip**을 
 
 <details><summary>✅️ Supported Version (지원 버전)</summary>
 
+<!-- 1.20.4 -->
+[2002t]: https://github.com/PlazmaMC/Plazma/tree/dev/1.20.4
+[2002s]: https://img.shields.io/github/actions/workflow/status/PlazmaMC/Plazma/build.yml?style=for-the-badge&label=%20&branch=dev/1.20.4
+[2002w]: https://github.com/PlazmaMC/Plazma/actions/workflows/build.yml?query=branch:dev/1.20.4
+
 <!-- 1.20.2 -->
-[2002t]: https://github.com/PlazmaMC/Plazma/tree/dev/1.20.2
-[2002s]: https://img.shields.io/github/actions/workflow/status/PlazmaMC/Plazma/build.yml?style=for-the-badge&label=%20&branch=dev/1.20.2
-[2002w]: https://github.com/PlazmaMC/Plazma/actions/workflows/build.yml?query=branch:dev/1.20.2
+[2002t]: https://github.com/PlazmaMC/Plazma/tree/ver/1.20.2
+[2002s]: https://img.shields.io/github/actions/workflow/status/PlazmaMC/Plazma/build.yml?style=for-the-badge&label=%20&branch=ver/1.20.2
+[2002w]: https://github.com/PlazmaMC/Plazma/actions/workflows/build.yml?query=branch:ver/1.20.2
 
 <!-- 1.20.1 -->
 [2001t]: https://github.com/PlazmaMC/Plazma/tree/ver/1.20.1
@@ -103,8 +108,8 @@ Mojmap 또는 Bundler에 대해 잘 알지 못한다면, **Reobf Paperclip**을 
 | Version (버전) | Support (지원상태) | Stability (안정성) | Progress (완성도) | Build Status (빌드 상태) |
 | :---: | :---: | :---: | :---: | :---: |
 | 1.20.5 | Waiting (대기중) | - | - | - |
-| 1.20.4 | Working (작업중) | - | - | - |
-| [1.20.2][2002t] | Active (활성) | Normal (보통) | 90%[^missing] | [![Build Status][2002s]][2002w] |
+| [1.20.4][2004t] | Working (작업중) | Poor (나쁨) | 0%[^missing] | [![Build Status][2004s]][2004w] |
+| [1.20.2][2002t] | Active (활성) | Normal (보통) | 90% | [![Build Status][2002s]][2002w] |
 | [1.20.1][2001t] | Active (활성) | Good (좋음) | 100% | [![Build Status][2001s]][2001w] |
 | [1.19.4][1904t] | Active (활성) | Good (좋음) | 100% | [![Build Status][1904s]][1904w] |
 | [1.19.2][1902t] | Working (작업중) | Poor (나쁨) | 0% | [![Build Status][1902s]][1902w] |
