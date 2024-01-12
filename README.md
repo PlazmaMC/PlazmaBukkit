@@ -104,7 +104,7 @@ Mojmap 또는 Bundler에 대해 잘 알지 못한다면, **Reobf Paperclip**을 
 | :---: | :---: | :---: | :---: | :---: |
 | 1.20.5 | Waiting (대기중) | - | - | - |
 | 1.20.4 | Working (작업중) | - | - | - |
-| [1.20.2][2002t] | Working (작업중) | Normal (보통) | 85%[^missing] | [![Build Status][2002s]][2002w] |
+| [1.20.2][2002t] | Active (활성) | Normal (보통) | 90%[^missing] | [![Build Status][2002s]][2002w] |
 | [1.20.1][2001t] | Active (활성) | Good (좋음) | 100% | [![Build Status][2001s]][2001w] |
 | [1.19.4][1904t] | Active (활성) | Good (좋음) | 100% | [![Build Status][1904s]][1904w] |
 | [1.19.2][1902t] | Working (작업중) | Poor (나쁨) | 0% | [![Build Status][1902s]][1902w] |
