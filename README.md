@@ -76,7 +76,7 @@ Mojmap 또는 Bundler에 대해 잘 알지 못한다면, **Reobf Paperclip**을 
 
 | 🔄 Indev (개발중) | ✅️ Supported (지원중) | ⛔️ Dropped (지원종료) |
 |:---:|:---:|:---:|
-| [1.20.4](https://github.com/PlazmaMC/PlazmaBukkit/tree/dev/1.20.4?tab=readme-ov-file#%EF%B8%8F-downloads) - [1.20.1](https://github.com/PlazmaMC/PlazmaBukkit/tree/ver/1.20.1?tab=readme-ov-file#%EF%B8%8F-downloads) - 1.19.2 | [1.20.2](https://github.com/PlazmaMC/PlazmaBukkit/tree/ver/1.20.2?tab=readme-ov-file#%EF%B8%8F-downloads) - [1.20.1](https://github.com/PlazmaMC/PlazmaBukkit/tree/ver/1.20.1?tab=readme-ov-file#%EF%B8%8F-downloads) - [1.19.4](https://github.com/PlazmaMC/PlazmaBukkit/tree/ver/1.19.4?tab=readme-ov-file#%EF%B8%8F-downloads) | - |
+| [1.20.4](https://github.com/PlazmaMC/PlazmaBukkit/tree/dev/1.20.4?tab=readme-ov-file#%EF%B8%8F-downloads) - 1.19.2 | [1.20.2](https://github.com/PlazmaMC/PlazmaBukkit/tree/ver/1.20.2?tab=readme-ov-file#%EF%B8%8F-downloads) - [1.20.1](https://github.com/PlazmaMC/PlazmaBukkit/tree/ver/1.20.1?tab=readme-ov-file#%EF%B8%8F-downloads) - [1.19.4](https://github.com/PlazmaMC/PlazmaBukkit/tree/ver/1.19.4?tab=readme-ov-file#%EF%B8%8F-downloads) | - |
 
 <details><summary>✅️ Supported Version (지원 버전)</summary>
 
