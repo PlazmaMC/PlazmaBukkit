@@ -1,4 +1,4 @@
-[<div align="center">
+<div align="center">
 
 [![image](https://raw.githubusercontent.com/PlazmaMC/Plazma/main/src/resources/title-900.png)](https://github.com/PlazmaMC/Plazma)
 
