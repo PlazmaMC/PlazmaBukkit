@@ -81,9 +81,9 @@ Mojmap 또는 Bundler에 대해 잘 알지 못한다면, **Reobf Paperclip**을 
 <details><summary>✅️ Supported Version (지원 버전)</summary>
 
 <!-- 1.20.4 -->
-[2002t]: https://github.com/PlazmaMC/Plazma/tree/dev/1.20.4
-[2002s]: https://img.shields.io/github/actions/workflow/status/PlazmaMC/Plazma/build.yml?style=for-the-badge&label=%20&branch=dev/1.20.4
-[2002w]: https://github.com/PlazmaMC/Plazma/actions/workflows/build.yml?query=branch:dev/1.20.4
+[2004t]: https://github.com/PlazmaMC/Plazma/tree/dev/1.20.4
+[2004s]: https://img.shields.io/github/actions/workflow/status/PlazmaMC/Plazma/build.yml?style=for-the-badge&label=%20&branch=dev/1.20.4
+[2004w]: https://github.com/PlazmaMC/Plazma/actions/workflows/build.yml?query=branch:dev/1.20.4
 
 <!-- 1.20.2 -->
 [2002t]: https://github.com/PlazmaMC/Plazma/tree/ver/1.20.2
