@@ -1,11 +1,14 @@
 import io.papermc.paperweight.util.*
 import io.papermc.paperweight.util.constants.PAPERCLIP_CONFIG
+import java.net.URI
+
+group = "org.plazmamc.plazma"
 
 plugins {
     java
     `maven-publish`
-    id("com.github.johnrengelman.shadow") version "8.1.1" apply false
-    id("io.papermc.paperweight.patcher") version "1.5.10"
+    alias(libs.plugins.shadow) apply false
+    alias(libs.plugins.paperweight)
 }
 
 repositories {
@@ -18,9 +21,9 @@ repositories {
 }
 
 dependencies {
-    remapper("net.fabricmc:tiny-remapper:0.8.11:fat")
-    decompiler("net.minecraftforge:forgeflower:2.0.627.2")
-    paperclip("io.papermc:paperclip:3.0.3")
+    remapper(libs.remapper)
+    decompiler(libs.decompiler)
+    paperclip(libs.paperclip)
 }
 
 allprojects {
@@ -114,14 +117,16 @@ tasks {
     }
 
     register("updateUpstream") {
-        val tempDir = layout.cacheDir("updateUpstream")
+        val tempDir = layout.cacheDir("updater")
         val file = "gradle.properties"
+        val latestCommit = gson.fromJson<paper.libs.com.google.gson.JsonObject>(URI.create("https://api.github.com/repos/PaperMC/Paper/commits/master").toURL().readText())["sha"].asString
+
+        outputs.upToDateWhen {
+            val paperCommit: String by project
+            paperCommit == latestCommit
+        }
 
         doFirst {
-            val apiResponse = layout.cache.resolve("apiResponse.json")
-            download.get().download("https://api.github.com/repos/PaperMC/Paper/commits/master", apiResponse)
-            val latestCommit = gson.fromJson<paper.libs.com.google.gson.JsonObject>(apiResponse)["sha"].asString
-
             copy {
                 from(file)
                 into(tempDir)
@@ -137,5 +142,26 @@ tasks {
                 into(project.file(file).parent)
             }
         }
+        finalizedBy(task("applyAndRebuildPatches"))
+    }
+
+    register("applyAndRebuildPatches") {
+        dependsOn(applyPatches)
+        finalizedBy(rebuildPatches)
+    }
+
+    register("getPaperCommit") {
+        val paperCommit: String by project
+        println(paperCommit)
+    }
+
+    register("getPufferfishCommit") {
+        val paperCommit: String by project
+        println(paperCommit)
+    }
+
+    register("getPurpurCommit") {
+        val paperCommit: String by project
+        println(paperCommit)
     }
 }
