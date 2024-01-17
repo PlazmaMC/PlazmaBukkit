@@ -1,14 +1,18 @@
-import io.papermc.paperweight.util.*
 import io.papermc.paperweight.util.constants.PAPERCLIP_CONFIG
-import java.net.URI
 
 group = "org.plazmamc.plazma"
 
 plugins {
     java
     `maven-publish`
+    `kotlin-dsl`
+    `always-up-to-date`
     alias(libs.plugins.shadow) apply false
     alias(libs.plugins.paperweight)
+}
+
+kotlin.jvmToolchain {
+    languageVersion = JavaLanguageVersion.of(17)
 }
 
 repositories {
@@ -106,6 +110,15 @@ paperweight {
     }
 }
 
+alwaysUpToDate {
+    paperRepository.set("https://github.com/PaperMC/Paper")
+    paperBranch.set("master")
+    purpurRepository.set("https://github.com/PurpurMC/Purpur")
+    purpurBranch.set("ver/1.20.4")
+    pufferfishRepository.set("https://github.com/pufferfish-gg/Pufferfish")
+    pufferfishBranch.set("ver/1.20")
+}
+
 tasks {
     generateDevelopmentBundle {
         apiCoordinates.set("org.plazmamc.plazma:plazma-api")
@@ -114,54 +127,5 @@ tasks {
                 "https://repo.maven.apache.org/maven2/",
                 "https://papermc.io/repo/repository/maven-public/"
         )
-    }
-
-    register("updateUpstream") {
-        val tempDir = layout.cacheDir("updater")
-        val file = "gradle.properties"
-        val latestCommit = gson.fromJson<paper.libs.com.google.gson.JsonObject>(URI.create("https://api.github.com/repos/PaperMC/Paper/commits/master").toURL().readText())["sha"].asString
-
-        outputs.upToDateWhen {
-            val paperCommit: String by project
-            paperCommit == latestCommit
-        }
-
-        doFirst {
-            copy {
-                from(file)
-                into(tempDir)
-                filter { line: String ->
-                    line.replace("paperCommit = .*".toRegex(), "paperCommit = $latestCommit")
-                }
-            }
-        }
-
-        doLast {
-            copy {
-                from(tempDir.file("gradle.properties"))
-                into(project.file(file).parent)
-            }
-        }
-        finalizedBy(task("applyAndRebuildPatches"))
-    }
-
-    register("applyAndRebuildPatches") {
-        dependsOn(applyPatches)
-        finalizedBy(rebuildPatches)
-    }
-
-    register("getPaperCommit") {
-        val paperCommit: String by project
-        println(paperCommit)
-    }
-
-    register("getPufferfishCommit") {
-        val paperCommit: String by project
-        println(paperCommit)
-    }
-
-    register("getPurpurCommit") {
-        val paperCommit: String by project
-        println(paperCommit)
     }
 }
