@@ -107,6 +107,7 @@ abstract class PurpurUpdateTask : Task() {
             copySource(paper)
             Git(paper)("add", ".").executeOut()
             Git(paper)("commit", "-m", "Vanilla Sources", "--author=Vanilla <auto@mated.null>").executeOut()
+            Thread.sleep(1_000)
             paper.resolve(".git").toFile().copyRecursively(dotGit, overwrite = true)
 
             Git(it).addCommit("Pufferfish Server Changes\n\n$pufferfishCommit", "--author=Kevin Raneri <kevin.raneri@gmail.com>")
@@ -152,6 +153,17 @@ abstract class PurpurUpdateTask : Task() {
             if (exists()) toFile().copyTo(to.resolve(name).toFile(), overwrite = true)
             else from.toFile().walk().filter { it.name.endsWith(name.substring(4)) }.first().copyTo(to.resolve(name).toFile(), overwrite = true)
         }
+    }
+
+    abstract class PurpurBuildTask : Task() {
+
+        private val property = project.extensions["alwaysUpToDate"] as AlwaysUpToDateExtension
+
+        @TaskAction
+        fun build() {
+
+        }
+
     }
 
 }
