@@ -4,4 +4,4 @@ import io.papermc.paperweight.util.path
 import org.gradle.api.Project
 import java.nio.file.Path
 
-val Project.pathIO: Path get() = this.layout.projectDirectory.path
+val Project.pathIO: Path get() = layout.projectDirectory.path

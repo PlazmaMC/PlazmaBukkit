@@ -57,7 +57,7 @@ abstract class PurpurUpdateTask : Task() {
     """.trimIndent()
 
     override fun init() {
-        this.outputs.upToDateWhen { check() }
+        outputs.upToDateWhen { check() }
     }
 
     private fun check(): Boolean {
@@ -72,7 +72,7 @@ abstract class PurpurUpdateTask : Task() {
 
     @TaskAction
     fun update() {
-        if (this.check()) return
+        if (check()) return
         Git.checkForGit()
 
         val dir = project.layout.cache.resolve("AlwaysUpToDate/UpdatePurpur")
@@ -119,7 +119,7 @@ abstract class PurpurUpdateTask : Task() {
 
         with(purpur.resolve("Purpur-API")) {
             pufferfish.resolve("pufferfish-api/.git").toFile()
-                .copyRecursively(this.resolve(".git").toFile().also { it.deleteRecursively() }, overwrite = true)
+                .copyRecursively(resolve(".git").toFile().also { it.deleteRecursively() }, overwrite = true)
             Git(this).addCommit("Purpur API Changes\n\n$purpurCommit", "--author=granny <contact@granny.dev>")
         }
 
@@ -142,14 +142,14 @@ abstract class PurpurUpdateTask : Task() {
     private fun copySource(dir: Path) {
         with(dir.resolve(".gradle/caches/paperweight/mc-dev-sources")) {
             val target = dir.resolve("src/main")
-            this.resolve("net").toFile().copyRecursively(target.resolve("java/net").toFile(), overwrite = true)
-            this.resolve("data").toFile().copyRecursively(target.resolve("resources/data").toFile(), overwrite = true)
+            resolve("net").toFile().copyRecursively(target.resolve("java/net").toFile(), overwrite = true)
+            resolve("data").toFile().copyRecursively(target.resolve("resources/data").toFile(), overwrite = true)
         }
     }
 
     private fun copyPatch(from: Path, to: Path, name: String) {
         with(from.resolve(name)) {
-            if (this.exists()) this.toFile().copyTo(to.resolve(name).toFile(), overwrite = true)
+            if (exists()) toFile().copyTo(to.resolve(name).toFile(), overwrite = true)
             else from.toFile().walk().filter { it.name.endsWith(name.substring(4)) }.first().copyTo(to.resolve(name).toFile(), overwrite = true)
         }
     }

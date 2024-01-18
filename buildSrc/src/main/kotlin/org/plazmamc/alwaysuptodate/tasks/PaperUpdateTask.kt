@@ -15,7 +15,7 @@ abstract class PaperUpdateTask : Task() {
     private val git = Git(project.pathIO)
 
     override fun init() {
-        this.outputs.upToDateWhen { this.check() }
+        outputs.upToDateWhen { check() }
     }
 
     private fun check(): Boolean {
@@ -29,7 +29,7 @@ abstract class PaperUpdateTask : Task() {
 
     @TaskAction
     fun update() {
-        if (this.check()) return
+        if (check()) return
         updatePaperCommit(property.paperRepository.get(), property.paperBranch.get(), project.file("gradle.properties"))
     }
 
