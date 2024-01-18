@@ -1,11 +1,18 @@
-import io.papermc.paperweight.util.*
 import io.papermc.paperweight.util.constants.PAPERCLIP_CONFIG
+
+group = "org.plazmamc.plazma"
 
 plugins {
     java
     `maven-publish`
-    id("com.github.johnrengelman.shadow") version "8.1.1" apply false
-    id("io.papermc.paperweight.patcher") version "1.5.10"
+    `kotlin-dsl`
+    `always-up-to-date`
+    alias(libs.plugins.shadow) apply false
+    alias(libs.plugins.paperweight)
+}
+
+kotlin.jvmToolchain {
+    languageVersion = JavaLanguageVersion.of(17)
 }
 
 repositories {
@@ -18,9 +25,9 @@ repositories {
 }
 
 dependencies {
-    remapper("net.fabricmc:tiny-remapper:0.8.11:fat")
-    decompiler("net.minecraftforge:forgeflower:2.0.627.2")
-    paperclip("io.papermc:paperclip:3.0.3")
+    remapper(libs.remapper)
+    decompiler(libs.decompiler)
+    paperclip(libs.paperclip)
 }
 
 allprojects {
@@ -103,6 +110,15 @@ paperweight {
     }
 }
 
+alwaysUpToDate {
+    paperRepository.set("https://github.com/PaperMC/Paper")
+    paperBranch.set("master")
+    purpurRepository.set("https://github.com/PurpurMC/Purpur")
+    purpurBranch.set("ver/1.20.4")
+    pufferfishRepository.set("https://github.com/pufferfish-gg/Pufferfish")
+    pufferfishBranch.set("ver/1.20")
+}
+
 tasks {
     generateDevelopmentBundle {
         apiCoordinates.set("org.plazmamc.plazma:plazma-api")
@@ -111,31 +127,5 @@ tasks {
                 "https://repo.maven.apache.org/maven2/",
                 "https://papermc.io/repo/repository/maven-public/"
         )
-    }
-
-    register("updateUpstream") {
-        val tempDir = layout.cacheDir("updateUpstream")
-        val file = "gradle.properties"
-
-        doFirst {
-            val apiResponse = layout.cache.resolve("apiResponse.json")
-            download.get().download("https://api.github.com/repos/PaperMC/Paper/commits/master", apiResponse)
-            val latestCommit = gson.fromJson<paper.libs.com.google.gson.JsonObject>(apiResponse)["sha"].asString
-
-            copy {
-                from(file)
-                into(tempDir)
-                filter { line: String ->
-                    line.replace("paperCommit = .*".toRegex(), "paperCommit = $latestCommit")
-                }
-            }
-        }
-
-        doLast {
-            copy {
-                from(tempDir.file("gradle.properties"))
-                into(project.file(file).parent)
-            }
-        }
     }
 }

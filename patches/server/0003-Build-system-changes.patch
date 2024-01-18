@@ -1,0 +1,78 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: AlphaKR93 <dev@alpha93.kr>
+Date: Sun, 14 Jan 2024 19:51:19 +0900
+Subject: [PATCH] Build system changes
+
+
+diff --git a/build.gradle.kts b/build.gradle.kts
+index f083d422678f5fd21825439944af888fbdc9bf3c..e30b51ed329f0c66a2329da45996ef0fc0db8ffb 100644
+--- a/build.gradle.kts
++++ b/build.gradle.kts
+@@ -19,6 +19,7 @@ dependencies {
+         exclude("io.papermc.paper", "paper-api")
+     }
+     // Purpur end
++    /* // Plazma - Use libs.versions.toml
+     // Paper start
+     implementation("org.jline:jline-terminal-jansi:3.21.0")
+     implementation("net.minecrell:terminalconsoleappender:1.3.0")
+@@ -46,9 +47,32 @@ dependencies {
+     runtimeOnly("com.mysql:mysql-connector-j:8.1.0")
+     runtimeOnly("com.lmax:disruptor:3.4.4") // Paper
+     // Paper start - Use Velocity cipher
+-    implementation("com.velocitypowered:velocity-native:3.1.2-SNAPSHOT") {
++    // Plazma start - Use libs.versions.toml
++     */
++    implementation(common.snakeyaml)
++    implementation(common.bundles.asm)
++    implementation(common.commons.lang2)
++    implementation(common.adventure.serializer.ansi)
++    implementation(common.log4j.core)
++    implementation(common.log4j.iostreams)
++    log4jPlugins.annotationProcessorConfigurationName(common.log4j.core)
++    runtimeOnly(log4jPlugins.output)
++    alsoShade(log4jPlugins.output)
++
++    implementation(server.ansi)
++    implementation(server.bundles.implementation)
++    implementation(server.velocity) {
++    // Plazma end
+         isTransitive = false
+     }
++
++    runtimeOnly(common.bundles.maven)
++    runtimeOnly(common.maven.provider)
++    runtimeOnly(server.bundles.runtime)
++
++    testImplementation(common.bundles.test)
++    testImplementation(server.classgraph)
++    /* // Plazma - Use libs.versions.toml
+     // Paper end
+ 
+     runtimeOnly("org.apache.maven:maven-resolver-provider:3.8.5")
+@@ -57,19 +81,22 @@ dependencies {
+ 
+     // Pufferfish start
+     implementation("org.yaml:snakeyaml:1.32")
+-    implementation ("com.github.carleslc.Simple-YAML:Simple-Yaml:1.8.4") {
++     */ // Plazma - Use libs.versions.toml
++    implementation(server.simpleyaml) { // Plazma - Use libs.versions.toml
+         exclude(group="org.yaml", module="snakeyaml")
+     }
+     // Pufferfish end
+ 
+-    implementation("org.mozilla:rhino-runtime:1.7.14") // Purpur
+-    implementation("org.mozilla:rhino-engine:1.7.14") // Purpur
++    //implementation("org.mozilla:rhino-runtime:1.7.14") // Purpur // Plazma - Use libs.versions.toml
++    //implementation("org.mozilla:rhino-engine:1.7.14") // Purpur // Plazma - Use libs.versions.toml
+     implementation("dev.omega24:upnp4j:1.0") // Purpur
+ 
++    /* // Plazma - Use libs.versions.toml
+     testImplementation("io.github.classgraph:classgraph:4.8.47") // Paper - mob goal test
+     testImplementation("org.junit.jupiter:junit-jupiter:5.10.0")
+     testImplementation("org.hamcrest:hamcrest:2.2")
+     testImplementation("org.mockito:mockito-core:5.5.0")
++     */ // Plazma - Use libs.versions.toml
+ }
+ 
+ val craftbukkitPackageVersion = "1_20_R2" // Paper
