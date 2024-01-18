@@ -84,7 +84,7 @@ abstract class PurpurUpdateTask : Task() {
         val pufferfish = git.clone("Pufferfish", property.pufferfishRepository.get(), property.pufferfishBranch.get(), dir)
         val purpur = git.clone("Purpur", property.purpurRepository.get(), property.purpurBranch.get(), dir)
 
-        updatePaperCommit(property.paperRepository.get(), property.paperBranch.get(), pufferfish.resolve("gradle.properties").toFile())
+        updatePaperCommit(property.paperRepository.get(), property.paperBranch.get(), pufferfish.resolve("gradle.properties").toFile(), "paperRef=")
         updatePaperCommit(property.paperRepository.get(), property.paperBranch.get(), purpur.resolve("gradle.properties").toFile())
         updatePaperCommit(property.paperRepository.get(), property.paperBranch.get(), project.file("gradle.properties"))
 
@@ -107,6 +107,7 @@ abstract class PurpurUpdateTask : Task() {
             copySource(paper)
             Git(paper)("add", ".").executeOut()
             Git(paper)("commit", "-m", "Vanilla Sources", "--author=Vanilla <auto@mated.null>").executeOut()
+            Thread.sleep(1_000)
             paper.resolve(".git").toFile().copyRecursively(dotGit, overwrite = true)
 
             Git(it).addCommit("Pufferfish Server Changes\n\n$pufferfishCommit", "--author=Kevin Raneri <kevin.raneri@gmail.com>")

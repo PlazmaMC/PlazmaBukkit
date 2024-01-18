@@ -35,10 +35,10 @@ abstract class PaperUpdateTask : Task() {
 
 }
 
-fun updatePaperCommit(repo: String, branch: String, properties: File) {
+fun updatePaperCommit(repo: String, branch: String, properties: File, regexRule: String = "paperCommit = ") {
     val latestCommit = Git(properties.parentFile.toPath())("ls-remote", repo).readText()?.lines()
         ?.filterNot { "[a-z0-9]{40}\trefs/heads/$branch".toRegex().matches(it) }?.first()?.split("\t")?.first()
         ?: throw AlwaysUpToDateException("Failed to get latest Paper commit")
 
-    properties.writeText(properties.readText().replace("paperCommit = .*".toRegex(), "paperCommit = $latestCommit"))
+    properties.writeText(properties.readText().replace("$regexRule.*".toRegex(), "$regexRule$latestCommit"))
 }
