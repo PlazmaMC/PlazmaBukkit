@@ -5,10 +5,10 @@ Subject: [PATCH] Avoid double I/O operation on load player file
 
 
 diff --git a/src/main/java/net/minecraft/world/level/storage/PlayerDataStorage.java b/src/main/java/net/minecraft/world/level/storage/PlayerDataStorage.java
-index 36af81f0957d17e170d229059c66f4eb4539dfeb..bf9a4571b05c9e2bacb6b26c7b24d33c6b4830f1 100644
+index b3a90d6ef0e17c236e0b3c46e2d0012671afdaa7..eb1c8bb352bfcc81f61174fd65867390aa2cc2d2 100644
 --- a/src/main/java/net/minecraft/world/level/storage/PlayerDataStorage.java
 +++ b/src/main/java/net/minecraft/world/level/storage/PlayerDataStorage.java
-@@ -56,7 +56,8 @@ public class PlayerDataStorage {
+@@ -60,7 +60,8 @@ public class PlayerDataStorage {
              File file = new File(this.playerDir, player.getStringUUID() + ".dat");
              // Spigot Start
              boolean usingWrongFile = false;
@@ -18,12 +18,12 @@ index 36af81f0957d17e170d229059c66f4eb4539dfeb..bf9a4571b05c9e2bacb6b26c7b24d33c
              {
                  file = new File( this.playerDir, java.util.UUID.nameUUIDFromBytes( ( "OfflinePlayer:" + player.getScoreboardName() ).getBytes( "UTF-8" ) ).toString() + ".dat");
                  if ( file.exists() )
-@@ -67,7 +68,7 @@ public class PlayerDataStorage {
+@@ -71,7 +72,7 @@ public class PlayerDataStorage {
              }
              // Spigot End
  
 -            if (file.exists() && file.isFile()) {
 +            if (isNormalFile) { // Plazma - Avoid double I/O operation
-                 nbttagcompound = NbtIo.readCompressed(file);
+                 nbttagcompound = NbtIo.readCompressed(file.toPath(), NbtAccounter.unlimitedHeap());
              }
              // Spigot Start

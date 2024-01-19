@@ -6,22 +6,22 @@ Subject: [PATCH] Implement No Chat Reports
 Implemented: 62fbdef42dfbfec551d8324b7084c4ccf248bab7
 
 diff --git a/src/main/java/net/minecraft/network/FriendlyByteBuf.java b/src/main/java/net/minecraft/network/FriendlyByteBuf.java
-index 40f51062624161892c780ddae05e22859e2cd021..b0b515b8ebeffe25a760d7d6faa87cbc1a585b2d 100644
+index bdcfd80f937c34956911373905d66424bbff8e1d..47cbafc08e3d87c448c69ff797afaf0eb5d78f9d 100644
 --- a/src/main/java/net/minecraft/network/FriendlyByteBuf.java
 +++ b/src/main/java/net/minecraft/network/FriendlyByteBuf.java
-@@ -139,9 +139,13 @@ public class FriendlyByteBuf extends ByteBuf {
-     public <T> void writeJsonWithCodec(Codec<T> codec, T value) {
+@@ -145,9 +145,13 @@ public class FriendlyByteBuf extends ByteBuf {
+         // Paper end - Adventure; add max length parameter
          DataResult<JsonElement> dataresult = codec.encodeStart(JsonOps.INSTANCE, value);
  
 -        this.writeUtf(FriendlyByteBuf.GSON.toJson((JsonElement) Util.getOrThrow(dataresult, (s) -> {
 -            return new EncoderException("Failed to encode: " + s + " " + value);
--        })));
+-        })), maxLength); // Paper - Adventure; add max length parameter
 +        // Plazma start - Implement No Chat Reports
 +        JsonElement element = Util.getOrThrow(dataresult, s -> new EncoderException("Failed to encode: " + s + " " + value));
 +        if (codec == net.minecraft.network.protocol.status.ServerStatus.CODEC
 +                && org.plazmamc.plazma.configurations.GlobalConfiguration.get().noChatReports.queryData())
 +            element.getAsJsonObject().addProperty("preventsChatReports", true);
-+        this.writeUtf(GSON.toJson(element));
++        this.writeUtf(GSON.toJson(element), maxLength);
 +        // Plazma end
      }
  
@@ -82,7 +82,7 @@ index 9d6db4a378036559efab91c8b7dcf2a6b0c2cce6..4d9f73add791cef03cc7aeaf1598a73c
      }
  }
 diff --git a/src/main/java/net/minecraft/server/dedicated/DedicatedServer.java b/src/main/java/net/minecraft/server/dedicated/DedicatedServer.java
-index 770b959d9e51ef0645415d5a0d7d79b7031abd66..f902505c850b9ea68733bd40e62b02b40a235e42 100644
+index 5c897d11e6ae17d8feaeedc7edf7ede02571a207..05dd190de9d45e245eb9f67ccec6b5c2e34ed6e0 100644
 --- a/src/main/java/net/minecraft/server/dedicated/DedicatedServer.java
 +++ b/src/main/java/net/minecraft/server/dedicated/DedicatedServer.java
 @@ -681,6 +681,7 @@ public class DedicatedServer extends MinecraftServer implements ServerInterface
@@ -91,13 +91,13 @@ index 770b959d9e51ef0645415d5a0d7d79b7031abd66..f902505c850b9ea68733bd40e62b02b4
      public boolean enforceSecureProfile() {
 +        if (org.plazmamc.plazma.configurations.GlobalConfiguration.get().noChatReports.enabled) return false; // Plazma - Implement No Chat Reports
          DedicatedServerProperties dedicatedserverproperties = this.getProperties();
-         // Paper start - fix secure profile with proxy online mode
-         return dedicatedserverproperties.enforceSecureProfile
+ 
+         // Paper start - Add setting for proxy online mode status
 diff --git a/src/main/java/net/minecraft/server/network/ServerCommonPacketListenerImpl.java b/src/main/java/net/minecraft/server/network/ServerCommonPacketListenerImpl.java
-index b19c59a87d4136da583a0b687f6b27fef3456f09..b54372c32845d2bc340951c0ea88d480efc1dd6a 100644
+index da499e0b21eba40d24d95047e3a9220567d4bae7..96d406c79e501971b5b4086abdeb6fdd70d8e1f7 100644
 --- a/src/main/java/net/minecraft/server/network/ServerCommonPacketListenerImpl.java
 +++ b/src/main/java/net/minecraft/server/network/ServerCommonPacketListenerImpl.java
-@@ -262,6 +262,13 @@ public abstract class ServerCommonPacketListenerImpl implements ServerCommonPack
+@@ -275,6 +275,13 @@ public abstract class ServerCommonPacketListenerImpl implements ServerCommonPack
      }
  
      public void send(Packet<?> packet, @Nullable PacketSendListener callbacks) {
@@ -112,10 +112,10 @@ index b19c59a87d4136da583a0b687f6b27fef3456f09..b54372c32845d2bc340951c0ea88d480
          if (packet == null || this.processedDisconnect) { // Spigot
              return;
 diff --git a/src/main/java/net/minecraft/server/players/PlayerList.java b/src/main/java/net/minecraft/server/players/PlayerList.java
-index e8de78f8b7c90a719e10c483991f45a7886256be..0ff64fc50768a4bed9c871fed1089753912b89d2 100644
+index 80dc93b8c96d78a4080c0636b8cd7c470a1e3922..59afcfb957ea653e64b17385accf5c9449d33b2a 100644
 --- a/src/main/java/net/minecraft/server/players/PlayerList.java
 +++ b/src/main/java/net/minecraft/server/players/PlayerList.java
-@@ -1493,6 +1493,7 @@ public abstract class PlayerList {
+@@ -1499,6 +1499,7 @@ public abstract class PlayerList {
      }
  
      public boolean verifyChatTrusted(PlayerChatMessage message) { // Paper - private -> public
@@ -124,10 +124,10 @@ index e8de78f8b7c90a719e10c483991f45a7886256be..0ff64fc50768a4bed9c871fed1089753
      }
  
 diff --git a/src/main/java/org/plazmamc/plazma/configurations/GlobalConfiguration.java b/src/main/java/org/plazmamc/plazma/configurations/GlobalConfiguration.java
-index f3cf7634a5fd470e7fb295ae1f88e14f0c4a0d1d..5dafbe4ca74071e25ce79128ca08c7bfebb778d5 100644
+index 832fef7f967f5497d2ddf20db3de8036805e27e3..54bf494356f3c224f86d06462f2686023da9ccc5 100644
 --- a/src/main/java/org/plazmamc/plazma/configurations/GlobalConfiguration.java
 +++ b/src/main/java/org/plazmamc/plazma/configurations/GlobalConfiguration.java
-@@ -56,4 +56,22 @@ public class GlobalConfiguration extends ConfigurationPart {
+@@ -55,4 +55,22 @@ public class GlobalConfiguration extends ConfigurationPart {
  
      }
  

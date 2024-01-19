@@ -5,7 +5,7 @@ Subject: [PATCH] Rebrand
 
 
 diff --git a/build.gradle.kts b/build.gradle.kts
-index e30b51ed329f0c66a2329da45996ef0fc0db8ffb..d91928799014596de519d1a1b3f1bb0a80ac925c 100644
+index 340dd814ad710f48c642be280d0bddbbcd5b9aab..c844854d45c07f2c8d7b1819fa7aa6ca56a56f85 100644
 --- a/build.gradle.kts
 +++ b/build.gradle.kts
 @@ -14,7 +14,7 @@ val alsoShade: Configuration by configurations.creating
@@ -13,7 +13,7 @@ index e30b51ed329f0c66a2329da45996ef0fc0db8ffb..d91928799014596de519d1a1b3f1bb0a
  dependencies {
      // Purpur start
 -    implementation(project(":purpur-api"))
-+    implementation(project(":plazma-api"))
++    implementation(project(":plazma-api")) // Plazma
      implementation("io.papermc.paper:paper-mojangapi:${project.version}") {
          exclude("io.papermc.paper", "paper-api")
      }
@@ -22,7 +22,7 @@ index e30b51ed329f0c66a2329da45996ef0fc0db8ffb..d91928799014596de519d1a1b3f1bb0a
              "Main-Class" to "org.bukkit.craftbukkit.Main",
              "Implementation-Title" to "CraftBukkit",
 -            "Implementation-Version" to "git-Purpur-$implementationVersion", // Pufferfish // Purpur
-+            "Implementation-Version" to "git-Plazma-$implementationVersion", // Pufferfish // Purpur
++            "Implementation-Version" to "git-Plazma-$implementationVersion", // Pufferfish // Purpur // Plazma
              "Implementation-Vendor" to date, // Paper
              "Specification-Title" to "Bukkit",
              "Specification-Version" to project.version,
@@ -131,10 +131,10 @@ index 3cb56595822799926a8141e60a42f5d1edfc6de5..19d1d136fc28d6c114f6bc44c6450d2d
                  .completer(new ConsoleCommandCompleter(this.server))
                  .option(LineReader.Option.COMPLETE_IN_WORD, true);
 diff --git a/src/main/java/net/minecraft/CrashReport.java b/src/main/java/net/minecraft/CrashReport.java
-index ed3527612315e6e0649182ce4e1ae2834b0918a9..ae02c029f0169d30a34d4a4e65ea6cb4fa498111 100644
+index 888e31a0454888c36cb27602a28619f1f6dbf2c0..e3b131d054079fe9bde6ef79ac29ca0dae0033a3 100644
 --- a/src/main/java/net/minecraft/CrashReport.java
 +++ b/src/main/java/net/minecraft/CrashReport.java
-@@ -35,7 +35,7 @@ public class CrashReport {
+@@ -37,7 +37,7 @@ public class CrashReport {
          io.papermc.paper.util.StacktraceDeobfuscator.INSTANCE.deobfuscateThrowable(cause); // Paper
          this.title = message;
          this.exception = cause;
@@ -143,7 +143,7 @@ index ed3527612315e6e0649182ce4e1ae2834b0918a9..ae02c029f0169d30a34d4a4e65ea6cb4
      }
  
      public String getTitle() {
-@@ -125,7 +125,7 @@ public class CrashReport {
+@@ -127,7 +127,7 @@ public class CrashReport {
          stringbuilder.append("---- Minecraft Crash Report ----\n");
          // Purpur start
          stringbuilder.append("// ");
@@ -153,10 +153,10 @@ index ed3527612315e6e0649182ce4e1ae2834b0918a9..ae02c029f0169d30a34d4a4e65ea6cb4
          stringbuilder.append("// ");
          stringbuilder.append(CrashReport.getErrorComment());
 diff --git a/src/main/java/net/minecraft/server/Main.java b/src/main/java/net/minecraft/server/Main.java
-index ec268189b19b6fa5c4521f96ce211a531db35ec5..ce45a93fe835fd1ea4411c78df430aaa903c83c3 100644
+index 2568272a10c0d92bc49c0c244b10791db7bfae2b..ff4b438c9e6fa951890e9b22beaa174acab76487 100644
 --- a/src/main/java/net/minecraft/server/Main.java
 +++ b/src/main/java/net/minecraft/server/Main.java
-@@ -108,6 +108,18 @@ public class Main {
+@@ -105,6 +105,18 @@ public class Main {
              */ // CraftBukkit end
  
          try {
@@ -176,10 +176,10 @@ index ec268189b19b6fa5c4521f96ce211a531db35ec5..ce45a93fe835fd1ea4411c78df430aaa
              if (Boolean.getBoolean("Paper.isRunDev")) {
                  net.minecraft.server.packs.VanillaPackResourcesBuilder.developmentConfig = builder -> {
 diff --git a/src/main/java/net/minecraft/server/MinecraftServer.java b/src/main/java/net/minecraft/server/MinecraftServer.java
-index b61c4d1ebb9c15a7ecd7bec5eb864851c053fb7e..b4d5bca6e3a39186a988098fb5d4cae97a776e79 100644
+index 6f94f01da0a2294f6fdc564653dde1fdbf508153..bcea2c7b88dc066f70bbc6740f3b9ebcb364efab 100644
 --- a/src/main/java/net/minecraft/server/MinecraftServer.java
 +++ b/src/main/java/net/minecraft/server/MinecraftServer.java
-@@ -913,7 +913,7 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
+@@ -959,7 +959,7 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
          shutdownThread = Thread.currentThread();
          org.spigotmc.WatchdogThread.doStop(); // Paper
          if (!isSameThread()) {
@@ -189,10 +189,10 @@ index b61c4d1ebb9c15a7ecd7bec5eb864851c053fb7e..b4d5bca6e3a39186a988098fb5d4cae9
                  this.getRunningThread().stop();
                  try {
 diff --git a/src/main/java/net/minecraft/server/dedicated/DedicatedServerProperties.java b/src/main/java/net/minecraft/server/dedicated/DedicatedServerProperties.java
-index cda4544ae96a4fcb5c6c4483df67a59f1b53fd27..fe82a20efb2b130a568bc06aec5b86d3082062a3 100644
+index d53e0b67d847dfec2f4b118b5ca3f0ed1dc29ad6..d9d8f24331772c05c461f1b9ce5f8f23353610ca 100644
 --- a/src/main/java/net/minecraft/server/dedicated/DedicatedServerProperties.java
 +++ b/src/main/java/net/minecraft/server/dedicated/DedicatedServerProperties.java
-@@ -58,7 +58,7 @@ public class DedicatedServerProperties extends Settings<DedicatedServerPropertie
+@@ -57,7 +57,7 @@ public class DedicatedServerProperties extends Settings<DedicatedServerPropertie
      public final boolean onlineMode = this.get("online-mode", true);
      public final boolean preventProxyConnections = this.get("prevent-proxy-connections", false);
      public final String serverIp = this.get("server-ip", "");
@@ -202,7 +202,7 @@ index cda4544ae96a4fcb5c6c4483df67a59f1b53fd27..fe82a20efb2b130a568bc06aec5b86d3
      public final boolean spawnNpcs = this.get("spawn-npcs", true);
      public final boolean pvp = this.get("pvp", true);
 diff --git a/src/main/java/net/minecraft/server/gui/MinecraftServerGui.java b/src/main/java/net/minecraft/server/gui/MinecraftServerGui.java
-index be7b3fe2dc84493dcde9e185717b0b7c7c2e9822..cfdaa744ff40c8a171ca9b36b305b326fc57c32c 100644
+index 64e12201e164f4dc8070711605dcfcb6e56421f6..248207423ea72f8daaf42de48c54c62965cdf598 100644
 --- a/src/main/java/net/minecraft/server/gui/MinecraftServerGui.java
 +++ b/src/main/java/net/minecraft/server/gui/MinecraftServerGui.java
 @@ -56,7 +56,7 @@ public class MinecraftServerGui extends JComponent {
@@ -232,21 +232,8 @@ index be7b3fe2dc84493dcde9e185717b0b7c7c2e9822..cfdaa744ff40c8a171ca9b36b305b326
                      server.halt(true);
                      servergui.runFinalizers();
                  }
-diff --git a/src/main/java/net/minecraft/world/level/Level.java b/src/main/java/net/minecraft/world/level/Level.java
-index 25540a7f5631acd856726cdb44bace9be7dab401..36a1ac09bec7b4139d1cd44e6ecda72fc30fa8c4 100644
---- a/src/main/java/net/minecraft/world/level/Level.java
-+++ b/src/main/java/net/minecraft/world/level/Level.java
-@@ -1323,7 +1323,7 @@ public abstract class Level implements LevelAccessor, AutoCloseable {
-             TickingBlockEntity tickingblockentity = (TickingBlockEntity) this.blockEntityTickers.get(this.tileTickPosition);
-             // Spigot start
-             if (tickingblockentity == null) {
--                this.getCraftServer().getLogger().severe("Spigot has detected a null entity and has removed it, preventing a crash");
-+                this.getCraftServer().getLogger().severe("Plazma has detected a null entity and has removed it, preventing a crash"); // Plazma
-                 tilesThisCycle--;
-                 continue;
-             }
 diff --git a/src/main/java/net/minecraft/world/level/chunk/storage/RegionFileStorage.java b/src/main/java/net/minecraft/world/level/chunk/storage/RegionFileStorage.java
-index db571f658f636cdda1dcdbaffa0c4da67fae11ad..0ba8a251bf1f5a7a6f27823686bf0d636feba769 100644
+index 6eaeb2db0da59611501f2b1a63b5b48816a0ba48..3bf6624aa4f193a6fe85da1fff50da237edffd7a 100644
 --- a/src/main/java/net/minecraft/world/level/chunk/storage/RegionFileStorage.java
 +++ b/src/main/java/net/minecraft/world/level/chunk/storage/RegionFileStorage.java
 @@ -153,7 +153,7 @@ public class RegionFileStorage implements AutoCloseable {
@@ -259,10 +246,10 @@ index db571f658f636cdda1dcdbaffa0c4da67fae11ad..0ba8a251bf1f5a7a6f27823686bf0d63
  
      private static final int DEFAULT_SIZE_THRESHOLD = 1024 * 8;
 diff --git a/src/main/java/org/bukkit/craftbukkit/CraftServer.java b/src/main/java/org/bukkit/craftbukkit/CraftServer.java
-index a8a887236c68567816badc0620833755c84a4b03..09c292e22788fdf48b639265f24595e14aceba7a 100644
+index fd754fc9ff313421d221eea8d21fbde98be24914..7f28d8852176281a4e43c1af4085314eb4a47031 100644
 --- a/src/main/java/org/bukkit/craftbukkit/CraftServer.java
 +++ b/src/main/java/org/bukkit/craftbukkit/CraftServer.java
-@@ -269,7 +269,7 @@ import javax.annotation.Nullable; // Paper
+@@ -264,7 +264,7 @@ import javax.annotation.Nullable; // Paper
  import javax.annotation.Nonnull; // Paper
  
  public final class CraftServer implements Server {
@@ -272,7 +259,7 @@ index a8a887236c68567816badc0620833755c84a4b03..09c292e22788fdf48b639265f24595e1
      private final String bukkitVersion = Versioning.getBukkitVersion();
      private final Logger logger = Logger.getLogger("Minecraft");
 diff --git a/src/main/java/org/bukkit/craftbukkit/Main.java b/src/main/java/org/bukkit/craftbukkit/Main.java
-index d41f9c4a3c992b5dadacb4fcb1107235fff79fa8..49d0cd1275c6bf5165e4880dc322bc93ad3848f3 100644
+index c7f8f85ad6cb76413275ebe64385a3ec7051257e..e2a5b6349cfb0d7742cb5fb5e8d8e38cecf33f83 100644
 --- a/src/main/java/org/bukkit/craftbukkit/Main.java
 +++ b/src/main/java/org/bukkit/craftbukkit/Main.java
 @@ -141,7 +141,7 @@ public class Main {
@@ -294,10 +281,10 @@ index d41f9c4a3c992b5dadacb4fcb1107235fff79fa8..49d0cd1275c6bf5165e4880dc322bc93
                  // Paper end
              }
 diff --git a/src/main/java/org/bukkit/craftbukkit/entity/CraftLivingEntity.java b/src/main/java/org/bukkit/craftbukkit/entity/CraftLivingEntity.java
-index 9c94fd78cbd0d3ef0c4dd3678262126b6ed2847b..653ba98a1b69f25b781f8794c7d2ae8c5445cfa6 100644
+index a2d1c22e778aa4c3c44c3a1a604c1656cc86f0da..d36d6497daebb193e05a275c50ee8199fc3bfa75 100644
 --- a/src/main/java/org/bukkit/craftbukkit/entity/CraftLivingEntity.java
 +++ b/src/main/java/org/bukkit/craftbukkit/entity/CraftLivingEntity.java
-@@ -912,7 +912,7 @@ public class CraftLivingEntity extends CraftEntity implements LivingEntity {
+@@ -915,7 +915,7 @@ public class CraftLivingEntity extends CraftEntity implements LivingEntity {
              return EntityCategory.WATER;
          }
  
@@ -370,7 +357,7 @@ index 0000000000000000000000000000000000000000..a858b7ddef7f6877c0b92f4150e0dd37
 +
 +}
 diff --git a/src/main/java/org/purpurmc/purpur/PurpurConfig.java b/src/main/java/org/purpurmc/purpur/PurpurConfig.java
-index 3633574e112f217b412217dd243a631dc4e9c40c..d0d31002562e728fa1a6c9bc81baa4534f11d365 100644
+index e9fc2b4661f5275b93db5d3fdf25a8bdc3b38920..48893da814280aaeba95c1a9e2de9c39df455f93 100644
 --- a/src/main/java/org/purpurmc/purpur/PurpurConfig.java
 +++ b/src/main/java/org/purpurmc/purpur/PurpurConfig.java
 @@ -231,7 +231,7 @@ public class PurpurConfig {

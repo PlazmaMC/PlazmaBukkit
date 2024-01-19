@@ -5,22 +5,22 @@ Subject: [PATCH] Don't refresh LootTable for non player interaction
 
 
 diff --git a/src/main/java/net/minecraft/world/level/block/entity/RandomizableContainerBlockEntity.java b/src/main/java/net/minecraft/world/level/block/entity/RandomizableContainerBlockEntity.java
-index 02364a148b347e3669275553004391e31d77c0b5..cd2d3707c8e4a313ad15958b2f926be6e05bcd4d 100644
+index b41635dd0569ff7df909df492d3e850aef7214be..48a385145a6c4cc4de69895c3e1415698f3e6770 100644
 --- a/src/main/java/net/minecraft/world/level/block/entity/RandomizableContainerBlockEntity.java
 +++ b/src/main/java/net/minecraft/world/level/block/entity/RandomizableContainerBlockEntity.java
-@@ -70,6 +70,7 @@ public abstract class RandomizableContainerBlockEntity extends BaseContainerBloc
-     }
+@@ -68,6 +68,7 @@ public abstract class RandomizableContainerBlockEntity extends BaseContainerBloc
  
-     public void unpackLootTable(@Nullable Player player) {
+     @Override
+     public void unpackLootTable(@org.jetbrains.annotations.Nullable final Player player) {
 +        if (player == null && org.plazmamc.plazma.configurations.GlobalConfiguration.get().misc.refreshLootTableForNonPlayerInteraction) return; // Plazma
-         if (this.level != null && this.lootableData.shouldReplenish(player) && this.level.getServer() != null) { // Paper - don't unpack loot table if not in world
-             LootTable lootTable = this.level.getServer().getLootData().getLootTable(this.lootTable);
-             if (player instanceof ServerPlayer) {
+         // Copied from super with changes, always check the original method
+         net.minecraft.world.level.Level level = this.getLevel();
+         BlockPos blockPos = this.getBlockPos();
 diff --git a/src/main/java/org/plazmamc/plazma/configurations/GlobalConfiguration.java b/src/main/java/org/plazmamc/plazma/configurations/GlobalConfiguration.java
-index d88208cb454d1042440803c817d99c5dcb775330..c687f448761a591900ae5ebad9c8dfca572e9b31 100644
+index 3047ff4e8949a741d8e14b7061c5f735d1eb96f8..0f515512489e07176638addf9e8420d948644be3 100644
 --- a/src/main/java/org/plazmamc/plazma/configurations/GlobalConfiguration.java
 +++ b/src/main/java/org/plazmamc/plazma/configurations/GlobalConfiguration.java
-@@ -42,6 +42,7 @@ public class GlobalConfiguration extends ConfigurationPart {
+@@ -41,6 +41,7 @@ public class GlobalConfiguration extends ConfigurationPart {
  
          public boolean reduceRandom = OPTIMIZE;
          public boolean ignoreThreadSafeRandom = false;

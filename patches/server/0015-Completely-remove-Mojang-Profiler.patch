@@ -5,7 +5,7 @@ Subject: [PATCH] Completely remove Mojang Profiler
 
 
 diff --git a/src/main/java/net/minecraft/server/MinecraftServer.java b/src/main/java/net/minecraft/server/MinecraftServer.java
-index 389322d3ca9b1f3789271936a7e6c60bd7c27893..6ca87960654becdc7fd7d9b8465a140c0db2b8b9 100644
+index b0c8943b3ad6c2d29b46ce387d349f91acc899f1..6b98e5140e946b4d728c281417cc37dc60413ba1 100644
 --- a/src/main/java/net/minecraft/server/MinecraftServer.java
 +++ b/src/main/java/net/minecraft/server/MinecraftServer.java
 @@ -113,16 +113,16 @@ import net.minecraft.util.Unit;
@@ -32,7 +32,7 @@ index 389322d3ca9b1f3789271936a7e6c60bd7c27893..6ca87960654becdc7fd7d9b8465a140c
  import net.minecraft.util.thread.ReentrantBlockableEventLoop;
  import net.minecraft.world.Difficulty;
  import net.minecraft.world.RandomSequences;
-@@ -214,11 +214,11 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
+@@ -217,11 +217,11 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
      public LevelStorageSource.LevelStorageAccess storageSource;
      public final PlayerDataStorage playerDataStorage;
      private final List<Runnable> tickables = Lists.newArrayList();
@@ -49,7 +49,7 @@ index 389322d3ca9b1f3789271936a7e6c60bd7c27893..6ca87960654becdc7fd7d9b8465a140c
      @Nullable
      private MinecraftServer.TimeProfiler debugCommandProfiler;
      private boolean debugCommandProfilerDelayStart;
-@@ -2302,10 +2302,12 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
+@@ -2485,10 +2485,12 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
          }
      }
  
@@ -62,7 +62,7 @@ index 389322d3ca9b1f3789271936a7e6c60bd7c27893..6ca87960654becdc7fd7d9b8465a140c
  
      public abstract boolean isSingleplayerOwner(GameProfile profile);
  
-@@ -2542,6 +2544,7 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
+@@ -2725,6 +2727,7 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
      }
      // CraftBukkit end
  
@@ -70,7 +70,7 @@ index 389322d3ca9b1f3789271936a7e6c60bd7c27893..6ca87960654becdc7fd7d9b8465a140c
      private void startMetricsRecordingTick() {
          if (false && this.willStartRecordingMetrics) { // Purpur
              this.metricsRecorder = ActiveMetricsRecorder.createStarted(new ServerMetricsSamplersProvider(Util.timeSource, this.isDedicatedServer()), Util.timeSource, Util.ioPool(), new MetricsPersister("server"), this.onMetricsRecordingStopped, (path) -> {
-@@ -2557,6 +2560,7 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
+@@ -2740,6 +2743,7 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
          //this.metricsRecorder.startTick(); // Purpur
          //this.profiler.startTick(); // Purpur
      }
@@ -79,19 +79,19 @@ index 389322d3ca9b1f3789271936a7e6c60bd7c27893..6ca87960654becdc7fd7d9b8465a140c
      private void endMetricsRecordingTick() {
          //this.profiler.endTick(); // Purpur
 diff --git a/src/main/java/net/minecraft/server/ServerAdvancementManager.java b/src/main/java/net/minecraft/server/ServerAdvancementManager.java
-index 8189c549edd14a351fc5e75be23da7378bbd3532..8c44b54aa6b3db4f52d0d6ad7f3d341f11b293f7 100644
+index 31718823250a1490b783f426fff65bf5a067b6f4..b4935d70c1043edc8a92a2f07a6acf5da9a9c0dd 100644
 --- a/src/main/java/net/minecraft/server/ServerAdvancementManager.java
 +++ b/src/main/java/net/minecraft/server/ServerAdvancementManager.java
-@@ -22,7 +22,7 @@ import net.minecraft.resources.ResourceLocation;
+@@ -25,7 +25,7 @@ import net.minecraft.resources.ResourceLocation;
  import net.minecraft.server.packs.resources.ResourceManager;
  import net.minecraft.server.packs.resources.SimpleJsonResourceReloadListener;
- import net.minecraft.util.GsonHelper;
+ import net.minecraft.util.ProblemReporter;
 -import net.minecraft.util.profiling.ProfilerFiller;
 +//import net.minecraft.util.profiling.ProfilerFiller; // Plazma - Completely remove profiler
  import net.minecraft.world.level.storage.loot.LootDataManager;
  import org.slf4j.Logger;
  
-@@ -39,7 +39,7 @@ public class ServerAdvancementManager extends SimpleJsonResourceReloadListener {
+@@ -42,7 +42,7 @@ public class ServerAdvancementManager extends SimpleJsonResourceReloadListener {
          this.lootData = conditionManager;
      }
  
@@ -101,7 +101,7 @@ index 8189c549edd14a351fc5e75be23da7378bbd3532..8c44b54aa6b3db4f52d0d6ad7f3d341f
  
          prepared.forEach((minecraftkey, jsonelement) -> {
 diff --git a/src/main/java/net/minecraft/server/ServerFunctionLibrary.java b/src/main/java/net/minecraft/server/ServerFunctionLibrary.java
-index 975422a57b83a31e63a600bb4ff9c4e2baaf6da7..6783dc11a321c244296e84223c51cd1a489a9b96 100644
+index de2eb71bb6933f2bd06859bc2c56fd0ad15ab71a..0a4caef179e1cbb280381a495dea4e922e4aafe8 100644
 --- a/src/main/java/net/minecraft/server/ServerFunctionLibrary.java
 +++ b/src/main/java/net/minecraft/server/ServerFunctionLibrary.java
 @@ -25,7 +25,7 @@ import net.minecraft.server.packs.resources.PreparableReloadListener;
@@ -118,25 +118,25 @@ index 975422a57b83a31e63a600bb4ff9c4e2baaf6da7..6783dc11a321c244296e84223c51cd1a
  
      @Override
 -    public CompletableFuture<Void> reload(PreparableReloadListener.PreparationBarrier synchronizer, ResourceManager manager, ProfilerFiller prepareProfiler, ProfilerFiller applyProfiler, Executor prepareExecutor, Executor applyExecutor) {
-+    public CompletableFuture<Void> reload(PreparableReloadListener.PreparationBarrier synchronizer, ResourceManager manager/*, ProfilerFiller prepareProfiler, ProfilerFiller applyProfiler*/, Executor prepareExecutor, Executor applyExecutor) { // Plazma - Completely remove profiler
++    public CompletableFuture<Void> reload(PreparableReloadListener.PreparationBarrier synchronizer, ResourceManager manager, /*ProfilerFiller prepareProfiler, ProfilerFiller applyProfiler,*/ Executor prepareExecutor, Executor applyExecutor) { // Plazma - Completely remove profiler
          CompletableFuture<Map<ResourceLocation, List<TagLoader.EntryWithSource>>> completableFuture = CompletableFuture.supplyAsync(() -> {
              return this.tagsLoader.load(manager);
          }, prepareExecutor);
 diff --git a/src/main/java/net/minecraft/server/ServerFunctionManager.java b/src/main/java/net/minecraft/server/ServerFunctionManager.java
-index 097ac55028d66ef9ab430ff5dd103db6e3b99fc7..2993e9f326c43ef3f06d5e332899f9fad1f03718 100644
+index 5dd0dcb47211cec69189115bf4eab1dffc3ca8cf..6a4229a8a84dbdd915682177893b06bae81fd119 100644
 --- a/src/main/java/net/minecraft/server/ServerFunctionManager.java
 +++ b/src/main/java/net/minecraft/server/ServerFunctionManager.java
-@@ -19,7 +19,7 @@ import net.minecraft.commands.FunctionInstantiationException;
+@@ -16,7 +16,7 @@ import net.minecraft.commands.functions.CommandFunction;
+ import net.minecraft.commands.functions.InstantiatedFunction;
  import net.minecraft.nbt.CompoundTag;
- import net.minecraft.network.chat.Component;
  import net.minecraft.resources.ResourceLocation;
 -import net.minecraft.util.profiling.ProfilerFiller;
 +//import net.minecraft.util.profiling.ProfilerFiller; // Plazma - Completely remove profiler
- import net.minecraft.world.level.GameRules;
+ import org.slf4j.Logger;
  
  public class ServerFunctionManager {
 diff --git a/src/main/java/net/minecraft/server/level/ChunkMap.java b/src/main/java/net/minecraft/server/level/ChunkMap.java
-index 3771caa73b0b41428f3d629aca1f562df7bcfaff..a88f6bbed191b6fd3ef2da625df45520331cf7d7 100644
+index 172c7b94830c13835e48d68a039bd66e7e7622b0..5a8b27dc3c82396123f681dbf466cab3527055bf 100644
 --- a/src/main/java/net/minecraft/server/level/ChunkMap.java
 +++ b/src/main/java/net/minecraft/server/level/ChunkMap.java
 @@ -68,7 +68,7 @@ import net.minecraft.server.level.progress.ChunkProgressListener;
@@ -149,10 +149,10 @@ index 3771caa73b0b41428f3d629aca1f562df7bcfaff..a88f6bbed191b6fd3ef2da625df45520
  import net.minecraft.util.thread.ProcessorHandle;
  import net.minecraft.util.thread.ProcessorMailbox;
 diff --git a/src/main/java/net/minecraft/server/level/ServerChunkCache.java b/src/main/java/net/minecraft/server/level/ServerChunkCache.java
-index 43a46feb5fb4bf23d71bc4f6c08caa93b1959ffc..16c2db8fbfcaf15efb94c04e1bb2508e85812690 100644
+index c3c47857515a7f75d69c718f352d8bae4b2c1d26..246345be61ce31baf9721002cc5a880b80fcec17 100644
 --- a/src/main/java/net/minecraft/server/level/ServerChunkCache.java
 +++ b/src/main/java/net/minecraft/server/level/ServerChunkCache.java
-@@ -24,7 +24,7 @@ import net.minecraft.core.SectionPos;
+@@ -23,7 +23,7 @@ import net.minecraft.core.SectionPos;
  import net.minecraft.network.protocol.Packet;
  import net.minecraft.server.level.progress.ChunkProgressListener;
  import net.minecraft.util.VisibleForDebug;
@@ -162,10 +162,10 @@ index 43a46feb5fb4bf23d71bc4f6c08caa93b1959ffc..16c2db8fbfcaf15efb94c04e1bb2508e
  import net.minecraft.world.entity.Entity;
  import net.minecraft.world.entity.ai.village.poi.PoiManager;
 diff --git a/src/main/java/net/minecraft/server/level/ServerLevel.java b/src/main/java/net/minecraft/server/level/ServerLevel.java
-index e46207a250a5456589da06fd5fad2a385ef7d4a5..9301ec8142fbf5c5112cac75aef1b8e35737ce43 100644
+index 9d5b6303fe1ecfe84c935b0811705dbefe6995d0..3902656486aa4fffc448a0f513b5e6564a20d3ad 100644
 --- a/src/main/java/net/minecraft/server/level/ServerLevel.java
 +++ b/src/main/java/net/minecraft/server/level/ServerLevel.java
-@@ -77,7 +77,7 @@ import net.minecraft.util.Mth;
+@@ -78,7 +78,7 @@ import net.minecraft.util.Mth;
  import net.minecraft.util.ProgressListener;
  import net.minecraft.util.RandomSource;
  import net.minecraft.util.Unit;
@@ -174,12 +174,12 @@ index e46207a250a5456589da06fd5fad2a385ef7d4a5..9301ec8142fbf5c5112cac75aef1b8e3
  import net.minecraft.util.valueproviders.IntProvider;
  import net.minecraft.util.valueproviders.UniformInt;
  import net.minecraft.world.DifficultyInstance;
-@@ -694,15 +694,15 @@ public class ServerLevel extends Level implements WorldGenLevel {
+@@ -700,15 +700,15 @@ public class ServerLevel extends Level implements WorldGenLevel {
          // Holder holder = worlddimension.type(); // CraftBukkit - decompile error
  
          // Objects.requireNonNull(minecraftserver); // CraftBukkit - decompile error
--        super(iworlddataserver, resourcekey, minecraftserver.registryAccess(), worlddimension.type(), minecraftserver::getProfiler, false, flag, i, minecraftserver.getMaxChainedNeighborUpdates(), gen, biomeProvider, env, spigotConfig -> minecraftserver.paperConfigurations.createWorldConfig(io.papermc.paper.configuration.PaperConfigurations.createWorldContextMap(convertable_conversionsession.levelDirectory.path(), iworlddataserver.getLevelName(), resourcekey.location(), spigotConfig, minecraftserver.registryAccess())), spigotConfig -> minecraftserver.plazmaConfigurations.createWorldConfig(org.plazmamc.plazma.configurations.PlazmaConfigurations.createWorldContextMap(convertable_conversionsession.levelDirectory.path(), iworlddataserver.getLevelName(), resourcekey.location(), spigotConfig, minecraftserver.registryAccess())), executor); // Paper - Async-Anti-Xray - Pass executor // Plazma
-+        super(iworlddataserver, resourcekey, minecraftserver.registryAccess(), worlddimension.type(), /*minecraftserver::getProfiler,*/ false, flag, i, minecraftserver.getMaxChainedNeighborUpdates(), gen, biomeProvider, env, spigotConfig -> minecraftserver.paperConfigurations.createWorldConfig(io.papermc.paper.configuration.PaperConfigurations.createWorldContextMap(convertable_conversionsession.levelDirectory.path(), iworlddataserver.getLevelName(), resourcekey.location(), spigotConfig, minecraftserver.registryAccess())), spigotConfig -> minecraftserver.plazmaConfigurations.createWorldConfig(org.plazmamc.plazma.configurations.PlazmaConfigurations.createWorldContextMap(convertable_conversionsession.levelDirectory.path(), iworlddataserver.getLevelName(), resourcekey.location(), spigotConfig, minecraftserver.registryAccess())), executor); // Paper - Async-Anti-Xray - Pass executor // Plazma // Plazma - Completely remove profiler
+-        super(iworlddataserver, resourcekey, minecraftserver.registryAccess(), worlddimension.type(), minecraftserver::getProfiler, false, flag, i, minecraftserver.getMaxChainedNeighborUpdates(), gen, biomeProvider, env, spigotConfig -> minecraftserver.paperConfigurations.createWorldConfig(io.papermc.paper.configuration.PaperConfigurations.createWorldContextMap(convertable_conversionsession.levelDirectory.path(), iworlddataserver.getLevelName(), resourcekey.location(), spigotConfig, minecraftserver.registryAccess())), spigotConfig -> minecraftserver.plazmaConfigurations.createWorldConfig(org.plazmamc.plazma.configurations.PlazmaConfigurations.createWorldContextMap(convertable_conversionsession.levelDirectory.path(), iworlddataserver.getLevelName(), resourcekey.location(), spigotConfig, minecraftserver.registryAccess())), executor); // Paper - create paper world configs; Async-Anti-Xray: Pass executor
++        super(iworlddataserver, resourcekey, minecraftserver.registryAccess(), worlddimension.type(), /*minecraftserver::getProfiler,*/ false, flag, i, minecraftserver.getMaxChainedNeighborUpdates(), gen, biomeProvider, env, spigotConfig -> minecraftserver.paperConfigurations.createWorldConfig(io.papermc.paper.configuration.PaperConfigurations.createWorldContextMap(convertable_conversionsession.levelDirectory.path(), iworlddataserver.getLevelName(), resourcekey.location(), spigotConfig, minecraftserver.registryAccess())), spigotConfig -> minecraftserver.plazmaConfigurations.createWorldConfig(org.plazmamc.plazma.configurations.PlazmaConfigurations.createWorldContextMap(convertable_conversionsession.levelDirectory.path(), iworlddataserver.getLevelName(), resourcekey.location(), spigotConfig, minecraftserver.registryAccess())), executor); // Paper - create paper world configs; Async-Anti-Xray: Pass executor // Plazma - Completely remove Mojang Profiler
          this.pvpMode = minecraftserver.isPvpAllowed();
          this.convertable = convertable_conversionsession;
          this.uuid = WorldUUID.getUUID(convertable_conversionsession.levelDirectory.path().toFile());
@@ -188,8 +188,8 @@ index e46207a250a5456589da06fd5fad2a385ef7d4a5..9301ec8142fbf5c5112cac75aef1b8e3
          this.entityTickList = new EntityTickList();
 -        this.blockTicks = new LevelTicks<>(this::isPositionTickingWithEntitiesLoaded, this.getProfilerSupplier());
 -        this.fluidTicks = new LevelTicks<>(this::isPositionTickingWithEntitiesLoaded, this.getProfilerSupplier());
-+        this.blockTicks = new LevelTicks<>(this::isPositionTickingWithEntitiesLoaded); //, this.getProfilerSupplier()); // Plazma - Completely remove profiler
-+        this.fluidTicks = new LevelTicks<>(this::isPositionTickingWithEntitiesLoaded); //, this.getProfilerSupplier()); // Plazma - Completely remove profiler
++        this.blockTicks = new LevelTicks<>(this::isPositionTickingWithEntitiesLoaded);//, this.getProfilerSupplier()); // Plazma - Completely remove profiler
++        this.fluidTicks = new LevelTicks<>(this::isPositionTickingWithEntitiesLoaded);//, this.getProfilerSupplier()); // Plazma - Completely remove profiler
          this.navigatingMobs = new ObjectOpenHashSet();
          this.blockEvents = new ObjectLinkedOpenHashSet();
          this.blockEventsToReschedule = new ArrayList(64);
@@ -652,10 +652,10 @@ index 863343a87fe34d72f04af89d75268b477b2adc7a..00000000000000000000000000000000
 -    }
 -}
 diff --git a/src/main/java/net/minecraft/world/entity/Mob.java b/src/main/java/net/minecraft/world/entity/Mob.java
-index 80c03bd4e5d7e20bb8a4e14af5620f5c57a05fd4..aeae6117b398b84d5c8ecaa175a72867416ff166 100644
+index 4c0d710d20e074ad4a0fdd1cd4c0c3d3383b68a5..2d5568ac864a7f557bc5a21ad796206c25caf028 100644
 --- a/src/main/java/net/minecraft/world/entity/Mob.java
 +++ b/src/main/java/net/minecraft/world/entity/Mob.java
-@@ -147,8 +147,8 @@ public abstract class Mob extends LivingEntity implements Targeting {
+@@ -148,8 +148,8 @@ public abstract class Mob extends LivingEntity implements Targeting {
          this.pathfindingMalus = Maps.newEnumMap(BlockPathTypes.class);
          this.restrictCenter = BlockPos.ZERO;
          this.restrictRadius = -1.0F;
@@ -701,18 +701,18 @@ index 02978315bc2b828cc603ce7478408f3f82c249c2..4f9b19c45afd6b26833ba892a90d3a95
      public void addGoal(int priority, Goal goal) {
          this.availableGoals.add(new WrappedGoal(priority, goal));
 diff --git a/src/main/java/net/minecraft/world/item/crafting/RecipeManager.java b/src/main/java/net/minecraft/world/item/crafting/RecipeManager.java
-index 388363948595247471fa4c3c6801fc493d61c0d0..6851ee45b5b41cf549a8aed14d95545b0d120414 100644
+index d87124f5356180a37e581febc6141fdc5f1395a7..c577e275c0375747b89f56bc79710871e313f6b0 100644
 --- a/src/main/java/net/minecraft/world/item/crafting/RecipeManager.java
 +++ b/src/main/java/net/minecraft/world/item/crafting/RecipeManager.java
-@@ -31,7 +31,7 @@ import net.minecraft.resources.ResourceLocation;
+@@ -37,7 +37,7 @@ import net.minecraft.resources.ResourceLocation;
  import net.minecraft.server.packs.resources.ResourceManager;
  import net.minecraft.server.packs.resources.SimpleJsonResourceReloadListener;
  import net.minecraft.util.GsonHelper;
 -import net.minecraft.util.profiling.ProfilerFiller;
 +//import net.minecraft.util.profiling.ProfilerFiller; // Plazma - Completely remove profiler
- import net.minecraft.world.Container;
- import net.minecraft.world.item.ItemStack;
- import net.minecraft.world.level.Level;
+ 
+ public class RecipeManager extends SimpleJsonResourceReloadListener {
+ 
 @@ -51,7 +51,7 @@ public class RecipeManager extends SimpleJsonResourceReloadListener {
          super(RecipeManager.GSON, "recipes");
      }
@@ -723,19 +723,19 @@ index 388363948595247471fa4c3c6801fc493d61c0d0..6851ee45b5b41cf549a8aed14d95545b
          // CraftBukkit start - SPIGOT-5667 make sure all types are populated and mutable
          Map<RecipeType<?>, Object2ObjectLinkedOpenHashMap<ResourceLocation, RecipeHolder<?>>> map1 = Maps.newHashMap();
 diff --git a/src/main/java/net/minecraft/world/level/Level.java b/src/main/java/net/minecraft/world/level/Level.java
-index af4eb54d99b67d059534e5e55e952aa41bb87bc7..412dd103bad498c3c93b7a3ab98f834944d514eb 100644
+index cde722d3e381d214e2835b7dc5877e9add0a5eda..7ce3756da66a7e6c42ac3220e660131f9fad2a76 100644
 --- a/src/main/java/net/minecraft/world/level/Level.java
 +++ b/src/main/java/net/minecraft/world/level/Level.java
-@@ -39,7 +39,7 @@ import net.minecraft.sounds.SoundSource;
+@@ -41,7 +41,7 @@ import net.minecraft.sounds.SoundSource;
  import net.minecraft.util.AbortableIterationConsumer;
  import net.minecraft.util.Mth;
  import net.minecraft.util.RandomSource;
 -import net.minecraft.util.profiling.ProfilerFiller;
 +//import net.minecraft.util.profiling.ProfilerFiller; // Plazma - Completely remove profiler
  import net.minecraft.world.DifficultyInstance;
+ import net.minecraft.world.TickRateManager;
  import net.minecraft.world.damagesource.DamageSource;
- import net.minecraft.world.damagesource.DamageSources;
-@@ -137,7 +137,7 @@ public abstract class Level implements LevelAccessor, AutoCloseable {
+@@ -140,7 +140,7 @@ public abstract class Level implements LevelAccessor, AutoCloseable {
      private final ResourceKey<DimensionType> dimensionTypeId;
      private final Holder<DimensionType> dimensionTypeRegistration;
      public final WritableLevelData levelData;
@@ -744,16 +744,16 @@ index af4eb54d99b67d059534e5e55e952aa41bb87bc7..412dd103bad498c3c93b7a3ab98f8349
      public final boolean isClientSide;
      private final WorldBorder worldBorder;
      private final BiomeManager biomeManager;
-@@ -262,7 +262,7 @@ public abstract class Level implements LevelAccessor, AutoCloseable {
+@@ -264,7 +264,7 @@ public abstract class Level implements LevelAccessor, AutoCloseable {
  
      //protected final io.papermc.paper.util.math.ThreadUnsafeRandom randomTickRandom = new io.papermc.paper.util.math.ThreadUnsafeRandom(java.util.concurrent.ThreadLocalRandom.current().nextLong()); public net.minecraft.util.RandomSource getThreadUnsafeRandom() { return this.randomTickRandom; } // Pufferfish - move thread unsafe random initialization // Pufferfish - getter // Purpur - dont break ABI
  
--    protected Level(WritableLevelData worlddatamutable, ResourceKey<Level> resourcekey, RegistryAccess iregistrycustom, Holder<DimensionType> holder, Supplier<ProfilerFiller> supplier, boolean flag, boolean flag1, long i, int j, org.bukkit.generator.ChunkGenerator gen, org.bukkit.generator.BiomeProvider biomeProvider, org.bukkit.World.Environment env, java.util.function.Function<org.spigotmc.SpigotWorldConfig, io.papermc.paper.configuration.WorldConfiguration> paperWorldConfigCreator, java.util.function.Function<org.spigotmc.SpigotWorldConfig, org.plazmamc.plazma.configurations.WorldConfigurations> plazmaWorldConfigurationCreator, java.util.concurrent.Executor executor) { // Paper - Async-Anti-Xray - Pass executor // Plazma
-+    protected Level(WritableLevelData worlddatamutable, ResourceKey<Level> resourcekey, RegistryAccess iregistrycustom, Holder<DimensionType> holder, /*Supplier<ProfilerFiller> supplier,*/ boolean flag, boolean flag1, long i, int j, org.bukkit.generator.ChunkGenerator gen, org.bukkit.generator.BiomeProvider biomeProvider, org.bukkit.World.Environment env, java.util.function.Function<org.spigotmc.SpigotWorldConfig, io.papermc.paper.configuration.WorldConfiguration> paperWorldConfigCreator, java.util.function.Function<org.spigotmc.SpigotWorldConfig, org.plazmamc.plazma.configurations.WorldConfigurations> plazmaWorldConfigurationCreator, java.util.concurrent.Executor executor) { // Paper - Async-Anti-Xray - Pass executor // Plazma //- Completely remove profiler
+-    protected Level(WritableLevelData worlddatamutable, ResourceKey<Level> resourcekey, RegistryAccess iregistrycustom, Holder<DimensionType> holder, Supplier<ProfilerFiller> supplier, boolean flag, boolean flag1, long i, int j, org.bukkit.generator.ChunkGenerator gen, org.bukkit.generator.BiomeProvider biomeProvider, org.bukkit.World.Environment env, java.util.function.Function<org.spigotmc.SpigotWorldConfig, io.papermc.paper.configuration.WorldConfiguration> paperWorldConfigCreator, java.util.function.Function<org.spigotmc.SpigotWorldConfig, org.plazmamc.plazma.configurations.WorldConfigurations> plazmaWorldConfigurationCreator, java.util.concurrent.Executor executor) { // Paper - create paper world config; Async-Anti-Xray: Pass executor // Plazma
++    protected Level(WritableLevelData worlddatamutable, ResourceKey<Level> resourcekey, RegistryAccess iregistrycustom, Holder<DimensionType> holder, /*Supplier<ProfilerFiller> supplier,*/ boolean flag, boolean flag1, long i, int j, org.bukkit.generator.ChunkGenerator gen, org.bukkit.generator.BiomeProvider biomeProvider, org.bukkit.World.Environment env, java.util.function.Function<org.spigotmc.SpigotWorldConfig, io.papermc.paper.configuration.WorldConfiguration> paperWorldConfigCreator, java.util.function.Function<org.spigotmc.SpigotWorldConfig, org.plazmamc.plazma.configurations.WorldConfigurations> plazmaWorldConfigurationCreator, java.util.concurrent.Executor executor) { // Paper - create paper world config; Async-Anti-Xray: Pass executor // Plazma // Plazma - Completely remove profiler
          this.spigotConfig = new org.spigotmc.SpigotWorldConfig(((net.minecraft.world.level.storage.PrimaryLevelData) worlddatamutable).getLevelName()); // Spigot
-         this.paperConfig = paperWorldConfigCreator.apply(this.spigotConfig); // Paper
+         this.paperConfig = paperWorldConfigCreator.apply(this.spigotConfig); // Paper - create paper world config
          this.plazmaConfig = plazmaWorldConfigurationCreator.apply(this.spigotConfig); // Plazma
-@@ -279,7 +279,7 @@ public abstract class Level implements LevelAccessor, AutoCloseable {
+@@ -281,7 +281,7 @@ public abstract class Level implements LevelAccessor, AutoCloseable {
          }
  
          // CraftBukkit end
@@ -762,7 +762,7 @@ index af4eb54d99b67d059534e5e55e952aa41bb87bc7..412dd103bad498c3c93b7a3ab98f8349
          this.levelData = worlddatamutable;
          this.dimensionTypeRegistration = holder;
          this.dimensionTypeId = (ResourceKey) holder.unwrapKey().orElseThrow(() -> {
-@@ -1833,6 +1833,7 @@ public abstract class Level implements LevelAccessor, AutoCloseable {
+@@ -1851,6 +1851,7 @@ public abstract class Level implements LevelAccessor, AutoCloseable {
          return false;
      }
  
@@ -770,7 +770,7 @@ index af4eb54d99b67d059534e5e55e952aa41bb87bc7..412dd103bad498c3c93b7a3ab98f8349
      public ProfilerFiller getProfiler() {
          if (true || gg.pufferfish.pufferfish.PufferfishConfig.disableMethodProfiler) return net.minecraft.util.profiling.InactiveProfiler.INSTANCE; // Pufferfish // Purpur
          return (ProfilerFiller) this.profiler.get();
-@@ -1841,6 +1842,7 @@ public abstract class Level implements LevelAccessor, AutoCloseable {
+@@ -1859,6 +1860,7 @@ public abstract class Level implements LevelAccessor, AutoCloseable {
      public Supplier<ProfilerFiller> getProfilerSupplier() {
          return this.profiler;
      }
@@ -802,7 +802,7 @@ index 0f1025495237aebe30132ace0832aa5718d6f9bb..0226280bbdb9d63831d93f980ee117da
 +     */ // Plazma - Completely remove profiler
  }
 diff --git a/src/main/java/net/minecraft/world/level/chunk/LevelChunk.java b/src/main/java/net/minecraft/world/level/chunk/LevelChunk.java
-index 66656c4cf157228c9f52b33b358713ef0172f9ff..a8a360b794cec35b9f7ab137aaf35fba1d610f26 100644
+index c37aa33134b8602caae5ecff00439ad5e0005d18..f65ea0319ba4b715bcfc033ab0030b4302341953 100644
 --- a/src/main/java/net/minecraft/world/level/chunk/LevelChunk.java
 +++ b/src/main/java/net/minecraft/world/level/chunk/LevelChunk.java
 @@ -25,7 +25,7 @@ import net.minecraft.network.FriendlyByteBuf;
@@ -855,19 +855,19 @@ index a8af51a25b0f99c3a64d9150fdfcd6b818aa7581..b9689131a7a46b46c0b75b86f2bb163d
          //profiler.markForCharting(MetricCategory.PATH_FINDING); // Purpur
          // Set<Target> set = positions.keySet();
 diff --git a/src/main/java/net/minecraft/world/level/storage/loot/LootDataManager.java b/src/main/java/net/minecraft/world/level/storage/loot/LootDataManager.java
-index 08f5239d5eea9133340ec9e1a3a7d8d5e792ced0..ad306d5d69b2bd6ac4ddbdd13dd0a34c9c4cc4f5 100644
+index 3ddf6ab00de2456ebf504985b88994f970e3b5c4..77ce02c7edea5170d31c8911b5de5638f23d46af 100644
 --- a/src/main/java/net/minecraft/world/level/storage/loot/LootDataManager.java
 +++ b/src/main/java/net/minecraft/world/level/storage/loot/LootDataManager.java
-@@ -19,7 +19,7 @@ import net.minecraft.resources.ResourceLocation;
- import net.minecraft.server.packs.resources.PreparableReloadListener;
+@@ -20,7 +20,7 @@ import net.minecraft.server.packs.resources.PreparableReloadListener;
  import net.minecraft.server.packs.resources.ResourceManager;
  import net.minecraft.server.packs.resources.SimpleJsonResourceReloadListener;
+ import net.minecraft.util.ProblemReporter;
 -import net.minecraft.util.profiling.ProfilerFiller;
 +//import net.minecraft.util.profiling.ProfilerFiller; // Plazma - Completely remove profiler // Plazma - Completely remove profiler
  import net.minecraft.world.level.storage.loot.parameters.LootContextParamSets;
  import org.bukkit.craftbukkit.CraftLootTable;
  import org.bukkit.craftbukkit.util.CraftNamespacedKey;
-@@ -36,7 +36,7 @@ public class LootDataManager implements PreparableReloadListener, LootDataResolv
+@@ -37,7 +37,7 @@ public class LootDataManager implements PreparableReloadListener, LootDataResolv
      public LootDataManager() {}
  
      @Override

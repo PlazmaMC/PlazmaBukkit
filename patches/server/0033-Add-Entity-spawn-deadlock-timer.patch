@@ -7,19 +7,19 @@ Subject: [PATCH] Add Entity spawn deadlock timer
 - AbsolemJackdaw/FixMySpawnR
 
 diff --git a/src/main/java/net/minecraft/world/level/BaseSpawner.java b/src/main/java/net/minecraft/world/level/BaseSpawner.java
-index 914564a528c360f352927e7681ab2e31ed365b21..090643e977257a097a99a3f54d1d73b995cfd82a 100644
+index ac6bdf21d5ff8ba563f8c9187f6a8dcc823587aa..94d79eb70ffdeaa41dce4ec7873fb6888eff272e 100644
 --- a/src/main/java/net/minecraft/world/level/BaseSpawner.java
 +++ b/src/main/java/net/minecraft/world/level/BaseSpawner.java
-@@ -46,6 +46,8 @@ public abstract class BaseSpawner {
+@@ -48,6 +48,8 @@ public abstract class BaseSpawner {
      public int requiredPlayerRange = 16;
      public int spawnRange = 4;
      private int tickDelay = 0; // Paper
 +    private int blockExistsTick = 0; // Plazma - Implement FixMySpawnR
 +    private boolean blockLockedByTime = false; // Plazma - Implement FixMySpawnR
-     // Paper start - ported from 1.20.3 Fix MC-259321
-     static <B, T extends B> net.minecraft.world.level.entity.EntityTypeTest<B, T> forExactClass(Class<T> clazz) {
-         return new net.minecraft.world.level.entity.EntityTypeTest<>() {
-@@ -97,6 +99,17 @@ public abstract class BaseSpawner {
+ 
+     public BaseSpawner() {}
+ 
+@@ -83,6 +85,17 @@ public abstract class BaseSpawner {
      }
  
      public void serverTick(ServerLevel world, BlockPos pos) {
@@ -37,7 +37,7 @@ index 914564a528c360f352927e7681ab2e31ed365b21..090643e977257a097a99a3f54d1d73b9
          if (spawnCount <= 0 || maxNearbyEntities <= 0) return; // Paper - Ignore impossible spawn tick
          // Paper start - Configurable mob spawner tick rate
          if (spawnDelay > 0 && --tickDelay > 0) return;
-@@ -301,6 +314,12 @@ public abstract class BaseSpawner {
+@@ -287,6 +300,12 @@ public abstract class BaseSpawner {
          if (nbt.contains("SpawnRange", 99)) {
              this.spawnRange = nbt.getShort("SpawnRange");
          }
@@ -50,13 +50,12 @@ index 914564a528c360f352927e7681ab2e31ed365b21..090643e977257a097a99a3f54d1d73b9
  
          this.displayEntity = null;
      }
-@@ -330,6 +349,9 @@ public abstract class BaseSpawner {
+@@ -316,6 +335,8 @@ public abstract class BaseSpawner {
              }));
          }
  
 +        nbt.putInt("Plazma.SpawnerTicks", this.blockExistsTick); // Plazma - Implement FixMySpawnR
 +        nbt.putBoolean("Plazma.SpawnerLocked", this.blockLockedByTime); // Plazma - Implement FixMySpawnR
-+
          nbt.put("SpawnPotentials", (Tag) SpawnData.LIST_CODEC.encodeStart(NbtOps.INSTANCE, this.spawnPotentials).result().orElseThrow());
          return nbt;
      }

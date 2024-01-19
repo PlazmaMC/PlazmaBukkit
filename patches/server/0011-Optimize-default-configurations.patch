@@ -9,7 +9,7 @@ Subject: [PATCH] Optimize default configurations
 - YouHaveTrouble/minecraft-exploits-and-how-to-fix-them
 
 diff --git a/src/main/java/gg/pufferfish/pufferfish/PufferfishConfig.java b/src/main/java/gg/pufferfish/pufferfish/PufferfishConfig.java
-index 9ca1494497ae53e56b1f81fda51b0b8bd02a6d03..97b1366d25537d68469e95ac101b1b8cf9fdc997 100644
+index 43397712cb13df5be3081c05eaa1a57c57f12c60..580ab3eb7664d5c51611a4b9635aa3c4872c8861 100644
 --- a/src/main/java/gg/pufferfish/pufferfish/PufferfishConfig.java
 +++ b/src/main/java/gg/pufferfish/pufferfish/PufferfishConfig.java
 @@ -64,7 +64,7 @@ public class PufferfishConfig {
@@ -21,7 +21,7 @@ index 9ca1494497ae53e56b1f81fda51b0b8bd02a6d03..97b1366d25537d68469e95ac101b1b8c
  				"Join our Discord for support: https://discord.gg/reZw4vQV9H",
  				"Download new builds at https://ci.pufferfish.host/job/Pufferfish");
  		
-@@ -211,7 +211,7 @@ public class PufferfishConfig {
+@@ -233,7 +233,7 @@ public class PufferfishConfig {
      public static int maxProjectileLoadsPerTick;
      public static int maxProjectileLoadsPerProjectile;
      private static void projectileLoading() {
@@ -30,7 +30,7 @@ index 9ca1494497ae53e56b1f81fda51b0b8bd02a6d03..97b1366d25537d68469e95ac101b1b8c
          maxProjectileLoadsPerProjectile = getInt("projectile.max-loads-per-projectile", 10, "Controls how many chunks a projectile", "can load in its lifetime before it gets", "automatically removed.");
  
          setComment("projectile", "Optimizes projectile settings");
-@@ -225,7 +225,7 @@ public class PufferfishConfig {
+@@ -247,7 +247,7 @@ public class PufferfishConfig {
      public static int activationDistanceMod;
  
      private static void dynamicActivationOfBrains() throws IOException {
@@ -39,7 +39,7 @@ index 9ca1494497ae53e56b1f81fda51b0b8bd02a6d03..97b1366d25537d68469e95ac101b1b8c
          startDistance = getInt("dab.start-distance", "activation-range.start-distance", 12,
                  "This value determines how far away an entity has to be",
                  "from the player to start being effected by DEAR.");
-@@ -233,7 +233,7 @@ public class PufferfishConfig {
+@@ -255,7 +255,7 @@ public class PufferfishConfig {
          maximumActivationPrio = getInt("dab.max-tick-freq", "activation-range.max-tick-freq", 20,
                  "This value defines how often in ticks, the furthest entity",
                  "will get their pathfinders and behaviors ticked. 20 = 1s");
@@ -48,7 +48,7 @@ index 9ca1494497ae53e56b1f81fda51b0b8bd02a6d03..97b1366d25537d68469e95ac101b1b8c
                  "This value defines how much distance modifies an entity's",
                  "tick frequency. freq = (distanceToPlayer^2) / (2^value)",
                  "If you want further away entities to tick less often, use 7.",
-@@ -253,8 +253,18 @@ public class PufferfishConfig {
+@@ -275,8 +275,18 @@ public class PufferfishConfig {
  	public static Map<String, Integer> projectileTimeouts;
  	private static void projectileTimeouts() {
  		// Set some defaults
@@ -125,7 +125,7 @@ index a6f58b3457b7477015c5c6d969e7d83017dd3fa1..85e56d726eb7780811e0a990e1ef7d3e
          public boolean loadPermissionsYmlBeforePlugins = true;
          @Constraints.Min(4)
 diff --git a/src/main/java/io/papermc/paper/configuration/WorldConfiguration.java b/src/main/java/io/papermc/paper/configuration/WorldConfiguration.java
-index 071d3877e386a0c7c4d2f2e8ddd06e0765c49d0d..79e2a6806311c402e481c5b29cbd3ced85101f6e 100644
+index 385ca2c1022e0985550a5cc2bbff953f1aa33f5c..121ee93d65bcaa26bdc3e57750107cdb54f8d6d7 100644
 --- a/src/main/java/io/papermc/paper/configuration/WorldConfiguration.java
 +++ b/src/main/java/io/papermc/paper/configuration/WorldConfiguration.java
 @@ -96,12 +96,32 @@ public class WorldConfiguration extends ConfigurationPart {
@@ -313,7 +313,7 @@ index 071d3877e386a0c7c4d2f2e8ddd06e0765c49d0d..79e2a6806311c402e481c5b29cbd3ced
          public int wetFarmland = 1;
          public int dryFarmland = 1;
          public Table<EntityType<?>, String, Integer> sensor = Util.make(HashBasedTable.create(), table -> table.put(EntityType.VILLAGER, "secondarypoisensor", 40));
-@@ -525,9 +589,9 @@ public class WorldConfiguration extends ConfigurationPart {
+@@ -532,9 +596,9 @@ public class WorldConfiguration extends ConfigurationPart {
  
      public class Misc extends ConfigurationPart {
          public int lightQueueSize = 20;
@@ -338,10 +338,10 @@ index 24763d3d270c29c95e0b3e85111145234f660a62..80ddc627e02e3c749e6b074afa93d357
      }
  
 diff --git a/src/main/java/net/minecraft/server/Main.java b/src/main/java/net/minecraft/server/Main.java
-index 9b8bdffbbfe45c6712d0f4da3643424fa94fc69e..84eca01450db5b737c676cab2439d041141c323d 100644
+index 81390751af65f0055bae807a976aa473cea917ac..29636e4adc2f3ce4cd9dc6f33420f3d9a9bdfc08 100644
 --- a/src/main/java/net/minecraft/server/Main.java
 +++ b/src/main/java/net/minecraft/server/Main.java
-@@ -163,7 +163,7 @@ public class Main {
+@@ -160,7 +160,7 @@ public class Main {
                  File configFile = (File) optionset.valueOf("bukkit-settings");
                  YamlConfiguration configuration = YamlConfiguration.loadConfiguration(configFile);
                  configuration.options().copyDefaults(true);
@@ -351,10 +351,10 @@ index 9b8bdffbbfe45c6712d0f4da3643424fa94fc69e..84eca01450db5b737c676cab2439d041
  
                  File commandFile = (File) optionset.valueOf("commands-settings");
 diff --git a/src/main/java/net/minecraft/server/dedicated/DedicatedServerProperties.java b/src/main/java/net/minecraft/server/dedicated/DedicatedServerProperties.java
-index fe82a20efb2b130a568bc06aec5b86d3082062a3..8dddcacec38bf2d5d79ce7fc0f26a2cced5d271d 100644
+index d9d8f24331772c05c461f1b9ce5f8f23353610ca..3d068c49106a52fd5485800dcc5c2e116411e29c 100644
 --- a/src/main/java/net/minecraft/server/dedicated/DedicatedServerProperties.java
 +++ b/src/main/java/net/minecraft/server/dedicated/DedicatedServerProperties.java
-@@ -131,14 +131,14 @@ public class DedicatedServerProperties extends Settings<DedicatedServerPropertie
+@@ -130,14 +130,14 @@ public class DedicatedServerProperties extends Settings<DedicatedServerPropertie
          this.spawnMonsters = this.get("spawn-monsters", true);
          this.useNativeTransport = this.get("use-native-transport", true);
          this.enableCommandBlock = this.get("enable-command-block", false);
@@ -373,7 +373,7 @@ index fe82a20efb2b130a568bc06aec5b86d3082062a3..8dddcacec38bf2d5d79ce7fc0f26a2cc
          this.maxPlayers = this.get("max-players", 20);
          this.networkCompressionThreshold = this.get("network-compression-threshold", 256);
          this.broadcastRconToOps = this.get("broadcast-rcon-to-ops", true);
-@@ -146,7 +146,7 @@ public class DedicatedServerProperties extends Settings<DedicatedServerPropertie
+@@ -145,7 +145,7 @@ public class DedicatedServerProperties extends Settings<DedicatedServerPropertie
          this.maxWorldSize = this.get("max-world-size", (integer) -> {
              return Mth.clamp(integer, 1, 29999984);
          }, 29999984);
@@ -383,10 +383,10 @@ index fe82a20efb2b130a568bc06aec5b86d3082062a3..8dddcacec38bf2d5d79ce7fc0f26a2cc
          this.enableStatus = this.get("enable-status", true);
          this.hideOnlinePlayers = this.get("hide-online-players", false);
 diff --git a/src/main/java/org/bukkit/craftbukkit/CraftServer.java b/src/main/java/org/bukkit/craftbukkit/CraftServer.java
-index 6537ae98dc4086f2b6668810425f80c19ef57734..da483bdf81efa62b36b6a10dacc7821b43dd18b7 100644
+index 2ddc14cb855997bee88998b73c542b119be4ceda..efdecbdb437f3ba03c11b0050a9bc1fff802531e 100644
 --- a/src/main/java/org/bukkit/craftbukkit/CraftServer.java
 +++ b/src/main/java/org/bukkit/craftbukkit/CraftServer.java
-@@ -433,7 +433,7 @@ public final class CraftServer implements Server {
+@@ -424,7 +424,7 @@ public final class CraftServer implements Server {
  
          this.configuration = YamlConfiguration.loadConfiguration(this.getConfigFile());
          this.configuration.options().copyDefaults(true);
@@ -407,7 +407,7 @@ index a858b7ddef7f6877c0b92f4150e0dd37bea121aa..eab5ea835a524482f8cc043c7be190a8
  
  }
 diff --git a/src/main/java/org/purpurmc/purpur/PurpurConfig.java b/src/main/java/org/purpurmc/purpur/PurpurConfig.java
-index d0d31002562e728fa1a6c9bc81baa4534f11d365..f9f7664e4a6a4e24dcb3b8da0a807a984a698429 100644
+index 48893da814280aaeba95c1a9e2de9c39df455f93..3d5c0cf532d347602a08565b459697b0868f1a1c 100644
 --- a/src/main/java/org/purpurmc/purpur/PurpurConfig.java
 +++ b/src/main/java/org/purpurmc/purpur/PurpurConfig.java
 @@ -49,6 +49,7 @@ public class PurpurConfig {
@@ -437,7 +437,7 @@ index d0d31002562e728fa1a6c9bc81baa4534f11d365..f9f7664e4a6a4e24dcb3b8da0a807a98
      private static void networkSettings() {
          useUPnP = getBoolean("settings.network.upnp-port-forwarding", useUPnP);
 diff --git a/src/main/java/org/purpurmc/purpur/PurpurWorldConfig.java b/src/main/java/org/purpurmc/purpur/PurpurWorldConfig.java
-index b9d1117885a8dd15f207e55ce5e402d8cefe0226..9cb79d203b6ec345d719cd488d2cce8f877fe2bd 100644
+index dab252cbadffbcdf19bacc0b378d671b29393e9c..fde8e2f6c58a2e36dab4cfbc2b1a13f3d7177195 100644
 --- a/src/main/java/org/purpurmc/purpur/PurpurWorldConfig.java
 +++ b/src/main/java/org/purpurmc/purpur/PurpurWorldConfig.java
 @@ -425,7 +425,7 @@ public class PurpurWorldConfig {
@@ -449,7 +449,7 @@ index b9d1117885a8dd15f207e55ce5e402d8cefe0226..9cb79d203b6ec345d719cd488d2cce8f
      public boolean teleportOnNetherCeilingDamage = false;
      public boolean totemOfUndyingWorksInInventory = false;
      public boolean playerFixStuckPortal = false;
-@@ -3070,7 +3070,7 @@ public class PurpurWorldConfig {
+@@ -3131,7 +3131,7 @@ public class PurpurWorldConfig {
      public boolean zombieJockeyOnlyBaby = true;
      public double zombieJockeyChance = 0.05D;
      public boolean zombieJockeyTryExistingChickens = true;
@@ -459,7 +459,7 @@ index b9d1117885a8dd15f207e55ce5e402d8cefe0226..9cb79d203b6ec345d719cd488d2cce8f
      public boolean zombieTakeDamageFromWater = false;
      public boolean zombieAlwaysDropExp = false;
 diff --git a/src/main/java/org/spigotmc/SpigotWorldConfig.java b/src/main/java/org/spigotmc/SpigotWorldConfig.java
-index f9b8e2bc039f1a37e47f84909c8785f3ef530284..576e82d2cf933b307b7374b60d864e98be4afcb2 100644
+index 1cf6d4f854d89c515e48e1fb365eb95ff9340765..7d1ae99e83dc6511838092c3ab6e0fd5f39faabc 100644
 --- a/src/main/java/org/spigotmc/SpigotWorldConfig.java
 +++ b/src/main/java/org/spigotmc/SpigotWorldConfig.java
 @@ -150,14 +150,14 @@ public class SpigotWorldConfig
