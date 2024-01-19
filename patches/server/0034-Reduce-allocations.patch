@@ -310,6 +310,19 @@ index 3604e22f593275140d706c296355ee06ca8ec888..6974ca1efbef05c845dc41e643bfed6d
      }
  
      @Override
+diff --git a/src/main/java/net/minecraft/nbt/NbtIo.java b/src/main/java/net/minecraft/nbt/NbtIo.java
+index c2044d2e8ce2d4747aa73ba90e5b975b1b7d2c19..b4e043379ece86ce39eacd4c1eb9114a2b6727ca 100644
+--- a/src/main/java/net/minecraft/nbt/NbtIo.java
++++ b/src/main/java/net/minecraft/nbt/NbtIo.java
+@@ -249,7 +249,7 @@ public class NbtIo {
+ 
+     @Nullable
+     public static CompoundTag read(Path path) throws IOException {
+-        if (!Files.exists(path, new LinkOption[0])) {
++        if (!Files.exists(path/*, new LinkOption[0]*/)) { // Plazma - Reduce allocations
+             return null;
+         } else {
+             InputStream inputstream = Files.newInputStream(path);
 diff --git a/src/main/java/net/minecraft/network/CipherBase.java b/src/main/java/net/minecraft/network/CipherBase.java
 index a2920b8a9eff77d9c5d1d7f70ad3abdacba8f0fa..70d776d5cfdb0612f65d92333d6f872afedc2207 100644
 --- a/src/main/java/net/minecraft/network/CipherBase.java
@@ -361,7 +374,7 @@ index d3a80d0a23be762c05931ae8001d98e43cab2b4a..a94feef330b1836a2fc009405c529455
  
      static MutableComponent translatableWithFallback(String key, @Nullable String fallback, Object... args) {
 diff --git a/src/main/java/net/minecraft/network/chat/contents/TranslatableContents.java b/src/main/java/net/minecraft/network/chat/contents/TranslatableContents.java
-index d45e39bc009281c298f3dfae113dc87f2b3b1fbd..1a33c6bb361b9bb0e4e98b74e85fc966931bb334 100644
+index d45e39bc009281c298f3dfae113dc87f2b3b1fbd..d9deb14896c62c35ccc5758df1419e5307702a2d 100644
 --- a/src/main/java/net/minecraft/network/chat/contents/TranslatableContents.java
 +++ b/src/main/java/net/minecraft/network/chat/contents/TranslatableContents.java
 @@ -28,7 +28,7 @@ import net.minecraft.util.ExtraCodecs;
@@ -373,6 +386,17 @@ index d45e39bc009281c298f3dfae113dc87f2b3b1fbd..1a33c6bb361b9bb0e4e98b74e85fc966
      private static final Codec<Object> PRIMITIVE_ARG_CODEC = ExtraCodecs.validate(ExtraCodecs.JAVA, TranslatableContents::filterAllowedArguments);
      private static final Codec<Object> ARG_CODEC = Codec.either(PRIMITIVE_ARG_CODEC, ComponentSerialization.CODEC).xmap((either) -> {
          return either.map((object) -> {
+@@ -83,8 +83,8 @@ public class TranslatableContents implements ComponentContents {
+ 
+     private static Object[] adjustArgs(Optional<List<Object>> args) {
+         return args.map((list) -> {
+-            return list.isEmpty() ? NO_ARGS : list.toArray();
+-        }).orElse(NO_ARGS);
++            return list.isEmpty() ? org.plazmamc.plazma.constants.Empty.OBJECT : list.toArray();
++        }).orElse(org.plazmamc.plazma.constants.Empty.OBJECT);
+     }
+ 
+     private static TranslatableContents create(String key, Optional<String> fallback, Optional<List<Object>> args) {
 diff --git a/src/main/java/net/minecraft/network/protocol/game/ClientboundSectionBlocksUpdatePacket.java b/src/main/java/net/minecraft/network/protocol/game/ClientboundSectionBlocksUpdatePacket.java
 index e3f355c85eb7cc8c1683e3009502c10a5ed32daa..838f07692c8e34c21c5a93611ab0f01b5059ab5e 100644
 --- a/src/main/java/net/minecraft/network/protocol/game/ClientboundSectionBlocksUpdatePacket.java
@@ -900,7 +924,7 @@ index c68736b023127c7b395835f4fa82d9062110697b..71ca67be643254b49afa963068b5813c
  
      @Override
 diff --git a/src/main/java/net/minecraft/world/level/storage/LevelStorageSource.java b/src/main/java/net/minecraft/world/level/storage/LevelStorageSource.java
-index 399da9d43aefbb95897df4697860d5bce5317152..6a6a562a147d3c6e945dcedbd70df966b63c5088 100644
+index 399da9d43aefbb95897df4697860d5bce5317152..df7816c1c5f069d89a22dbd876a2d663ba68949f 100644
 --- a/src/main/java/net/minecraft/world/level/storage/LevelStorageSource.java
 +++ b/src/main/java/net/minecraft/world/level/storage/LevelStorageSource.java
 @@ -110,7 +110,7 @@ public class LevelStorageSource {
@@ -953,7 +977,7 @@ index 399da9d43aefbb95897df4697860d5bce5317152..6a6a562a147d3c6e945dcedbd70df966
      public boolean levelExists(String name) {
          try {
 -            return Files.isDirectory(this.getLevelPath(name), new LinkOption[0]);
-+            return Files.isDirectory(this.getLevelPath(name)/*, new LinkOption[0]*/)) { // Plazma - Reduce allocations
++            return Files.isDirectory(this.getLevelPath(name)/*, new LinkOption[0]*/); // Plazma - Reduce allocations
          } catch (InvalidPathException invalidpathexception) {
              return false;
          }
@@ -962,7 +986,7 @@ index 399da9d43aefbb95897df4697860d5bce5317152..6a6a562a147d3c6e945dcedbd70df966
  
          public boolean hasWorldData() {
 -            return Files.exists(this.levelDirectory.dataFile(), new LinkOption[0]) || Files.exists(this.levelDirectory.oldDataFile(), new LinkOption[0]);
-+            return Files.exists(this.levelDirectory.dataFile()/*, new LinkOption[0])*/ || Files.exists(this.levelDirectory.oldDataFile()/*, new LinkOption[0]*/); // Plazma - Reduce allocations
++            return Files.exists(this.levelDirectory.dataFile()/*, new LinkOption[0]*/) || Files.exists(this.levelDirectory.oldDataFile()/*, new LinkOption[0]*/); // Plazma - Reduce allocations
          }
  
          public void close() throws IOException {

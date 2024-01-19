@@ -4,6 +4,66 @@ Date: Wed, 27 Sep 2023 17:52:52 +0900
 Subject: [PATCH] Completely remove Mojang Profiler
 
 
+diff --git a/src/main/java/net/minecraft/commands/Commands.java b/src/main/java/net/minecraft/commands/Commands.java
+index 35563a94879fe77f98d43d97cc6ba57b24906c23..1ecbd34e4066dd33047d2a0d081eb257e3409222 100644
+--- a/src/main/java/net/minecraft/commands/Commands.java
++++ b/src/main/java/net/minecraft/commands/Commands.java
+@@ -435,7 +435,7 @@ public class Commands {
+             int j = minecraftserver.getGameRules().getInt(GameRules.RULE_MAX_COMMAND_FORK_COUNT);
+ 
+             try {
+-                ExecutionContext executioncontext1 = new ExecutionContext<>(i, j, minecraftserver.getProfiler());
++                ExecutionContext executioncontext1 = new ExecutionContext<>(i, j/*, minecraftserver.getProfiler()*/); // Plazma - Completely remove profiler
+ 
+                 try {
+                     Commands.CURRENT_EXECUTION_CONTEXT.set(executioncontext1);
+diff --git a/src/main/java/net/minecraft/commands/execution/ExecutionContext.java b/src/main/java/net/minecraft/commands/execution/ExecutionContext.java
+index 38854a047c6da7e2551f206478d17628e765168d..2f72549549d4d79251baaf1339dbb482703ab2c9 100644
+--- a/src/main/java/net/minecraft/commands/execution/ExecutionContext.java
++++ b/src/main/java/net/minecraft/commands/execution/ExecutionContext.java
+@@ -12,7 +12,7 @@ import net.minecraft.commands.ExecutionCommandSource;
+ import net.minecraft.commands.execution.tasks.BuildContexts;
+ import net.minecraft.commands.execution.tasks.CallFunction;
+ import net.minecraft.commands.functions.InstantiatedFunction;
+-import net.minecraft.util.profiling.ProfilerFiller;
++//import net.minecraft.util.profiling.ProfilerFiller; // Plazma - Completely remove profiler
+ import org.slf4j.Logger;
+ 
+ public class ExecutionContext<T> implements AutoCloseable {
+@@ -20,7 +20,7 @@ public class ExecutionContext<T> implements AutoCloseable {
+     private static final Logger LOGGER = LogUtils.getLogger();
+     private final int commandLimit;
+     private final int forkLimit;
+-    private final ProfilerFiller profiler;
++    //private final ProfilerFiller profiler; // Plazma - Completely remove profiler
+     @Nullable
+     private TraceCallbacks tracer;
+     private int commandQuota;
+@@ -29,10 +29,10 @@ public class ExecutionContext<T> implements AutoCloseable {
+     private final List<CommandQueueEntry<T>> newTopCommands = new ObjectArrayList<>();
+     private int currentFrameDepth;
+ 
+-    public ExecutionContext(int maxCommandChainLength, int maxCommandForkCount, ProfilerFiller profiler) {
++    public ExecutionContext(int maxCommandChainLength, int maxCommandForkCount/*, ProfilerFiller profiler*/) { // Plazma - Completely remove profiler
+         this.commandLimit = maxCommandChainLength;
+         this.forkLimit = maxCommandForkCount;
+-        this.profiler = profiler;
++        //this.profiler = profiler; // Plazma - Completely remove profiler
+         this.commandQuota = maxCommandChainLength;
+     }
+ 
+@@ -127,9 +127,11 @@ public class ExecutionContext<T> implements AutoCloseable {
+         return this.tracer;
+     }
+ 
++    /* // Plazma - Completely remove profiler
+     public ProfilerFiller profiler() {
+         return this.profiler;
+     }
++     */ // Plazma - Completely remove profiler
+ 
+     public int forkLimit() {
+         return this.forkLimit;
 diff --git a/src/main/java/net/minecraft/server/MinecraftServer.java b/src/main/java/net/minecraft/server/MinecraftServer.java
 index b0c8943b3ad6c2d29b46ce387d349f91acc899f1..6b98e5140e946b4d728c281417cc37dc60413ba1 100644
 --- a/src/main/java/net/minecraft/server/MinecraftServer.java
@@ -529,6 +589,47 @@ index c6c30d99399c5cde2b0ec2f320d81d952b422d78..00000000000000000000000000000000
 -        }
 -    }
 -}
+diff --git a/src/main/java/net/minecraft/util/profiling/ContinuousProfiler.java b/src/main/java/net/minecraft/util/profiling/ContinuousProfiler.java
+deleted file mode 100644
+index 4424bca7effa4fef26453afcd06d86e6a30d7b8f..0000000000000000000000000000000000000000
+--- a/src/main/java/net/minecraft/util/profiling/ContinuousProfiler.java
++++ /dev/null
+@@ -1,35 +0,0 @@
+-package net.minecraft.util.profiling;
+-
+-import java.util.function.IntSupplier;
+-import java.util.function.LongSupplier;
+-
+-public class ContinuousProfiler {
+-    private final LongSupplier realTime;
+-    private final IntSupplier tickCount;
+-    private ProfileCollector profiler = InactiveProfiler.INSTANCE;
+-
+-    public ContinuousProfiler(LongSupplier timeGetter, IntSupplier tickGetter) {
+-        this.realTime = timeGetter;
+-        this.tickCount = tickGetter;
+-    }
+-
+-    public boolean isEnabled() {
+-        return this.profiler != InactiveProfiler.INSTANCE;
+-    }
+-
+-    public void disable() {
+-        this.profiler = InactiveProfiler.INSTANCE;
+-    }
+-
+-    public void enable() {
+-        this.profiler = new ActiveProfiler(this.realTime, this.tickCount, true);
+-    }
+-
+-    public ProfilerFiller getFiller() {
+-        return this.profiler;
+-    }
+-
+-    public ProfileResults getResults() {
+-        return this.profiler.getResults();
+-    }
+-}
 diff --git a/src/main/java/net/minecraft/util/profiling/ProfilerFiller.java b/src/main/java/net/minecraft/util/profiling/ProfilerFiller.java
 deleted file mode 100644
 index 863343a87fe34d72f04af89d75268b477b2adc7a..0000000000000000000000000000000000000000
@@ -648,6 +749,406 @@ index 863343a87fe34d72f04af89d75268b477b2adc7a..00000000000000000000000000000000
 -                    //b.incrementCounter(markerGetter, num); // Purpur
 -                }
 -            };
+-        }
+-    }
+-}
+diff --git a/src/main/java/net/minecraft/util/profiling/SingleTickProfiler.java b/src/main/java/net/minecraft/util/profiling/SingleTickProfiler.java
+deleted file mode 100644
+index 38c9b686212c0f78eb702b1897d491e450267ca7..0000000000000000000000000000000000000000
+--- a/src/main/java/net/minecraft/util/profiling/SingleTickProfiler.java
++++ /dev/null
+@@ -1,53 +0,0 @@
+-package net.minecraft.util.profiling;
+-
+-import com.mojang.logging.LogUtils;
+-import java.io.File;
+-import java.util.function.LongSupplier;
+-import javax.annotation.Nullable;
+-import net.minecraft.Util;
+-import org.slf4j.Logger;
+-
+-public class SingleTickProfiler {
+-    private static final Logger LOGGER = LogUtils.getLogger();
+-    private final LongSupplier realTime;
+-    private final long saveThreshold;
+-    private int tick;
+-    private final File location;
+-    private ProfileCollector profiler = InactiveProfiler.INSTANCE;
+-
+-    public SingleTickProfiler(LongSupplier timeGetter, String filename, long overtime) {
+-        this.realTime = timeGetter;
+-        this.location = new File("debug", filename);
+-        this.saveThreshold = overtime;
+-    }
+-
+-    public ProfilerFiller startTick() {
+-        this.profiler = new ActiveProfiler(this.realTime, () -> {
+-            return this.tick;
+-        }, false);
+-        ++this.tick;
+-        return this.profiler;
+-    }
+-
+-    public void endTick() {
+-        if (this.profiler != InactiveProfiler.INSTANCE) {
+-            ProfileResults profileResults = this.profiler.getResults();
+-            this.profiler = InactiveProfiler.INSTANCE;
+-            if (profileResults.getNanoDuration() >= this.saveThreshold) {
+-                File file = new File(this.location, "tick-results-" + Util.getFilenameFormattedDateTime() + ".txt");
+-                profileResults.saveResults(file.toPath());
+-                LOGGER.info("Recorded long tick -- wrote info to: {}", (Object)file.getAbsolutePath());
+-            }
+-
+-        }
+-    }
+-
+-    @Nullable
+-    public static SingleTickProfiler createTickProfiler(String name) {
+-        return null;
+-    }
+-
+-    public static ProfilerFiller decorateFiller(ProfilerFiller profiler, @Nullable SingleTickProfiler monitor) {
+-        return monitor != null ? ProfilerFiller.tee(monitor.startTick(), profiler) : profiler;
+-    }
+-}
+diff --git a/src/main/java/net/minecraft/util/profiling/metrics/profiling/ActiveMetricsRecorder.java b/src/main/java/net/minecraft/util/profiling/metrics/profiling/ActiveMetricsRecorder.java
+deleted file mode 100644
+index 157e6562bc2fa0946ea6be825cd740d067b4e84f..0000000000000000000000000000000000000000
+--- a/src/main/java/net/minecraft/util/profiling/metrics/profiling/ActiveMetricsRecorder.java
++++ /dev/null
+@@ -1,164 +0,0 @@
+-package net.minecraft.util.profiling.metrics.profiling;
+-
+-import com.google.common.collect.ImmutableSet;
+-import com.google.common.collect.Lists;
+-import it.unimi.dsi.fastutil.objects.Object2ObjectOpenHashMap;
+-import java.nio.file.Path;
+-import java.time.Instant;
+-import java.util.Collection;
+-import java.util.HashSet;
+-import java.util.List;
+-import java.util.Map;
+-import java.util.Set;
+-import java.util.concurrent.Executor;
+-import java.util.concurrent.TimeUnit;
+-import java.util.function.Consumer;
+-import java.util.function.LongSupplier;
+-import javax.annotation.Nullable;
+-import net.minecraft.util.profiling.ActiveProfiler;
+-import net.minecraft.util.profiling.ContinuousProfiler;
+-import net.minecraft.util.profiling.EmptyProfileResults;
+-import net.minecraft.util.profiling.InactiveProfiler;
+-import net.minecraft.util.profiling.ProfileCollector;
+-import net.minecraft.util.profiling.ProfileResults;
+-import net.minecraft.util.profiling.ProfilerFiller;
+-import net.minecraft.util.profiling.metrics.MetricSampler;
+-import net.minecraft.util.profiling.metrics.MetricsSamplerProvider;
+-import net.minecraft.util.profiling.metrics.storage.MetricsPersister;
+-import net.minecraft.util.profiling.metrics.storage.RecordedDeviation;
+-
+-public class ActiveMetricsRecorder implements MetricsRecorder {
+-    public static final int PROFILING_MAX_DURATION_SECONDS = 10;
+-    @Nullable
+-    private static Consumer<Path> globalOnReportFinished = null;
+-    private final Map<MetricSampler, List<RecordedDeviation>> deviationsBySampler = new Object2ObjectOpenHashMap<>();
+-    private final ContinuousProfiler taskProfiler;
+-    private final Executor ioExecutor;
+-    private final MetricsPersister metricsPersister;
+-    private final Consumer<ProfileResults> onProfilingEnd;
+-    private final Consumer<Path> onReportFinished;
+-    private final MetricsSamplerProvider metricsSamplerProvider;
+-    private final LongSupplier wallTimeSource;
+-    private final long deadlineNano;
+-    private int currentTick;
+-    private ProfileCollector singleTickProfiler;
+-    private volatile boolean killSwitch;
+-    private Set<MetricSampler> thisTickSamplers = ImmutableSet.of();
+-
+-    private ActiveMetricsRecorder(MetricsSamplerProvider samplerSource, LongSupplier timeGetter, Executor dumpExecutor, MetricsPersister dumper, Consumer<ProfileResults> resultConsumer, Consumer<Path> dumpConsumer) {
+-        this.metricsSamplerProvider = samplerSource;
+-        this.wallTimeSource = timeGetter;
+-        this.taskProfiler = new ContinuousProfiler(timeGetter, () -> {
+-            return this.currentTick;
+-        });
+-        this.ioExecutor = dumpExecutor;
+-        this.metricsPersister = dumper;
+-        this.onProfilingEnd = resultConsumer;
+-        this.onReportFinished = globalOnReportFinished == null ? dumpConsumer : dumpConsumer.andThen(globalOnReportFinished);
+-        this.deadlineNano = timeGetter.getAsLong() + TimeUnit.NANOSECONDS.convert(10L, TimeUnit.SECONDS);
+-        this.singleTickProfiler = new ActiveProfiler(this.wallTimeSource, () -> {
+-            return this.currentTick;
+-        }, false);
+-        this.taskProfiler.enable();
+-    }
+-
+-    public static ActiveMetricsRecorder createStarted(MetricsSamplerProvider source, LongSupplier timeGetter, Executor dumpExecutor, MetricsPersister dumper, Consumer<ProfileResults> resultConsumer, Consumer<Path> dumpConsumer) {
+-        return new ActiveMetricsRecorder(source, timeGetter, dumpExecutor, dumper, resultConsumer, dumpConsumer);
+-    }
+-
+-    @Override
+-    public synchronized void end() {
+-        if (this.isRecording()) {
+-            this.killSwitch = true;
+-        }
+-    }
+-
+-    @Override
+-    public synchronized void cancel() {
+-        if (this.isRecording()) {
+-            this.singleTickProfiler = InactiveProfiler.INSTANCE;
+-            this.onProfilingEnd.accept(EmptyProfileResults.EMPTY);
+-            this.cleanup(this.thisTickSamplers);
+-        }
+-    }
+-
+-    @Override
+-    public void startTick() {
+-        this.verifyStarted();
+-        this.thisTickSamplers = this.metricsSamplerProvider.samplers(() -> {
+-            return this.singleTickProfiler;
+-        });
+-
+-        for(MetricSampler metricSampler : this.thisTickSamplers) {
+-            metricSampler.onStartTick();
+-        }
+-
+-        ++this.currentTick;
+-    }
+-
+-    @Override
+-    public void endTick() {
+-        this.verifyStarted();
+-        if (this.currentTick != 0) {
+-            for(MetricSampler metricSampler : this.thisTickSamplers) {
+-                metricSampler.onEndTick(this.currentTick);
+-                if (metricSampler.triggersThreshold()) {
+-                    RecordedDeviation recordedDeviation = new RecordedDeviation(Instant.now(), this.currentTick, this.singleTickProfiler.getResults());
+-                    this.deviationsBySampler.computeIfAbsent(metricSampler, (s) -> {
+-                        return Lists.newArrayList();
+-                    }).add(recordedDeviation);
+-                }
+-            }
+-
+-            if (!this.killSwitch && this.wallTimeSource.getAsLong() <= this.deadlineNano) {
+-                this.singleTickProfiler = new ActiveProfiler(this.wallTimeSource, () -> {
+-                    return this.currentTick;
+-                }, false);
+-            } else {
+-                this.killSwitch = false;
+-                ProfileResults profileResults = this.taskProfiler.getResults();
+-                this.singleTickProfiler = InactiveProfiler.INSTANCE;
+-                this.onProfilingEnd.accept(profileResults);
+-                this.scheduleSaveResults(profileResults);
+-            }
+-        }
+-    }
+-
+-    @Override
+-    public boolean isRecording() {
+-        return this.taskProfiler.isEnabled();
+-    }
+-
+-    @Override
+-    public ProfilerFiller getProfiler() {
+-        return ProfilerFiller.tee(this.taskProfiler.getFiller(), this.singleTickProfiler);
+-    }
+-
+-    private void verifyStarted() {
+-        if (!this.isRecording()) {
+-            throw new IllegalStateException("Not started!");
+-        }
+-    }
+-
+-    private void scheduleSaveResults(ProfileResults result) {
+-        HashSet<MetricSampler> hashSet = new HashSet<>(this.thisTickSamplers);
+-        this.ioExecutor.execute(() -> {
+-            Path path = this.metricsPersister.saveReports(hashSet, this.deviationsBySampler, result);
+-            this.cleanup(hashSet);
+-            this.onReportFinished.accept(path);
+-        });
+-    }
+-
+-    private void cleanup(Collection<MetricSampler> samplers) {
+-        for(MetricSampler metricSampler : samplers) {
+-            metricSampler.onFinished();
+-        }
+-
+-        this.deviationsBySampler.clear();
+-        this.taskProfiler.disable();
+-    }
+-
+-    public static void registerGlobalCompletionCallback(Consumer<Path> consumer) {
+-        globalOnReportFinished = consumer;
+-    }
+-}
+diff --git a/src/main/java/net/minecraft/util/profiling/metrics/profiling/InactiveMetricsRecorder.java b/src/main/java/net/minecraft/util/profiling/metrics/profiling/InactiveMetricsRecorder.java
+deleted file mode 100644
+index 12d7b7c86115b667bd8f940206985d9ed4b837d4..0000000000000000000000000000000000000000
+--- a/src/main/java/net/minecraft/util/profiling/metrics/profiling/InactiveMetricsRecorder.java
++++ /dev/null
+@@ -1,34 +0,0 @@
+-package net.minecraft.util.profiling.metrics.profiling;
+-
+-import net.minecraft.util.profiling.InactiveProfiler;
+-import net.minecraft.util.profiling.ProfilerFiller;
+-
+-public class InactiveMetricsRecorder implements MetricsRecorder {
+-    public static final MetricsRecorder INSTANCE = new InactiveMetricsRecorder();
+-
+-    @Override
+-    public void end() {
+-    }
+-
+-    @Override
+-    public void cancel() {
+-    }
+-
+-    @Override
+-    public void startTick() {
+-    }
+-
+-    @Override
+-    public boolean isRecording() {
+-        return false;
+-    }
+-
+-    @Override
+-    public ProfilerFiller getProfiler() {
+-        return InactiveProfiler.INSTANCE;
+-    }
+-
+-    @Override
+-    public void endTick() {
+-    }
+-}
+diff --git a/src/main/java/net/minecraft/util/profiling/metrics/profiling/MetricsRecorder.java b/src/main/java/net/minecraft/util/profiling/metrics/profiling/MetricsRecorder.java
+deleted file mode 100644
+index 48e7211e01691a677c52cf1f5982b0c179eaf83b..0000000000000000000000000000000000000000
+--- a/src/main/java/net/minecraft/util/profiling/metrics/profiling/MetricsRecorder.java
++++ /dev/null
+@@ -1,17 +0,0 @@
+-package net.minecraft.util.profiling.metrics.profiling;
+-
+-import net.minecraft.util.profiling.ProfilerFiller;
+-
+-public interface MetricsRecorder {
+-    void end();
+-
+-    void cancel();
+-
+-    void startTick();
+-
+-    boolean isRecording();
+-
+-    ProfilerFiller getProfiler();
+-
+-    void endTick();
+-}
+diff --git a/src/main/java/net/minecraft/util/profiling/metrics/profiling/ServerMetricsSamplersProvider.java b/src/main/java/net/minecraft/util/profiling/metrics/profiling/ServerMetricsSamplersProvider.java
+deleted file mode 100644
+index 42fc60456bc651345c5f6e13b975c7874532231e..0000000000000000000000000000000000000000
+--- a/src/main/java/net/minecraft/util/profiling/metrics/profiling/ServerMetricsSamplersProvider.java
++++ /dev/null
+@@ -1,102 +0,0 @@
+-package net.minecraft.util.profiling.metrics.profiling;
+-
+-import com.google.common.base.Stopwatch;
+-import com.google.common.base.Ticker;
+-import com.google.common.collect.ImmutableSet;
+-import com.mojang.logging.LogUtils;
+-import it.unimi.dsi.fastutil.objects.ObjectOpenHashSet;
+-import java.util.Set;
+-import java.util.concurrent.TimeUnit;
+-import java.util.function.LongSupplier;
+-import java.util.function.Supplier;
+-import java.util.function.ToDoubleFunction;
+-import java.util.stream.IntStream;
+-import net.minecraft.util.profiling.ProfileCollector;
+-import net.minecraft.util.profiling.metrics.MetricCategory;
+-import net.minecraft.util.profiling.metrics.MetricSampler;
+-import net.minecraft.util.profiling.metrics.MetricsRegistry;
+-import net.minecraft.util.profiling.metrics.MetricsSamplerProvider;
+-import org.slf4j.Logger;
+-import oshi.SystemInfo;
+-import oshi.hardware.CentralProcessor;
+-
+-public class ServerMetricsSamplersProvider implements MetricsSamplerProvider {
+-    private static final Logger LOGGER = LogUtils.getLogger();
+-    private final Set<MetricSampler> samplers = new ObjectOpenHashSet<>();
+-    private final ProfilerSamplerAdapter samplerFactory = new ProfilerSamplerAdapter();
+-
+-    public ServerMetricsSamplersProvider(LongSupplier nanoTimeSupplier, boolean includeSystem) {
+-        this.samplers.add(tickTimeSampler(nanoTimeSupplier));
+-        if (includeSystem) {
+-            this.samplers.addAll(runtimeIndependentSamplers());
+-        }
+-
+-    }
+-
+-    public static Set<MetricSampler> runtimeIndependentSamplers() {
+-        ImmutableSet.Builder<MetricSampler> builder = ImmutableSet.builder();
+-
+-        try {
+-            ServerMetricsSamplersProvider.CpuStats cpuStats = new ServerMetricsSamplersProvider.CpuStats();
+-            IntStream.range(0, cpuStats.nrOfCpus).mapToObj((index) -> {
+-                return MetricSampler.create("cpu#" + index, MetricCategory.CPU, () -> {
+-                    return cpuStats.loadForCpu(index);
+-                });
+-            }).forEach(builder::add);
+-        } catch (Throwable var2) {
+-            LOGGER.warn("Failed to query cpu, no cpu stats will be recorded", var2);
+-        }
+-
+-        builder.add(MetricSampler.create("heap MiB", MetricCategory.JVM, () -> {
+-            return (double)((float)(Runtime.getRuntime().totalMemory() - Runtime.getRuntime().freeMemory()) / 1048576.0F);
+-        }));
+-        builder.addAll(MetricsRegistry.INSTANCE.getRegisteredSamplers());
+-        return builder.build();
+-    }
+-
+-    @Override
+-    public Set<MetricSampler> samplers(Supplier<ProfileCollector> profilerSupplier) {
+-        this.samplers.addAll(this.samplerFactory.newSamplersFoundInProfiler(profilerSupplier));
+-        return this.samplers;
+-    }
+-
+-    public static MetricSampler tickTimeSampler(final LongSupplier nanoTimeSupplier) {
+-        Stopwatch stopwatch = Stopwatch.createUnstarted(new Ticker() {
+-            @Override
+-            public long read() {
+-                return nanoTimeSupplier.getAsLong();
+-            }
+-        });
+-        ToDoubleFunction<Stopwatch> toDoubleFunction = (watch) -> {
+-            if (watch.isRunning()) {
+-                watch.stop();
+-            }
+-
+-            long l = watch.elapsed(TimeUnit.NANOSECONDS);
+-            watch.reset();
+-            return (double)l;
+-        };
+-        MetricSampler.ValueIncreasedByPercentage valueIncreasedByPercentage = new MetricSampler.ValueIncreasedByPercentage(2.0F);
+-        return MetricSampler.builder("ticktime", MetricCategory.TICK_LOOP, toDoubleFunction, stopwatch).withBeforeTick(Stopwatch::start).withThresholdAlert(valueIncreasedByPercentage).build();
+-    }
+-
+-    static class CpuStats {
+-        private final SystemInfo systemInfo = new SystemInfo();
+-        private final CentralProcessor processor = this.systemInfo.getHardware().getProcessor();
+-        public final int nrOfCpus = this.processor.getLogicalProcessorCount();
+-        private long[][] previousCpuLoadTick = this.processor.getProcessorCpuLoadTicks();
+-        private double[] currentLoad = this.processor.getProcessorCpuLoadBetweenTicks(this.previousCpuLoadTick);
+-        private long lastPollMs;
+-
+-        public double loadForCpu(int index) {
+-            long l = System.currentTimeMillis();
+-            if (this.lastPollMs == 0L || this.lastPollMs + 501L < l) {
+-                this.currentLoad = this.processor.getProcessorCpuLoadBetweenTicks(this.previousCpuLoadTick);
+-                this.previousCpuLoadTick = this.processor.getProcessorCpuLoadTicks();
+-                this.lastPollMs = l;
+-            }
+-
+-            return this.currentLoad[index] * 100.0D;
 -        }
 -    }
 -}

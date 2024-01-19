@@ -94,17 +94,33 @@ index 5c897d11e6ae17d8feaeedc7edf7ede02571a207..05dd190de9d45e245eb9f67ccec6b5c2
  
          // Paper start - Add setting for proxy online mode status
 diff --git a/src/main/java/net/minecraft/server/network/ServerCommonPacketListenerImpl.java b/src/main/java/net/minecraft/server/network/ServerCommonPacketListenerImpl.java
-index da499e0b21eba40d24d95047e3a9220567d4bae7..96d406c79e501971b5b4086abdeb6fdd70d8e1f7 100644
+index da499e0b21eba40d24d95047e3a9220567d4bae7..ef706612c7dd4ab703e442a488264244008b6227 100644
 --- a/src/main/java/net/minecraft/server/network/ServerCommonPacketListenerImpl.java
 +++ b/src/main/java/net/minecraft/server/network/ServerCommonPacketListenerImpl.java
-@@ -275,6 +275,13 @@ public abstract class ServerCommonPacketListenerImpl implements ServerCommonPack
+@@ -271,10 +271,29 @@ public abstract class ServerCommonPacketListenerImpl implements ServerCommonPack
+     }
+ 
+     public void send(Packet<?> packet) {
++        if (org.plazmamc.plazma.configurations.GlobalConfiguration.get().noChatReports.convertToSystemMessage()
++            && this instanceof ServerGamePacketListenerImpl impl
++            && packet instanceof net.minecraft.network.protocol.game.ClientboundPlayerChatPacket p) {
++            impl.send(new net.minecraft.network.protocol.game.ClientboundSystemChatPacket(
++                p.chatType().resolve(impl.player.level().registryAccess())
++                    .orElseThrow().decorate(p.unsignedContent() != null ? p.unsignedContent() : Component.literal(p.body().content())),
++                false
++            ));
++            return;
++        }
+         this.send(packet, (PacketSendListener) null);
      }
  
      public void send(Packet<?> packet, @Nullable PacketSendListener callbacks) {
 +        // Plazma start - Implement No Chat Reports
 +        if (org.plazmamc.plazma.configurations.GlobalConfiguration.get().noChatReports.convertToSystemMessage()
++                && callbacks != null
++                && this instanceof ServerGamePacketListenerImpl impl
 +                && packet instanceof net.minecraft.network.protocol.game.ClientboundPlayerChatPacket p) {
-+            this.send(new net.minecraft.network.protocol.game.ClientboundSystemChatPacket(null, Component.Serializer.toJson(p.chatType().resolve(this.player.level().registryAccess()).get().decorate(p.unsignedContent() != null ? p.unsignedContent() : Component.literal(p.body().content()))), false), null);
++            impl.send(p);
 +            return;
 +        }
 +        // Plazma end
