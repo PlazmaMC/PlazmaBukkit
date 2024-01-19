@@ -65,6 +65,13 @@ jobs:
         if: startsWith(github.ref_name, 'ver/') || startsWith(github.ref_name, 'dev/')
         continue-on-error: true
         run: |
+          if [ ! -d "$DIRECTORY" ]; then
+            mkdir javadoc
+            cd javadoc
+            git init && git branch -m ${{ github.ref_name }}
+            git remote add origin https://github.com/PlazmaMC/Javadocs
+          fi
+          
           (cd Plazma-API/build/docs/javadoc && tar c .) | (cd javadoc && tar xf -)
           cd javadoc
           git add . && git commit -m "Update Javadocs"
