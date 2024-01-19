@@ -341,9 +341,18 @@ index 7ab57748b2f2aea1003d9b7e70e76c372aa1e432..7de117e0464a24da632d134870554fd1
 +    protected abstract void apply(T prepared, ResourceManager manager/*, ProfilerFiller profiler*/); // Plazma - Completely remove profiler
  }
 diff --git a/src/main/java/net/minecraft/server/packs/resources/SimpleReloadInstance.java b/src/main/java/net/minecraft/server/packs/resources/SimpleReloadInstance.java
-index de2ecc7c69fb870f843f60596115866214267ee4..05a731dec4aec1d3cf61a761bda018cc8c46afde 100644
+index de2ecc7c69fb870f843f60596115866214267ee4..b9c89ce6d94aeb16fa6ea28d6b82aeea270790bf 100644
 --- a/src/main/java/net/minecraft/server/packs/resources/SimpleReloadInstance.java
 +++ b/src/main/java/net/minecraft/server/packs/resources/SimpleReloadInstance.java
+@@ -9,7 +9,7 @@ import java.util.concurrent.Executor;
+ import java.util.concurrent.atomic.AtomicInteger;
+ import net.minecraft.Util;
+ import net.minecraft.util.Unit;
+-import net.minecraft.util.profiling.InactiveProfiler;
++//import net.minecraft.util.profiling.InactiveProfiler; // Plazma - Completely remove Profiler
+ 
+ public class SimpleReloadInstance<S> implements ReloadInstance {
+     private static final int PREPARATION_PROGRESS_WEIGHT = 2;
 @@ -26,7 +26,7 @@ public class SimpleReloadInstance<S> implements ReloadInstance {
  
      public static SimpleReloadInstance<Void> of(ResourceManager manager, List<PreparableReloadListener> reloaders, Executor prepareExecutor, Executor applyExecutor, CompletableFuture<Unit> initialStage) {
@@ -376,782 +385,415 @@ index 60ed9413c32d91ce33583cc24998d08869d07a23..67c0d8f7294e18c7b2107b82219bc106
              return this.createLoader(manager, prepareExecutor, registry);
          }).toList();
 diff --git a/src/main/java/net/minecraft/util/profiling/ActiveProfiler.java b/src/main/java/net/minecraft/util/profiling/ActiveProfiler.java
-deleted file mode 100644
-index c6c30d99399c5cde2b0ec2f320d81d952b422d78..0000000000000000000000000000000000000000
+index c6c30d99399c5cde2b0ec2f320d81d952b422d78..9800974e23ffa29a264f733db4df08e944cb7fbd 100644
 --- a/src/main/java/net/minecraft/util/profiling/ActiveProfiler.java
-+++ /dev/null
-@@ -1,208 +0,0 @@
--package net.minecraft.util.profiling;
--
--import com.google.common.collect.Lists;
--import com.google.common.collect.Maps;
--import com.mojang.logging.LogUtils;
--import it.unimi.dsi.fastutil.longs.LongArrayList;
--import it.unimi.dsi.fastutil.longs.LongList;
--import it.unimi.dsi.fastutil.objects.Object2LongMap;
--import it.unimi.dsi.fastutil.objects.Object2LongMaps;
--import it.unimi.dsi.fastutil.objects.Object2LongOpenHashMap;
--import it.unimi.dsi.fastutil.objects.ObjectArraySet;
--import java.time.Duration;
--import java.util.List;
--import java.util.Map;
--import java.util.Set;
--import java.util.function.IntSupplier;
--import java.util.function.LongSupplier;
--import java.util.function.Supplier;
--import javax.annotation.Nullable;
--import net.minecraft.Util;
--import net.minecraft.util.profiling.metrics.MetricCategory;
--import org.apache.commons.lang3.tuple.Pair;
--import org.slf4j.Logger;
--
++++ b/src/main/java/net/minecraft/util/profiling/ActiveProfiler.java
+@@ -1,5 +1,6 @@
+ package net.minecraft.util.profiling;
+ 
++/* // Plazma - Completely remove profiler
+ import com.google.common.collect.Lists;
+ import com.google.common.collect.Maps;
+ import com.mojang.logging.LogUtils;
+@@ -21,8 +22,9 @@ import net.minecraft.Util;
+ import net.minecraft.util.profiling.metrics.MetricCategory;
+ import org.apache.commons.lang3.tuple.Pair;
+ import org.slf4j.Logger;
++ */ // Plazma - Completely remove profiler
+ 
 -public class ActiveProfiler implements ProfileCollector {
--    private static final long WARNING_TIME_NANOS = Duration.ofMillis(100L).toNanos();
--    private static final Logger LOGGER = LogUtils.getLogger();
--    private final List<String> paths = Lists.newArrayList();
--    private final LongList startTimes = new LongArrayList();
--    private final Map<String, ActiveProfiler.PathEntry> entries = Maps.newHashMap();
--    private final IntSupplier getTickTime;
--    private final LongSupplier getRealTime;
--    private final long startTimeNano;
--    private final int startTimeTicks;
--    private String path = "";
--    private boolean started;
--    @Nullable
--    private ActiveProfiler.PathEntry currentEntry;
--    private final boolean warn;
--    private final Set<Pair<String, MetricCategory>> chartedPaths = new ObjectArraySet<>();
--
--    public ActiveProfiler(LongSupplier timeGetter, IntSupplier tickGetter, boolean checkTimeout) {
--        this.startTimeNano = timeGetter.getAsLong();
--        this.getRealTime = timeGetter;
--        this.startTimeTicks = tickGetter.getAsInt();
--        this.getTickTime = tickGetter;
--        this.warn = checkTimeout;
--    }
--
--    @Override
--    public void startTick() {
--        if (this.started) {
--            LOGGER.error("Profiler tick already started - missing endTick()?");
--        } else {
--            this.started = true;
--            this.path = "";
--            this.paths.clear();
--            //this.push("root"); // Purpur
--        }
--    }
--
--    @Override
--    public void endTick() {
--        if (!this.started) {
--            LOGGER.error("Profiler tick already ended - missing startTick()?");
--        } else {
--            //this.pop(); // Purpur
--            this.started = false;
--            if (!this.path.isEmpty()) {
--                LOGGER.error("Profiler tick ended before path was fully popped (remainder: '{}'). Mismatched push/pop?", LogUtils.defer(() -> {
--                    return ProfileResults.demanglePath(this.path);
--                }));
--            }
--
--        }
--    }
--
--    @Override
--    public void push(String location) {
--        if (!this.started) {
--            LOGGER.error("Cannot push '{}' to profiler if profiler tick hasn't started - missing startTick()?", (Object)location);
--        } else {
--            if (!this.path.isEmpty()) {
--                this.path = this.path + "\u001e";
--            }
--
--            this.path = this.path + location;
--            this.paths.add(this.path);
--            this.startTimes.add(Util.getNanos());
--            this.currentEntry = null;
--        }
--    }
--
--    @Override
--    public void push(Supplier<String> locationGetter) {
--        //this.push(locationGetter.get()); // Purpur
--    }
--
--    @Override
--    public void markForCharting(MetricCategory type) {
--        this.chartedPaths.add(Pair.of(this.path, type));
--    }
--
--    @Override
--    public void pop() {
--        if (!this.started) {
--            LOGGER.error("Cannot pop from profiler if profiler tick hasn't started - missing startTick()?");
--        } else if (this.startTimes.isEmpty()) {
--            LOGGER.error("Tried to pop one too many times! Mismatched push() and pop()?");
--        } else {
--            long l = Util.getNanos();
--            long m = this.startTimes.removeLong(this.startTimes.size() - 1);
--            this.paths.remove(this.paths.size() - 1);
--            long n = l - m;
--            ActiveProfiler.PathEntry pathEntry = this.getCurrentEntry();
--            pathEntry.accumulatedDuration += n;
--            ++pathEntry.count;
--            pathEntry.maxDuration = Math.max(pathEntry.maxDuration, n);
--            pathEntry.minDuration = Math.min(pathEntry.minDuration, n);
--            if (this.warn && n > WARNING_TIME_NANOS) {
--                LOGGER.warn("Something's taking too long! '{}' took aprox {} ms", LogUtils.defer(() -> {
--                    return ProfileResults.demanglePath(this.path);
--                }), LogUtils.defer(() -> {
--                    return (double)n / 1000000.0D;
--                }));
--            }
--
--            this.path = this.paths.isEmpty() ? "" : this.paths.get(this.paths.size() - 1);
--            this.currentEntry = null;
--        }
--    }
--
--    @Override
--    public void popPush(String location) {
--        //this.pop(); // Purpur
--        //this.push(location); // Purpur
--    }
--
--    @Override
--    public void popPush(Supplier<String> locationGetter) {
--        //this.pop(); // Purpur
--        //this.push(locationGetter); // Purpur
--    }
--
--    private ActiveProfiler.PathEntry getCurrentEntry() {
--        if (this.currentEntry == null) {
--            this.currentEntry = this.entries.computeIfAbsent(this.path, (k) -> {
--                return new ActiveProfiler.PathEntry();
--            });
--        }
--
--        return this.currentEntry;
--    }
--
--    @Override
--    public void incrementCounter(String marker, int num) {
--        this.getCurrentEntry().counters.addTo(marker, (long)num);
--    }
--
--    @Override
--    public void incrementCounter(Supplier<String> markerGetter, int num) {
--        this.getCurrentEntry().counters.addTo(markerGetter.get(), (long)num);
--    }
--
--    @Override
--    public ProfileResults getResults() {
--        return new FilledProfileResults(this.entries, this.startTimeNano, this.startTimeTicks, this.getRealTime.getAsLong(), this.getTickTime.getAsInt());
--    }
--
--    @Nullable
--    @Override
--    public ActiveProfiler.PathEntry getEntry(String name) {
--        return this.entries.get(name);
--    }
--
--    @Override
--    public Set<Pair<String, MetricCategory>> getChartedPaths() {
--        return this.chartedPaths;
--    }
--
--    public static class PathEntry implements ProfilerPathEntry {
--        long maxDuration = Long.MIN_VALUE;
--        long minDuration = Long.MAX_VALUE;
--        long accumulatedDuration;
--        long count;
--        final Object2LongOpenHashMap<String> counters = new Object2LongOpenHashMap<>();
--
--        @Override
--        public long getDuration() {
--            return this.accumulatedDuration;
--        }
--
--        @Override
--        public long getMaxDuration() {
--            return this.maxDuration;
--        }
--
--        @Override
--        public long getCount() {
--            return this.count;
--        }
--
--        @Override
--        public Object2LongMap<String> getCounters() {
--            return Object2LongMaps.unmodifiable(this.counters);
--        }
--    }
--}
++interface ActiveProfiler { /*implements ProfileCollector { // Plazma - Completely remove profiler
+     private static final long WARNING_TIME_NANOS = Duration.ofMillis(100L).toNanos();
+     private static final Logger LOGGER = LogUtils.getLogger();
+     private final List<String> paths = Lists.newArrayList();
+@@ -205,4 +207,5 @@ public class ActiveProfiler implements ProfileCollector {
+             return Object2LongMaps.unmodifiable(this.counters);
+         }
+     }
++     */ // Plazma - Completely remove profiler
+ }
 diff --git a/src/main/java/net/minecraft/util/profiling/ContinuousProfiler.java b/src/main/java/net/minecraft/util/profiling/ContinuousProfiler.java
-deleted file mode 100644
-index 4424bca7effa4fef26453afcd06d86e6a30d7b8f..0000000000000000000000000000000000000000
+index 4424bca7effa4fef26453afcd06d86e6a30d7b8f..01efc02c02750e8f046bddd6786c6bb076c2146e 100644
 --- a/src/main/java/net/minecraft/util/profiling/ContinuousProfiler.java
-+++ /dev/null
-@@ -1,35 +0,0 @@
--package net.minecraft.util.profiling;
--
--import java.util.function.IntSupplier;
--import java.util.function.LongSupplier;
--
++++ b/src/main/java/net/minecraft/util/profiling/ContinuousProfiler.java
+@@ -1,9 +1,11 @@
+ package net.minecraft.util.profiling;
+ 
++/* // Plazma - Completely remove profiler
+ import java.util.function.IntSupplier;
+ import java.util.function.LongSupplier;
++ */ // Plazma - Completely remove profiler
+ 
 -public class ContinuousProfiler {
--    private final LongSupplier realTime;
--    private final IntSupplier tickCount;
--    private ProfileCollector profiler = InactiveProfiler.INSTANCE;
--
--    public ContinuousProfiler(LongSupplier timeGetter, IntSupplier tickGetter) {
--        this.realTime = timeGetter;
--        this.tickCount = tickGetter;
--    }
--
--    public boolean isEnabled() {
--        return this.profiler != InactiveProfiler.INSTANCE;
--    }
--
--    public void disable() {
--        this.profiler = InactiveProfiler.INSTANCE;
--    }
--
--    public void enable() {
--        this.profiler = new ActiveProfiler(this.realTime, this.tickCount, true);
--    }
--
--    public ProfilerFiller getFiller() {
--        return this.profiler;
--    }
--
--    public ProfileResults getResults() {
--        return this.profiler.getResults();
--    }
--}
++interface ContinuousProfiler { /* // Plazma - Completely remove profiler
+     private final LongSupplier realTime;
+     private final IntSupplier tickCount;
+     private ProfileCollector profiler = InactiveProfiler.INSTANCE;
+@@ -32,4 +34,5 @@ public class ContinuousProfiler {
+     public ProfileResults getResults() {
+         return this.profiler.getResults();
+     }
++     */ // Plazma - Completely remove profiler
+ }
+diff --git a/src/main/java/net/minecraft/util/profiling/FilledProfileResults.java b/src/main/java/net/minecraft/util/profiling/FilledProfileResults.java
+index 253a5221bc0d99f0bcbab18ad0d15b99b0d8f5f6..4a6410bb32a26190cee6580458f22392e9cce516 100644
+--- a/src/main/java/net/minecraft/util/profiling/FilledProfileResults.java
++++ b/src/main/java/net/minecraft/util/profiling/FilledProfileResults.java
+@@ -1,5 +1,6 @@
+ package net.minecraft.util.profiling;
+ 
++/* // Plazma - Completely remove profiler
+ import com.google.common.base.Splitter;
+ import com.google.common.collect.Lists;
+ import com.google.common.collect.Maps;
+@@ -22,8 +23,9 @@ import net.minecraft.Util;
+ import org.apache.commons.io.IOUtils;
+ import org.apache.commons.lang3.ObjectUtils;
+ import org.slf4j.Logger;
++ */ // Plazma - Completely remove profiler
+ 
+-public class FilledProfileResults implements ProfileResults {
++final class FilledProfileResults { /* implements ProfileResults { // Plazma - Completely remove profiler
+     private static final Logger LOGGER = LogUtils.getLogger();
+     private static final ProfilerPathEntry EMPTY = new ProfilerPathEntry() {
+         @Override
+@@ -291,4 +293,5 @@ public class FilledProfileResults implements ProfileResults {
+ 
+         }
+     }
++     */ // Plazma - Completely remove profiler
+ }
+diff --git a/src/main/java/net/minecraft/util/profiling/InactiveProfiler.java b/src/main/java/net/minecraft/util/profiling/InactiveProfiler.java
+index 5d2d8018460c04f7314c872441a8b21bc296c1ea..fcfe21038a647e6ac404c8c248044871282ba386 100644
+--- a/src/main/java/net/minecraft/util/profiling/InactiveProfiler.java
++++ b/src/main/java/net/minecraft/util/profiling/InactiveProfiler.java
+@@ -1,13 +1,15 @@
+ package net.minecraft.util.profiling;
+ 
++/* // Plazma - Completely remove profiler
+ import com.google.common.collect.ImmutableSet;
+ import java.util.Set;
+ import java.util.function.Supplier;
+ import javax.annotation.Nullable;
+ import net.minecraft.util.profiling.metrics.MetricCategory;
+ import org.apache.commons.lang3.tuple.Pair;
++ */ // Plazma - Completely remove profiler
+ 
+-public class InactiveProfiler implements ProfileCollector {
++interface InactiveProfiler { /* implements ProfileCollector { // Plazma - Completely remove profiler
+     public static final InactiveProfiler INSTANCE = new InactiveProfiler();
+ 
+     private InactiveProfiler() {
+@@ -68,4 +70,5 @@ public class InactiveProfiler implements ProfileCollector {
+     public Set<Pair<String, MetricCategory>> getChartedPaths() {
+         return ImmutableSet.of();
+     }
++     */ // Plazma - Completely remove profiler
+ }
+diff --git a/src/main/java/net/minecraft/util/profiling/ProfileCollector.java b/src/main/java/net/minecraft/util/profiling/ProfileCollector.java
+index fe47a3ce6318ad74bd4d9b10dbf5ee06c94b6939..26d23cdaddaf734de498d427178370a386f1685b 100644
+--- a/src/main/java/net/minecraft/util/profiling/ProfileCollector.java
++++ b/src/main/java/net/minecraft/util/profiling/ProfileCollector.java
+@@ -1,15 +1,18 @@
+ package net.minecraft.util.profiling;
+ 
++/* // Plazma - Completely remove profiler
+ import java.util.Set;
+ import javax.annotation.Nullable;
+ import net.minecraft.util.profiling.metrics.MetricCategory;
+ import org.apache.commons.lang3.tuple.Pair;
++ */ // Plazma - Completely remove profiler
+ 
+-public interface ProfileCollector extends ProfilerFiller {
++interface ProfileCollector { /* extends ProfilerFiller { // Plazma - Completely remove profiler
+     ProfileResults getResults();
+ 
+     @Nullable
+     ActiveProfiler.PathEntry getEntry(String name);
+ 
+     Set<Pair<String, MetricCategory>> getChartedPaths();
++     */ // Plazma - Completely remove profiler
+ }
 diff --git a/src/main/java/net/minecraft/util/profiling/ProfilerFiller.java b/src/main/java/net/minecraft/util/profiling/ProfilerFiller.java
-deleted file mode 100644
-index 863343a87fe34d72f04af89d75268b477b2adc7a..0000000000000000000000000000000000000000
+index 863343a87fe34d72f04af89d75268b477b2adc7a..95a7ab6b2977318796aba5af415043d07dc77cfa 100644
 --- a/src/main/java/net/minecraft/util/profiling/ProfilerFiller.java
-+++ /dev/null
-@@ -1,116 +0,0 @@
--package net.minecraft.util.profiling;
--
--import java.util.function.Supplier;
--import net.minecraft.util.profiling.metrics.MetricCategory;
--
++++ b/src/main/java/net/minecraft/util/profiling/ProfilerFiller.java
+@@ -1,9 +1,11 @@
+ package net.minecraft.util.profiling;
+ 
++/* // Plazma - Completely remove profiler
+ import java.util.function.Supplier;
+ import net.minecraft.util.profiling.metrics.MetricCategory;
++ */ // Plazma - Completely remove profiler
+ 
 -public interface ProfilerFiller {
--    String ROOT = "root";
--
--    @io.papermc.paper.annotation.DoNotUse // Purpur
--    void startTick();
--
--    @io.papermc.paper.annotation.DoNotUse // Purpur
--    void endTick();
--
--    @io.papermc.paper.annotation.DoNotUse // Purpur
--    void push(String location);
--
--    @io.papermc.paper.annotation.DoNotUse // Purpur
--    void push(Supplier<String> locationGetter);
--
--    @io.papermc.paper.annotation.DoNotUse // Purpur
--    void pop();
--
--    @io.papermc.paper.annotation.DoNotUse // Purpur
--    void popPush(String location);
--
--    @io.papermc.paper.annotation.DoNotUse // Purpur
--    void popPush(Supplier<String> locationGetter);
--
--    @io.papermc.paper.annotation.DoNotUse // Purpur
--    void markForCharting(MetricCategory type);
--
--    @io.papermc.paper.annotation.DoNotUse // Purpur
--    default void incrementCounter(String marker) {
--        //this.incrementCounter(marker, 1); // Purpur
--    }
--
--    @io.papermc.paper.annotation.DoNotUse // Purpur
--    void incrementCounter(String marker, int num);
--
--    @io.papermc.paper.annotation.DoNotUse // Purpur
--    default void incrementCounter(Supplier<String> markerGetter) {
--        //this.incrementCounter(markerGetter, 1); // Purpur
--    }
--
--    @io.papermc.paper.annotation.DoNotUse // Purpur
--    void incrementCounter(Supplier<String> markerGetter, int num);
--
--    static ProfilerFiller tee(final ProfilerFiller a, final ProfilerFiller b) {
--        if (a == InactiveProfiler.INSTANCE) {
--            return b;
--        } else {
--            return b == InactiveProfiler.INSTANCE ? a : new ProfilerFiller() {
--                @Override
--                public void startTick() {
--                    //a.startTick(); // Purpur
--                    //b.startTick(); // Purpur
--                }
--
--                @Override
--                public void endTick() {
--                    //a.endTick(); // Purpur
--                    //b.endTick(); // Purpur
--                }
--
--                @Override
--                public void push(String location) {
--                    //a.push(location); // Purpur
--                    //b.push(location); // Purpur
--                }
--
--                @Override
--                public void push(Supplier<String> locationGetter) {
--                    //a.push(locationGetter); // Purpur
--                    //b.push(locationGetter); // Purpur
--                }
--
--                @Override
--                public void markForCharting(MetricCategory type) {
--                    //a.markForCharting(type); // Purpur
--                    //b.markForCharting(type); // Purpur
--                }
--
--                @Override
--                public void pop() {
--                    //a.pop(); // Purpur
--                    //b.pop(); // Purpur
--                }
--
--                @Override
--                public void popPush(String location) {
--                    //a.popPush(location); // Purpur
--                    //b.popPush(location); // Purpur
--                }
--
--                @Override
--                public void popPush(Supplier<String> locationGetter) {
--                    //a.popPush(locationGetter); // Purpur
--                    //b.popPush(locationGetter); // Purpur
--                }
--
--                @Override
--                public void incrementCounter(String marker, int num) {
--                    //a.incrementCounter(marker, num); // Purpur
--                    //b.incrementCounter(marker, num); // Purpur
--                }
--
--                @Override
--                public void incrementCounter(Supplier<String> markerGetter, int num) {
--                    //a.incrementCounter(markerGetter, num); // Purpur
--                    //b.incrementCounter(markerGetter, num); // Purpur
--                }
--            };
--        }
--    }
--}
++interface ProfilerFiller { /* // Plazma - Completely remove profiler
+     String ROOT = "root";
+ 
+     @io.papermc.paper.annotation.DoNotUse // Purpur
+@@ -113,4 +115,5 @@ public interface ProfilerFiller {
+             };
+         }
+     }
++     */ // Plazma - Completely remove profiler
+ }
+diff --git a/src/main/java/net/minecraft/util/profiling/ProfilerPathEntry.java b/src/main/java/net/minecraft/util/profiling/ProfilerPathEntry.java
+index c073262f663309e6f73e67b303927b3996ea0c16..79633d06a6d59e03061e2350c7b385a8c042a907 100644
+--- a/src/main/java/net/minecraft/util/profiling/ProfilerPathEntry.java
++++ b/src/main/java/net/minecraft/util/profiling/ProfilerPathEntry.java
+@@ -1,8 +1,8 @@
+ package net.minecraft.util.profiling;
+ 
+-import it.unimi.dsi.fastutil.objects.Object2LongMap;
++//import it.unimi.dsi.fastutil.objects.Object2LongMap; // Plazma - Completely remove profiler
+ 
+-public interface ProfilerPathEntry {
++interface ProfilerPathEntry { /* // Plazma - Completely remove profiler
+     long getDuration();
+ 
+     long getMaxDuration();
+@@ -10,4 +10,5 @@ public interface ProfilerPathEntry {
+     long getCount();
+ 
+     Object2LongMap<String> getCounters();
++     */ // Plazma - Completely remove profiler
+ }
 diff --git a/src/main/java/net/minecraft/util/profiling/SingleTickProfiler.java b/src/main/java/net/minecraft/util/profiling/SingleTickProfiler.java
-deleted file mode 100644
-index 38c9b686212c0f78eb702b1897d491e450267ca7..0000000000000000000000000000000000000000
+index 38c9b686212c0f78eb702b1897d491e450267ca7..76003de077d464b2a6813661ff6bf376bcf01052 100644
 --- a/src/main/java/net/minecraft/util/profiling/SingleTickProfiler.java
-+++ /dev/null
-@@ -1,53 +0,0 @@
--package net.minecraft.util.profiling;
--
--import com.mojang.logging.LogUtils;
--import java.io.File;
--import java.util.function.LongSupplier;
--import javax.annotation.Nullable;
--import net.minecraft.Util;
--import org.slf4j.Logger;
--
++++ b/src/main/java/net/minecraft/util/profiling/SingleTickProfiler.java
+@@ -1,13 +1,15 @@
+ package net.minecraft.util.profiling;
+ 
++/* // Plazma - Completely remove profiler
+ import com.mojang.logging.LogUtils;
+ import java.io.File;
+ import java.util.function.LongSupplier;
+ import javax.annotation.Nullable;
+ import net.minecraft.Util;
+ import org.slf4j.Logger;
++ */ // Plazma - Completely remove profiler
+ 
 -public class SingleTickProfiler {
--    private static final Logger LOGGER = LogUtils.getLogger();
--    private final LongSupplier realTime;
--    private final long saveThreshold;
--    private int tick;
--    private final File location;
--    private ProfileCollector profiler = InactiveProfiler.INSTANCE;
--
--    public SingleTickProfiler(LongSupplier timeGetter, String filename, long overtime) {
--        this.realTime = timeGetter;
--        this.location = new File("debug", filename);
--        this.saveThreshold = overtime;
--    }
--
--    public ProfilerFiller startTick() {
--        this.profiler = new ActiveProfiler(this.realTime, () -> {
--            return this.tick;
--        }, false);
--        ++this.tick;
--        return this.profiler;
--    }
--
--    public void endTick() {
--        if (this.profiler != InactiveProfiler.INSTANCE) {
--            ProfileResults profileResults = this.profiler.getResults();
--            this.profiler = InactiveProfiler.INSTANCE;
--            if (profileResults.getNanoDuration() >= this.saveThreshold) {
--                File file = new File(this.location, "tick-results-" + Util.getFilenameFormattedDateTime() + ".txt");
--                profileResults.saveResults(file.toPath());
--                LOGGER.info("Recorded long tick -- wrote info to: {}", (Object)file.getAbsolutePath());
--            }
--
--        }
--    }
--
--    @Nullable
--    public static SingleTickProfiler createTickProfiler(String name) {
--        return null;
--    }
--
--    public static ProfilerFiller decorateFiller(ProfilerFiller profiler, @Nullable SingleTickProfiler monitor) {
--        return monitor != null ? ProfilerFiller.tee(monitor.startTick(), profiler) : profiler;
--    }
--}
++interface SingleTickProfiler { /* // Plazma - Completely remove profiler
+     private static final Logger LOGGER = LogUtils.getLogger();
+     private final LongSupplier realTime;
+     private final long saveThreshold;
+@@ -50,4 +52,5 @@ public class SingleTickProfiler {
+     public static ProfilerFiller decorateFiller(ProfilerFiller profiler, @Nullable SingleTickProfiler monitor) {
+         return monitor != null ? ProfilerFiller.tee(monitor.startTick(), profiler) : profiler;
+     }
++     */ // Plazma - Completely remove profiler
+ }
+diff --git a/src/main/java/net/minecraft/util/profiling/metrics/MetricsSamplerProvider.java b/src/main/java/net/minecraft/util/profiling/metrics/MetricsSamplerProvider.java
+index 07f78c451e5330296c38f6b599d979610a03381f..86c513c5cdb7aa9fc6426f3e59d842f166a86a40 100644
+--- a/src/main/java/net/minecraft/util/profiling/metrics/MetricsSamplerProvider.java
++++ b/src/main/java/net/minecraft/util/profiling/metrics/MetricsSamplerProvider.java
+@@ -1,9 +1,11 @@
+ package net.minecraft.util.profiling.metrics;
+ 
++/* // Plazma - Completely remove profiler
+ import java.util.Set;
+ import java.util.function.Supplier;
+ import net.minecraft.util.profiling.ProfileCollector;
++ */ // Plazma - Completely remove profiler
+ 
+-public interface MetricsSamplerProvider {
+-    Set<MetricSampler> samplers(Supplier<ProfileCollector> profilerSupplier);
++interface MetricsSamplerProvider {
++    //Set<MetricSampler> samplers(Supplier<ProfileCollector> profilerSupplier); // Plazma - Completely remove profiler
+ }
 diff --git a/src/main/java/net/minecraft/util/profiling/metrics/profiling/ActiveMetricsRecorder.java b/src/main/java/net/minecraft/util/profiling/metrics/profiling/ActiveMetricsRecorder.java
-deleted file mode 100644
-index 157e6562bc2fa0946ea6be825cd740d067b4e84f..0000000000000000000000000000000000000000
+index 157e6562bc2fa0946ea6be825cd740d067b4e84f..e47c4f37bf4b1fd3d2a4e9932a4304ca42c32f8c 100644
 --- a/src/main/java/net/minecraft/util/profiling/metrics/profiling/ActiveMetricsRecorder.java
-+++ /dev/null
-@@ -1,164 +0,0 @@
--package net.minecraft.util.profiling.metrics.profiling;
--
--import com.google.common.collect.ImmutableSet;
--import com.google.common.collect.Lists;
--import it.unimi.dsi.fastutil.objects.Object2ObjectOpenHashMap;
--import java.nio.file.Path;
--import java.time.Instant;
--import java.util.Collection;
--import java.util.HashSet;
--import java.util.List;
--import java.util.Map;
--import java.util.Set;
--import java.util.concurrent.Executor;
--import java.util.concurrent.TimeUnit;
--import java.util.function.Consumer;
--import java.util.function.LongSupplier;
--import javax.annotation.Nullable;
--import net.minecraft.util.profiling.ActiveProfiler;
--import net.minecraft.util.profiling.ContinuousProfiler;
--import net.minecraft.util.profiling.EmptyProfileResults;
--import net.minecraft.util.profiling.InactiveProfiler;
--import net.minecraft.util.profiling.ProfileCollector;
--import net.minecraft.util.profiling.ProfileResults;
--import net.minecraft.util.profiling.ProfilerFiller;
--import net.minecraft.util.profiling.metrics.MetricSampler;
--import net.minecraft.util.profiling.metrics.MetricsSamplerProvider;
--import net.minecraft.util.profiling.metrics.storage.MetricsPersister;
--import net.minecraft.util.profiling.metrics.storage.RecordedDeviation;
--
++++ b/src/main/java/net/minecraft/util/profiling/metrics/profiling/ActiveMetricsRecorder.java
+@@ -1,5 +1,6 @@
+ package net.minecraft.util.profiling.metrics.profiling;
+ 
++/* // Plazma - Completely remove profiler
+ import com.google.common.collect.ImmutableSet;
+ import com.google.common.collect.Lists;
+ import it.unimi.dsi.fastutil.objects.Object2ObjectOpenHashMap;
+@@ -26,8 +27,9 @@ import net.minecraft.util.profiling.metrics.MetricSampler;
+ import net.minecraft.util.profiling.metrics.MetricsSamplerProvider;
+ import net.minecraft.util.profiling.metrics.storage.MetricsPersister;
+ import net.minecraft.util.profiling.metrics.storage.RecordedDeviation;
++ */ // Plazma - Completely remove profiler
+ 
 -public class ActiveMetricsRecorder implements MetricsRecorder {
--    public static final int PROFILING_MAX_DURATION_SECONDS = 10;
--    @Nullable
--    private static Consumer<Path> globalOnReportFinished = null;
--    private final Map<MetricSampler, List<RecordedDeviation>> deviationsBySampler = new Object2ObjectOpenHashMap<>();
--    private final ContinuousProfiler taskProfiler;
--    private final Executor ioExecutor;
--    private final MetricsPersister metricsPersister;
--    private final Consumer<ProfileResults> onProfilingEnd;
--    private final Consumer<Path> onReportFinished;
--    private final MetricsSamplerProvider metricsSamplerProvider;
--    private final LongSupplier wallTimeSource;
--    private final long deadlineNano;
--    private int currentTick;
--    private ProfileCollector singleTickProfiler;
--    private volatile boolean killSwitch;
--    private Set<MetricSampler> thisTickSamplers = ImmutableSet.of();
--
--    private ActiveMetricsRecorder(MetricsSamplerProvider samplerSource, LongSupplier timeGetter, Executor dumpExecutor, MetricsPersister dumper, Consumer<ProfileResults> resultConsumer, Consumer<Path> dumpConsumer) {
--        this.metricsSamplerProvider = samplerSource;
--        this.wallTimeSource = timeGetter;
--        this.taskProfiler = new ContinuousProfiler(timeGetter, () -> {
--            return this.currentTick;
--        });
--        this.ioExecutor = dumpExecutor;
--        this.metricsPersister = dumper;
--        this.onProfilingEnd = resultConsumer;
--        this.onReportFinished = globalOnReportFinished == null ? dumpConsumer : dumpConsumer.andThen(globalOnReportFinished);
--        this.deadlineNano = timeGetter.getAsLong() + TimeUnit.NANOSECONDS.convert(10L, TimeUnit.SECONDS);
--        this.singleTickProfiler = new ActiveProfiler(this.wallTimeSource, () -> {
--            return this.currentTick;
--        }, false);
--        this.taskProfiler.enable();
--    }
--
--    public static ActiveMetricsRecorder createStarted(MetricsSamplerProvider source, LongSupplier timeGetter, Executor dumpExecutor, MetricsPersister dumper, Consumer<ProfileResults> resultConsumer, Consumer<Path> dumpConsumer) {
--        return new ActiveMetricsRecorder(source, timeGetter, dumpExecutor, dumper, resultConsumer, dumpConsumer);
--    }
--
--    @Override
--    public synchronized void end() {
--        if (this.isRecording()) {
--            this.killSwitch = true;
--        }
--    }
--
--    @Override
--    public synchronized void cancel() {
--        if (this.isRecording()) {
--            this.singleTickProfiler = InactiveProfiler.INSTANCE;
--            this.onProfilingEnd.accept(EmptyProfileResults.EMPTY);
--            this.cleanup(this.thisTickSamplers);
--        }
--    }
--
--    @Override
--    public void startTick() {
--        this.verifyStarted();
--        this.thisTickSamplers = this.metricsSamplerProvider.samplers(() -> {
--            return this.singleTickProfiler;
--        });
--
--        for(MetricSampler metricSampler : this.thisTickSamplers) {
--            metricSampler.onStartTick();
--        }
--
--        ++this.currentTick;
--    }
--
--    @Override
--    public void endTick() {
--        this.verifyStarted();
--        if (this.currentTick != 0) {
--            for(MetricSampler metricSampler : this.thisTickSamplers) {
--                metricSampler.onEndTick(this.currentTick);
--                if (metricSampler.triggersThreshold()) {
--                    RecordedDeviation recordedDeviation = new RecordedDeviation(Instant.now(), this.currentTick, this.singleTickProfiler.getResults());
--                    this.deviationsBySampler.computeIfAbsent(metricSampler, (s) -> {
--                        return Lists.newArrayList();
--                    }).add(recordedDeviation);
--                }
--            }
--
--            if (!this.killSwitch && this.wallTimeSource.getAsLong() <= this.deadlineNano) {
--                this.singleTickProfiler = new ActiveProfiler(this.wallTimeSource, () -> {
--                    return this.currentTick;
--                }, false);
--            } else {
--                this.killSwitch = false;
--                ProfileResults profileResults = this.taskProfiler.getResults();
--                this.singleTickProfiler = InactiveProfiler.INSTANCE;
--                this.onProfilingEnd.accept(profileResults);
--                this.scheduleSaveResults(profileResults);
--            }
--        }
--    }
--
--    @Override
--    public boolean isRecording() {
--        return this.taskProfiler.isEnabled();
--    }
--
--    @Override
--    public ProfilerFiller getProfiler() {
--        return ProfilerFiller.tee(this.taskProfiler.getFiller(), this.singleTickProfiler);
--    }
--
--    private void verifyStarted() {
--        if (!this.isRecording()) {
--            throw new IllegalStateException("Not started!");
--        }
--    }
--
--    private void scheduleSaveResults(ProfileResults result) {
--        HashSet<MetricSampler> hashSet = new HashSet<>(this.thisTickSamplers);
--        this.ioExecutor.execute(() -> {
--            Path path = this.metricsPersister.saveReports(hashSet, this.deviationsBySampler, result);
--            this.cleanup(hashSet);
--            this.onReportFinished.accept(path);
--        });
--    }
--
--    private void cleanup(Collection<MetricSampler> samplers) {
--        for(MetricSampler metricSampler : samplers) {
--            metricSampler.onFinished();
--        }
--
--        this.deviationsBySampler.clear();
--        this.taskProfiler.disable();
--    }
--
--    public static void registerGlobalCompletionCallback(Consumer<Path> consumer) {
--        globalOnReportFinished = consumer;
--    }
--}
++interface ActiveMetricsRecorder { /*implements MetricsRecorder { // Plazma - Completely remove profiler
+     public static final int PROFILING_MAX_DURATION_SECONDS = 10;
+     @Nullable
+     private static Consumer<Path> globalOnReportFinished = null;
+@@ -161,4 +163,5 @@ public class ActiveMetricsRecorder implements MetricsRecorder {
+     public static void registerGlobalCompletionCallback(Consumer<Path> consumer) {
+         globalOnReportFinished = consumer;
+     }
++     */ // Plazma - Completely remove profiler
+ }
 diff --git a/src/main/java/net/minecraft/util/profiling/metrics/profiling/InactiveMetricsRecorder.java b/src/main/java/net/minecraft/util/profiling/metrics/profiling/InactiveMetricsRecorder.java
-deleted file mode 100644
-index 12d7b7c86115b667bd8f940206985d9ed4b837d4..0000000000000000000000000000000000000000
+index 12d7b7c86115b667bd8f940206985d9ed4b837d4..7b4f620ad3f30860941d997f5ca517ee8951899c 100644
 --- a/src/main/java/net/minecraft/util/profiling/metrics/profiling/InactiveMetricsRecorder.java
-+++ /dev/null
-@@ -1,34 +0,0 @@
--package net.minecraft.util.profiling.metrics.profiling;
--
--import net.minecraft.util.profiling.InactiveProfiler;
--import net.minecraft.util.profiling.ProfilerFiller;
--
++++ b/src/main/java/net/minecraft/util/profiling/metrics/profiling/InactiveMetricsRecorder.java
+@@ -1,9 +1,11 @@
+ package net.minecraft.util.profiling.metrics.profiling;
+ 
++/* // Plazma - Completely remove profiler
+ import net.minecraft.util.profiling.InactiveProfiler;
+ import net.minecraft.util.profiling.ProfilerFiller;
++ */ // Plazma - Completely remove profiler
+ 
 -public class InactiveMetricsRecorder implements MetricsRecorder {
--    public static final MetricsRecorder INSTANCE = new InactiveMetricsRecorder();
--
--    @Override
--    public void end() {
--    }
--
--    @Override
--    public void cancel() {
--    }
--
--    @Override
--    public void startTick() {
--    }
--
--    @Override
--    public boolean isRecording() {
--        return false;
--    }
--
--    @Override
--    public ProfilerFiller getProfiler() {
--        return InactiveProfiler.INSTANCE;
--    }
--
--    @Override
--    public void endTick() {
--    }
--}
++interface InactiveMetricsRecorder { /* implements MetricsRecorder { // Plazma - Completely remove profiler
+     public static final MetricsRecorder INSTANCE = new InactiveMetricsRecorder();
+ 
+     @Override
+@@ -31,4 +33,5 @@ public class InactiveMetricsRecorder implements MetricsRecorder {
+     @Override
+     public void endTick() {
+     }
++     */ // Plazma - Completely remove profiler
+ }
 diff --git a/src/main/java/net/minecraft/util/profiling/metrics/profiling/MetricsRecorder.java b/src/main/java/net/minecraft/util/profiling/metrics/profiling/MetricsRecorder.java
-deleted file mode 100644
-index 48e7211e01691a677c52cf1f5982b0c179eaf83b..0000000000000000000000000000000000000000
+index 48e7211e01691a677c52cf1f5982b0c179eaf83b..f1f8519954759916fdd840265e87cfb491a396dc 100644
 --- a/src/main/java/net/minecraft/util/profiling/metrics/profiling/MetricsRecorder.java
-+++ /dev/null
-@@ -1,17 +0,0 @@
--package net.minecraft.util.profiling.metrics.profiling;
--
++++ b/src/main/java/net/minecraft/util/profiling/metrics/profiling/MetricsRecorder.java
+@@ -1,8 +1,8 @@
+ package net.minecraft.util.profiling.metrics.profiling;
+ 
 -import net.minecraft.util.profiling.ProfilerFiller;
--
++//import net.minecraft.util.profiling.ProfilerFiller; // Plazma - Completely remove profiler
+ 
 -public interface MetricsRecorder {
--    void end();
--
--    void cancel();
--
--    void startTick();
--
--    boolean isRecording();
--
--    ProfilerFiller getProfiler();
--
--    void endTick();
--}
++interface MetricsRecorder { /* // Plazma - Completely remove profiler
+     void end();
+ 
+     void cancel();
+@@ -14,4 +14,5 @@ public interface MetricsRecorder {
+     ProfilerFiller getProfiler();
+ 
+     void endTick();
++     */ // Plazma - Completely remove profiler
+ }
+diff --git a/src/main/java/net/minecraft/util/profiling/metrics/profiling/ProfilerSamplerAdapter.java b/src/main/java/net/minecraft/util/profiling/metrics/profiling/ProfilerSamplerAdapter.java
+index 5bdfad52aa555c1720ca9eb8abc94d6e3f9be86c..d9e7e097a3336932abbb367cb94784131b79c422 100644
+--- a/src/main/java/net/minecraft/util/profiling/metrics/profiling/ProfilerSamplerAdapter.java
++++ b/src/main/java/net/minecraft/util/profiling/metrics/profiling/ProfilerSamplerAdapter.java
+@@ -1,5 +1,6 @@
+ package net.minecraft.util.profiling.metrics.profiling;
+ 
++/* // Plazma - Completely remove profiler
+ import it.unimi.dsi.fastutil.objects.ObjectOpenHashSet;
+ import java.util.Set;
+ import java.util.function.Supplier;
+@@ -9,8 +10,9 @@ import net.minecraft.util.profiling.ActiveProfiler;
+ import net.minecraft.util.profiling.ProfileCollector;
+ import net.minecraft.util.profiling.metrics.MetricCategory;
+ import net.minecraft.util.profiling.metrics.MetricSampler;
++ */ // Plazma - Completely remove profiler
+ 
+-public class ProfilerSamplerAdapter {
++interface ProfilerSamplerAdapter { /* // Plazma - Completely remove profiler
+     private final Set<String> previouslyFoundSamplerNames = new ObjectOpenHashSet<>();
+ 
+     public Set<MetricSampler> newSamplersFoundInProfiler(Supplier<ProfileCollector> profilerSupplier) {
+@@ -33,4 +35,5 @@ public class ProfilerSamplerAdapter {
+             return pathEntry == null ? 0.0D : (double)pathEntry.getMaxDuration() / (double)TimeUtil.NANOSECONDS_PER_MILLISECOND;
+         });
+     }
++     */ // Plazma - Completely remove profiler
+ }
 diff --git a/src/main/java/net/minecraft/util/profiling/metrics/profiling/ServerMetricsSamplersProvider.java b/src/main/java/net/minecraft/util/profiling/metrics/profiling/ServerMetricsSamplersProvider.java
-deleted file mode 100644
-index 42fc60456bc651345c5f6e13b975c7874532231e..0000000000000000000000000000000000000000
+index 42fc60456bc651345c5f6e13b975c7874532231e..e437ad3e9dbde84dbe53247e833a556e8fbf4e12 100644
 --- a/src/main/java/net/minecraft/util/profiling/metrics/profiling/ServerMetricsSamplersProvider.java
-+++ /dev/null
-@@ -1,102 +0,0 @@
--package net.minecraft.util.profiling.metrics.profiling;
--
--import com.google.common.base.Stopwatch;
--import com.google.common.base.Ticker;
--import com.google.common.collect.ImmutableSet;
--import com.mojang.logging.LogUtils;
--import it.unimi.dsi.fastutil.objects.ObjectOpenHashSet;
--import java.util.Set;
--import java.util.concurrent.TimeUnit;
--import java.util.function.LongSupplier;
--import java.util.function.Supplier;
--import java.util.function.ToDoubleFunction;
--import java.util.stream.IntStream;
--import net.minecraft.util.profiling.ProfileCollector;
--import net.minecraft.util.profiling.metrics.MetricCategory;
--import net.minecraft.util.profiling.metrics.MetricSampler;
--import net.minecraft.util.profiling.metrics.MetricsRegistry;
--import net.minecraft.util.profiling.metrics.MetricsSamplerProvider;
--import org.slf4j.Logger;
--import oshi.SystemInfo;
--import oshi.hardware.CentralProcessor;
--
++++ b/src/main/java/net/minecraft/util/profiling/metrics/profiling/ServerMetricsSamplersProvider.java
+@@ -1,5 +1,6 @@
+ package net.minecraft.util.profiling.metrics.profiling;
+ 
++/* // Plazma - Completely remove profiler
+ import com.google.common.base.Stopwatch;
+ import com.google.common.base.Ticker;
+ import com.google.common.collect.ImmutableSet;
+@@ -19,8 +20,9 @@ import net.minecraft.util.profiling.metrics.MetricsSamplerProvider;
+ import org.slf4j.Logger;
+ import oshi.SystemInfo;
+ import oshi.hardware.CentralProcessor;
++ */ // Plazma - Completely remove profiler
+ 
 -public class ServerMetricsSamplersProvider implements MetricsSamplerProvider {
--    private static final Logger LOGGER = LogUtils.getLogger();
--    private final Set<MetricSampler> samplers = new ObjectOpenHashSet<>();
--    private final ProfilerSamplerAdapter samplerFactory = new ProfilerSamplerAdapter();
--
--    public ServerMetricsSamplersProvider(LongSupplier nanoTimeSupplier, boolean includeSystem) {
--        this.samplers.add(tickTimeSampler(nanoTimeSupplier));
--        if (includeSystem) {
--            this.samplers.addAll(runtimeIndependentSamplers());
--        }
--
--    }
--
--    public static Set<MetricSampler> runtimeIndependentSamplers() {
--        ImmutableSet.Builder<MetricSampler> builder = ImmutableSet.builder();
--
--        try {
--            ServerMetricsSamplersProvider.CpuStats cpuStats = new ServerMetricsSamplersProvider.CpuStats();
--            IntStream.range(0, cpuStats.nrOfCpus).mapToObj((index) -> {
--                return MetricSampler.create("cpu#" + index, MetricCategory.CPU, () -> {
--                    return cpuStats.loadForCpu(index);
--                });
--            }).forEach(builder::add);
--        } catch (Throwable var2) {
--            LOGGER.warn("Failed to query cpu, no cpu stats will be recorded", var2);
--        }
--
--        builder.add(MetricSampler.create("heap MiB", MetricCategory.JVM, () -> {
--            return (double)((float)(Runtime.getRuntime().totalMemory() - Runtime.getRuntime().freeMemory()) / 1048576.0F);
--        }));
--        builder.addAll(MetricsRegistry.INSTANCE.getRegisteredSamplers());
--        return builder.build();
--    }
--
--    @Override
--    public Set<MetricSampler> samplers(Supplier<ProfileCollector> profilerSupplier) {
--        this.samplers.addAll(this.samplerFactory.newSamplersFoundInProfiler(profilerSupplier));
--        return this.samplers;
--    }
--
--    public static MetricSampler tickTimeSampler(final LongSupplier nanoTimeSupplier) {
--        Stopwatch stopwatch = Stopwatch.createUnstarted(new Ticker() {
--            @Override
--            public long read() {
--                return nanoTimeSupplier.getAsLong();
--            }
--        });
--        ToDoubleFunction<Stopwatch> toDoubleFunction = (watch) -> {
--            if (watch.isRunning()) {
--                watch.stop();
--            }
--
--            long l = watch.elapsed(TimeUnit.NANOSECONDS);
--            watch.reset();
--            return (double)l;
--        };
--        MetricSampler.ValueIncreasedByPercentage valueIncreasedByPercentage = new MetricSampler.ValueIncreasedByPercentage(2.0F);
--        return MetricSampler.builder("ticktime", MetricCategory.TICK_LOOP, toDoubleFunction, stopwatch).withBeforeTick(Stopwatch::start).withThresholdAlert(valueIncreasedByPercentage).build();
--    }
--
--    static class CpuStats {
--        private final SystemInfo systemInfo = new SystemInfo();
--        private final CentralProcessor processor = this.systemInfo.getHardware().getProcessor();
--        public final int nrOfCpus = this.processor.getLogicalProcessorCount();
--        private long[][] previousCpuLoadTick = this.processor.getProcessorCpuLoadTicks();
--        private double[] currentLoad = this.processor.getProcessorCpuLoadBetweenTicks(this.previousCpuLoadTick);
--        private long lastPollMs;
--
--        public double loadForCpu(int index) {
--            long l = System.currentTimeMillis();
--            if (this.lastPollMs == 0L || this.lastPollMs + 501L < l) {
--                this.currentLoad = this.processor.getProcessorCpuLoadBetweenTicks(this.previousCpuLoadTick);
--                this.previousCpuLoadTick = this.processor.getProcessorCpuLoadTicks();
--                this.lastPollMs = l;
--            }
--
--            return this.currentLoad[index] * 100.0D;
--        }
--    }
--}
++interface ServerMetricsSamplersProvider { /* implements MetricsSamplerProvider { // Plazma - Completely remove profiler
+     private static final Logger LOGGER = LogUtils.getLogger();
+     private final Set<MetricSampler> samplers = new ObjectOpenHashSet<>();
+     private final ProfilerSamplerAdapter samplerFactory = new ProfilerSamplerAdapter();
+@@ -99,4 +101,5 @@ public class ServerMetricsSamplersProvider implements MetricsSamplerProvider {
+             return this.currentLoad[index] * 100.0D;
+         }
+     }
++     */ // Plazma - Completely remove profiler
+ }
+diff --git a/src/main/java/net/minecraft/util/profiling/metrics/storage/MetricsPersister.java b/src/main/java/net/minecraft/util/profiling/metrics/storage/MetricsPersister.java
+index 2c2b8bf76ea213b111f3a76b0823146565dc3880..69d71f827943fd0245d7c928d63f791d5d69cdf4 100644
+--- a/src/main/java/net/minecraft/util/profiling/metrics/storage/MetricsPersister.java
++++ b/src/main/java/net/minecraft/util/profiling/metrics/storage/MetricsPersister.java
+@@ -1,13 +1,14 @@
+ package net.minecraft.util.profiling.metrics.storage;
+ 
++import java.nio.file.Path;
++import java.nio.file.Paths;
++/* // Plazma - Completely remove profiler
+ import com.mojang.logging.LogUtils;
+ import java.io.IOException;
+ import java.io.UncheckedIOException;
+ import java.io.Writer;
+ import java.nio.charset.StandardCharsets;
+ import java.nio.file.Files;
+-import java.nio.file.Path;
+-import java.nio.file.Paths;
+ import java.time.ZoneId;
+ import java.time.format.DateTimeFormatter;
+ import java.util.List;
+@@ -24,9 +25,11 @@ import net.minecraft.util.profiling.metrics.MetricCategory;
+ import net.minecraft.util.profiling.metrics.MetricSampler;
+ import org.apache.commons.io.IOUtils;
+ import org.slf4j.Logger;
++ */ // Plazma - Completely remove profiler
+ 
+-public class MetricsPersister {
++public interface MetricsPersister { // Plazma - Completely remove profiler
+     public static final Path PROFILING_RESULTS_DIR = Paths.get("debug/profiling");
++    /* // Plazma - Completely remove profiler
+     public static final String METRICS_DIR_NAME = "metrics";
+     public static final String DEVIATIONS_DIR_NAME = "deviations";
+     public static final String PROFILING_RESULT_FILENAME = "profiling.txt";
+@@ -126,4 +129,5 @@ public class MetricsPersister {
+     private void saveProfilingTaskExecutionResult(ProfileResults result, Path directory) {
+         result.saveResults(directory.resolve("profiling.txt"));
+     }
++     */ // Plazma - Completely remove profiler
+ }
+diff --git a/src/main/java/net/minecraft/util/profiling/metrics/storage/RecordedDeviation.java b/src/main/java/net/minecraft/util/profiling/metrics/storage/RecordedDeviation.java
+index f012d23b22b1a9d1acb6c020c66dc727f7fe9e1a..b029b178c327652a24dcee889db659fdce7d95a5 100644
+--- a/src/main/java/net/minecraft/util/profiling/metrics/storage/RecordedDeviation.java
++++ b/src/main/java/net/minecraft/util/profiling/metrics/storage/RecordedDeviation.java
+@@ -1,9 +1,11 @@
+ package net.minecraft.util.profiling.metrics.storage;
+ 
++/* // Plazma - Completely remove profiler
+ import java.time.Instant;
+ import net.minecraft.util.profiling.ProfileResults;
++ */ // Plazma - Completely remove profiler
+ 
+-public final class RecordedDeviation {
++interface RecordedDeviation { /* // Plazma - Completely remove profiler
+     public final Instant timestamp;
+     public final int tick;
+     public final ProfileResults profilerResultAtTick;
+@@ -13,4 +15,5 @@ public final class RecordedDeviation {
+         this.tick = ticks;
+         this.profilerResultAtTick = result;
+     }
++     */ // Plazma - Completely remove profiler
+ }
 diff --git a/src/main/java/net/minecraft/world/entity/Mob.java b/src/main/java/net/minecraft/world/entity/Mob.java
 index 4c0d710d20e074ad4a0fdd1cd4c0c3d3383b68a5..2d5568ac864a7f557bc5a21ad796206c25caf028 100644
 --- a/src/main/java/net/minecraft/world/entity/Mob.java
@@ -1325,18 +967,20 @@ index c37aa33134b8602caae5ecff00439ad5e0005d18..f65ea0319ba4b715bcfc033ab0030b43
                      //gameprofilerfiller.push("updateSkyLightSources"); // Purpur
                      // Paper - starlight - remove skyLightSources
 diff --git a/src/main/java/net/minecraft/world/level/pathfinder/PathFinder.java b/src/main/java/net/minecraft/world/level/pathfinder/PathFinder.java
-index a8af51a25b0f99c3a64d9150fdfcd6b818aa7581..b9689131a7a46b46c0b75b86f2bb163d7de74921 100644
+index a8af51a25b0f99c3a64d9150fdfcd6b818aa7581..4b894750b2de4dd8ecb766fdabccbdcd6a41a3e8 100644
 --- a/src/main/java/net/minecraft/world/level/pathfinder/PathFinder.java
 +++ b/src/main/java/net/minecraft/world/level/pathfinder/PathFinder.java
-@@ -12,7 +12,7 @@ import java.util.function.Function;
+@@ -12,8 +12,8 @@ import java.util.function.Function;
  import java.util.stream.Collectors;
  import javax.annotation.Nullable;
  import net.minecraft.core.BlockPos;
 -import net.minecraft.util.profiling.ProfilerFiller;
+-import net.minecraft.util.profiling.metrics.MetricCategory;
 +//import net.minecraft.util.profiling.ProfilerFiller; // Plazma - Completely remove profiler
- import net.minecraft.util.profiling.metrics.MetricCategory;
++//import net.minecraft.util.profiling.metrics.MetricCategory; // Plazma - Completely remove profiler
  import net.minecraft.world.entity.Mob;
  import net.minecraft.world.level.PathNavigationRegion;
+ 
 @@ -44,7 +44,7 @@ public class PathFinder {
                  map.add(new java.util.AbstractMap.SimpleEntry<>(this.nodeEvaluator.getGoal(pos.getX(), pos.getY(), pos.getZ()), pos));
              }
