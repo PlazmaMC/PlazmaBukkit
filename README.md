@@ -35,5 +35,4 @@ Mojmap 또는 Bundler에 대해 잘 알지 못한다면, **Reobf Paperclip**을 
 
 | **Reobf Paperclip (Default)** |    Mojmap Paperclip     |      Reobf Bundler       |      Mojmap Bundler       |
 |:-----------------------------:|:-----------------------:|:------------------------:|:-------------------------:|
-|             Work              |           In            |         Progress         |           !!!             |
-<!-- |    [Download][paperReobf]     | [Download][paperMojmap] | [Download][bundlerReobf] | [Download][bundlerMojmap] | -->
+|    [Download][paperReobf]     | [Download][paperMojmap] | [Download][bundlerReobf] | [Download][bundlerMojmap] |
