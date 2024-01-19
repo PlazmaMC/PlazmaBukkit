@@ -1,4 +1,4 @@
-name: Release Plazma (1.20.2)
+name: Release Plazma (1.20.4)
 
 on:
   push:
@@ -9,8 +9,7 @@ on:
 
 env:
   ORG_NAME: PlazmaMC
-  MC_VERSION: 1.20.2
-  MAIN_BRANCH: ver/1.20.1
+  MC_VERSION: 1.20.4
 
 jobs:
   release:
@@ -28,11 +27,12 @@ jobs:
 
       - name: Checkout javadocs
         uses: actions/checkout@v4
-        if: github.ref_name == env.MAIN_BRANCH
+        continue-on-error: true
+        if: startsWith(github.ref_name, 'ver/') || startsWith(github.ref_name, 'dev/')
         with:
           repository: PlazmaMC/Javadocs
           path: javadoc
-          ref: main
+          ref: ${{ github.ref_name }}
           token: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Validate Gradle Wrapper
@@ -56,35 +56,33 @@ jobs:
         run: ./gradlew build --stacktrace
 
       - name: Create Reobf Jar
-        run: ./gradlew createReobfPaperclipJar --no-rebuild --stacktrace
+        run: ./gradlew createReobfPaperclipJar --stacktrace
 
       - name: Create Mojmap Jar
-        run: ./gradlew createMojmapPaperclipJar --no-rebuild --stacktrace
+        run: ./gradlew createMojmapPaperclipJar --stacktrace
 
       - name: Update Javadoc
+        if: startsWith(github.ref_name, 'ver/') || startsWith(github.ref_name, 'dev/')
         continue-on-error: true
-        if: github.ref_name == env.MAIN_BRANCH
         run: |
+          if [ ! -d "$DIRECTORY" ]; then
+            mkdir javadoc
+            cd javadoc
+            git init && git branch -m ${{ github.ref_name }}
+            git remote add origin https://github.com/PlazmaMC/Javadocs
+          fi
+          
           (cd Plazma-API/build/docs/javadoc && tar c .) | (cd javadoc && tar xf -)
           cd javadoc
           git add . && git commit -m "Update Javadocs"
           git push
 
       - name: Publish Packages
-        if: github.ref_name == env.MAIN_BRANCH
+        if: startsWith(github.ref_name, 'ver/') || startsWith(github.ref_name, 'dev/')
         run: |
           export GITHUB_USERNAME=${{ env.ORG_NAME }}
           export GITHUB_TOKEN=${{ secrets.GITHUB_TOKEN }}
-          ./gradlew publish --no-rebuild --stacktrace
-
-      - name: Upload Artifacts
-        if: "!startsWith(github.ref_name, 'ver/')"
-        uses: actions/upload-artifact@v3
-        with:
-          name: Artifacts
-          path: |
-            build/libs
-            Plazma-API/build/docs/javadoc
+          ./gradlew publish --stacktrace
       
       - name: Get Release Number
         if: startsWith(github.ref_name, 'ver/')
