@@ -5,10 +5,22 @@ Subject: [PATCH] Optimize-spigot-event-bus
 
 
 diff --git a/src/main/java/io/papermc/paper/plugin/manager/PaperEventManager.java b/src/main/java/io/papermc/paper/plugin/manager/PaperEventManager.java
-index 32305a34bcebd53aa523102a6da59bc2eb765055..6feb88b90831ec7106c9d777bdfa68fa185f1b89 100644
+index 32305a34bcebd53aa523102a6da59bc2eb765055..1a80bb6d776d3064b2919f2af734e65b54314585 100644
 --- a/src/main/java/io/papermc/paper/plugin/manager/PaperEventManager.java
 +++ b/src/main/java/io/papermc/paper/plugin/manager/PaperEventManager.java
-@@ -41,12 +41,17 @@ class PaperEventManager {
+@@ -26,9 +26,10 @@ import java.util.Map;
+ import java.util.Set;
+ import java.util.logging.Level;
+ 
+-class PaperEventManager {
++public class PaperEventManager { // Plazma - package -> public
+ 
+     private final Server server;
++    public static boolean optimizeEventBus = false; // Plazma
+ 
+     public PaperEventManager(Server server) {
+         this.server = server;
+@@ -41,12 +42,17 @@ class PaperEventManager {
          RegisteredListener[] listeners = handlers.getRegisteredListeners();
          if (listeners.length == 0) return;
          // Plazma end
@@ -17,7 +29,7 @@ index 32305a34bcebd53aa523102a6da59bc2eb765055..6feb88b90831ec7106c9d777bdfa68fa
 -        } else if (!event.isAsynchronous() && !this.server.isPrimaryThread() && !this.server.isStopping()) {
 -            throw new IllegalStateException(event.getEventName() + " may only be triggered synchronously.");
 +        // Plazma start - Optimize spigot event bus
-+        if (event.asynchronous() != net.kyori.adventure.util.TriState.NOT_SET) {
++        if (!optimizeEventBus || event.asynchronous() != net.kyori.adventure.util.TriState.NOT_SET) {
 +            final boolean isAsync = event.isAsynchronous();
 +            final boolean onPrimaryThread = this.server.isPrimaryThread();
 +            if (isAsync && onPrimaryThread) {
@@ -31,3 +43,20 @@ index 32305a34bcebd53aa523102a6da59bc2eb765055..6feb88b90831ec7106c9d777bdfa68fa
          for (RegisteredListener registration : listeners) {
              if (!registration.getPlugin().isEnabled()) {
                  continue;
+diff --git a/src/main/java/org/plazmamc/plazma/configurations/GlobalConfiguration.java b/src/main/java/org/plazmamc/plazma/configurations/GlobalConfiguration.java
+index 525fe30b6abba295709fca3d10f9b24679112571..97080c277c51fc8a5eb7bdd981d2225e5efe44dc 100644
+--- a/src/main/java/org/plazmamc/plazma/configurations/GlobalConfiguration.java
++++ b/src/main/java/org/plazmamc/plazma/configurations/GlobalConfiguration.java
+@@ -44,10 +44,12 @@ public class GlobalConfiguration extends ConfigurationPart {
+         public boolean doNotTriggerLootTableRefreshForNonPlayerInteraction = DO_OPTIMIZE;
+         public boolean doNotSendUselessEntityPackets = DO_OPTIMIZE;
+         public boolean optimizeVarInts = DO_OPTIMIZE;
++        public boolean optimizeEventBus = DO_OPTIMIZE;
+ 
+         @Override
+         public void postProcess() {
+             net.minecraft.network.FriendlyByteBuf.optimizeVarInts = optimizeVarInts;
++            io.papermc.paper.plugin.manager.PaperEventManager.optimizeEventBus = optimizeEventBus;
+         }
+ 
+     }
