@@ -1,11 +1,11 @@
 name: Release Plazma (1.20.4)
 
 on:
-  workflow_dispatch:
   push:
     branches: [ "ver/*", "dev/*", "feat/**/*" ]
     paths:
       - "**.patch"
+  workflow_dispatch:
 
 env:
   ORG_NAME: PlazmaMC
@@ -22,6 +22,12 @@ jobs:
     if: "!startsWith(github.event.commits[0].message, '[CI-Skip]')"
     runs-on: ${{ matrix.os }}
     steps:
+      - name: Setup Variables
+        id: setup
+        env:
+          BRANCH: ${{ github.ref_name }}
+        run: echo "branch=${BRANCH##*/}"
+    
       - name: Checkout repository
         uses: actions/checkout@v4
 
@@ -32,7 +38,7 @@ jobs:
         with:
           repository: PlazmaMC/Javadocs
           path: javadoc
-          ref: ${{ github.ref_name }}
+          ref: ${{ steps.setup.outputs.branch }}
           token: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Validate Gradle Wrapper
@@ -68,7 +74,7 @@ jobs:
           if [ ! -d "javadoc" ]; then
             mkdir javadoc
             cd javadoc
-            git init && git branch -m ${{ github.ref_name }}
+            git init && git branch -m ${{ steps.setup.outputs.branch }}
             git remote add origin https://github.com/PlazmaMC/Javadocs
           fi
           
