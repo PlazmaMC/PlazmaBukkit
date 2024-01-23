@@ -1,0 +1,122 @@
+name: Release Plazma (1.20.4)
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [ "ver/*", "dev/*", "feat/**/*" ]
+    paths:
+      - "**.patch"
+
+env:
+  ORG_NAME: PlazmaMC
+  MC_VERSION: 1.20.4
+
+jobs:
+  release:
+    name: Release Plazma
+    strategy:
+      matrix:
+        base_jdk: [17]
+        os: [ubuntu-22.04]
+
+    if: "!startsWith(github.event.commits[0].message, '[CI-Skip]')"
+    runs-on: ${{ matrix.os }}
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Checkout javadocs
+        uses: actions/checkout@v4
+        continue-on-error: true
+        if: startsWith(github.ref_name, 'ver/') || startsWith(github.ref_name, 'dev/')
+        with:
+          repository: PlazmaMC/Javadocs
+          path: javadoc
+          ref: ${{ github.ref_name }}
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Validate Gradle Wrapper
+        uses: gradle/wrapper-validation-action@v1
+
+      - name: Set up GraalVM ${{ matrix.base_jdk }}
+        uses: graalvm/setup-graalvm@v1
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          java-version: ${{ matrix.base_jdk }}
+          version: latest
+          cache: 'gradle'
+
+      - name: Configure Git
+        run: git config --global user.email "41898282+github-actions[bot]@users.noreply.github.com" && git config --global user.name "github-actions[bot]"
+
+      - name: Apply Patches
+        run: ./gradlew applyPatches --stacktrace
+
+      - name: Build
+        run: ./gradlew build --stacktrace
+
+      - name: Create Reobf Jar
+        run: ./gradlew createReobfPaperclipJar --stacktrace
+
+      - name: Create Mojmap Jar
+        run: ./gradlew createMojmapPaperclipJar --stacktrace
+
+      - name: Update Javadoc
+        if: startsWith(github.ref_name, 'ver/') || startsWith(github.ref_name, 'dev/')
+        continue-on-error: true
+        run: |
+          if [ ! -d "$DIRECTORY" ]; then
+            mkdir javadoc
+            cd javadoc
+            git init && git branch -m ${{ github.ref_name }}
+            git remote add origin https://github.com/PlazmaMC/Javadocs
+          fi
+          
+          (cd Plazma-API/build/docs/javadoc && tar c .) | (cd javadoc && tar xf -)
+          cd javadoc
+          git add . && git commit -m "Update Javadocs"
+          git push
+
+      - name: Publish Packages
+        if: startsWith(github.ref_name, 'ver/') || startsWith(github.ref_name, 'dev/')
+        run: |
+          export GITHUB_USERNAME=${{ env.ORG_NAME }}
+          export GITHUB_TOKEN=${{ secrets.GITHUB_TOKEN }}
+          ./gradlew publish --stacktrace
+      
+      - name: Get Release Number
+        if: startsWith(github.ref_name, 'ver/')
+        run: echo "RELEASE=$(git ls-remote --tags origin | grep "build/${{ env.MC_VERSION }}" | wc -l)" >> $GITHUB_ENV
+
+      - name: Release Artifacts
+        if: startsWith(github.ref_name, 'ver/')
+        uses: softprops/action-gh-release@v0.1.15
+        with:
+          name: "Build #${{ env.RELEASE }} for ${{ env.MC_VERSION }}"
+          tag_name: build/${{ env.MC_VERSION }}/${{ env.RELEASE }}
+          target_commitish: ${{ github.ref_name }}
+          generate_release_notes: true
+          fail_on_unmatched_files: true
+          files: build/libs/*.jar
+          
+      - name: Release Artifacts (Latest/Stable)
+        if: startsWith(github.ref_name, 'ver/')
+        uses: softprops/action-gh-release@v0.1.15
+        with:
+          name: "Build #${{ env.RELEASE }} for ${{ env.MC_VERSION }}"
+          tag_name: build/${{ env.MC_VERSION }}/latest
+          target_commitish: ${{ github.ref_name }}
+          generate_release_notes: true
+          fail_on_unmatched_files: true
+          files: build/libs/*.jar
+
+      - name: Release Artifacts (Latest/Development)
+        if: startsWith(github.ref_name, 'dev/')
+        uses: softprops/action-gh-release@v0.1.15
+        with:
+          name: "Development Build for ${{ env.MC_VERSION }}"
+          tag_name: build/${{ env.MC_VERSION }}/latest
+          target_commitish: ${{ github.ref_name }}
+          generate_release_notes: true
+          fail_on_unmatched_files: true
+          files: build/libs/*.jar

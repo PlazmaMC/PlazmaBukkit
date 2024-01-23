@@ -2,15 +2,21 @@ name: Test Gradle build script
 
 on:
   push:
-    branches: [ "ver/*", "feat/*", "dev/*", "expr/*", "ench/*", "impl/*" ]
+    branches: [ "ver/*", "dev/*", "feat/**/*" ]
+    paths:
+      - "*.kt"
+      - "*.kts"
+      - "*.toml"
+      - "gradle-wrapper.*"
   workflow_dispatch:
 
 jobs:
-  release:
+  check:
+    name: Test Gradle build script
     strategy:
       matrix:
-        jdk: [19.0.2+7]
-        java: ['temurin']
+        jdk: [21]
+        java: ['zulu']
         os: [ubuntu-22.04]
 
     if: "!contains(github.event.commits[0].message, '[CheckSkip]')"
