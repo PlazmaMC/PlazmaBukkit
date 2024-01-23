@@ -41,7 +41,7 @@ allprojects {
         repositories {
             maven {
                 name = "githubPackage"
-                url = uri("https://maven.pkg.github.com/PlazmaMC/Plazma")
+                url = uri("https://maven.pkg.github.com/PlazmaMC/PlazmaBukkit")
 
                 credentials {
                     username = System.getenv("GITHUB_USERNAME")
