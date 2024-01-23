@@ -339,7 +339,7 @@ index a2920b8a9eff77d9c5d1d7f70ad3abdacba8f0fa..70d776d5cfdb0612f65d92333d6f872a
      protected CipherBase(Cipher cipher) {
          this.cipher = cipher;
 diff --git a/src/main/java/net/minecraft/network/Connection.java b/src/main/java/net/minecraft/network/Connection.java
-index 57d0fbca001da7cace3eeb69526e28e8a2ef5ac5..9f4cbb0164fffe6b69af36ddce6b9727a6f0f6da 100644
+index c4e611e7ece504a1ccfa2e3a9d963dbe5917389d..1592ecd2fedf2ecfdff7165617119c55394bdb45 100644
 --- a/src/main/java/net/minecraft/network/Connection.java
 +++ b/src/main/java/net/minecraft/network/Connection.java
 @@ -321,7 +321,7 @@ public class Connection extends SimpleChannelInboundHandler<Packet<?>> {
@@ -411,24 +411,29 @@ index ccdc2345465313991f065e1176b58fb7d5e8722f..bb50e69a4d84e4753db77be071cc6fc7
      // Paper end - Multi Block Change API
  
 diff --git a/src/main/java/net/minecraft/server/MinecraftServer.java b/src/main/java/net/minecraft/server/MinecraftServer.java
-index 83d98b630181890ad991bdd24112d3c7aa807d2b..8dddbb894eb987e476923078b1632ef9d3def68c 100644
+index b8251ca497a0c676b9885af87a106b4b5eb5d221..833a03146da779e0f4b2e4a345e73a35e62756b4 100644
 --- a/src/main/java/net/minecraft/server/MinecraftServer.java
 +++ b/src/main/java/net/minecraft/server/MinecraftServer.java
-@@ -1504,10 +1504,10 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
+@@ -1503,13 +1503,10 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
+     }
  
      private Optional<ServerStatus.Favicon> loadStatusIcon() {
-         Optional<Path> optional = Optional.of(this.getFile("server-icon.png").toPath()).filter((path) -> {
+-        Optional<Path> optional = Optional.of(this.getFile("server-icon.png").toPath()).filter((path) -> {
 -            return Files.isRegularFile(path, new LinkOption[0]);
-+            return Files.isRegularFile(path/*, new LinkOption[0]*/); // Plazma - Reduce allocations
-         }).or(() -> {
-             return this.storageSource.getIconFile().filter((path) -> {
+-        }).or(() -> {
+-            return this.storageSource.getIconFile().filter((path) -> {
 -                return Files.isRegularFile(path, new LinkOption[0]);
-+                return Files.isRegularFile(path, /*new LinkOption[0]*/); // Plazma - Reduce allocations
-             });
-         });
+-            });
+-        });
++        // Plazma start - Reduce allocations
++        Optional<Path> optional = Optional.of(this.getFile("server-icon.png").toPath()).
++            filter(Files::isRegularFile).or(() -> this.storageSource.getIconFile().filter(Files::isRegularFile));
++        // Plazma end - Reduce allocations
  
+         return optional.flatMap((path) -> {
+             try {
 diff --git a/src/main/java/net/minecraft/server/PlayerAdvancements.java b/src/main/java/net/minecraft/server/PlayerAdvancements.java
-index 9abce8a22246f449e1e508dc9972d14cfb8c7c6f..c77d87b0909d3f905882efb0d49f8b5d03020cc0 100644
+index ba8a8575af92541cef2e116743d51cd68d1e794a..140079be22acbb898720c538c4ffb06194da0860 100644
 --- a/src/main/java/net/minecraft/server/PlayerAdvancements.java
 +++ b/src/main/java/net/minecraft/server/PlayerAdvancements.java
 @@ -130,7 +130,7 @@ public class PlayerAdvancements {
@@ -473,7 +478,7 @@ index f65d6dc2b1596232707be402cf0377b5ab90cc01..6735382b229bf6ab66f1ccdf6122215e
                  return map;
              });
 diff --git a/src/main/java/net/minecraft/server/level/ChunkMap.java b/src/main/java/net/minecraft/server/level/ChunkMap.java
-index 14813ee7f00b082707539b6754b703375adf3c61..ff8c7b60836ef532c7bd5d41f6a83a4a9d8c9b06 100644
+index c5ea437e6524b39fb6779112380f57cf4a0bbe15..79688571001aafcb0941f9acaa41201b535d8366 100644
 --- a/src/main/java/net/minecraft/server/level/ChunkMap.java
 +++ b/src/main/java/net/minecraft/server/level/ChunkMap.java
 @@ -109,6 +109,7 @@ import org.bukkit.craftbukkit.generator.CustomChunkGenerator;
@@ -494,7 +499,7 @@ index 14813ee7f00b082707539b6754b703375adf3c61..ff8c7b60836ef532c7bd5d41f6a83a4a
                      this.updatePlayer(conn.getPlayer());
                  }
 diff --git a/src/main/java/net/minecraft/server/level/ServerLevel.java b/src/main/java/net/minecraft/server/level/ServerLevel.java
-index 4f1d092d9bb41c87aa2db9d5b2ffc98907515e53..ed2eb73580b9f0dd0bb2e8de6fa86d7d1e9be59b 100644
+index d3053983028c031db7c99e53033c831ae822d5c6..c946cff8e8bd126dc0d9d05489b15395755056d4 100644
 --- a/src/main/java/net/minecraft/server/level/ServerLevel.java
 +++ b/src/main/java/net/minecraft/server/level/ServerLevel.java
 @@ -1449,7 +1449,7 @@ public class ServerLevel extends Level implements WorldGenLevel {
@@ -507,26 +512,10 @@ index 4f1d092d9bb41c87aa2db9d5b2ffc98907515e53..ed2eb73580b9f0dd0bb2e8de6fa86d7d
          return ret;
      }
 diff --git a/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java b/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
-index 3a30fee71f0874f352690ed57ddf1bad069f3db1..5a49594e9deaa5fe4ddefc9919396f207dcae79e 100644
+index 02d4cb5eea668fe8c48b4e5a3df94f05c23796eb..362062ff9f454e0dc2c5633e1f7e29d865a013ce 100644
 --- a/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
 +++ b/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
-@@ -792,13 +792,13 @@ public class ServerGamePacketListenerImpl extends ServerCommonPacketListenerImpl
-         // PacketUtils.ensureRunningOnSameThread(packet, this, this.player.serverLevel()); // Paper - run this async
-         // CraftBukkit start
-         if (this.chatSpamTickCount.addAndGet(io.papermc.paper.configuration.GlobalConfiguration.get().spamLimiter.tabSpamIncrement) > io.papermc.paper.configuration.GlobalConfiguration.get().spamLimiter.tabSpamLimit && !this.server.getPlayerList().isOp(this.player.getGameProfile())) { // Paper - configurable tab spam limits
--            server.scheduleOnMain(() -> this.disconnect(Component.translatable("disconnect.spam", new Object[0]), org.bukkit.event.player.PlayerKickEvent.Cause.SPAM)); // Paper - kick event cause
-+            server.scheduleOnMain(() -> this.disconnect(Component.translatable("disconnect.spam"/*, new Object[0]*/), org.bukkit.event.player.PlayerKickEvent.Cause.SPAM)); // Paper - kick event cause // Plazma - Reduce allocations
-             return;
-         }
-         // Paper start
-         String str = packet.getCommand(); int index = -1;
-         if (str.length() > 64 && ((index = str.indexOf(' ')) == -1 || index >= 64)) {
--            server.scheduleOnMain(() -> this.disconnect(Component.translatable("disconnect.spam", new Object[0]))); // Paper
-+            server.scheduleOnMain(() -> this.disconnect(Component.translatable("disconnect.spam"/*, new Object[0]*/))); // Paper // Plazma - Reduce allocations
-             return;
-         }
-         // Paper end
-@@ -3279,7 +3279,7 @@ public class ServerGamePacketListenerImpl extends ServerCommonPacketListenerImpl
+@@ -3264,7 +3264,7 @@ public class ServerGamePacketListenerImpl extends ServerCommonPacketListenerImpl
          // Paper start - auto recipe limit
          if (!org.bukkit.Bukkit.isPrimaryThread()) {
              if (this.recipeSpamPackets.addAndGet(io.papermc.paper.configuration.GlobalConfiguration.get().spamLimiter.recipeSpamIncrement) > io.papermc.paper.configuration.GlobalConfiguration.get().spamLimiter.recipeSpamLimit) {
@@ -536,7 +525,7 @@ index 3a30fee71f0874f352690ed57ddf1bad069f3db1..5a49594e9deaa5fe4ddefc9919396f20
              }
          }
 diff --git a/src/main/java/net/minecraft/server/network/ServerLoginPacketListenerImpl.java b/src/main/java/net/minecraft/server/network/ServerLoginPacketListenerImpl.java
-index 0f53f8da792812f9a324843959939bff7bbc78ed..5d4331fcded0788d2a38a64d49bdb8a26f2bdec9 100644
+index 8757db8c7f9dc4fbdaf2324f6da639cbf1514b5d..3a995fb30a00b313d9b4de52ad11eac5a8c351eb 100644
 --- a/src/main/java/net/minecraft/server/network/ServerLoginPacketListenerImpl.java
 +++ b/src/main/java/net/minecraft/server/network/ServerLoginPacketListenerImpl.java
 @@ -138,8 +138,8 @@ public class ServerLoginPacketListenerImpl implements ServerLoginPacketListener,
@@ -569,7 +558,7 @@ index 0f53f8da792812f9a324843959939bff7bbc78ed..5d4331fcded0788d2a38a64d49bdb8a2
          ServerConfigurationPacketListenerImpl serverconfigurationpacketlistenerimpl = new ServerConfigurationPacketListenerImpl(this.server, this.connection, commonlistenercookie, this.player); // CraftBukkit
  
 diff --git a/src/main/java/net/minecraft/server/players/PlayerList.java b/src/main/java/net/minecraft/server/players/PlayerList.java
-index 56ee7057defed5c9281aa557d20608c275fac9d6..670519845bc4dc8c59f1fb48a4c7e35d0f986567 100644
+index 5630d7efd841346abcf530247bc1b8535d8c8e5e..4dd5f4fb94c2a25100dcc24b91a0f6059a61d070 100644
 --- a/src/main/java/net/minecraft/server/players/PlayerList.java
 +++ b/src/main/java/net/minecraft/server/players/PlayerList.java
 @@ -716,7 +716,7 @@ public abstract class PlayerList {
@@ -724,7 +713,7 @@ index a00646bc8a9caefe56e48b7682e8fb0c464b81fa..a2b5d2f1be493148a0ed102f10fd8b76
          this.targetSelector.addGoal(3, new NearestAttackableTargetGoal<>(this, IronGolem.class, true));
          this.targetSelector.addGoal(3, new NearestAttackableTargetGoal<>(this, Turtle.class, 10, true, false, Turtle.BABY_ON_LAND_SELECTOR));
 diff --git a/src/main/java/net/minecraft/world/entity/monster/Creeper.java b/src/main/java/net/minecraft/world/entity/monster/Creeper.java
-index c01f641a58de999ab0772efc24900308aad8f04a..03df741744e1f2062aed3acf7f58a37c8c99172b 100644
+index 8bbc11845d190b33296f61c503f54209d218bc85..ca3b1acf17c0a414db414a59c13a33ab86938a7b 100644
 --- a/src/main/java/net/minecraft/world/entity/monster/Creeper.java
 +++ b/src/main/java/net/minecraft/world/entity/monster/Creeper.java
 @@ -153,7 +153,7 @@ public class Creeper extends Monster implements PowerableMob {
@@ -737,7 +726,7 @@ index c01f641a58de999ab0772efc24900308aad8f04a..03df741744e1f2062aed3acf7f58a37c
  
      public static AttributeSupplier.Builder createAttributes() {
 diff --git a/src/main/java/net/minecraft/world/entity/monster/EnderMan.java b/src/main/java/net/minecraft/world/entity/monster/EnderMan.java
-index f0c3ab07e97ff79ca3d04260e10d069fe6c432d4..536f967ea4f17cba3c754f66a71df269a7d8290f 100644
+index 13bc6389652f8868d7539676ee6d85f37ba78f67..6e4dca9074132fc0fb8c90878bf5028729b72367 100644
 --- a/src/main/java/net/minecraft/world/entity/monster/EnderMan.java
 +++ b/src/main/java/net/minecraft/world/entity/monster/EnderMan.java
 @@ -138,7 +138,7 @@ public class EnderMan extends Monster implements NeutralMob {
@@ -875,7 +864,7 @@ index a907b79fd8291a0e92db138f37239d17424188a1..a402db6baa4b24b4c6750b01b8b2f56e
          int i = 0;
  
 diff --git a/src/main/java/net/minecraft/world/level/chunk/storage/RegionFile.java b/src/main/java/net/minecraft/world/level/chunk/storage/RegionFile.java
-index 0761096829e2afc5f8dd88b9a693874fc2f1bb8b..a65c350b2b0f662c3fd7d54465e7ff42d28715f2 100644
+index 4373ae3b454ad3fb8550e83b868e98cc04893c1b..eeee5fe71f0894113582282cebaad4705c94afac 100644
 --- a/src/main/java/net/minecraft/world/level/chunk/storage/RegionFile.java
 +++ b/src/main/java/net/minecraft/world/level/chunk/storage/RegionFile.java
 @@ -444,7 +444,7 @@ public class RegionFile implements AutoCloseable {
