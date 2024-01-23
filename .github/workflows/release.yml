@@ -41,6 +41,14 @@ jobs:
           ref: ${{ steps.setup.outputs.branch }}
           token: ${{ secrets.GITHUB_TOKEN }}
 
+      - name: Checkout javadocs
+        uses: actions/checkout@v4
+        if: startsWith(github.ref_name, 'ver/') || startsWith(github.ref_name, 'dev/')
+        with:
+          repository: PlazmaMC/Javadocs
+          path: jdmain
+          token: ${{ secrets.GITHUB_TOKEN }}
+
       - name: Validate Gradle Wrapper
         uses: gradle/wrapper-validation-action@v1
 
@@ -80,6 +88,11 @@ jobs:
           
           (cd Plazma-API/build/docs/javadoc && tar c .) | (cd javadoc && tar xf -)
           cd javadoc
+          git add . && git commit -m "Update Javadocs"
+          git push
+
+          cd ../jdmain
+          git submodule update
           git add . && git commit -m "Update Javadocs"
           git push
 
