@@ -3,25 +3,27 @@ From: AlphaKR93 <dev@alpha93.kr>
 Date: Wed, 27 Sep 2023 22:35:19 +0900
 Subject: [PATCH] Ignore useless entity packets
 
+[REFERENCE]
+- PurpurMC/Purpur
 
 diff --git a/src/main/java/net/minecraft/server/level/ServerEntity.java b/src/main/java/net/minecraft/server/level/ServerEntity.java
-index 92ca330bee2f58bde93c8da12a8f5c14e29de540..05342f5fbe5cd62e81e09d3d6743cf47331b54c2 100644
+index 2568b4ad72a7b99484aaa048257a3b5465b63b9d..59f6f8474f77f0cb332072dfe0b4d47464c1b78a 100644
 --- a/src/main/java/net/minecraft/server/level/ServerEntity.java
 +++ b/src/main/java/net/minecraft/server/level/ServerEntity.java
-@@ -200,6 +200,8 @@ public class ServerEntity {
+@@ -206,6 +206,8 @@ public class ServerEntity {
                          flag4 = true;
                          flag5 = true;
                      }
 +
-+                    if (this.level.plazmaConfig().entity.ignoreUselessPackets && isUselessPacket(packet1)) packet1 = null; // Plazma
++                    if (this.level.plazmaConfig().entity.ignoreUselessPackets && isUselessPacket(packet1)) packet1 = null; // Plazma - Ignore useless entity packets
                  }
  
                  if ((this.trackDelta || this.entity.hasImpulse || this.entity instanceof LivingEntity && ((LivingEntity) this.entity).isFallFlying()) && this.tickCount > 0) {
-@@ -272,6 +274,19 @@ public class ServerEntity {
+@@ -278,6 +280,19 @@ public class ServerEntity {
          });
      }
  
-+    // Plazma start
++    // Plazma start - Ignore useless entity packets
 +    private boolean isUselessPacket(@Nullable Packet<?> packet) {
 +        if (!(packet instanceof ClientboundMoveEntityPacket p)) return false;
 +        if (p instanceof ClientboundMoveEntityPacket.Pos)
@@ -32,7 +34,7 @@ index 92ca330bee2f58bde93c8da12a8f5c14e29de540..05342f5fbe5cd62e81e09d3d6743cf47
 +            return p.getXa() == 0 && p.getYa() == 0 && p.getZa() == 0 && p.getxRot() == 0 && p.getyRot() == 0;
 +        return false;
 +    }
-+    // Plazma end
++    // Plazma end - Ignore useless entity packets
 +
      public void removePairing(ServerPlayer player) {
          this.entity.stopSeenByPlayer(player);

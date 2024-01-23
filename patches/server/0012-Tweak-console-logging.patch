@@ -4,21 +4,8 @@ Date: Sun, 5 Nov 2023 10:40:49 +0900
 Subject: [PATCH] Tweak console logging
 
 
-diff --git a/src/main/java/io/papermc/paper/adventure/ChatProcessor.java b/src/main/java/io/papermc/paper/adventure/ChatProcessor.java
-index e4fd372a1d585887287253a02531cd192929377b..6624fb97404c3032d60167e3fb108dcfcd066784 100644
---- a/src/main/java/io/papermc/paper/adventure/ChatProcessor.java
-+++ b/src/main/java/io/papermc/paper/adventure/ChatProcessor.java
-@@ -355,7 +355,7 @@ public final class ChatProcessor {
- 
-         private void sendToServer(final ChatType.Bound chatType, final @Nullable Function<Audience, net.minecraft.network.chat.Component> msgFunction) {
-             final PlayerChatMessage toConsoleMessage = msgFunction == null ? ChatProcessor.this.message : ChatProcessor.this.message.withUnsignedContent(msgFunction.apply(ChatProcessor.this.server.console));
--            ChatProcessor.this.server.logChatMessage(toConsoleMessage.decoratedContent(), chatType, ChatProcessor.this.server.getPlayerList().verifyChatTrusted(toConsoleMessage) ? null : "Not Secure");
-+            ChatProcessor.this.server.logChatMessage(toConsoleMessage.decoratedContent(), chatType, (!org.plazmamc.plazma.configurations.GlobalConfiguration.get().consoleLogs.notSecurePrefix || ChatProcessor.this.server.getPlayerList().verifyChatTrusted(toConsoleMessage)) ? null : "Not Secure"); // Plazma - Tweak console logging
-         }
-     }
- 
 diff --git a/src/main/java/net/minecraft/server/dedicated/DedicatedServer.java b/src/main/java/net/minecraft/server/dedicated/DedicatedServer.java
-index 8fc6b2e4be405d6738fedb91ffee5cbfe4fca67d..5c897d11e6ae17d8feaeedc7edf7ede02571a207 100644
+index d2ea4c6470706138a1e6cebb8c591abb14c96a18..84cf2b2e289af0a43c9cc64a9c7e045ffaf9c62b 100644
 --- a/src/main/java/net/minecraft/server/dedicated/DedicatedServer.java
 +++ b/src/main/java/net/minecraft/server/dedicated/DedicatedServer.java
 @@ -180,16 +180,6 @@ public class DedicatedServer extends MinecraftServer implements ServerInterface
@@ -33,24 +20,16 @@ index 8fc6b2e4be405d6738fedb91ffee5cbfe4fca67d..5c897d11e6ae17d8feaeedc7edf7ede0
 -            DedicatedServer.LOGGER.warn("FOR MORE INFORMATION, SEE https://madelinemiller.dev/blog/root-minecraft-server/");
 -            DedicatedServer.LOGGER.warn("****************************");
 -        }
--        // Paper end
+-        // Paper end - detect running as root
 -
          DedicatedServer.LOGGER.info("Loading properties");
          DedicatedServerProperties dedicatedserverproperties = this.settings.getProperties();
  
-@@ -319,6 +309,7 @@ public class DedicatedServer extends MinecraftServer implements ServerInterface
-         String proxyFlavor = (io.papermc.paper.configuration.GlobalConfiguration.get().proxies.velocity.enabled) ? "Velocity" : "BungeeCord";
-         String proxyLink = (io.papermc.paper.configuration.GlobalConfiguration.get().proxies.velocity.enabled) ? "https://docs.papermc.io/velocity/security" : "http://www.spigotmc.org/wiki/firewall-guide/";
-         // Paper end
-+        if (org.plazmamc.plazma.configurations.GlobalConfiguration.get().consoleLogs.offlineWarnings) // Plazma - Tweak console logging
-         if (!this.usesAuthentication()) {
-             DedicatedServer.LOGGER.warn("**** SERVER IS RUNNING IN OFFLINE/INSECURE MODE!");
-             DedicatedServer.LOGGER.warn("The server will make no attempt to authenticate usernames. Beware.");
-@@ -335,6 +326,17 @@ public class DedicatedServer extends MinecraftServer implements ServerInterface
-             DedicatedServer.LOGGER.warn("To change this, set \"online-mode\" to \"true\" in the server.properties file.");
-         }
- 
-+        // Plazma - Moved down - Tweak console logging
+@@ -212,6 +202,17 @@ public class DedicatedServer extends MinecraftServer implements ServerInterface
+         this.plazmaConfigurations.initializeGlobalConfiguration(this.registryAccess()); // Plazma - Configurable Plazma
+         this.plazmaConfigurations.initializeWorldDefaultsConfiguration(this.registryAccess()); // Plazma - Configurable Plazma
+         // Paper end - initialize global and world-defaults configuration
++        // Plazma - Tweak console logging; Moved down
 +        // Paper start - detect running as root
 +        if (org.plazmamc.plazma.configurations.GlobalConfiguration.get().consoleLogs.rootUserWarnings && io.papermc.paper.util.ServerEnvironment.userIsRootOrAdmin()) {
 +            DedicatedServer.LOGGER.warn("****************************");
@@ -59,13 +38,30 @@ index 8fc6b2e4be405d6738fedb91ffee5cbfe4fca67d..5c897d11e6ae17d8feaeedc7edf7ede0
 +            DedicatedServer.LOGGER.warn("FOR MORE INFORMATION, SEE https://madelinemiller.dev/blog/root-minecraft-server/");
 +            DedicatedServer.LOGGER.warn("****************************");
 +        }
-+        // Paper end
-+        // Plazma end
++        // Paper end - detect running as root
++        // Plazma end - Tweak console logging
+         // Paper start - fix converting txt to json file; convert old users earlier after PlayerList creation but before file load/save
+         if (this.convertOldUsers()) {
+             this.getProfileCache().save(false); // Paper
+@@ -319,6 +320,7 @@ public class DedicatedServer extends MinecraftServer implements ServerInterface
+         String proxyFlavor = (io.papermc.paper.configuration.GlobalConfiguration.get().proxies.velocity.enabled) ? "Velocity" : "BungeeCord";
+         String proxyLink = (io.papermc.paper.configuration.GlobalConfiguration.get().proxies.velocity.enabled) ? "https://docs.papermc.io/velocity/security" : "http://www.spigotmc.org/wiki/firewall-guide/";
+         // Paper end - Add Velocity IP Forwarding Support
++        if (org.plazmamc.plazma.configurations.GlobalConfiguration.get().consoleLogs.offlineWarnings && !(io.papermc.paper.configuration.GlobalConfiguration.get().proxies.velocity.enabled && io.papermc.paper.configuration.GlobalConfiguration.get().proxies.velocity.onlineMode)) // Plazma - Tweak console logging
+         if (!this.usesAuthentication()) {
+             DedicatedServer.LOGGER.warn("**** SERVER IS RUNNING IN OFFLINE/INSECURE MODE!");
+             DedicatedServer.LOGGER.warn("The server will make no attempt to authenticate usernames. Beware.");
+@@ -332,7 +334,7 @@ public class DedicatedServer extends MinecraftServer implements ServerInterface
+                 DedicatedServer.LOGGER.warn("While this makes the game possible to play without internet access, it also opens up the ability for hackers to connect with any username they choose.");
+             }
+             // Spigot end
+-            DedicatedServer.LOGGER.warn("To change this, set \"online-mode\" to \"true\" in the server.properties file.");
++            DedicatedServer.LOGGER.warn("To change this, set \"online-mode\" to \"true\" in the server.properties file or set \"console-logs.offline-warnings\" to \"false\" in the config/plazma-global.yml file."); // Plazma - Tweak console logging
+         }
  
-         if (!OldUsersConverter.serverReadyAfterUserconversion(this)) {
-             return false;
+ 
 diff --git a/src/main/java/net/minecraft/server/players/PlayerList.java b/src/main/java/net/minecraft/server/players/PlayerList.java
-index 92717b7aa7ac94a2b1d11b5ba46522057903f981..80dc93b8c96d78a4080c0636b8cd7c470a1e3922 100644
+index e2f58fe299694db1b8975a502b42c832ef23ffb9..3803a04804fc11553c85507a257939552ce4890f 100644
 --- a/src/main/java/net/minecraft/server/players/PlayerList.java
 +++ b/src/main/java/net/minecraft/server/players/PlayerList.java
 @@ -1468,6 +1468,7 @@ public abstract class PlayerList {

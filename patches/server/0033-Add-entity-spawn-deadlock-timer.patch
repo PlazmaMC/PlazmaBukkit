@@ -1,21 +1,21 @@
 From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
 From: AlphaKR93 <dev@alpha93.kr>
 Date: Tue, 5 Dec 2023 13:29:28 +0900
-Subject: [PATCH] Add Entity spawn deadlock timer
+Subject: [PATCH] Add entity spawn deadlock timer
 
 [REFERENCE]
 - AbsolemJackdaw/FixMySpawnR
 
 diff --git a/src/main/java/net/minecraft/world/level/BaseSpawner.java b/src/main/java/net/minecraft/world/level/BaseSpawner.java
-index ac6bdf21d5ff8ba563f8c9187f6a8dcc823587aa..94d79eb70ffdeaa41dce4ec7873fb6888eff272e 100644
+index 28e8403f1f91effd7eb5a50855f823f8adc90b6b..1b9989387d94429538e724329737b304232756e6 100644
 --- a/src/main/java/net/minecraft/world/level/BaseSpawner.java
 +++ b/src/main/java/net/minecraft/world/level/BaseSpawner.java
 @@ -48,6 +48,8 @@ public abstract class BaseSpawner {
      public int requiredPlayerRange = 16;
      public int spawnRange = 4;
      private int tickDelay = 0; // Paper
-+    private int blockExistsTick = 0; // Plazma - Implement FixMySpawnR
-+    private boolean blockLockedByTime = false; // Plazma - Implement FixMySpawnR
++    private int blockExistsTick = 0; // Plazma - Add entity spawn deadlock timer
++    private boolean blockLockedByTime = false; // Plazma - Add entity spawn deadlock timer
  
      public BaseSpawner() {}
  
@@ -23,7 +23,7 @@ index ac6bdf21d5ff8ba563f8c9187f6a8dcc823587aa..94d79eb70ffdeaa41dce4ec7873fb688
      }
  
      public void serverTick(ServerLevel world, BlockPos pos) {
-+        // Plazma start - Implement FixMySpawnR
++        // Plazma start - Add entity spawn deadlock timer
 +        if (world.plazmaConfig().entity.spawnDeadlockTimer.enabled) {
 +            if (!this.blockLockedByTime) {
 +                if (this.blockExistsTick > world.plazmaConfig().entity.spawnDeadlockTimer.timerTimeout)
@@ -33,7 +33,7 @@ index ac6bdf21d5ff8ba563f8c9187f6a8dcc823587aa..94d79eb70ffdeaa41dce4ec7873fb688
 +
 +            if (blockLockedByTime && world.getBestNeighborSignal(pos) > 0) return;
 +        }
-+        // Plazma end
++        // Plazma end - Add entity spawn deadlock timer
          if (spawnCount <= 0 || maxNearbyEntities <= 0) return; // Paper - Ignore impossible spawn tick
          // Paper start - Configurable mob spawner tick rate
          if (spawnDelay > 0 && --tickDelay > 0) return;
@@ -41,12 +41,12 @@ index ac6bdf21d5ff8ba563f8c9187f6a8dcc823587aa..94d79eb70ffdeaa41dce4ec7873fb688
          if (nbt.contains("SpawnRange", 99)) {
              this.spawnRange = nbt.getShort("SpawnRange");
          }
-+        // Plazma start - Implement FixMySpawnR
++        // Plazma start - Add entity spawn deadlock timer
 +        if (nbt.contains("Plazma.SpawnerTicks", 99)) {
 +            this.blockExistsTick = nbt.getInt("Plazma.SpawnerTicks");
 +            this.blockLockedByTime = nbt.getBoolean("Plazma.SpawnerLocked");
 +        }
-+        // Plazma end
++        // Plazma end - Add entity spawn deadlock timer
  
          this.displayEntity = null;
      }
@@ -54,8 +54,8 @@ index ac6bdf21d5ff8ba563f8c9187f6a8dcc823587aa..94d79eb70ffdeaa41dce4ec7873fb688
              }));
          }
  
-+        nbt.putInt("Plazma.SpawnerTicks", this.blockExistsTick); // Plazma - Implement FixMySpawnR
-+        nbt.putBoolean("Plazma.SpawnerLocked", this.blockLockedByTime); // Plazma - Implement FixMySpawnR
++        nbt.putInt("Plazma.SpawnerTicks", this.blockExistsTick); // Plazma - Add entity spawn deadlock timer
++        nbt.putBoolean("Plazma.SpawnerLocked", this.blockLockedByTime); // Plazma - Add entity spawn deadlock timer
          nbt.put("SpawnPotentials", (Tag) SpawnData.LIST_CODEC.encodeStart(NbtOps.INSTANCE, this.spawnPotentials).result().orElseThrow());
          return nbt;
      }

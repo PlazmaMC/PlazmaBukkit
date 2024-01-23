@@ -5,32 +5,23 @@ Subject: [PATCH] Build system changes
 
 
 diff --git a/build.gradle.kts b/build.gradle.kts
-index 5b8a28969451b12c4fc66976afd052ffa5805932..340dd814ad710f48c642be280d0bddbbcd5b9aab 100644
+index 0c92d10f334f82d196e065c0811d0c1f48887377..9118c9ee41eac40662c352ebd71941ddee31d9a0 100644
 --- a/build.gradle.kts
 +++ b/build.gradle.kts
-@@ -19,21 +19,43 @@ dependencies {
+@@ -19,6 +19,8 @@ dependencies {
          exclude("io.papermc.paper", "paper-api")
      }
      // Purpur end
-+    // Plazma start - Use libs.versions.toml
-     // Paper start
++    // Plazma start - Use Gradle version catalogs
 +    /*
+     // Paper start
      implementation("org.jline:jline-terminal-jansi:3.21.0")
      implementation("net.minecrell:terminalconsoleappender:1.3.0")
-     implementation("net.kyori:adventure-text-serializer-ansi:4.14.0") // Keep in sync with adventureVersion from Paper-API build file
-     implementation("net.kyori:ansi:1.0.3") // Manually bump beyond above transitive dep
-+     */
-     /*
-           Required to add the missing Log4j2Plugins.dat file from log4j-core
-           which has been removed by Mojang. Without it, log4j has to classload
-           all its classes to check if they are plugins.
-           Scanning takes about 1-2 seconds so adding this speeds up the server start.
+@@ -32,8 +34,28 @@ dependencies {
       */
--    implementation("org.apache.logging.log4j:log4j-core:2.19.0") // Paper - implementation
--    log4jPlugins.annotationProcessorConfigurationName("org.apache.logging.log4j:log4j-core:2.19.0") // Paper - Needed to generate meta for our Log4j plugins
--    runtimeOnly(log4jPlugins.output)
-+    //implementation("org.apache.logging.log4j:log4j-core:2.19.0") // Paper - implementation
-+    //log4jPlugins.annotationProcessorConfigurationName("org.apache.logging.log4j:log4j-core:2.19.0") // Paper - Needed to generate meta for our Log4j plugins
+     implementation("org.apache.logging.log4j:log4j-core:2.19.0") // Paper - implementation
+     log4jPlugins.annotationProcessorConfigurationName("org.apache.logging.log4j:log4j-core:2.19.0") // Paper - Needed to generate meta for our Log4j plugins
++     */
 +    log4jPlugins.annotationProcessorConfigurationName(common.log4j.core)
 +
 +    implementation(common.log4j.core)
@@ -42,12 +33,12 @@ index 5b8a28969451b12c4fc66976afd052ffa5805932..340dd814ad710f48c642be280d0bddbb
 +    implementation(server.ansi)
 +    implementation(server.bundles.implementation)
 +
-     alsoShade(log4jPlugins.output)
-+
 +    runtimeOnly(common.bundles.maven)
 +    runtimeOnly(common.maven.provider)
 +    runtimeOnly(server.bundles.runtime)
-+    runtimeOnly(log4jPlugins.output)
+     runtimeOnly(log4jPlugins.output)
++
+     alsoShade(log4jPlugins.output)
 +
 +    testImplementation(common.bundles.test)
 +    testImplementation(server.classgraph)
@@ -65,7 +56,7 @@ index 5b8a28969451b12c4fc66976afd052ffa5805932..340dd814ad710f48c642be280d0bddbb
 +    implementation(server.velocity) {
          isTransitive = false
      }
-     // Paper end
+     // Paper end - Use Velocity cipher
  
 +    /*
      runtimeOnly("org.apache.maven:maven-resolver-provider:3.9.6")
@@ -83,8 +74,8 @@ index 5b8a28969451b12c4fc66976afd052ffa5805932..340dd814ad710f48c642be280d0bddbb
  
 -    implementation("org.mozilla:rhino-runtime:1.7.14") // Purpur
 -    implementation("org.mozilla:rhino-engine:1.7.14") // Purpur
-+    //implementation("org.mozilla:rhino-runtime:1.7.14") // Purpur
-+    //implementation("org.mozilla:rhino-engine:1.7.14") // Purpur
++    // implementation("org.mozilla:rhino-runtime:1.7.14") // Purpur
++    // implementation("org.mozilla:rhino-engine:1.7.14") // Purpur
      implementation("dev.omega24:upnp4j:1.0") // Purpur
  
 +    /*
@@ -93,7 +84,7 @@ index 5b8a28969451b12c4fc66976afd052ffa5805932..340dd814ad710f48c642be280d0bddbb
      testImplementation("org.hamcrest:hamcrest:2.2")
      testImplementation("org.mockito:mockito-core:5.5.0")
 +     */
-+    // Plazma end
++    // Plazma end - Use Gradle version catalogs
  }
  
  val craftbukkitPackageVersion = "1_20_R3" // Paper

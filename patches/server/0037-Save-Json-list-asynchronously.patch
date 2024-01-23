@@ -5,7 +5,7 @@ Subject: [PATCH] Save Json list asynchronously
 
 
 diff --git a/src/main/java/net/minecraft/server/dedicated/DedicatedPlayerList.java b/src/main/java/net/minecraft/server/dedicated/DedicatedPlayerList.java
-index 935dac757280731bfeb0a8f033cbe315ecac46da..038f370ac2cb768e14fe7605b32b2ac811c33b8f 100644
+index 1c9cf5e1c4ee05724ffcdbd77a19bca1ab2be4d3..bc3b251a3f8ad345bdaaf67be59ff2c143d4d130 100644
 --- a/src/main/java/net/minecraft/server/dedicated/DedicatedPlayerList.java
 +++ b/src/main/java/net/minecraft/server/dedicated/DedicatedPlayerList.java
 @@ -60,20 +60,20 @@ public class DedicatedPlayerList extends PlayerList {
@@ -13,30 +13,30 @@ index 935dac757280731bfeb0a8f033cbe315ecac46da..038f370ac2cb768e14fe7605b32b2ac8
  
      private void saveIpBanList() {
 -        try {
-+        //try { // Plazma - Build fix
++        //try { // Plazma - Save Json list asynchronously
              this.getIpBans().save();
 -        } catch (IOException var2) {
-+        /*} catch (IOException var2) { // Plazma - Build fix
++        /*} catch (IOException var2) { // Plazma - Save Json list asynchronously
              LOGGER.warn("Failed to save ip banlist: ", (Throwable)var2);
 -        }
-+        }*/ // Plazma - Build fix
++        }*/ // Plazma - Save Json list asynchronously
  
      }
  
      private void saveUserBanList() {
 -        try {
-+        //try { // Plazma - Build fix
++        //try { // Plazma - Save Json list asynchronously
              this.getBans().save();
 -        } catch (IOException var2) {
-+        /*} catch (IOException var2) { // Plazma - Build fix
++        /*} catch (IOException var2) { // Plazma - Save Json list asynchronously
              LOGGER.warn("Failed to save user banlist: ", (Throwable)var2);
 -        }
-+        }*/ // Plazma - Build fix
++        }*/ // Plazma - Save Json list asynchronously
  
      }
  
 diff --git a/src/main/java/net/minecraft/server/players/StoredUserList.java b/src/main/java/net/minecraft/server/players/StoredUserList.java
-index 78d2298d8cb0b028dc777106115d425b10cfd599..cb5fbe78a4c3bffe91a579b9d8c24e35cd3d1021 100644
+index 2e7ef69361ec8e5c2e9c03653beb945fbd5877a1..43680e141f08ba8359401a17f2e2fe59fca12dfa 100644
 --- a/src/main/java/net/minecraft/server/players/StoredUserList.java
 +++ b/src/main/java/net/minecraft/server/players/StoredUserList.java
 @@ -44,11 +44,11 @@ public abstract class StoredUserList<K, V extends StoredUserEntry<K>> {
@@ -44,32 +44,32 @@ index 78d2298d8cb0b028dc777106115d425b10cfd599..cb5fbe78a4c3bffe91a579b9d8c24e35
          this.map.put(this.getKeyForUser(entry.getUser()), entry);
  
 -        try {
-+        //try { // Plazma - Fix build
++        //try { // Plazma - Save Json list asynchronously
              this.save();
 -        } catch (IOException ioexception) {
-+        /*} catch (IOException ioexception) { // Plazma - Fix build
++        /*} catch (IOException ioexception) { // Plazma - Save Json list asynchronously
              StoredUserList.LOGGER.warn("Could not save the list after adding a user.", ioexception);
 -        }
-+        }*/ // Plazma - Fix build
++        }*/ // Plazma - Save Json list asynchronously
  
      }
  
-@@ -66,11 +66,11 @@ public abstract class StoredUserList<K, V extends StoredUserEntry<K>> {
+@@ -64,11 +64,11 @@ public abstract class StoredUserList<K, V extends StoredUserEntry<K>> {
      public void remove(K key) {
          this.map.remove(this.getKeyForUser(key));
  
 -        try {
-+        //try { // Plazma - Fix build
++        //try { // Plazma - Save Json list asynchronously
              this.save();
 -        } catch (IOException ioexception) {
-+        /*} catch (IOException ioexception) { // Plazma - Fix build
++        /*} catch (IOException ioexception) { // Plazma - Save Json list asynchronously
              StoredUserList.LOGGER.warn("Could not save the list after removing a user.", ioexception);
 -        }
-+        }*/ // Plazma - Fix build
++        }*/ // Plazma - Save Json list asynchronously
  
      }
  
-@@ -125,7 +125,10 @@ public abstract class StoredUserList<K, V extends StoredUserEntry<K>> {
+@@ -102,7 +102,10 @@ public abstract class StoredUserList<K, V extends StoredUserEntry<K>> {
          return this.map.values();
      }
  
@@ -81,7 +81,7 @@ index 78d2298d8cb0b028dc777106115d425b10cfd599..cb5fbe78a4c3bffe91a579b9d8c24e35
          this.removeExpired(); // Paper - remove expired values before saving
          JsonArray jsonarray = new JsonArray();
          Stream<JsonObject> stream = this.map.values().stream().map((jsonlistentry) -> { // CraftBukkit - decompile error
-@@ -137,27 +140,16 @@ public abstract class StoredUserList<K, V extends StoredUserEntry<K>> {
+@@ -114,27 +117,16 @@ public abstract class StoredUserList<K, V extends StoredUserEntry<K>> {
  
          Objects.requireNonNull(jsonarray);
          stream.forEach(jsonarray::add);
@@ -110,7 +110,7 @@ index 78d2298d8cb0b028dc777106115d425b10cfd599..cb5fbe78a4c3bffe91a579b9d8c24e35
  
 +        });
      }
-+    // Plazma end
++    // Plazma end - Save Json list asynchronously
  
      public void load() throws IOException {
          if (this.file.exists()) {

@@ -7,26 +7,27 @@ Subject: [PATCH] Apply various optimizations
 Akarin - Swaps the predicate order of collision
 
 diff --git a/src/main/java/net/minecraft/world/entity/Entity.java b/src/main/java/net/minecraft/world/entity/Entity.java
-index 93e558e1cfcdee33abf6f1c57e4cf47c7f53f750..0864624e060a32934208f80313cf08744509803d 100644
+index f10933fc78cbb0ead042c1870d93d0447f640896..8156e42e7e22cd64b981ee645c2b02e455f71ec4 100644
 --- a/src/main/java/net/minecraft/world/entity/Entity.java
 +++ b/src/main/java/net/minecraft/world/entity/Entity.java
-@@ -2145,8 +2145,9 @@ public abstract class Entity implements Nameable, EntityAccess, CommandSource, S
+@@ -2144,8 +2144,9 @@ public abstract class Entity implements Nameable, EntityAccess, CommandSource, S
      public void playerTouch(Player player) {}
  
      public void push(Entity entity) {
-+        if (entity.noPhysics || this.noPhysics) return; // Plazma
++        if (entity.noPhysics || this.noPhysics) return; // Plazma - Swaps the predicate order of collision
          if (!this.isPassengerOfSameVehicle(entity)) {
 -            if (!entity.noPhysics && !this.noPhysics) {
-+            //if (!entity.noPhysics && !this.noPhysics) { // Plazma - moved up
-                 if (this.level.paperConfig().collisions.onlyPlayersCollide && !(entity instanceof ServerPlayer || this instanceof ServerPlayer)) return; // Paper
++            //if (!entity.noPhysics && !this.noPhysics) { // Plazma - Swaps the predicate order of collision
+                 if (this.level.paperConfig().collisions.onlyPlayersCollide && !(entity instanceof ServerPlayer || this instanceof ServerPlayer)) return; // Paper - Collision option for requiring a player participant
                  double d0 = entity.getX() - this.getX();
                  double d1 = entity.getZ() - this.getZ();
-@@ -2175,7 +2176,7 @@ public abstract class Entity implements Nameable, EntityAccess, CommandSource, S
+@@ -2173,8 +2174,7 @@ public abstract class Entity implements Nameable, EntityAccess, CommandSource, S
+                         entity.push(d0, 0.0D, d1);
                      }
                  }
- 
+-
 -            }
-+            //} // Plazma
++            //} // Plazma - Swaps the predicate order of collision
          }
      }
  

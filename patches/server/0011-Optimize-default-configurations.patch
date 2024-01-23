@@ -9,7 +9,7 @@ Subject: [PATCH] Optimize default configurations
 - YouHaveTrouble/minecraft-exploits-and-how-to-fix-them
 
 diff --git a/src/main/java/gg/pufferfish/pufferfish/PufferfishConfig.java b/src/main/java/gg/pufferfish/pufferfish/PufferfishConfig.java
-index 43397712cb13df5be3081c05eaa1a57c57f12c60..580ab3eb7664d5c51611a4b9635aa3c4872c8861 100644
+index ebbd115686de7a87dd422e8d2d92abcf953358a7..65de112fedeed8623186a778d791a6cdc4d284f6 100644
 --- a/src/main/java/gg/pufferfish/pufferfish/PufferfishConfig.java
 +++ b/src/main/java/gg/pufferfish/pufferfish/PufferfishConfig.java
 @@ -64,7 +64,7 @@ public class PufferfishConfig {
@@ -17,11 +17,11 @@ index 43397712cb13df5be3081c05eaa1a57c57f12c60..580ab3eb7664d5c51611a4b9635aa3c4
  		setComment("info",
  				"Pufferfish Configuration",
 -				"Check out Pufferfish Host for maximum performance server hosting: https://pufferfish.host",
-+				//"Check out Pufferfish Host for maximum performance server hosting: https://pufferfish.host", // Plazma - Nope
++				//"Check out Pufferfish Host for maximum performance server hosting: https://pufferfish.host", // Plazma - Sponsorblock
  				"Join our Discord for support: https://discord.gg/reZw4vQV9H",
  				"Download new builds at https://ci.pufferfish.host/job/Pufferfish");
  		
-@@ -233,7 +233,7 @@ public class PufferfishConfig {
+@@ -219,7 +219,7 @@ public class PufferfishConfig {
      public static int maxProjectileLoadsPerTick;
      public static int maxProjectileLoadsPerProjectile;
      private static void projectileLoading() {
@@ -30,7 +30,7 @@ index 43397712cb13df5be3081c05eaa1a57c57f12c60..580ab3eb7664d5c51611a4b9635aa3c4
          maxProjectileLoadsPerProjectile = getInt("projectile.max-loads-per-projectile", 10, "Controls how many chunks a projectile", "can load in its lifetime before it gets", "automatically removed.");
  
          setComment("projectile", "Optimizes projectile settings");
-@@ -247,7 +247,7 @@ public class PufferfishConfig {
+@@ -233,7 +233,7 @@ public class PufferfishConfig {
      public static int activationDistanceMod;
  
      private static void dynamicActivationOfBrains() throws IOException {
@@ -39,7 +39,7 @@ index 43397712cb13df5be3081c05eaa1a57c57f12c60..580ab3eb7664d5c51611a4b9635aa3c4
          startDistance = getInt("dab.start-distance", "activation-range.start-distance", 12,
                  "This value determines how far away an entity has to be",
                  "from the player to start being effected by DEAR.");
-@@ -255,7 +255,7 @@ public class PufferfishConfig {
+@@ -241,7 +241,7 @@ public class PufferfishConfig {
          maximumActivationPrio = getInt("dab.max-tick-freq", "activation-range.max-tick-freq", 20,
                  "This value defines how often in ticks, the furthest entity",
                  "will get their pathfinders and behaviors ticked. 20 = 1s");
@@ -48,7 +48,7 @@ index 43397712cb13df5be3081c05eaa1a57c57f12c60..580ab3eb7664d5c51611a4b9635aa3c4
                  "This value defines how much distance modifies an entity's",
                  "tick frequency. freq = (distanceToPlayer^2) / (2^value)",
                  "If you want further away entities to tick less often, use 7.",
-@@ -275,8 +275,18 @@ public class PufferfishConfig {
+@@ -261,8 +261,18 @@ public class PufferfishConfig {
  	public static Map<String, Integer> projectileTimeouts;
  	private static void projectileTimeouts() {
  		// Set some defaults
@@ -338,7 +338,7 @@ index 24763d3d270c29c95e0b3e85111145234f660a62..80ddc627e02e3c749e6b074afa93d357
      }
  
 diff --git a/src/main/java/net/minecraft/server/Main.java b/src/main/java/net/minecraft/server/Main.java
-index 81390751af65f0055bae807a976aa473cea917ac..29636e4adc2f3ce4cd9dc6f33420f3d9a9bdfc08 100644
+index 0f7ce26f2db698814dfd766dadca5bfa53a63eb6..e12dd19afff4a8249fc7c5aa5e12215f8fc30c14 100644
 --- a/src/main/java/net/minecraft/server/Main.java
 +++ b/src/main/java/net/minecraft/server/Main.java
 @@ -160,7 +160,7 @@ public class Main {
@@ -351,7 +351,7 @@ index 81390751af65f0055bae807a976aa473cea917ac..29636e4adc2f3ce4cd9dc6f33420f3d9
  
                  File commandFile = (File) optionset.valueOf("commands-settings");
 diff --git a/src/main/java/net/minecraft/server/dedicated/DedicatedServerProperties.java b/src/main/java/net/minecraft/server/dedicated/DedicatedServerProperties.java
-index d9d8f24331772c05c461f1b9ce5f8f23353610ca..3d068c49106a52fd5485800dcc5c2e116411e29c 100644
+index e8ed7b12f09da333182d1826814e8c72918ddae8..4961fba3af3ef082e91de5aafe75a65dd3c9dd99 100644
 --- a/src/main/java/net/minecraft/server/dedicated/DedicatedServerProperties.java
 +++ b/src/main/java/net/minecraft/server/dedicated/DedicatedServerProperties.java
 @@ -130,14 +130,14 @@ public class DedicatedServerProperties extends Settings<DedicatedServerPropertie
@@ -377,13 +377,13 @@ index d9d8f24331772c05c461f1b9ce5f8f23353610ca..3d068c49106a52fd5485800dcc5c2e11
          this.maxWorldSize = this.get("max-world-size", (integer) -> {
              return Mth.clamp(integer, 1, 29999984);
          }, 29999984);
--        this.syncChunkWrites = this.get("sync-chunk-writes", true) && Boolean.getBoolean("Paper.enable-sync-chunk-writes"); // Paper - hide behind flag
-+        this.syncChunkWrites = this.get("sync-chunk-writes", Boolean.getBoolean("Paper.enable-sync-chunk-writes")); // Paper - hide behind flag // Plazma - Optimize default configurations
+-        this.syncChunkWrites = this.get("sync-chunk-writes", true) && Boolean.getBoolean("Paper.enable-sync-chunk-writes"); // Paper - Hide sync chunk writes behind flag
++        this.syncChunkWrites = this.get("sync-chunk-writes", false) && Boolean.getBoolean("Paper.enable-sync-chunk-writes"); // Paper - Hide sync chunk writes behind flag // Plazma - Show disabled by default
          this.enableJmxMonitoring = this.get("enable-jmx-monitoring", false);
          this.enableStatus = this.get("enable-status", true);
          this.hideOnlinePlayers = this.get("hide-online-players", false);
 diff --git a/src/main/java/org/bukkit/craftbukkit/CraftServer.java b/src/main/java/org/bukkit/craftbukkit/CraftServer.java
-index 2ddc14cb855997bee88998b73c542b119be4ceda..efdecbdb437f3ba03c11b0050a9bc1fff802531e 100644
+index 0a933294eafc179ec4c8a1145bfdd2be590853b3..c129cf5753a54891dc7379711298f826d16428d9 100644
 --- a/src/main/java/org/bukkit/craftbukkit/CraftServer.java
 +++ b/src/main/java/org/bukkit/craftbukkit/CraftServer.java
 @@ -424,7 +424,7 @@ public final class CraftServer implements Server {
@@ -407,7 +407,7 @@ index a858b7ddef7f6877c0b92f4150e0dd37bea121aa..eab5ea835a524482f8cc043c7be190a8
  
  }
 diff --git a/src/main/java/org/purpurmc/purpur/PurpurConfig.java b/src/main/java/org/purpurmc/purpur/PurpurConfig.java
-index 48893da814280aaeba95c1a9e2de9c39df455f93..3d5c0cf532d347602a08565b459697b0868f1a1c 100644
+index c65f68359edfc01bca2c9fd98812d69346631746..bdc0377822ee29abd941b2ac47adaa9b5a4a3770 100644
 --- a/src/main/java/org/purpurmc/purpur/PurpurConfig.java
 +++ b/src/main/java/org/purpurmc/purpur/PurpurConfig.java
 @@ -49,6 +49,7 @@ public class PurpurConfig {

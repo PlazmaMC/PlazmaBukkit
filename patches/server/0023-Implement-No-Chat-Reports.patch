@@ -3,10 +3,10 @@ From: AlphaKR93 <dev@alpha93.kr>
 Date: Thu, 28 Sep 2023 11:47:50 +0900
 Subject: [PATCH] Implement No Chat Reports
 
-Implemented: 62fbdef42dfbfec551d8324b7084c4ccf248bab7
+Implemented: 644bb6bb4a8012c75900c643d9863fe92c799e1d
 
 diff --git a/src/main/java/net/minecraft/network/FriendlyByteBuf.java b/src/main/java/net/minecraft/network/FriendlyByteBuf.java
-index bdcfd80f937c34956911373905d66424bbff8e1d..47cbafc08e3d87c448c69ff797afaf0eb5d78f9d 100644
+index bdcfd80f937c34956911373905d66424bbff8e1d..6c575aeeef323c8eb0837eb9d9eea8fcff21da17 100644
 --- a/src/main/java/net/minecraft/network/FriendlyByteBuf.java
 +++ b/src/main/java/net/minecraft/network/FriendlyByteBuf.java
 @@ -145,9 +145,13 @@ public class FriendlyByteBuf extends ByteBuf {
@@ -22,12 +22,12 @@ index bdcfd80f937c34956911373905d66424bbff8e1d..47cbafc08e3d87c448c69ff797afaf0e
 +                && org.plazmamc.plazma.configurations.GlobalConfiguration.get().noChatReports.queryData())
 +            element.getAsJsonObject().addProperty("preventsChatReports", true);
 +        this.writeUtf(GSON.toJson(element), maxLength);
-+        // Plazma end
++        // Plazma end - Implement No Chat Reports
      }
  
      public <T> void writeId(IdMap<T> registry, T value) {
 diff --git a/src/main/java/net/minecraft/network/protocol/game/ServerboundChatCommandPacket.java b/src/main/java/net/minecraft/network/protocol/game/ServerboundChatCommandPacket.java
-index b8c1f3b9afddc87d56541c8af63cffecfcdd2653..4f0d6ac849dda74c9180fa03d97d389cc4554b46 100644
+index b8c1f3b9afddc87d56541c8af63cffecfcdd2653..4fe3de84fbbd16ecfe0b27922d5bfeaa9c89f61b 100644
 --- a/src/main/java/net/minecraft/network/protocol/game/ServerboundChatCommandPacket.java
 +++ b/src/main/java/net/minecraft/network/protocol/game/ServerboundChatCommandPacket.java
 @@ -24,4 +24,13 @@ public record ServerboundChatCommandPacket(String command, Instant timeStamp, lo
@@ -42,10 +42,10 @@ index b8c1f3b9afddc87d56541c8af63cffecfcdd2653..4f0d6ac849dda74c9180fa03d97d389c
 +            return ArgumentSignatures.EMPTY;
 +        return this.argumentSignatures;
 +    }
-+    // Plazma end
++    // Plazma end - Implement No Chat Reports
  }
 diff --git a/src/main/java/net/minecraft/network/protocol/game/ServerboundChatPacket.java b/src/main/java/net/minecraft/network/protocol/game/ServerboundChatPacket.java
-index d1d2fc0c57523c1abf1e8bfec913c78927c3dafc..b32e17ef1d7d65f2e3cf4fb5471d8182b3ba892f 100644
+index d1d2fc0c57523c1abf1e8bfec913c78927c3dafc..bd69821b153b692b508505264899bdfda4805f0f 100644
 --- a/src/main/java/net/minecraft/network/protocol/game/ServerboundChatPacket.java
 +++ b/src/main/java/net/minecraft/network/protocol/game/ServerboundChatPacket.java
 @@ -25,4 +25,12 @@ public record ServerboundChatPacket(String message, Instant timeStamp, long salt
@@ -59,10 +59,10 @@ index d1d2fc0c57523c1abf1e8bfec913c78927c3dafc..b32e17ef1d7d65f2e3cf4fb5471d8182
 +        if (org.plazmamc.plazma.configurations.GlobalConfiguration.get().noChatReports.enabled) return null;
 +        return this.signature;
 +    }
-+    // Plazma end
++    // Plazma end - Implement No Chat Reports
  }
 diff --git a/src/main/java/net/minecraft/network/protocol/game/ServerboundChatSessionUpdatePacket.java b/src/main/java/net/minecraft/network/protocol/game/ServerboundChatSessionUpdatePacket.java
-index 9d6db4a378036559efab91c8b7dcf2a6b0c2cce6..4d9f73add791cef03cc7aeaf1598a73c2195809a 100644
+index 9d6db4a378036559efab91c8b7dcf2a6b0c2cce6..587d89d67afe9108b5e810463fb3cb21f1b8accf 100644
 --- a/src/main/java/net/minecraft/network/protocol/game/ServerboundChatSessionUpdatePacket.java
 +++ b/src/main/java/net/minecraft/network/protocol/game/ServerboundChatSessionUpdatePacket.java
 @@ -16,6 +16,15 @@ public record ServerboundChatSessionUpdatePacket(RemoteChatSession.Data chatSess
@@ -77,12 +77,12 @@ index 9d6db4a378036559efab91c8b7dcf2a6b0c2cce6..4d9f73add791cef03cc7aeaf1598a73c
 +            );
 +            return;
 +        }
-+        // Plazma end
++        // Plazma end - Implement No Chat Reports
          listener.handleChatSessionUpdate(this);
      }
  }
 diff --git a/src/main/java/net/minecraft/server/dedicated/DedicatedServer.java b/src/main/java/net/minecraft/server/dedicated/DedicatedServer.java
-index 5c897d11e6ae17d8feaeedc7edf7ede02571a207..05dd190de9d45e245eb9f67ccec6b5c2e34ed6e0 100644
+index 84cf2b2e289af0a43c9cc64a9c7e045ffaf9c62b..3b7a0e6220e93157b171d227676147b0cb481d97 100644
 --- a/src/main/java/net/minecraft/server/dedicated/DedicatedServer.java
 +++ b/src/main/java/net/minecraft/server/dedicated/DedicatedServer.java
 @@ -681,6 +681,7 @@ public class DedicatedServer extends MinecraftServer implements ServerInterface
@@ -94,13 +94,14 @@ index 5c897d11e6ae17d8feaeedc7edf7ede02571a207..05dd190de9d45e245eb9f67ccec6b5c2
  
          // Paper start - Add setting for proxy online mode status
 diff --git a/src/main/java/net/minecraft/server/network/ServerCommonPacketListenerImpl.java b/src/main/java/net/minecraft/server/network/ServerCommonPacketListenerImpl.java
-index da499e0b21eba40d24d95047e3a9220567d4bae7..ef706612c7dd4ab703e442a488264244008b6227 100644
+index fa5107deb090a779ddc2fdd0fd6de05e1fcf85b9..901408f39509fab160180e13dcee6499542b49ca 100644
 --- a/src/main/java/net/minecraft/server/network/ServerCommonPacketListenerImpl.java
 +++ b/src/main/java/net/minecraft/server/network/ServerCommonPacketListenerImpl.java
-@@ -271,10 +271,29 @@ public abstract class ServerCommonPacketListenerImpl implements ServerCommonPack
+@@ -271,10 +271,31 @@ public abstract class ServerCommonPacketListenerImpl implements ServerCommonPack
      }
  
      public void send(Packet<?> packet) {
++        // Plazma start - Implement No Chat Reports
 +        if (org.plazmamc.plazma.configurations.GlobalConfiguration.get().noChatReports.convertToSystemMessage()
 +            && this instanceof ServerGamePacketListenerImpl impl
 +            && packet instanceof net.minecraft.network.protocol.game.ClientboundPlayerChatPacket p) {
@@ -111,6 +112,7 @@ index da499e0b21eba40d24d95047e3a9220567d4bae7..ef706612c7dd4ab703e442a488264244
 +            ));
 +            return;
 +        }
++        // Plazma end - Implement No Chat Reports
          this.send(packet, (PacketSendListener) null);
      }
  
@@ -123,12 +125,12 @@ index da499e0b21eba40d24d95047e3a9220567d4bae7..ef706612c7dd4ab703e442a488264244
 +            impl.send(p);
 +            return;
 +        }
-+        // Plazma end
++        // Plazma end - Implement No Chat Reports
          // CraftBukkit start
          if (packet == null || this.processedDisconnect) { // Spigot
              return;
 diff --git a/src/main/java/net/minecraft/server/players/PlayerList.java b/src/main/java/net/minecraft/server/players/PlayerList.java
-index 80dc93b8c96d78a4080c0636b8cd7c470a1e3922..59afcfb957ea653e64b17385accf5c9449d33b2a 100644
+index 3803a04804fc11553c85507a257939552ce4890f..56ee7057defed5c9281aa557d20608c275fac9d6 100644
 --- a/src/main/java/net/minecraft/server/players/PlayerList.java
 +++ b/src/main/java/net/minecraft/server/players/PlayerList.java
 @@ -1499,6 +1499,7 @@ public abstract class PlayerList {

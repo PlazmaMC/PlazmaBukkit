@@ -88,6 +88,10 @@ abstract class PurpurUpdateTask : Task() {
         updatePaperCommit(property.paperRepository.get(), property.paperBranch.get(), purpur.resolve("gradle.properties").toFile())
         updatePaperCommit(property.paperRepository.get(), property.paperBranch.get(), project.file("gradle.properties"))
 
+        val latestCommit = git("ls-remote", property.purpurRepository.get()).readText()?.lines()
+            ?.filterNot { "[a-z0-9]{40}\trefs/heads/${property.purpurBranch.get()}".toRegex().matches(it) }?.first()?.split("\t")?.first()
+            ?: throw AlwaysUpToDateException("Failed to get latest Purpur commit")
+
         val purpurGradle = Gradle(purpur)
         val purpurPatches = purpur.resolve("patches").also {
             val puffefishPatches = pufferfish.resolve("patches").also { that -> that.toFile().deleteRecursively() }
@@ -138,6 +142,8 @@ abstract class PurpurUpdateTask : Task() {
                 copyPatch(this, target, "0002-Purpur-API-Changes.patch")
             }
         }
+
+        project.file("gradle.properties").writeText(project.file("gradle.properties").readText().replace("purpurCommit = .*".toRegex(), "purpurCommit = $latestCommit"))
     }
 
     private fun copySource(dir: Path) {
