@@ -1,7 +1,5 @@
 import io.papermc.paperweight.util.constants.PAPERCLIP_CONFIG
 
-group = "org.plazmamc.plazma"
-
 plugins {
     java
     `maven-publish`
