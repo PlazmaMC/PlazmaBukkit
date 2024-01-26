@@ -1,8 +1,6 @@
 import org.gradle.api.tasks.testing.logging.TestExceptionFormat
 import org.gradle.api.tasks.testing.logging.TestLogEvent
 
-group = "org.plazmamc.plazma"
-
 plugins {
     java
     `maven-publish`
