@@ -22,6 +22,12 @@ jobs:
     if: "!startsWith(github.event.commits[0].message, '[CI-Skip]')"
     runs-on: ${{ matrix.os }}
     steps:
+      - name: Setup Variables
+        id: setup
+        env:
+          BRANCH: ${{ github.ref_name }}
+        run: echo "branch=${BRANCH##*/}" >> $GITHUB_OUTPUT
+    
       - name: Checkout repository
         uses: actions/checkout@v4
 
@@ -32,7 +38,15 @@ jobs:
         with:
           repository: PlazmaMC/Javadocs
           path: javadoc
-          ref: ${{ github.ref_name }}
+          ref: ${{ steps.setup.outputs.branch }}
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Checkout javadocs
+        uses: actions/checkout@v4
+        if: startsWith(github.ref_name, 'ver/') || startsWith(github.ref_name, 'dev/')
+        with:
+          repository: PlazmaMC/Javadocs
+          path: jdmain
           token: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Validate Gradle Wrapper
@@ -65,15 +79,20 @@ jobs:
         if: startsWith(github.ref_name, 'ver/') || startsWith(github.ref_name, 'dev/')
         continue-on-error: true
         run: |
-          if [ ! -d "$DIRECTORY" ]; then
+          if [ ! -d "javadoc" ]; then
             mkdir javadoc
             cd javadoc
-            git init && git branch -m ${{ github.ref_name }}
+            git init && git branch -m ${{ steps.setup.outputs.branch }}
             git remote add origin https://github.com/PlazmaMC/Javadocs
           fi
           
           (cd Plazma-API/build/docs/javadoc && tar c .) | (cd javadoc && tar xf -)
           cd javadoc
+          git add . && git commit -m "Update Javadocs"
+          git push -f
+
+          cd ../jdmain
+          git submodule update
           git add . && git commit -m "Update Javadocs"
           git push
 
