@@ -57,24 +57,15 @@ abstract class PurpurUpdateTask : Task() {
     """.trimIndent()
 
     override fun init() {
-        outputs.upToDateWhen { check() }
-    }
-
-    private fun check(): Boolean {
-        val regex = "[a-z0-9]{40}\trefs/heads/${property.purpurBranch}".toRegex()
-        val latestCommit = Git(project.pathIO)("ls-remote", property.purpurRepository.get()).readText()?.lines()
-            ?.filterNot { regex.matches(it) }?.first()?.split("\t")?.first()
-            ?: throw AlwaysUpToDateException("Failed to get latest Purpur commit")
-        val currentCommit = project.properties["purpurCommit"] as String
-
-        return currentCommit == latestCommit
+        outputs.upToDateWhen { project.checkCommit(property.purpurRepository.get(), property.purpurBranch.get(), "purpurCommit") }
     }
 
     @TaskAction
     fun update() {
-        if (check()) return
+        if (project.checkCommit(property.purpurRepository.get(), property.purpurBranch.get(), "purpurCommit")) return
         Git.checkForGit()
 
+        project.createCompareComment(property.purpurRepository.get(), property.purpurBranch.get(), project.properties["paperCommit"] as String)
         val dir = project.layout.cache.resolve("AlwaysUpToDate/UpdatePurpur")
         if (dir.exists()) dir.toFile().deleteRecursively()
 
@@ -86,7 +77,15 @@ abstract class PurpurUpdateTask : Task() {
 
         updatePaperCommit(property.paperRepository.get(), property.paperBranch.get(), pufferfish.resolve("gradle.properties").toFile(), "paperRef=")
         updatePaperCommit(property.paperRepository.get(), property.paperBranch.get(), purpur.resolve("gradle.properties").toFile())
-        updatePaperCommit(property.paperRepository.get(), property.paperBranch.get(), project.file("gradle.properties"))
+
+        if (!project.checkCommit(property.paperRepository.get(), property.paperBranch.get(), "paperCommit")) {
+            project.createCompareComment(property.paperRepository.get(), property.paperBranch.get(), project.properties["paperCommit"] as String)
+            updatePaperCommit(
+                property.paperRepository.get(),
+                property.paperBranch.get(),
+                project.file("gradle.properties")
+            )
+        }
 
         val latestCommit = git("ls-remote", property.purpurRepository.get()).readText()?.lines()
             ?.filterNot { "[a-z0-9]{40}\trefs/heads/${property.purpurBranch.get()}".toRegex().matches(it) }?.first()?.split("\t")?.first()
