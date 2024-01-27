@@ -75,7 +75,7 @@ abstract class PurpurUpdateTask : Task() {
         project.createCompareComment(
             property.purpurRepository.get(),
             property.purpurBranch.get(),
-            project.properties["paperCommit"] as String,
+            project.properties["purpurCommit"] as String,
             true
         )
         val dir = project.layout.cache.resolve("AlwaysUpToDate/UpdatePurpur")
