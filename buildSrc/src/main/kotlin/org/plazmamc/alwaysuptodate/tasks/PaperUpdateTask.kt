@@ -5,7 +5,6 @@ import org.gradle.api.tasks.TaskAction
 import org.gradle.kotlin.dsl.get
 import org.plazmamc.alwaysuptodate.AlwaysUpToDateException
 import org.plazmamc.alwaysuptodate.AlwaysUpToDateExtension
-import org.plazmamc.alwaysuptodate.utils.pathIO
 import java.io.File
 
 abstract class PaperUpdateTask : Task() {
@@ -13,13 +12,24 @@ abstract class PaperUpdateTask : Task() {
     private val property = project.extensions["alwaysUpToDate"] as AlwaysUpToDateExtension
 
     override fun init() {
-        outputs.upToDateWhen { project.checkCommit(property.paperRepository.get(), property.paperBranch.get(), "purpurCommit") }
+        outputs.upToDateWhen {
+            project.checkCommit(
+                property.paperRepository.get(),
+                property.paperBranch.get(),
+                "purpurCommit"
+            )
+        }
     }
 
     @TaskAction
     fun update() {
         if (project.checkCommit(property.paperRepository.get(), property.paperBranch.get(), "purpurCommit")) return
-        project.createCompareComment(property.paperRepository.get(), property.paperBranch.get(), project.properties["paperCommit"] as String)
+        project.createCompareComment(
+            property.paperRepository.get(),
+            property.paperBranch.get(),
+            project.properties["paperCommit"] as String,
+            true
+        )
         updatePaperCommit(property.paperRepository.get(), property.paperBranch.get(), project.file("gradle.properties"))
     }
 

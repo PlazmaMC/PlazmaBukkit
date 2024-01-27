@@ -1,6 +1,8 @@
 package org.plazmamc.alwaysuptodate.tasks
 
-import io.papermc.paperweight.util.*
+import io.papermc.paperweight.util.Git
+import io.papermc.paperweight.util.cache
+import io.papermc.paperweight.util.path
 import org.gradle.api.tasks.TaskAction
 import org.gradle.kotlin.dsl.get
 import org.plazmamc.alwaysuptodate.AlwaysUpToDateException
@@ -8,7 +10,6 @@ import org.plazmamc.alwaysuptodate.AlwaysUpToDateExtension
 import org.plazmamc.alwaysuptodate.utils.Gradle
 import org.plazmamc.alwaysuptodate.utils.addCommit
 import org.plazmamc.alwaysuptodate.utils.clone
-import org.plazmamc.alwaysuptodate.utils.pathIO
 import java.nio.file.Path
 import kotlin.io.path.createDirectories
 import kotlin.io.path.exists
@@ -57,7 +58,13 @@ abstract class PurpurUpdateTask : Task() {
     """.trimIndent()
 
     override fun init() {
-        outputs.upToDateWhen { project.checkCommit(property.purpurRepository.get(), property.purpurBranch.get(), "purpurCommit") }
+        outputs.upToDateWhen {
+            project.checkCommit(
+                property.purpurRepository.get(),
+                property.purpurBranch.get(),
+                "purpurCommit"
+            )
+        }
     }
 
     @TaskAction
@@ -65,7 +72,12 @@ abstract class PurpurUpdateTask : Task() {
         if (project.checkCommit(property.purpurRepository.get(), property.purpurBranch.get(), "purpurCommit")) return
         Git.checkForGit()
 
-        project.createCompareComment(property.purpurRepository.get(), property.purpurBranch.get(), project.properties["paperCommit"] as String)
+        project.createCompareComment(
+            property.purpurRepository.get(),
+            property.purpurBranch.get(),
+            project.properties["paperCommit"] as String,
+            true
+        )
         val dir = project.layout.cache.resolve("AlwaysUpToDate/UpdatePurpur")
         if (dir.exists()) dir.toFile().deleteRecursively()
 
@@ -79,7 +91,11 @@ abstract class PurpurUpdateTask : Task() {
         updatePaperCommit(property.paperRepository.get(), property.paperBranch.get(), purpur.resolve("gradle.properties").toFile())
 
         if (!project.checkCommit(property.paperRepository.get(), property.paperBranch.get(), "paperCommit")) {
-            project.createCompareComment(property.paperRepository.get(), property.paperBranch.get(), project.properties["paperCommit"] as String)
+            project.createCompareComment(
+                property.paperRepository.get(),
+                property.paperBranch.get(),
+                project.properties["paperCommit"] as String
+            )
             updatePaperCommit(
                 property.paperRepository.get(),
                 property.paperBranch.get(),
