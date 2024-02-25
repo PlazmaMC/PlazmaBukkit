@@ -1,14 +1,14 @@
 From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
 From: AlphaKR93 <dev@alpha93.kr>
 Date: Sun, 14 Jan 2024 19:51:19 +0900
-Subject: [PATCH] Build system changes
+Subject: [PATCH] Use Gradle Version Catalogs
 
 
 diff --git a/build.gradle.kts b/build.gradle.kts
-index 0c92d10f334f82d196e065c0811d0c1f48887377..9118c9ee41eac40662c352ebd71941ddee31d9a0 100644
+index 32366253c04c493135f2b22d1940f83669104723..be06b9b282c53bc135963447e19185d9ff41d19a 100644
 --- a/build.gradle.kts
 +++ b/build.gradle.kts
-@@ -19,6 +19,8 @@ dependencies {
+@@ -19,21 +19,37 @@ dependencies {
          exclude("io.papermc.paper", "paper-api")
      }
      // Purpur end
@@ -17,8 +17,14 @@ index 0c92d10f334f82d196e065c0811d0c1f48887377..9118c9ee41eac40662c352ebd71941dd
      // Paper start
      implementation("org.jline:jline-terminal-jansi:3.21.0")
      implementation("net.minecrell:terminalconsoleappender:1.3.0")
-@@ -32,8 +34,28 @@ dependencies {
-      */
+     implementation("net.kyori:adventure-text-serializer-ansi:4.14.0") // Keep in sync with adventureVersion from Paper-API build file
+     implementation("net.kyori:ansi:1.0.3") // Manually bump beyond above transitive dep
+-    /*
+-          Required to add the missing Log4j2Plugins.dat file from log4j-core
+-          which has been removed by Mojang. Without it, log4j has to classload
+-          all its classes to check if they are plugins.
+-          Scanning takes about 1-2 seconds so adding this speeds up the server start.
+-     */
      implementation("org.apache.logging.log4j:log4j-core:2.19.0") // Paper - implementation
      log4jPlugins.annotationProcessorConfigurationName("org.apache.logging.log4j:log4j-core:2.19.0") // Paper - Needed to generate meta for our Log4j plugins
 +     */
@@ -41,31 +47,29 @@ index 0c92d10f334f82d196e065c0811d0c1f48887377..9118c9ee41eac40662c352ebd71941dd
      alsoShade(log4jPlugins.output)
 +
 +    testImplementation(common.bundles.test)
-+    testImplementation(server.classgraph)
++    testImplementation(server.bundles.test)
 +    /*
      implementation("io.netty:netty-codec-haproxy:4.1.97.Final") // Paper - Add support for proxy protocol
      // Paper end
      implementation("org.apache.logging.log4j:log4j-iostreams:2.19.0") // Paper - remove exclusion
-@@ -44,31 +66,37 @@ dependencies {
-     runtimeOnly("org.xerial:sqlite-jdbc:3.42.0.1")
-     runtimeOnly("com.mysql:mysql-connector-j:8.2.0")
+@@ -46,10 +62,13 @@ dependencies {
      runtimeOnly("com.lmax:disruptor:3.4.4") // Paper
-+     */
      // Paper start - Use Velocity cipher
--    implementation("com.velocitypowered:velocity-native:3.1.2-SNAPSHOT") {
+     implementation("com.velocitypowered:velocity-native:3.1.2-SNAPSHOT") {
++     */
 +    implementation(server.velocity) {
          isTransitive = false
      }
      // Paper end - Use Velocity cipher
  
-+    /*
++     /*
      runtimeOnly("org.apache.maven:maven-resolver-provider:3.9.6")
      runtimeOnly("org.apache.maven.resolver:maven-resolver-connector-basic:1.9.18")
      runtimeOnly("org.apache.maven.resolver:maven-resolver-transport-http:1.9.18")
- 
+@@ -57,20 +76,25 @@ dependencies {
      // Pufferfish start
      implementation("org.yaml:snakeyaml:1.32")
--    implementation ("com.github.carleslc.Simple-YAML:Simple-Yaml:1.8.4") {
+     implementation ("com.github.carleslc.Simple-YAML:Simple-Yaml:1.8.4") {
 +     */
 +    implementation(server.simpleyaml) {
          exclude(group="org.yaml", module="snakeyaml")
@@ -74,8 +78,8 @@ index 0c92d10f334f82d196e065c0811d0c1f48887377..9118c9ee41eac40662c352ebd71941dd
  
 -    implementation("org.mozilla:rhino-runtime:1.7.14") // Purpur
 -    implementation("org.mozilla:rhino-engine:1.7.14") // Purpur
-+    // implementation("org.mozilla:rhino-runtime:1.7.14") // Purpur
-+    // implementation("org.mozilla:rhino-engine:1.7.14") // Purpur
++    //implementation("org.mozilla:rhino-runtime:1.7.14") // Purpur
++    //implementation("org.mozilla:rhino-engine:1.7.14") // Purpur
      implementation("dev.omega24:upnp4j:1.0") // Purpur
  
 +    /*
@@ -83,8 +87,10 @@ index 0c92d10f334f82d196e065c0811d0c1f48887377..9118c9ee41eac40662c352ebd71941dd
      testImplementation("org.junit.jupiter:junit-jupiter:5.10.0")
      testImplementation("org.hamcrest:hamcrest:2.2")
      testImplementation("org.mockito:mockito-core:5.5.0")
+     testImplementation("org.ow2.asm:asm-tree:9.5")
+     testImplementation("org.junit-pioneer:junit-pioneer:2.2.0") // Paper - CartesianTest
 +     */
-+    // Plazma end - Use Gradle version catalogs
++    // Plazma end - Use Gradle Version Catalogs
  }
  
  val craftbukkitPackageVersion = "1_20_R3" // Paper

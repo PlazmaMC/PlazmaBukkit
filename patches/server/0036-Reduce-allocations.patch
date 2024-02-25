@@ -123,19 +123,19 @@ index ae60bd96b5284d54676d8e7e4dd5d170b526ec1e..359c4b080bd47234e569dce7055da03d
          return true;
      }
 diff --git a/src/main/java/io/papermc/paper/plugin/manager/PaperPluginInstanceManager.java b/src/main/java/io/papermc/paper/plugin/manager/PaperPluginInstanceManager.java
-index 04efba1517e2bde8ecced31ab2eb669b2e84a28c..55504d54a1eab004e76f19b57186f807f522bbba 100644
+index eedbf46e04b5ae420f9bedcbc2bbb10643ba7e22..1ac70b965f5dd9441658156e19a38419cbcc47d6 100644
 --- a/src/main/java/io/papermc/paper/plugin/manager/PaperPluginInstanceManager.java
 +++ b/src/main/java/io/papermc/paper/plugin/manager/PaperPluginInstanceManager.java
-@@ -48,6 +48,8 @@ class PaperPluginInstanceManager {
+@@ -47,6 +47,8 @@ import java.util.logging.Level;
+ class PaperPluginInstanceManager {
  
      private static final FileProviderSource FILE_PROVIDER_SOURCE = new FileProviderSource("File '%s'"::formatted);
-     private static final DirectoryProviderSource DIRECTORY_PROVIDER_SOURCE = new DirectoryProviderSource();
++    private static final JavaPlugin[] EMPTY_JPLUGIN = new JavaPlugin[0]; // Plazma - Reduce allocations
 +    private static final Plugin[] EMPTY_PLUGIN = new Plugin[0]; // Plazma - Reduce allocations
-+    private static final JavaPlugin[] EMPTY_JAVA_PLUGIN = new JavaPlugin[0]; // Plazma - Reduce allocations
  
      private final List<Plugin> plugins = new ArrayList<>();
      private final Map<String, Plugin> lookupNames = new HashMap<>();
-@@ -69,7 +71,7 @@ class PaperPluginInstanceManager {
+@@ -68,7 +70,7 @@ class PaperPluginInstanceManager {
      }
  
      public @NotNull Plugin[] getPlugins() {
@@ -144,12 +144,12 @@ index 04efba1517e2bde8ecced31ab2eb669b2e84a28c..55504d54a1eab004e76f19b57186f807
      }
  
      public boolean isPluginEnabled(@NotNull String name) {
-@@ -138,7 +140,7 @@ class PaperPluginInstanceManager {
+@@ -136,7 +138,7 @@ class PaperPluginInstanceManager {
              this.server.getLogger().log(Level.SEVERE, "Unknown error occurred while loading plugins through PluginManager.", e);
          }
  
 -        return runtimePluginEntrypointHandler.getPluginProviderStorage().getLoaded().toArray(new JavaPlugin[0]);
-+        return runtimePluginEntrypointHandler.getPluginProviderStorage().getLoaded().toArray(EMPTY_JAVA_PLUGIN); // Plazma - Reduce allocations
++        return runtimePluginEntrypointHandler.getPluginProviderStorage().getLoaded().toArray(EMPTY_JPLUGIN); // Plazma - Reduce allocations
      }
  
      // Plugins are disabled in order like this inorder to "rougly" prevent
@@ -167,20 +167,38 @@ index ee0331a6bc40cdde08d926fd8eb1dc642630c2e5..bafa781ea77afa159576afca3449bacb
  
          private static int[] getIndices(final int length) {
 diff --git a/src/main/java/io/papermc/paper/world/ChunkEntitySlices.java b/src/main/java/io/papermc/paper/world/ChunkEntitySlices.java
-index 7e8dc9e8f381abfdcce2746edc93122d623622d1..bf882040399015b38b917c7982f01e74137945f7 100644
+index c78cbec447032de9fe69748591bef6be300160ed..8ca248e844e73685a8d44a966144657315a799aa 100644
 --- a/src/main/java/io/papermc/paper/world/ChunkEntitySlices.java
 +++ b/src/main/java/io/papermc/paper/world/ChunkEntitySlices.java
-@@ -303,7 +303,7 @@ public final class ChunkEntitySlices {
+@@ -304,7 +304,7 @@ public final class ChunkEntitySlices {
  
      protected static final class BasicEntityList<E extends Entity> {
  
 -        protected static final Entity[] EMPTY = new Entity[0];
-+        protected static final Entity[] EMPTY = org.plazmamc.plazma.constants.Empty.ENTITY; // Plazma - Reduce allocations
++        //protected static final Entity[] EMPTY = new Entity[0]; // Plazma - Reduce allocations
          protected static final int DEFAULT_CAPACITY = 4;
  
          protected E[] storage;
+@@ -315,7 +315,7 @@ public final class ChunkEntitySlices {
+         }
+ 
+         public BasicEntityList(final int cap) {
+-            this.storage = (E[])(cap <= 0 ? EMPTY : new Entity[cap]);
++            this.storage = (E[])(cap <= 0 ? org.plazmamc.plazma.constants.Empty.ENTITY : new Entity[cap]);
+         }
+ 
+         public boolean isEmpty() {
+@@ -327,7 +327,7 @@ public final class ChunkEntitySlices {
+         }
+ 
+         private void resize() {
+-            if (this.storage == EMPTY) {
++            if (this.storage == org.plazmamc.plazma.constants.Empty.ENTITY) {
+                 this.storage = (E[])new Entity[DEFAULT_CAPACITY];
+             } else {
+                 this.storage = Arrays.copyOf(this.storage, this.storage.length * 2);
 diff --git a/src/main/java/net/minecraft/CrashReport.java b/src/main/java/net/minecraft/CrashReport.java
-index 315ac3baecf1e29fd49c4c52e2d914d9a726540f..7259d86b568b38112ab420ea2b28f29e4ffcae71 100644
+index c5a3f9c2daf3da135cccecb757353534e1688821..e5585c6befeef62ecf130e8dabbe6b78f9e90a65 100644
 --- a/src/main/java/net/minecraft/CrashReport.java
 +++ b/src/main/java/net/minecraft/CrashReport.java
 @@ -30,7 +30,7 @@ public class CrashReport {
@@ -339,7 +357,7 @@ index a2920b8a9eff77d9c5d1d7f70ad3abdacba8f0fa..70d776d5cfdb0612f65d92333d6f872a
      protected CipherBase(Cipher cipher) {
          this.cipher = cipher;
 diff --git a/src/main/java/net/minecraft/network/Connection.java b/src/main/java/net/minecraft/network/Connection.java
-index c4e611e7ece504a1ccfa2e3a9d963dbe5917389d..1592ecd2fedf2ecfdff7165617119c55394bdb45 100644
+index b41cab778f446434b788946ea9d3e02c152e570e..1c71cea8554a055973bb85c7a8181f08e3246148 100644
 --- a/src/main/java/net/minecraft/network/Connection.java
 +++ b/src/main/java/net/minecraft/network/Connection.java
 @@ -321,7 +321,7 @@ public class Connection extends SimpleChannelInboundHandler<Packet<?>> {
@@ -374,7 +392,7 @@ index d3a80d0a23be762c05931ae8001d98e43cab2b4a..a94feef330b1836a2fc009405c529455
  
      static MutableComponent translatableWithFallback(String key, @Nullable String fallback, Object... args) {
 diff --git a/src/main/java/net/minecraft/network/chat/contents/TranslatableContents.java b/src/main/java/net/minecraft/network/chat/contents/TranslatableContents.java
-index d45e39bc009281c298f3dfae113dc87f2b3b1fbd..d9deb14896c62c35ccc5758df1419e5307702a2d 100644
+index 084ffde43447f6ff5e45e9fe3fc6a86bde65fd5a..2e7b3260085986e26567e50a0c42feb121dba4cd 100644
 --- a/src/main/java/net/minecraft/network/chat/contents/TranslatableContents.java
 +++ b/src/main/java/net/minecraft/network/chat/contents/TranslatableContents.java
 @@ -28,7 +28,7 @@ import net.minecraft.util.ExtraCodecs;
@@ -411,7 +429,7 @@ index ccdc2345465313991f065e1176b58fb7d5e8722f..bb50e69a4d84e4753db77be071cc6fc7
      // Paper end - Multi Block Change API
  
 diff --git a/src/main/java/net/minecraft/server/MinecraftServer.java b/src/main/java/net/minecraft/server/MinecraftServer.java
-index 2ab66feae898d7316e8a5d0a3103d462e93c81b6..6ad66f23c80181bb8e6da0e1d07f3acf22f82847 100644
+index fcc197256be00621bb3875c20849fe083a453c5c..2ce7351231aa921604698d45220d7e3e34289b62 100644
 --- a/src/main/java/net/minecraft/server/MinecraftServer.java
 +++ b/src/main/java/net/minecraft/server/MinecraftServer.java
 @@ -1505,13 +1505,10 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
@@ -478,7 +496,7 @@ index f65d6dc2b1596232707be402cf0377b5ab90cc01..6735382b229bf6ab66f1ccdf6122215e
                  return map;
              });
 diff --git a/src/main/java/net/minecraft/server/level/ChunkMap.java b/src/main/java/net/minecraft/server/level/ChunkMap.java
-index 69bccd2d35af4dae43ce77da1f0b0a436da1ad3e..d0a1ecca75acfaf416f08fb1dd13f1c49bc5b225 100644
+index d1056b1c91edc3ec06c78e65c8fa2dd1f000c43f..618f2166417b88c92d99a7cf6f10e769eedc95a3 100644
 --- a/src/main/java/net/minecraft/server/level/ChunkMap.java
 +++ b/src/main/java/net/minecraft/server/level/ChunkMap.java
 @@ -109,6 +109,7 @@ import org.bukkit.craftbukkit.generator.CustomChunkGenerator;
@@ -499,7 +517,7 @@ index 69bccd2d35af4dae43ce77da1f0b0a436da1ad3e..d0a1ecca75acfaf416f08fb1dd13f1c4
                      this.updatePlayer(conn.getPlayer());
                  }
 diff --git a/src/main/java/net/minecraft/server/level/ServerLevel.java b/src/main/java/net/minecraft/server/level/ServerLevel.java
-index 4247a66f621bbe8e02493aea714094c424eb6fcb..b9cfc2f69be627aa19842127eb9ad0d729f647f4 100644
+index 611916db3f9a6d2fbfa720e883fb03973b4a65c2..0aee1fb44f19fd838ca206335764b04f4a3f8a26 100644
 --- a/src/main/java/net/minecraft/server/level/ServerLevel.java
 +++ b/src/main/java/net/minecraft/server/level/ServerLevel.java
 @@ -1449,7 +1449,7 @@ public class ServerLevel extends Level implements WorldGenLevel {
@@ -511,21 +529,8 @@ index 4247a66f621bbe8e02493aea714094c424eb6fcb..b9cfc2f69be627aa19842127eb9ad0d7
  
          return ret;
      }
-diff --git a/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java b/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
-index 64666af7f8c4e2ad9a47e20131b4654fabae9cc5..51cd58031cc9f32085ac2435f01485ec09df5ff7 100644
---- a/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
-+++ b/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
-@@ -3264,7 +3264,7 @@ public class ServerGamePacketListenerImpl extends ServerCommonPacketListenerImpl
-         // Paper start - auto recipe limit
-         if (!org.bukkit.Bukkit.isPrimaryThread()) {
-             if (this.recipeSpamPackets.addAndGet(io.papermc.paper.configuration.GlobalConfiguration.get().spamLimiter.recipeSpamIncrement) > io.papermc.paper.configuration.GlobalConfiguration.get().spamLimiter.recipeSpamLimit) {
--                this.server.scheduleOnMain(() -> this.disconnect(net.minecraft.network.chat.Component.translatable("disconnect.spam", new Object[0]), org.bukkit.event.player.PlayerKickEvent.Cause.SPAM)); // Paper - kick event cause
-+                this.server.scheduleOnMain(() -> this.disconnect(net.minecraft.network.chat.Component.translatable("disconnect.spam"/*, new Object[0]*/), org.bukkit.event.player.PlayerKickEvent.Cause.SPAM)); // Paper - kick event cause // Plazma - Reduce allocations
-                 return;
-             }
-         }
 diff --git a/src/main/java/net/minecraft/server/network/ServerLoginPacketListenerImpl.java b/src/main/java/net/minecraft/server/network/ServerLoginPacketListenerImpl.java
-index 8757db8c7f9dc4fbdaf2324f6da639cbf1514b5d..3a995fb30a00b313d9b4de52ad11eac5a8c351eb 100644
+index 01069a21857f9f3b7905861ee38c3891903af3b8..d45a435a3aa8fc5b8f028e0455c3789b36cbdf12 100644
 --- a/src/main/java/net/minecraft/server/network/ServerLoginPacketListenerImpl.java
 +++ b/src/main/java/net/minecraft/server/network/ServerLoginPacketListenerImpl.java
 @@ -138,8 +138,8 @@ public class ServerLoginPacketListenerImpl implements ServerLoginPacketListener,
@@ -558,23 +563,31 @@ index 8757db8c7f9dc4fbdaf2324f6da639cbf1514b5d..3a995fb30a00b313d9b4de52ad11eac5
          ServerConfigurationPacketListenerImpl serverconfigurationpacketlistenerimpl = new ServerConfigurationPacketListenerImpl(this.server, this.connection, commonlistenercookie, this.player); // CraftBukkit
  
 diff --git a/src/main/java/net/minecraft/server/players/PlayerList.java b/src/main/java/net/minecraft/server/players/PlayerList.java
-index c9e1f0d3dce8c0124f100818dab054ca728b341a..71c49f7458a1b54cda9a7e07162de981e7a53bb2 100644
+index f3b081abd82036c928655923c44a62a0e9889031..0250b9a90e62ca5a9a7172f6e1012e89514fd6e6 100644
 --- a/src/main/java/net/minecraft/server/players/PlayerList.java
 +++ b/src/main/java/net/minecraft/server/players/PlayerList.java
-@@ -715,7 +715,7 @@ public abstract class PlayerList {
-         while (iterator.hasNext()) {
-             entityplayer = (ServerPlayer) iterator.next();
-             this.save(entityplayer); // CraftBukkit - Force the player's inventory to be saved
--            entityplayer.connection.disconnect(Component.translatable("multiplayer.disconnect.duplicate_login", new Object[0]), org.bukkit.event.player.PlayerKickEvent.Cause.DUPLICATE_LOGIN); // Paper - kick event cause
-+            entityplayer.connection.disconnect(Component.translatable("multiplayer.disconnect.duplicate_login"/*, new Object[0]*/), org.bukkit.event.player.PlayerKickEvent.Cause.DUPLICATE_LOGIN); // Paper - kick event cause // Plazma - Reduce allocations
-         }
+@@ -133,6 +133,7 @@ public abstract class PlayerList {
+     private static final Logger LOGGER = LogUtils.getLogger();
+     private static final int SEND_PLAYER_INFO_INTERVAL = 600;
+     private static final SimpleDateFormat BAN_DATE_FORMAT = new SimpleDateFormat("yyyy-MM-dd 'at' HH:mm:ss z");
++    private static final org.bukkit.event.player.PlayerRespawnEvent.RespawnFlag[] EMPTY_FLAG = new org.bukkit.event.player.PlayerRespawnEvent.RespawnFlag[0]; // Plazma - Reduce allocations
+     private final MinecraftServer server;
+     public final List<ServerPlayer> players = new java.util.concurrent.CopyOnWriteArrayList(); // CraftBukkit - ArrayList -> CopyOnWriteArrayList: Iterator safety
+     private final Map<UUID, ServerPlayer> playersByUUID = Maps.newHashMap();
+@@ -816,7 +817,7 @@ public abstract class PlayerList {
  
-         // Instead of kicking then returning, we need to store the kick reason
+     public ServerPlayer respawn(ServerPlayer entityplayer, ServerLevel worldserver, boolean flag, Location location, boolean avoidSuffocation, RespawnReason reason) {
+         // Paper start - Expand PlayerRespawnEvent
+-        return respawn(entityplayer, worldserver, flag, location, avoidSuffocation, reason, new org.bukkit.event.player.PlayerRespawnEvent.RespawnFlag[0]);
++        return respawn(entityplayer, worldserver, flag, location, avoidSuffocation, reason, EMPTY_FLAG); // Plazma - Reduce allocations
+     }
+ 
+     public ServerPlayer respawn(ServerPlayer entityplayer, ServerLevel worldserver, boolean flag, Location location, boolean avoidSuffocation, RespawnReason reason, org.bukkit.event.player.PlayerRespawnEvent.RespawnFlag...respawnFlags) {
 diff --git a/src/main/java/net/minecraft/server/players/StoredUserList.java b/src/main/java/net/minecraft/server/players/StoredUserList.java
-index 35f973cc2c0989256fa21abaf0327c2f36dbe4c9..2e7ef69361ec8e5c2e9c03653beb945fbd5877a1 100644
+index 7e133752ccb1ea7c0b4fa781feb1a88e2cfdcf6d..1289e8e9c54a584f5037ea8e852df37376af093d 100644
 --- a/src/main/java/net/minecraft/server/players/StoredUserList.java
 +++ b/src/main/java/net/minecraft/server/players/StoredUserList.java
-@@ -77,7 +77,7 @@ public abstract class StoredUserList<K, V extends StoredUserEntry<K>> {
+@@ -76,7 +76,7 @@ public abstract class StoredUserList<K, V extends StoredUserEntry<K>> {
      }
  
      public String[] getUserList() {
@@ -635,10 +648,10 @@ index 442eb602f5c82550a87e218e2013171b718abd62..b68f7d1fba18cf08a1844a179f07cb6d
          this.targetSelector.addGoal(3, new NearestAttackableTargetGoal<>(this, Mob.class, 5, false, false, (entityliving) -> {
              return entityliving instanceof Enemy && !(entityliving instanceof Creeper);
 diff --git a/src/main/java/net/minecraft/world/entity/animal/Panda.java b/src/main/java/net/minecraft/world/entity/animal/Panda.java
-index 588048ad83486adc7e798fba6dbbfe9f4926d7b0..8568ff3d5790ac47d7332b9f132af8839e7a2829 100644
+index adfa18c941b5070692ed855d1d609993ca49a01d..b44e752b4fa18d25ca7ac989b1eaacc138512848 100644
 --- a/src/main/java/net/minecraft/world/entity/animal/Panda.java
 +++ b/src/main/java/net/minecraft/world/entity/animal/Panda.java
-@@ -339,7 +339,7 @@ public class Panda extends Animal {
+@@ -340,7 +340,7 @@ public class Panda extends Animal {
          this.goalSelector.addGoal(13, new FollowParentGoal(this, 1.25D));
          this.goalSelector.addGoal(14, new WaterAvoidingRandomStrollGoal(this, 1.0D));
          this.targetSelector.addGoal(0, new org.purpurmc.purpur.entity.ai.HasRider(this)); // Purpur
@@ -687,10 +700,10 @@ index 8adcffc1e6434e06ca52d119a7326a1272897307..a6a697868b22224a26d6c39e594533c3
      private final DynamicGameEventListener<VibrationSystem.Listener> dynamicVibrationListener;
      private VibrationSystem.Data vibrationData;
 diff --git a/src/main/java/net/minecraft/world/entity/boss/wither/WitherBoss.java b/src/main/java/net/minecraft/world/entity/boss/wither/WitherBoss.java
-index a8314521dd5d17fcf3ff1de4f6fc85804112d87c..7277022e1205185ad6b43e87820c733d9bb5c67d 100644
+index 1d896c6c49705acd87416dc11a1d8ce205f7844e..6d5c60cf9851fc358f29d25bf5d0de98ff7aeb40 100644
 --- a/src/main/java/net/minecraft/world/entity/boss/wither/WitherBoss.java
 +++ b/src/main/java/net/minecraft/world/entity/boss/wither/WitherBoss.java
-@@ -254,7 +254,7 @@ public class WitherBoss extends Monster implements PowerableMob, RangedAttackMob
+@@ -255,7 +255,7 @@ public class WitherBoss extends Monster implements PowerableMob, RangedAttackMob
          this.goalSelector.addGoal(6, new LookAtPlayerGoal(this, Player.class, 8.0F));
          this.goalSelector.addGoal(7, new RandomLookAroundGoal(this));
          this.targetSelector.addGoal(0, new org.purpurmc.purpur.entity.ai.HasRider(this)); // Purpur
@@ -713,10 +726,10 @@ index a00646bc8a9caefe56e48b7682e8fb0c464b81fa..a2b5d2f1be493148a0ed102f10fd8b76
          this.targetSelector.addGoal(3, new NearestAttackableTargetGoal<>(this, IronGolem.class, true));
          this.targetSelector.addGoal(3, new NearestAttackableTargetGoal<>(this, Turtle.class, 10, true, false, Turtle.BABY_ON_LAND_SELECTOR));
 diff --git a/src/main/java/net/minecraft/world/entity/monster/Creeper.java b/src/main/java/net/minecraft/world/entity/monster/Creeper.java
-index 8bbc11845d190b33296f61c503f54209d218bc85..ca3b1acf17c0a414db414a59c13a33ab86938a7b 100644
+index 54315fb84e3289f0ad8305c2c2cec980a5b2c627..5adcb3cb643025de833935ad0b962cf557d354aa 100644
 --- a/src/main/java/net/minecraft/world/entity/monster/Creeper.java
 +++ b/src/main/java/net/minecraft/world/entity/monster/Creeper.java
-@@ -153,7 +153,7 @@ public class Creeper extends Monster implements PowerableMob {
+@@ -154,7 +154,7 @@ public class Creeper extends Monster implements PowerableMob {
          this.goalSelector.addGoal(6, new RandomLookAroundGoal(this));
          this.targetSelector.addGoal(0, new org.purpurmc.purpur.entity.ai.HasRider(this)); // Purpur
          this.targetSelector.addGoal(1, new NearestAttackableTargetGoal<>(this, Player.class, true));
@@ -739,10 +752,10 @@ index 13bc6389652f8868d7539676ee6d85f37ba78f67..6e4dca9074132fc0fb8c90878bf50287
          this.targetSelector.addGoal(4, new ResetUniversalAngerTargetGoal<>(this, false));
      }
 diff --git a/src/main/java/net/minecraft/world/entity/monster/Silverfish.java b/src/main/java/net/minecraft/world/entity/monster/Silverfish.java
-index dbc27afbccb027963ae3f035c268835adedbb933..320916acbf22cd5d9a7aff7d3550de756bafeccd 100644
+index 931412a5ab315d4080a9f5209d3e85d78642f4c2..0678c916eb6c7fe4a96d6716980892f80e77b3d8 100644
 --- a/src/main/java/net/minecraft/world/entity/monster/Silverfish.java
 +++ b/src/main/java/net/minecraft/world/entity/monster/Silverfish.java
-@@ -89,7 +89,7 @@ public class Silverfish extends Monster {
+@@ -90,7 +90,7 @@ public class Silverfish extends Monster {
          this.goalSelector.addGoal(4, new MeleeAttackGoal(this, 1.0D, false));
          this.goalSelector.addGoal(5, new Silverfish.SilverfishMergeWithStoneGoal(this));
          this.targetSelector.addGoal(0, new org.purpurmc.purpur.entity.ai.HasRider(this)); // Purpur
@@ -812,7 +825,7 @@ index a097cfc528f709c80575f35483b6878314ea2717..61840d78c4e99e706de56613d13d5741
              inventory: for (int index = 0; index < inventory.getContainerSize(); index++) {
                  ItemStack itemStack = inventory.getItem(index);
 diff --git a/src/main/java/net/minecraft/world/level/block/ComposterBlock.java b/src/main/java/net/minecraft/world/level/block/ComposterBlock.java
-index 70fbe678b27656f07b1048ab9ddfd755a64e0328..0ec803e0b476199617d7c6c961e0f2f4a204a51c 100644
+index 47b7baa41f341087bcd5dfec1d2a13b96f8357ca..72e410ad6bed528b7a1febd30079ab39e10fd5ed 100644
 --- a/src/main/java/net/minecraft/world/level/block/ComposterBlock.java
 +++ b/src/main/java/net/minecraft/world/level/block/ComposterBlock.java
 @@ -62,6 +62,7 @@ public class ComposterBlock extends Block implements WorldlyContainerHolder {
@@ -1001,10 +1014,10 @@ index 16d2aa4556bc9f32a2def7f9ca282aa3fa23fb87..8514da343ce287298477f2c977e49491
  
          @Nullable
 diff --git a/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java b/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java
-index 137595efe9e828810cf1f006027ac96606ad8821..3f13abec289e53990b0dd6a04cab4cf07adf1dd9 100644
+index 988cc1290200de629a4c24cc67a03e69c2fcc727..eb709829d84a4536208b39572e265ffb230ddd8a 100644
 --- a/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java
 +++ b/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java
-@@ -420,7 +420,7 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
+@@ -426,7 +426,7 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
      public void sendTitle(Title title) {
          Preconditions.checkNotNull(title, "Title is null");
          setTitleTimes(title.getFadeIn(), title.getStay(), title.getFadeOut());
@@ -1014,10 +1027,10 @@ index 137595efe9e828810cf1f006027ac96606ad8821..3f13abec289e53990b0dd6a04cab4cf0
      }
  
 diff --git a/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaBook.java b/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaBook.java
-index 6d85237b21650edf1d2dc71abaf0edbe7a8aef6b..be71bfb63970d21e9b79f6b1b26138d5cd4ca0b1 100644
+index c5d1ba7a1be3f102edcdfdc05fc50b30ef1f775b..66006d9ff581ac96f13389261de0cd647279b98a 100644
 --- a/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaBook.java
 +++ b/src/main/java/org/bukkit/craftbukkit/inventory/CraftMetaBook.java
-@@ -609,7 +609,7 @@ public class CraftMetaBook extends CraftMetaItem implements BookMeta {
+@@ -610,7 +610,7 @@ public class CraftMetaBook extends CraftMetaItem implements BookMeta {
                  throw new IllegalArgumentException("Invalid page number " + page + "/" + CraftMetaBook.this.getPageCount());
              }
  
@@ -1026,7 +1039,7 @@ index 6d85237b21650edf1d2dc71abaf0edbe7a8aef6b..be71bfb63970d21e9b79f6b1b26138d5
              CraftMetaBook.this.pages.set(page - 1, this.componentsToPage(newText));
          }
  
-@@ -622,7 +622,7 @@ public class CraftMetaBook extends CraftMetaItem implements BookMeta {
+@@ -623,7 +623,7 @@ public class CraftMetaBook extends CraftMetaItem implements BookMeta {
          public void addPage(final BaseComponent[]... pages) {
              for (BaseComponent[] page : pages) {
                  if (page == null) {

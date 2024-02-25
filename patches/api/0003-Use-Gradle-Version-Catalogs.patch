@@ -5,7 +5,7 @@ Subject: [PATCH] Use Gradle Version Catalogs
 
 
 diff --git a/build.gradle.kts b/build.gradle.kts
-index 0a33275fdf16bda47771bab9ddfeb2bf8616c2dc..033d510a10a630259e142b8a7bdfa57e7c22bb90 100644
+index 0588b113b02a05e946dd92fce489662bc01a41eb..83f574f2314f11425eb9c4b11e8873c048f404ca 100644
 --- a/build.gradle.kts
 +++ b/build.gradle.kts
 @@ -9,11 +9,13 @@ java {
@@ -14,7 +14,7 @@ index 0a33275fdf16bda47771bab9ddfeb2bf8616c2dc..033d510a10a630259e142b8a7bdfa57e
  
 +/* // Plazma - Use Gradle Version Catalogs
  val annotationsVersion = "24.0.1"
- val bungeeCordChatVersion = "1.20-R0.1"
+ val bungeeCordChatVersion = "1.20-R0.2"
  val adventureVersion = "4.15.0"
  val slf4jVersion = "2.0.9"
  val log4jVersion = "2.17.1"
@@ -22,22 +22,32 @@ index 0a33275fdf16bda47771bab9ddfeb2bf8616c2dc..033d510a10a630259e142b8a7bdfa57e
  val apiAndDocs: Configuration by configurations.creating {
      attributes {
          attribute(Category.CATEGORY_ATTRIBUTE, objects.named(Category.DOCUMENTATION))
-@@ -28,6 +30,7 @@ configurations.api {
+@@ -27,6 +29,7 @@ configurations.api {
+ }
  
  dependencies {
-     // api dependencies are listed transitively to API consumers
 +    /* // Plazma - Use Gradle Version Catalogs
+     // api dependencies are listed transitively to API consumers
      api("com.google.guava:guava:32.1.2-jre")
      api("com.google.code.gson:gson:2.10.1")
-     // Paper start - adventure
-@@ -38,9 +41,35 @@ dependencies {
-     api("org.yaml:snakeyaml:2.2")
+@@ -39,8 +42,34 @@ dependencies {
      api("org.joml:joml:1.10.5")
      // Paper start
--    api("com.googlecode.json-simple:json-simple:1.1.1") {
+     api("com.googlecode.json-simple:json-simple:1.1.1") {
 +    // Plazma start - Use Gradle Version Catalogs
 +     */
 +    implementation(common.bundles.asm)
++
++    api(api.bundles.api)
++    api(common.snakeyaml)
++    api(common.log4j.api)
++    api(common.maven.provider)
++    api(api.jsonsimple) {
+         isTransitive = false // includes junit
+     }
++
++    apiAndDocs(common.bundles.adventure)
++    apiAndDocs(platform(common.adventure.bom))
 +
 +    compileOnly(api.findbugs)
 +    compileOnly(api.annotations)
@@ -50,20 +60,8 @@ index 0a33275fdf16bda47771bab9ddfeb2bf8616c2dc..033d510a10a630259e142b8a7bdfa57e
 +    testImplementation(common.commons.lang3)
 +
 +    testCompileOnly(api.bundles.annotations)
-+
-+    api(api.bundles.api)
-+    api(common.snakeyaml)
-+    api(common.log4j.api)
-+    api(common.maven.provider)
-+
-+    apiAndDocs(common.bundles.adventure)
-+    apiAndDocs(platform(common.adventure.bom))
-+
-+    api(api.jsonsimple) {
++    /*
 +    // Plazma end - Use Gradle Version Catalogs
-         isTransitive = false // includes junit
-     }
-+    /* // Plazma - Use Gradle Version Catalogs
      api("it.unimi.dsi:fastutil:8.5.6")
      apiAndDocs(platform("net.kyori:adventure-bom:$adventureVersion"))
      apiAndDocs("net.kyori:adventure-api")
