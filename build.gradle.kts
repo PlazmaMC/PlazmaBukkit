@@ -55,8 +55,6 @@ allprojects {
 }
 
 subprojects {
-    apply(plugin = "java")
-    
     tasks {
         withType<JavaCompile>().configureEach {
             options.compilerArgs.addAll(listOf("--add-modules=jdk.incubator.vector", "-Xmaxwarns", "1"))
@@ -83,10 +81,9 @@ subprojects {
 
     repositories {
         mavenCentral()
-        maven("https://papermc.io/repo/repository/maven-public/")
         maven("https://jitpack.io")
+        maven("https://papermc.io/repo/repository/maven-public/")
     }
-
 }
 
 paperweight {
@@ -123,6 +120,14 @@ alwaysUpToDate {
 }
 
 tasks {
+    applyPatches {
+        dependsOn("applyGeneratedApiPatches")
+    }
+
+    rebuildPatches {
+        dependsOn("rebuildGeneratedApiPatches")
+    }
+
     generateDevelopmentBundle {
         apiCoordinates.set("org.plazmamc.plazma:plazma-api")
         mojangApiCoordinates.set("io.papermc.paper:paper-mojangapi")
