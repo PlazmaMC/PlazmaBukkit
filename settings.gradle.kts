@@ -23,7 +23,7 @@ dependencyResolutionManagement {
 }
 
 rootProject.name = "plazma"
-for (name in listOf("Plazma-API", "Plazma-Server")) {
+for (name in listOf("Plazma-API", "Plazma-Server", "Plazma-MojangAPI")) {
     val projName = name.lowercase(Locale.ENGLISH)
     include(projName)
     findProject(":$projName")!!.projectDir = file(name)
