@@ -80,7 +80,7 @@ Mojmap 또는 Bundler에 대해 잘 알지 못한다면, **Reobf Paperclip**을 
 ## ⚙️ 주요 기능
 - **[Paper](https://github.com/PaperMC/Paper) 기반** - 대부분의 Bukkit, CraftBukkit, Spigot 그리고 Paper 플러그인이 정상적으로 동작합니다.
 - **[Pufferfish](https://github.com/pufferfish-gg/Pufferfish) & [Purpur](https://github.com/PurpurMC/Purpur) 포함** - 여러 최적화와 사용자화를 제공합니다.
-- **[No Chat Reports](https://github.com/Aizistral-Studios/No-Chat-Reports) 탑재** - 채팅 신고를 비활성화 하여 서버를 트래킹으로부터 보호할 수 있습니다. (활성화 가능)
+- **[No Chat Reports](https://github.com/Aizistral-Studios/No-Chat-Reports) 탑재** - 채팅 신고를 비활성화 하여 서버를 트래킹으로부터 보호할 수 있습니다. (활성화 가능, 기본적으로 비활성화됨)
 - **[업스트림 자동 업데이트](https://github.com/PlazmaMC/AlwaysUpToDate)** - 자체 스크립트를 통해 업스트림을 자동으로 업데이트 하여 항상 최신으로 유지됩니다.
 - **여러 최적화 모드 적용** - 여러 모드를 적용하여 안정적이고 높은 성능을 제공합니다.
 - **[기본 구성 파일 최적화](https://github.com/YouHaveTrouble/minecraft-optimization)** - 기본 구성 파일이 최적화 되어 있어 따로 구성 파일을 최적화 하지 않아도 됩니다.
@@ -106,7 +106,7 @@ Mojmap 또는 Bundler에 대해 잘 알지 못한다면, **Reobf Paperclip**을 
 ## ⚙️ Features
 - **Based on [Paper](https://github.com/PaperMC/Paper)** - Most plugins of Bukkit, Craftbukkit, Spigot, and Paper are available
 - **Including [Pufferfish](https://github.com/pufferfish-gg/Pufferfish) and [Purpur](https://github.com/PurpurMC/Purpur)** - Provides multiple optimizations and customizations
-- **Support [No Chat Reports](https://github.com/Aizistral-Studios/No-Chat-Reports)** - Disable chat reporting to secure server chat (Configurable)
+- **Support [No Chat Reports](https://github.com/Aizistral-Studios/No-Chat-Reports)** - Disable chat reporting to secure server chat (Configurable, Disabled by default)
 - **[Automatic Upstream Updates](https://github.com/PlazmaMC/AlwaysUpToDate)** - Automatically updates the upstream through our own scripts, so it's always up to date.
 - **Implemented many useful mods** - Stable and fast by implementing many mods
 - **[Optimized Default Configuration](https://github.com/YouHaveTrouble/minecraft-optimization)** - The default configuration file is optimized, so you do not need to modify it separately.
