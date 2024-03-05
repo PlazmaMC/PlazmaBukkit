@@ -1,0 +1,76 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Sayakie <sayakie@kakao.com>
+Date: Mon, 4 Mar 2024 22:12:53 +0900
+Subject: [PATCH] Async player io loading
+
+
+diff --git a/src/main/java/net/minecraft/server/network/ServerLoginPacketListenerImpl.java b/src/main/java/net/minecraft/server/network/ServerLoginPacketListenerImpl.java
+index 85b8007f0da3b7d77d1caff64000e4fc174f73bf..75a28768c4758820007bebe240fbe6355c8394bc 100644
+--- a/src/main/java/net/minecraft/server/network/ServerLoginPacketListenerImpl.java
++++ b/src/main/java/net/minecraft/server/network/ServerLoginPacketListenerImpl.java
+@@ -124,7 +124,7 @@ public class ServerLoginPacketListenerImpl implements ServerLoginPacketListener,
+ 
+     }
+ 
+-    private static final java.util.concurrent.ExecutorService authenticatorPool = java.util.concurrent.Executors.newCachedThreadPool(new com.google.common.util.concurrent.ThreadFactoryBuilder().setNameFormat("User Authenticator #%d").setUncaughtExceptionHandler(new DefaultUncaughtExceptionHandler(LOGGER)).build()); // Paper - Cache authenticator threads
++    public static final java.util.concurrent.ExecutorService authenticatorPool = java.util.concurrent.Executors.newCachedThreadPool(new com.google.common.util.concurrent.ThreadFactoryBuilder().setNameFormat("User Authenticator #%d").setUncaughtExceptionHandler(new DefaultUncaughtExceptionHandler(LOGGER)).build()); // Paper - Cache authenticator threads // Plazma - private -> public
+ 
+     // Spigot start
+     public void initUUID()
+diff --git a/src/main/java/net/minecraft/server/players/PlayerList.java b/src/main/java/net/minecraft/server/players/PlayerList.java
+index 4c793f4f7b79e35c4c42d330bb63d29c0ef32124..1f4664fb0c04a0f9d4258300c2096621c37ae8c3 100644
+--- a/src/main/java/net/minecraft/server/players/PlayerList.java
++++ b/src/main/java/net/minecraft/server/players/PlayerList.java
+@@ -189,6 +189,8 @@ public abstract class PlayerList {
+     abstract public void loadAndSaveFiles(); // Paper - moved from DedicatedPlayerList constructor
+ 
+     public void placeNewPlayer(Connection connection, ServerPlayer player) {
++        // Plazma - moved down
++        /*
+         player.isRealPlayer = true; // Paper
+         player.loginTime = System.currentTimeMillis(); // Paper
+         GameProfile gameprofile = player.getGameProfile();
+@@ -203,8 +205,31 @@ public abstract class PlayerList {
+         } else {
+             s = gameprofile.getName();
+         }
++        */
+ 
++        // Plazma start - async player io loading
++        if (org.plazmamc.plazma.configurations.GlobalConfiguration.get().player.asyncPlayerIoLoading) java.util.concurrent.CompletableFuture.supplyAsync(() -> this.load(player), net.minecraft.server.network.ServerLoginPacketListenerImpl.authenticatorPool).thenAcceptAsync(nbt -> placeNewPlayer(connection, player, nbt), server); else {
+         CompoundTag nbttagcompound = this.load(player);
++        placeNewPlayer(connection, player, nbttagcompound);
++        }
++    }
++
++    private void placeNewPlayer(Connection connection, ServerPlayer player, @Nullable CompoundTag nbttagcompound) {
++        player.isRealPlayer = true; // Paper
++        player.loginTime = System.currentTimeMillis(); // Paper
++        GameProfile gameprofile = player.getGameProfile();
++        GameProfileCache usercache = this.server.getProfileCache();
++        String s;
++
++        if (usercache != null) {
++            Optional<GameProfile> optional = usercache.get(gameprofile.getId());
++
++            s = (String) optional.map(GameProfile::getName).orElse(gameprofile.getName());
++            usercache.add(gameprofile);
++        } else {
++            s = gameprofile.getName();
++        }
++        // Plazma end
+         ResourceKey resourcekey;
+         // CraftBukkit start - Better rename detection
+         if (nbttagcompound != null && nbttagcompound.contains("bukkit")) {
+diff --git a/src/main/java/org/plazmamc/plazma/configurations/GlobalConfiguration.java b/src/main/java/org/plazmamc/plazma/configurations/GlobalConfiguration.java
+index a32df4bae271234f5034bfa7d71fd670087a7961..95def7abab5168878dc6d6ca9faee8dc5ca85db2 100644
+--- a/src/main/java/org/plazmamc/plazma/configurations/GlobalConfiguration.java
++++ b/src/main/java/org/plazmamc/plazma/configurations/GlobalConfiguration.java
+@@ -34,6 +34,7 @@ public class GlobalConfiguration extends ConfigurationPart {
+ 
+         public boolean allowAnyUsername = false;
+         public boolean enableBypassReducedDebugInfoPermission = true; // TODO: Move to Player.Permissions class
++        public boolean asyncPlayerIoLoading = true;
+ 
+     }
+ 
