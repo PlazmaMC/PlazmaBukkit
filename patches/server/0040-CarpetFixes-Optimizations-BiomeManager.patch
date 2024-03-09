@@ -1,6 +1,6 @@
 From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
-From: IPECTER <ipectert@gmail.com>
-Date: Wed, 6 Sep 2023 15:53:37 +0900
+From: ipecter <ipectert@gmail.com>
+Date: Sat, 9 Mar 2024 17:22:54 +0900
 Subject: [PATCH] CarpetFixes-Optimizations-BiomeManager
 
 Original: fxmorin/carpet-fixes
@@ -14,7 +14,7 @@ before doing the seed mixing. This seems to be around 25% - 75% faster depending
 We can predict much faster than the seed mixing.
 
 diff --git a/src/main/java/net/minecraft/world/level/biome/BiomeManager.java b/src/main/java/net/minecraft/world/level/biome/BiomeManager.java
-index 5695c5116c8a338b2e41aafcb2dc9f2146856970..b2291854b9803fe01d40e8a1d76d6ff358cea114 100644
+index 5695c5116c8a338b2e41aafcb2dc9f2146856970..b9db884c7510ba352256eab702ef188cb4acfec8 100644
 --- a/src/main/java/net/minecraft/world/level/biome/BiomeManager.java
 +++ b/src/main/java/net/minecraft/world/level/biome/BiomeManager.java
 @@ -12,6 +12,7 @@ public class BiomeManager {
@@ -111,64 +111,64 @@ index 5695c5116c8a338b2e41aafcb2dc9f2146856970..b2291854b9803fe01d40e8a1d76d6ff3
 +                    smallestX = biomeX;
 +                    smallestDist = biomeDist;
 +                }
-             }
--        }
++            }
 +            return this.noiseBiomeSource.getNoiseBiome(
-+                    (smallestX & 4) == 0 ? x : x + 1,
-+                    (smallestX & 2) == 0 ? y : y + 1,
-+                    (smallestX & 1) == 0 ? z : z + 1
++                (smallestX & 4) == 0 ? x : x + 1,
++                (smallestX & 2) == 0 ? y : y + 1,
++                (smallestX & 1) == 0 ? z : z + 1
 +            );
 +        } else {
-+                int i = pos.getX() - 2;
-+                int j = pos.getY() - 2;
-+                int k = pos.getZ() - 2;
-+                int l = i >> 2;
-+                int m = j >> 2;
-+                int n = k >> 2;
-+                double d = (double) (i & 3) / 4.0D;
-+                double e = (double) (j & 3) / 4.0D;
-+                double f = (double) (k & 3) / 4.0D;
-+                int o = 0;
-+                double g = Double.POSITIVE_INFINITY;
++            int i = pos.getX() - 2;
++            int j = pos.getY() - 2;
++            int k = pos.getZ() - 2;
++            int l = i >> 2;
++            int m = j >> 2;
++            int n = k >> 2;
++            double d = (double) (i & 3) / 4.0D;
++            double e = (double) (j & 3) / 4.0D;
++            double f = (double) (k & 3) / 4.0D;
++            int o = 0;
++            double g = Double.POSITIVE_INFINITY;
 +
-+                for (int p = 0; p < 8; ++p) {
-+                    boolean bl = (p & 4) == 0;
-+                    boolean bl2 = (p & 2) == 0;
-+                    boolean bl3 = (p & 1) == 0;
-+                    int q = bl ? l : l + 1;
-+                    int r = bl2 ? m : m + 1;
-+                    int s = bl3 ? n : n + 1;
-+                    double h = bl ? d : d - 1.0D;
-+                    double t = bl2 ? e : e - 1.0D;
-+                    double u = bl3 ? f : f - 1.0D;
-+                    double v = getFiddledDistance(this.biomeZoomSeed, q, r, s, h, t, u);
-+                    if (g > v) {
-+                        o = p;
-+                        g = v;
-+                    }
++            for (int p = 0; p < 8; ++p) {
++                boolean bl = (p & 4) == 0;
++                boolean bl2 = (p & 2) == 0;
++                boolean bl3 = (p & 1) == 0;
++                int q = bl ? l : l + 1;
++                int r = bl2 ? m : m + 1;
++                int s = bl3 ? n : n + 1;
++                double h = bl ? d : d - 1.0D;
++                double t = bl2 ? e : e - 1.0D;
++                double u = bl3 ? f : f - 1.0D;
++                double v = getFiddledDistance(this.biomeZoomSeed, q, r, s, h, t, u);
++                if (g > v) {
++                    o = p;
++                    g = v;
 +                }
+             }
+-        }
  
 -        int w = (o & 4) == 0 ? l : l + 1;
 -        int x = (o & 2) == 0 ? m : m + 1;
 -        int y = (o & 1) == 0 ? n : n + 1;
 -        return this.noiseBiomeSource.getNoiseBiome(w, x, y);
-+                int w = (o & 4) == 0 ? l : l + 1;
-+                int x = (o & 2) == 0 ? m : m + 1;
-+                int y = (o & 1) == 0 ? n : n + 1;
-+                return this.noiseBiomeSource.getNoiseBiome(w, x, y);
-+            }
++            int w = (o & 4) == 0 ? l : l + 1;
++            int x = (o & 2) == 0 ? m : m + 1;
++            int y = (o & 1) == 0 ? n : n + 1;
++            return this.noiseBiomeSource.getNoiseBiome(w, x, y);
++        }
 +        // Plazma end
      }
  
      public Holder<Biome> getNoiseBiomeAtPosition(double x, double y, double z) {
 diff --git a/src/main/java/org/plazmamc/plazma/configurations/GlobalConfiguration.java b/src/main/java/org/plazmamc/plazma/configurations/GlobalConfiguration.java
-index 49d5292697fdc6f23874557dd2db9d1fcda750f3..d329f77ab19ac781506c26909591fa4ae9dabb1e 100644
+index 05a601ff9dd68c08d257e76594bb9e3f5f9a5e95..e86c79cb427a17f04f2517be3eb70dceb3a42fa9 100644
 --- a/src/main/java/org/plazmamc/plazma/configurations/GlobalConfiguration.java
 +++ b/src/main/java/org/plazmamc/plazma/configurations/GlobalConfiguration.java
-@@ -82,6 +82,11 @@ public class GlobalConfiguration extends ConfigurationPart {
+@@ -98,6 +98,11 @@ public class GlobalConfiguration extends ConfigurationPart {
      public class CarpetFixes extends ConfigurationPart {
  
-         public boolean enabled = DO_OPTIMIZE;
+         public boolean enabled = OPTIMIZE;
 +        boolean optimizedBiomeAccess = true;
 +
 +        public boolean optimizedBiomeAccess() {
@@ -176,4 +176,4 @@ index 49d5292697fdc6f23874557dd2db9d1fcda750f3..d329f77ab19ac781506c26909591fa4a
 +        }
  
      }
- }
+ 
