@@ -27,9 +27,11 @@ Plazma may cause **<u>unexpected problems</u>**, so be sure to test it thoroughl
 If you don't know about Mojmap or Bundler, download **Reobf Paperclip**<br>
 Mojmap 또는 Bundler에 대해 잘 알지 못한다면, **Reobf Paperclip**을 사용하세요
 
+[^l]: Low Priority (우선순위 낮음)
+
 | 🔄 Indev (개발중) | ✅️ Supported (지원중) | ⛔️ Dropped (지원종료) |
 |:---:|:---:|:---:|
-| [1.20.4](https://github.com/PlazmaMC/PlazmaBukkit/tree/dev/1.20.4?tab=readme-ov-file#%EF%B8%8F-downloads) - 1.19.2 | [1.20.2](https://github.com/PlazmaMC/PlazmaBukkit/tree/ver/1.20.2?tab=readme-ov-file#%EF%B8%8F-downloads) - [1.19.4](https://github.com/PlazmaMC/PlazmaBukkit/tree/ver/1.19.4?tab=readme-ov-file#%EF%B8%8F-downloads) | [1.20.1](https://github.com/PlazmaMC/PlazmaBukkit/tree/ver/1.20.1?tab=readme-ov-file#%EF%B8%8F-downloads) |
+| 1.19.2[^l] | [1.20.4](https://github.com/PlazmaMC/PlazmaBukkit/tree/dev/1.20.4?tab=readme-ov-file#%EF%B8%8F-downloads) - [1.20.2](https://github.com/PlazmaMC/PlazmaBukkit/tree/ver/1.20.2?tab=readme-ov-file#%EF%B8%8F-downloads)[^m] | [1.20.1](https://github.com/PlazmaMC/PlazmaBukkit/tree/ver/1.20.1?tab=readme-ov-file#%EF%B8%8F-downloads) - [1.19.4](https://github.com/PlazmaMC/PlazmaBukkit/tree/ver/1.19.4?tab=readme-ov-file#%EF%B8%8F-downloads) |
 
 <details><summary>✅️ Supported Version (지원 버전)</summary>
 
@@ -57,15 +59,17 @@ Mojmap 또는 Bundler에 대해 잘 알지 못한다면, **Reobf Paperclip**을 
 [1902t]: https://github.com/PlazmaMC/Plazma/tree/dev/1.19.2
 [1902s]: https://img.shields.io/badge/UNSUPPORTED-yellow?style=for-the-badge
 [1902w]: https://github.com/PlazmaMC/Plazma/actions?query=branch:dev/1.19.2
+
+[^m]: Only bug fixes. No new features. (오류 수정만. 기능 추가 없음)
   
 | Version (버전) | Support (지원상태) | Stability (안정성) | Progress (완성도) | Build Status (빌드 상태) |
 | :---: | :---: | :---: | :---: | :---: |
 | 1.20.5 | Waiting (대기중) | - | - | - |
 | [1.20.4][2004t] | Active (활성) | Good (좋음) | 100% | [![Build Status][2004s]][2004w] |
-| [1.20.2][2002t] | Active (활성) | Good (좋음) | 100% | [![Build Status][2002s]][2002w] |
-| [1.20.1][2001t] | Active (활성) | Good (좋음) | 100% | [![Build Status][2001s]][2001w] |
-| [1.19.4][1904t] | Active (활성) | Good (좋음) | 100% | [![Build Status][1904s]][1904w] |
-| [1.19.2][1902t] | Working (작업중) | Poor (나쁨) | 0% | [![Build Status][1902s]][1902w] |
+| [1.20.2][2002t] | Maintain[^m] | Good (좋음) | 100% | [![Build Status][2002s]][2002w] |
+| [1.20.1][2001t] | EOL (지원 종료) | Good (좋음) | 100% | [![Build Status][2001s]][2001w] |
+| [1.19.4][1904t] | EOL (지원 종료) | Good (좋음) | 100% | [![Build Status][1904s]][1904w] |
+| [1.19.2][1902t] | Working (작업중)[^l] | Poor (나쁨) | 0% | [![Build Status][1902s]][1902w] |
 </details>
 
 #
