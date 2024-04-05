@@ -40,19 +40,19 @@ Plazma may cause **<u>unexpected problems</u>**, so be sure to test it thoroughl
 
 ## ⚙️ 주요 기능
 1. **강력한 플러그인 생태계**\
-   [Paper](https://github.com/PaperMC/Paper)를 기반으로 하고 있어, 인터넷에서 다운로드 가능한 대부분의 [최신 플러그인](#user-content-fn-1)[^1]이 정상 작동합니다.
+   [Paper](https://github.com/PaperMC/Paper)를 기반으로 하고 있어, 인터넷에서 다운로드 가능한 대부분의 최신 플러그인인이 정상 작동합니다.
 2. **설정이 필요 없는 최적화**\
    [Pufferfish](https://github.com/pufferfish-gg/Pufferfish)의 모든 패치가 포함되어 있으며, 일부 자체 최적화와 모드가 내장되어 있어 최고의 성능을 제공합니다.
 3. **원하는 대로 사용자화하는 게임**\
    Plazma에 포함된 [Purpur](https://github.com/PurpurMC/Purpur)는 게임의 전반적인 속성을 수정할 수 있게 해줍니다.
 4. **안전하게 플레이하는 서버**\
-   [No Chat Reports](https://github.com/Aizistral-Studios/No-Chat-Reports)가 포함되어 있어 1.19부터 추가된 Mojang[^2]의 [채팅 신고 시스템](#user-content-fn-3)[^3]을 비활성화 할 수 있으며, 진단 정보 수집기가 완전 제거되어 추적 없는 안전한 서버를 플레이 할 수 있습니다.
+   [No Chat Reports](https://github.com/Aizistral-Studios/No-Chat-Reports)가 포함되어 있어 1.19부터 추가된 Mojang의 채팅 신고 시스템을 비활성화 할 수 있으며, 진단 정보 수집기가 완전 제거되어 추적 없는 안전한 서버를 플레이 할 수 있습니다.
 5. **가장 빠른 업데이트**\
    [AlwaysUpToDate](https://github.com/PlazmaMC/AlwaysUpToDate)는 Plazma의 포함 패치가 항상 최신으로 유지될 수 있도록 해서, Paper 기반 서버 플랫폼 중에서 가장 빠른 업데이트를 제공하고 있습니다.
 6. **기본 구성 파일 최적화**\
    기본 적용되는 구성 파일이 최적화되어 있어, 직접 구성 파일을 최적화 하지 않아도 됩니다.
 7. **체계적으로 작동하는 멀티스레드**\
-   게임의 메커니즘과 관계 없는 시스템 메커니즘을 비동기화 하여, [지연 시간](#user-content-fn-4)[^4]을 줄여 서버를 최적화 합니다.
+   게임의 메커니즘과 관계 없는 시스템 메커니즘을 비동기화 하여, 지연 시간을 줄여 서버를 최적화 합니다.
 8. **불필요한 공간의 사용 차단**\
    비슷한 값을 가진 데이터를 모두 하나로 합쳐 메모리 사용량을 줄입니다.
 - **[Plazma에 대해 더 알아보고 싶다면?](https://docs.plazmamc.org/v/ko/plazma/about/patches-list)**
@@ -75,19 +75,19 @@ Plazma may cause **<u>unexpected problems</u>**, so be sure to test it thoroughl
 ## ⚙️ Key Features
 
 1. **Powerful Plugin Ecosystem**\
-   Based on [Paper](https://github.com/PaperMC/Paper), most of the latest [plugins](#user-content-fn-1)[^1] available on the internet work seamlessly.
+   Based on [Paper](https://github.com/PaperMC/Paper), most of the latest plugins available on the internet work seamlessly.
 2. **Optimization without the need for settings**\
    Includes all patches from [Pufferfish](https://github.com/pufferfish-gg/Pufferfish), with some internal optimizations and modes for optimal performance.
 3. **Customizable gameplay**\
    [Purpur](https://github.com/PurpurMC/Purpur) included in Plazma allows modification of various game attributes.
 4. **Secure server gameplay**\
-   Includes [No Chat Reports](https://github.com/Aizistral-Studios/No-Chat-Reports) to disable Mojang's [chat reporting system](#user-content-fn-3)[^3] introduced in 1.19, and completely removes diagnostic information collectors for a traceless, secure server gameplay.
+   Includes [No Chat Reports](https://github.com/Aizistral-Studios/No-Chat-Reports) to disable Mojang's chat reporting feature introduced in 1.19, and completely removes diagnostic information collectors for a traceless, secure server gameplay.
 5. **Fastest updates**\
    [AlwaysUpToDate](https://github.com/PlazmaMC/AlwaysUpToDate) ensures that Plazma's included patches are always kept up to date, providing the fastest updates among Paper-based server platforms.
 6. **Optimized default configuration files**\
    The default configuration files are optimized, eliminating the need for manual optimization.
 7. **Systematically functioning multithreading**\
-   Asynchronously synchronizing system mechanisms unrelated to game mechanics to reduce [latency](#user-content-fn-4)[^4] and optimize the server.
+   Asynchronously synchronizing system mechanisms unrelated to game mechanics to reduce latencry and optimize the server.
 8. **Blocking unnecessary space usage**\
    Consolidating data with similar values reduces memory usage.
 - **[Want to learn more about Plazma?](https://docs.plazmamc.org/plazma/about/patches-list)**
