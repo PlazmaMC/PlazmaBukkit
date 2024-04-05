@@ -4,7 +4,7 @@
 
 ### A Server Platform for Minecraft: Java Edition based on [Paper](https://github.com/PaperMC/Paper), which provides the fastest performance
 
-[![Discord](https://api.plazmamc.org/internal/cdn/discord)](https://discord.gg/MmfC52K8A8)
+[![Discord](https://api.plazmamc.org/internal/cdn/discord)](https://tp.plazmamc.org/discord)
 [![License](https://api.plazmamc.org/internal/cdn/license)](LICENSE.md)
 [![Downloads](https://api.plazmamc.org/internal/cdn/downloads)](https://github.com/PlazmaMC/Plazma/releases)
 [![Stargazers](https://api.plazmamc.org/internal/cdn/stars)](https://github.com/PlazmaMC/Plazma/stargazers)
@@ -101,4 +101,4 @@ Plazma may cause **<u>unexpected problems</u>**, so be sure to test it thoroughl
 - Skript와 Plugin등 서버 개발과 관련된 질문에 대한 답변을 받으실 수 있습니다.
 
 ## 📈 bStats
-[![bStats](https://api.plazmamc.org/internal/cdn/bstats)](https://bstats.org/plugin/server-implementation/Plazma/18047)
+[![bStats](https://api.plazmamc.org/internal/cdn/bstats)](https://bstats.org/plugin/server-implementation/Plazma)
