@@ -6,7 +6,7 @@
 
 [![Discord](https://api.plazmamc.org/internal/cdn/discord)](https://plazmamc.org/discord)
 [![License](https://api.plazmamc.org/internal/cdn/license)](LICENSE.md)
-[![Downloads](https://api.plazmamc.org/internal/cdn/downloads)](https://github.com/PlazmaMC/Plazma/releases)
+[![Downloads](https://api.plazmamc.org/internal/cdn/downloads)](https://plazmamc.org/downloads)
 [![Stargazers](https://api.plazmamc.org/internal/cdn/stars)](https://github.com/PlazmaMC/Plazma/stargazers)
 
 [![Upstream Status](https://api.plazmamc.org/internal/cdn/upstreams)](https://github.com/PlazmaMC/AlwaysUpToDate/actions)
@@ -16,7 +16,7 @@
 [^warn]: In most cases, it works fine, but it can sometimes cause errors, so it should be used after sufficient testing.<br>대부분의 경우 정상적으로 작동하지만 때때로 오류를 일으킬 수 있으므로, 충분한 테스트를 거친 후 사용해야 합니다.
 [^missing]: Some patches are still in development. There may be differences in functionality compared to stable versions.<br>일부 패치가 아직 개발중이므로, 안정 버전과 기능 차이가 있을 수 있습니다.
 
-### [📑 Document](https://docs.plazmamc.org/) | [⬇️ Downloads](https://docs.plazmamc.org/plazma/about/downloads)
+### [📑 Document](https://docs.plazmamc.org/) | [⬇️ Downloads](https://plazmamc.org/downloads)
 
 #
 
