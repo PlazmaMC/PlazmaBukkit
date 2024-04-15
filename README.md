@@ -26,11 +26,9 @@
 Not long ago, the paper modified the code base overall (decompiler change), and most patches of Plazma are not currently applied.
 And, both developers are currently very busy, and Plazma updates continue to be delayed.<br/><br/>
 얼마 전 Paper에서 코드 기반을 전반적으로 수정하면서(디컴파일러 변경) 현재 Plazma의 대부분의 패치가 적용되지 않고 있습니다.
-그리고, 두 개발자 모두 현재 굉장히 바쁜 상태로, Plazma 업데이트가 계속해서 지연되고 있습니다.
-
+그리고, 두 개발자 모두 현재 굉장히 바쁜 상태로, Plazma 업데이트가 계속해서 지연되고 있습니다.<br/><br/>
+We will proceed with the 1.20.4 update as soon as possible within May, and after the 1.20.5 release, we will update as soon as possible.   
 최대한 5월 내에는 1.20.4 업데이트를 진행하고, 1.20.5 릴리스 후 최대한 빨리 업데이트 할 수 있도록 하겠습니다.
-
-We will proceed with the 1.20.4 update as soon as possible within May, and after the 1.20.5 release, we will update as soon as possible.
 
 > [!WARNING]
 Plazma may cause **<u>unexpected problems</u>**, so be sure to test it thoroughly before using it on a public server.<br>
