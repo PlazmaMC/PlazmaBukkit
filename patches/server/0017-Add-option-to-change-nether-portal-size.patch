@@ -1,0 +1,63 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: AlphaKR93 <dev@alpha93.kr>
+Date: Sun, 5 Nov 2023 11:27:51 +0900
+Subject: [PATCH] Add option to change nether portal size
+
+
+diff --git a/src/main/java/net/minecraft/world/level/portal/PortalShape.java b/src/main/java/net/minecraft/world/level/portal/PortalShape.java
+index 46910a3bdacc9df1835e16b300f9e107744d2660..9b372b494b831c374bab478267309544b4b31748 100644
+--- a/src/main/java/net/minecraft/world/level/portal/PortalShape.java
++++ b/src/main/java/net/minecraft/world/level/portal/PortalShape.java
+@@ -99,7 +99,7 @@ public class PortalShape {
+     private int calculateWidth() {
+         int i = this.getDistanceUntilEdgeAboveFrame(this.bottomLeft, this.rightDir);
+ 
+-        return i >= 2 && i <= 21 ? i : 0;
++        return i >= this.level.getMinecraftWorld().plazmaConfig().structure.netherPortal.width.min() && i <= this.level.getMinecraftWorld().plazmaConfig().structure.netherPortal.width.max() ? i : 0; // Plazma - Configurable nether portal size
+     }
+ 
+     private int getDistanceUntilEdgeAboveFrame(BlockPos pos, Direction direction) {
+@@ -132,7 +132,7 @@ public class PortalShape {
+         BlockPos.MutableBlockPos blockposition_mutableblockposition = new BlockPos.MutableBlockPos();
+         int i = this.getDistanceUntilTop(blockposition_mutableblockposition);
+ 
+-        return i >= 3 && i <= 21 && this.hasTopFrame(blockposition_mutableblockposition, i) ? i : 0;
++        return i >= this.level.getMinecraftWorld().plazmaConfig().structure.netherPortal.height.min() && i <= this.level.getMinecraftWorld().plazmaConfig().structure.netherPortal.height.max() && this.hasTopFrame(blockposition_mutableblockposition, i) ? i : 0; // Plazma - Configurable nether portal size
+     }
+ 
+     private boolean hasTopFrame(BlockPos.MutableBlockPos pos, int height) {
+@@ -186,7 +186,7 @@ public class PortalShape {
+     }
+ 
+     public boolean isValid() {
+-        return this.bottomLeft != null && this.width >= 2 && this.width <= 21 && this.height >= 3 && this.height <= 21;
++        return this.bottomLeft != null && this.width >= this.level.getMinecraftWorld().plazmaConfig().structure.netherPortal.width.min() && this.width <= this.level.getMinecraftWorld().plazmaConfig().structure.netherPortal.width.max() && this.height >= this.level.getMinecraftWorld().plazmaConfig().structure.netherPortal.height.min() && this.height <= this.level.getMinecraftWorld().plazmaConfig().structure.netherPortal.height.max(); // Plazma - Configurable nether portal size
+     }
+ 
+     // CraftBukkit start - return boolean
+diff --git a/src/main/java/org/plazmamc/plazma/configurations/WorldConfigurations.java b/src/main/java/org/plazmamc/plazma/configurations/WorldConfigurations.java
+index 42d639688b6f0b9ff53debf49a920f5c8e232a19..36728e206de513e071f387d36a608e70a5984a58 100644
+--- a/src/main/java/org/plazmamc/plazma/configurations/WorldConfigurations.java
++++ b/src/main/java/org/plazmamc/plazma/configurations/WorldConfigurations.java
+@@ -42,6 +42,21 @@ public class WorldConfigurations extends ConfigurationPart {
+         public NetherPortal netherPortal;
+         public class NetherPortal extends ConfigurationPart {
+ 
++            public Width width;
++            public class Width extends ConfigurationPart {
++
++                int min = 2; public int min() { return Math.max(this.min, 1); }
++                int max = 21; public int max() { return Math.max(this.min, this.max); }
++
++            }
++
++            public Height height;
++            public class Height extends ConfigurationPart {
++
++                int min = 3; public int min() { return Math.max(this.min, 2); }
++                int max = 21; public int max() { return Math.max(this.min, this.max); }
++
++            }
+ 
+         }
+ 

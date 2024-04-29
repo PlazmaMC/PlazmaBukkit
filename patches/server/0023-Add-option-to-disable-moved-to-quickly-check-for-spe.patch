@@ -1,0 +1,31 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: AlphaKR93 <dev@alpha93.kr>
+Date: Sun, 5 Nov 2023 12:16:14 +0900
+Subject: [PATCH] Add option to disable moved to quickly check for specific
+ players
+
+
+diff --git a/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java b/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
+index f7ac60e1aa188ec25a4c5d326cdd4a109a54101c..613f12a7194920690c42ffca2fdf6908700516e5 100644
+--- a/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
++++ b/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
+@@ -1472,6 +1472,7 @@ public class ServerGamePacketListenerImpl extends ServerCommonPacketListenerImpl
+                                 }
+                                 // Paper end - Prevent moving into unloaded chunks
+ 
++                                if (!this.player.getBukkitEntity().hasPermission("plazma.bypass-moved-to-quickly-check") || !(org.plazmamc.plazma.configurations.GlobalConfiguration.get().player.checkSpectatorMovedToQuickly && this.player.isSpectator())) // Plazma - Options to bypass moved to quickly check
+                                 if (!this.player.isChangingDimension() && (!this.player.level().getGameRules().getBoolean(GameRules.RULE_DISABLE_ELYTRA_MOVEMENT_CHECK) || !this.player.isFallFlying())) {
+                                     float f2 = this.player.isFallFlying() ? 300.0F : 100.0F;
+ 
+diff --git a/src/main/java/org/plazmamc/plazma/configurations/GlobalConfiguration.java b/src/main/java/org/plazmamc/plazma/configurations/GlobalConfiguration.java
+index a060257a62da7ed02b342b426e18e5f02ecdbdc9..f7e4d14a7eaa3e35c9b03f3c6a01ae8712ded569 100644
+--- a/src/main/java/org/plazmamc/plazma/configurations/GlobalConfiguration.java
++++ b/src/main/java/org/plazmamc/plazma/configurations/GlobalConfiguration.java
+@@ -27,6 +27,7 @@ public class GlobalConfiguration extends ConfigurationPart {
+     public Player player;
+     public class Player extends ConfigurationPart {
+ 
++        public boolean checkSpectatorMovedToQuickly = !OPTIMIZE;
+ 
+     }
+ 

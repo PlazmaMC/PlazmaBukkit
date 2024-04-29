@@ -1,0 +1,30 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: AlphaKR93 <dev@alpha93.kr>
+Date: Sun, 5 Nov 2023 12:03:06 +0900
+Subject: [PATCH] Do not refresh LootTable for non player interaction
+
+
+diff --git a/src/main/java/net/minecraft/world/level/block/entity/RandomizableContainerBlockEntity.java b/src/main/java/net/minecraft/world/level/block/entity/RandomizableContainerBlockEntity.java
+index fa64bf5ad13c278438039b663ea3134e72108411..3ec9cb7c98cd5d3cb26e4a27174a75fe243c81c0 100644
+--- a/src/main/java/net/minecraft/world/level/block/entity/RandomizableContainerBlockEntity.java
++++ b/src/main/java/net/minecraft/world/level/block/entity/RandomizableContainerBlockEntity.java
+@@ -68,6 +68,7 @@ public abstract class RandomizableContainerBlockEntity extends BaseContainerBloc
+ 
+     @Override
+     public void unpackLootTable(@org.jetbrains.annotations.Nullable final Player player) {
++        if (player == null && org.plazmamc.plazma.configurations.GlobalConfiguration.get().misc.refreshLootTableForNonPlayerInteraction) return; // Plazma - Do not refresh LootTable for non player interaction
+         // Copied from super with changes, always check the original method
+         net.minecraft.world.level.Level level = this.getLevel();
+         BlockPos blockPos = this.getBlockPos();
+diff --git a/src/main/java/org/plazmamc/plazma/configurations/GlobalConfiguration.java b/src/main/java/org/plazmamc/plazma/configurations/GlobalConfiguration.java
+index d922c572e2410fa1f719fe2371f65cd1542ca8b4..a060257a62da7ed02b342b426e18e5f02ecdbdc9 100644
+--- a/src/main/java/org/plazmamc/plazma/configurations/GlobalConfiguration.java
++++ b/src/main/java/org/plazmamc/plazma/configurations/GlobalConfiguration.java
+@@ -66,6 +66,7 @@ public class GlobalConfiguration extends ConfigurationPart {
+ 
+         public boolean reduceRandom = OPTIMIZE;
+         public boolean ignoreThreadSafeRandom = false;
++        public boolean refreshLootTableForNonPlayerInteraction = !OPTIMIZE;
+ 
+     }
+ 

@@ -1,0 +1,937 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: AlphaKR93 <dev@alpha93.kr>
+Date: Sat, 27 Apr 2024 14:01:42 +0900
+Subject: [PATCH] Completely remove Timings
+
+
+diff --git a/src/main/java/co/aikar/timings/FullServerTickHandler.java b/src/main/java/co/aikar/timings/FullServerTickHandler.java
+index 36b8fe86335df851f9c85d6bb2a91368b4d945d1..acf3df70e17aa8b2b155c83a56226fcc69c2f367 100644
+--- a/src/main/java/co/aikar/timings/FullServerTickHandler.java
++++ b/src/main/java/co/aikar/timings/FullServerTickHandler.java
+@@ -1,12 +1,14 @@
+ package co.aikar.timings;
+ 
++/* // Plazma - Remove timings
+ import static co.aikar.timings.TimingsManager.*;
+ 
+ import org.bukkit.Bukkit;
+ import org.jetbrains.annotations.NotNull;
++ */ // Plazma - Remove timings
+ 
+ @Deprecated(forRemoval = true)
+-public class FullServerTickHandler extends TimingHandler {
++interface FullServerTickHandler { /* extends TimingHandler { // Plazma - Remove timings
+     private static final TimingIdentifier IDENTITY = new TimingIdentifier("Minecraft", "Full Server Tick", null);
+     final TimingData minuteData;
+     double avgFreeMemory = -1D;
+@@ -83,4 +85,5 @@ public class FullServerTickHandler extends TimingHandler {
+     boolean isViolated() {
+         return record.getCurTickTotal() > 50000000;
+     }
++     */ // Plazma - Remove timings
+ }
+diff --git a/src/main/java/co/aikar/timings/NullTimingHandler.java b/src/main/java/co/aikar/timings/NullTimingHandler.java
+index 81671cf40feeed2844ee8d92348d48062aaf2c46..ac3b2d321b43ed73bfe8c30742e3574e3603d1ae 100644
+--- a/src/main/java/co/aikar/timings/NullTimingHandler.java
++++ b/src/main/java/co/aikar/timings/NullTimingHandler.java
+@@ -23,11 +23,13 @@
+  */
+ package co.aikar.timings;
+ 
++/*  // Plazma - Remove timings
+ import org.jetbrains.annotations.NotNull;
+ import org.jetbrains.annotations.Nullable;
++ */ // Plazma - Remove timings
+ 
+ @Deprecated(forRemoval = true)
+-public final class NullTimingHandler implements Timing {
++interface NullTimingHandler { /* implements Timing { // Plazma - Remove timings
+     public static final Timing NULL = new NullTimingHandler();
+     @NotNull
+     @Override
+@@ -66,4 +68,5 @@ public final class NullTimingHandler implements Timing {
+     public void close() {
+ 
+     }
++     */ // Plazma - Remove timings
+ }
+diff --git a/src/main/java/co/aikar/timings/TimedEventExecutor.java b/src/main/java/co/aikar/timings/TimedEventExecutor.java
+index 6fbc64e0f214d0c8e5afcbe385e414a4e1fe1c72..ed9580da2bfa1e3423bd63962008c00f29f6ff98 100644
+--- a/src/main/java/co/aikar/timings/TimedEventExecutor.java
++++ b/src/main/java/co/aikar/timings/TimedEventExecutor.java
+@@ -23,6 +23,7 @@
+  */
+ package co.aikar.timings;
+ 
++/* // Plazma - Remove timings
+ import org.bukkit.Bukkit;
+ import org.bukkit.event.Event;
+ import org.bukkit.event.EventException;
+@@ -33,21 +34,14 @@ import org.bukkit.plugin.Plugin;
+ import java.lang.reflect.Method;
+ import org.jetbrains.annotations.NotNull;
+ import org.jetbrains.annotations.Nullable;
++ */ // Plazma - Remove timings
+ 
+ @Deprecated(forRemoval = true)
+-public class TimedEventExecutor implements EventExecutor {
++interface TimedEventExecutor { /* implements EventExecutor { // Plazma - Remove timings
+ 
+     private final EventExecutor executor;
+     private final Timing timings;
+ 
+-    /**
+-     * Wraps an event executor and associates a timing handler to it.
+-     *
+-     * @param executor Executor to wrap
+-     * @param plugin Owning plugin
+-     * @param method EventHandler method
+-     * @param eventClass Owning class
+-     */
+     public TimedEventExecutor(@NotNull EventExecutor executor, @NotNull Plugin plugin, @Nullable Method method, @NotNull Class<? extends Event> eventClass) {
+         this.executor = executor;
+         String id;
+@@ -87,4 +81,5 @@ public class TimedEventExecutor implements EventExecutor {
+     public String toString() {
+         return "TimedEventExecutor['" + this.executor.toString() + "']";
+     }
++     */ // Plazma - Remove timings
+ }
+diff --git a/src/main/java/co/aikar/timings/Timing.java b/src/main/java/co/aikar/timings/Timing.java
+index 1d866e980abc542bdfee1ce082cd9cdd7761e9f7..409d698de83fb72569813d15d4fb5afbaecda68b 100644
+--- a/src/main/java/co/aikar/timings/Timing.java
++++ b/src/main/java/co/aikar/timings/Timing.java
+@@ -23,8 +23,10 @@
+  */
+ package co.aikar.timings;
+ 
++/* // Plazma - Remove timings
+ import org.jetbrains.annotations.NotNull;
+ import org.jetbrains.annotations.Nullable;
++ */ // Plazma - Remove timings
+ 
+ /**
+  * Provides an ability to time sections of code within the Minecraft Server
+@@ -32,61 +34,30 @@ import org.jetbrains.annotations.Nullable;
+  * @deprecated Timings will likely be replaced with Spark in the future
+  */
+ @Deprecated(forRemoval = true)
+-public interface Timing extends AutoCloseable {
+-    /**
+-     * Starts timing the execution until {@link #stopTiming()} is called.
+-     *
+-     * @return Timing
+-     */
++interface Timing { /* extends AutoCloseable { // Plazma - Remove timings
+     @NotNull
+     @io.papermc.paper.annotation.DoNotUse // Purpur
+     Timing startTiming();
+ 
+-    /**
+-     * <p>Stops timing and records the data. Propagates the data up to group handlers.</p>
+-     *
+-     * Will automatically be called when this Timing is used with try-with-resources
+-     */
+     @io.papermc.paper.annotation.DoNotUse // Purpur
+     void stopTiming();
+ 
+-    /**
+-     * Starts timing the execution until {@link #stopTiming()} is called.
+-     *
+-     * But only if we are on the primary thread.
+-     *
+-     * @return Timing
+-     */
+     @NotNull
+     @io.papermc.paper.annotation.DoNotUse // Purpur
+     Timing startTimingIfSync();
+ 
+-    /**
+-     * <p>Stops timing and records the data. Propagates the data up to group handlers.</p>
+-     *
+-     * <p>Will automatically be called when this Timing is used with try-with-resources</p>
+-     *
+-     * But only if we are on the primary thread.
+-     */
+     @io.papermc.paper.annotation.DoNotUse // Purpur
+     void stopTimingIfSync();
+ 
+-    /**
+-     * @deprecated Doesn't do anything - Removed
+-     */
+     @Deprecated
+     @io.papermc.paper.annotation.DoNotUse // Purpur
+     void abort();
+ 
+-    /**
+-     * Used internally to get the actual backing Handler in the case of delegated Handlers
+-     *
+-     * @return TimingHandler
+-     */
+     @Nullable
+     TimingHandler getTimingHandler();
+ 
+     @Override
+     @io.papermc.paper.annotation.DoNotUse // Purpur
+     void close();
++     */ // Plazma - Remove timings
+ }
+diff --git a/src/main/java/co/aikar/timings/TimingData.java b/src/main/java/co/aikar/timings/TimingData.java
+index a5d13a1e44edb861f45c83a9b4309fbf799d407d..51449d3bbf204f7fee4730af80121bdc1e2c467d 100644
+--- a/src/main/java/co/aikar/timings/TimingData.java
++++ b/src/main/java/co/aikar/timings/TimingData.java
+@@ -23,17 +23,19 @@
+  */
+ package co.aikar.timings;
+ 
++/* // Plazma - Remove timings
+ import java.util.List;
+ import org.jetbrains.annotations.NotNull;
+ 
+ import static co.aikar.util.JSONUtil.toArray;
++ */ // Plazma - Remove timings
+ 
+ /**
+  * <p>Lightweight object for tracking timing data</p>
+  *
+  * This is broken out to reduce memory usage
+  */
+-class TimingData {
++interface TimingData { /* // Plazma - Remove timings
+     private final int id;
+     private int count = 0;
+     private int lagCount = 0;
+@@ -119,4 +121,5 @@ class TimingData {
+     void setCurTickTotal(long curTickTotal) {
+         this.curTickTotal = curTickTotal;
+     }
++     */ // Plazma - Remove timings
+ }
+diff --git a/src/main/java/co/aikar/timings/TimingHandler.java b/src/main/java/co/aikar/timings/TimingHandler.java
+index 199789d56d22fcb1b77ebd56805cc28aa5a5ab0a..2a070b9882462226be4547da9a47907df2f64b9d 100644
+--- a/src/main/java/co/aikar/timings/TimingHandler.java
++++ b/src/main/java/co/aikar/timings/TimingHandler.java
+@@ -23,6 +23,7 @@
+  */
+ package co.aikar.timings;
+ 
++/* // Plazma - Remove timings
+ import co.aikar.util.LoadingIntMap;
+ import it.unimi.dsi.fastutil.ints.Int2ObjectOpenHashMap;
+ 
+@@ -35,8 +36,9 @@ import java.util.logging.Logger;
+ import org.bukkit.Bukkit;
+ import org.jetbrains.annotations.NotNull;
+ import org.jetbrains.annotations.Nullable;
++ */ // Plazma - Remove timings
+ 
+-class TimingHandler implements Timing {
++interface TimingHandler { /* implements Timing { // Plazma - Remove timings
+ 
+     private static AtomicInteger idPool = new AtomicInteger(1);
+     private static Deque<TimingHandler> TIMING_STACK = new ArrayDeque<>();
+@@ -163,9 +165,6 @@ class TimingHandler implements Timing {
+         }
+     }
+ 
+-    /**
+-     * Reset this timer, setting all values to zero.
+-     */
+     void reset(boolean full) {
+         record.reset();
+         if (full) {
+@@ -194,9 +193,6 @@ class TimingHandler implements Timing {
+         return id;
+     }
+ 
+-    /**
+-     * This is simply for the Closeable interface so it can be used with try-with-resources ()
+-     */
+     @Override
+     public void close() {
+         stopTimingIfSync();
+@@ -223,4 +219,5 @@ class TimingHandler implements Timing {
+         }
+         return clonedChildren;
+     }
++     */ // Plazma - Remove timings
+ }
+diff --git a/src/main/java/co/aikar/timings/TimingHistory.java b/src/main/java/co/aikar/timings/TimingHistory.java
+index 02e88db63be2d5e31da6b65157ba7b971b1f10f3..bda95eeacd244892ea3a114bfdcb8b24dfdfccfa 100644
+--- a/src/main/java/co/aikar/timings/TimingHistory.java
++++ b/src/main/java/co/aikar/timings/TimingHistory.java
+@@ -23,6 +23,7 @@
+  */
+ package co.aikar.timings;
+ 
++/* // Plazma - Remove timings
+ import co.aikar.timings.TimingHistory.RegionData.RegionId;
+ import com.google.common.base.Function;
+ import com.google.common.collect.Sets;
+@@ -49,10 +50,11 @@ import org.jetbrains.annotations.Nullable;
+ import static co.aikar.timings.TimingsManager.FULL_SERVER_TICK;
+ import static co.aikar.timings.TimingsManager.MINUTE_REPORTS;
+ import static co.aikar.util.JSONUtil.*;
++ */ // Plazma - Remove timings
+ 
+ @Deprecated(forRemoval = true)
+ @SuppressWarnings({"deprecation", "SuppressionAnnotation", "Convert2Lambda", "Anonymous2MethodRef"})
+-public class TimingHistory {
++interface TimingHistory { /*
+     public static long lastMinuteTime;
+     public static long timedTicks;
+     public static long playerTicks;
+@@ -352,4 +354,5 @@ public class TimingHistory {
+             return count;
+         }
+     }
++     */ // Plazma - Remove timings
+ }
+diff --git a/src/main/java/co/aikar/timings/TimingHistoryEntry.java b/src/main/java/co/aikar/timings/TimingHistoryEntry.java
+index 86d5ac6bd0d7d0003688761aceb3f3343575319f..c862c14eb99ac9c55cfb367cf3d8c2db59f8a50e 100644
+--- a/src/main/java/co/aikar/timings/TimingHistoryEntry.java
++++ b/src/main/java/co/aikar/timings/TimingHistoryEntry.java
+@@ -23,14 +23,16 @@
+  */
+ package co.aikar.timings;
+ 
++/* // Plazma - Remove timings
+ import com.google.common.base.Function;
+ 
+ import java.util.List;
+ import org.jetbrains.annotations.NotNull;
+ 
+ import static co.aikar.util.JSONUtil.toArrayMapper;
++ */ // Plazma - Remove timings
+ 
+-class TimingHistoryEntry {
++interface TimingHistoryEntry { /* // Plazma - Remove timings
+     final TimingData data;
+     private final TimingData[] children;
+ 
+@@ -55,4 +57,5 @@ class TimingHistoryEntry {
+         }
+         return result;
+     }
++    */ // Plazma - Remove timings
+ }
+diff --git a/src/main/java/co/aikar/timings/TimingIdentifier.java b/src/main/java/co/aikar/timings/TimingIdentifier.java
+index df142a89b8c43acb81eb383eac0ef048a1f49a6e..b273b4bc96cc756fa246b8b4c8efa1cac23cd957 100644
+--- a/src/main/java/co/aikar/timings/TimingIdentifier.java
++++ b/src/main/java/co/aikar/timings/TimingIdentifier.java
+@@ -23,6 +23,7 @@
+  */
+ package co.aikar.timings;
+ 
++/* // Plazma - Remove timings
+ import co.aikar.util.LoadingMap;
+ 
+ import java.util.ArrayList;
+@@ -34,16 +35,14 @@ import java.util.concurrent.ConcurrentHashMap;
+ import java.util.concurrent.atomic.AtomicInteger;
+ import org.jetbrains.annotations.NotNull;
+ import org.jetbrains.annotations.Nullable;
++ */ // Plazma - Remove timings
+ 
+ /**
+  * <p>Used as a basis for fast HashMap key comparisons for the Timing Map.</p>
+  *
+  * This class uses interned strings giving us the ability to do an identity check instead of equals() on the strings
+  */
+-final class TimingIdentifier {
+-    /**
+-     * Holds all groups. Autoloads on request for a group by name.
+-     */
++interface TimingIdentifier { /* // Plazma - Remove timings
+     static final Map<String, TimingGroup> GROUP_MAP = LoadingMap.of(new ConcurrentHashMap<>(64, .5F), TimingGroup::new);
+     private static final TimingGroup DEFAULT_GROUP = getGroup("Minecraft");
+     final String group;
+@@ -113,4 +112,5 @@ final class TimingIdentifier {
+             return id;
+         }
+     }
++     */ // Plazma - Remove timings
+ }
+diff --git a/src/main/java/co/aikar/timings/Timings.java b/src/main/java/co/aikar/timings/Timings.java
+index 752d54830aa8baa1450bf72da03ae55ed30293c2..d2bab3cc02f7dfef2852cd705870351c81376061 100644
+--- a/src/main/java/co/aikar/timings/Timings.java
++++ b/src/main/java/co/aikar/timings/Timings.java
+@@ -23,6 +23,7 @@
+  */
+ package co.aikar.timings;
+ 
++/* // Plazma - Remove timings
+ import com.google.common.base.Preconditions;
+ import com.google.common.collect.EvictingQueue;
+ import com.google.common.collect.Lists;
+@@ -39,13 +40,14 @@ import java.util.Queue;
+ import java.util.logging.Level;
+ import org.jetbrains.annotations.NotNull;
+ import org.jetbrains.annotations.Nullable;
++ */ // Plazma - Remove timings
+ 
+ /**
+  * @deprecated Timings will likely be replaced with Spark in the future
+  */
+ @Deprecated(forRemoval = true)
+ @SuppressWarnings({"UnusedDeclaration", "WeakerAccess", "SameParameterValue"})
+-public final class Timings {
++interface Timings { /* // Plazma - Remove timings
+ 
+     final static List<CommandSender> requestingReport = Lists.newArrayList();
+     private static final int MAX_HISTORY_FRAMES = 12;
+@@ -58,13 +60,6 @@ public final class Timings {
+ 
+     private Timings() {}
+ 
+-    /**
+-     * Returns a Timing for a plugin corresponding to a name.
+-     *
+-     * @param plugin Plugin to own the Timing
+-     * @param name   Name of Timing
+-     * @return Handler
+-     */
+     @NotNull
+     public static Timing of(@NotNull Plugin plugin, @NotNull String name) {
+         Timing pluginHandler = null;
+@@ -74,18 +69,6 @@ public final class Timings {
+         return of(plugin, name, pluginHandler);
+     }
+ 
+-    /**
+-     * <p>Returns a handler that has a groupHandler timer handler. Parent timers should not have their
+-     * start/stop methods called directly, as the children will call it for you.</p>
+-     *
+-     * Parent Timers are used to group multiple subsections together and get a summary of them combined
+-     * Parent Handler can not be changed after first call
+-     *
+-     * @param plugin       Plugin to own the Timing
+-     * @param name         Name of Timing
+-     * @param groupHandler Parent handler to mirror .start/stop calls to
+-     * @return Timing Handler
+-     */
+     @NotNull
+     public static Timing of(@NotNull Plugin plugin, @NotNull String name, @Nullable Timing groupHandler) {
+         Preconditions.checkNotNull(plugin, "Plugin can not be null");
+@@ -93,34 +76,11 @@ public final class Timings {
+         return TimingsManager.getHandler(plugin.getName(), name, groupHandler);
+     }
+ 
+-    /**
+-     * Returns a Timing object after starting it, useful for Java7 try-with-resources.
+-     *
+-     * try (Timing ignored = Timings.ofStart(plugin, someName)) {
+-     * // timed section
+-     * }
+-     *
+-     * @param plugin Plugin to own the Timing
+-     * @param name   Name of Timing
+-     * @return Timing Handler
+-     */
+     @NotNull
+     public static Timing ofStart(@NotNull Plugin plugin, @NotNull String name) {
+         return ofStart(plugin, name, null);
+     }
+ 
+-    /**
+-     * Returns a Timing object after starting it, useful for Java7 try-with-resources.
+-     *
+-     * try (Timing ignored = Timings.ofStart(plugin, someName, groupHandler)) {
+-     * // timed section
+-     * }
+-     *
+-     * @param plugin       Plugin to own the Timing
+-     * @param name         Name of Timing
+-     * @param groupHandler Parent handler to mirror .start/stop calls to
+-     * @return Timing Handler
+-     */
+     @NotNull
+     public static Timing ofStart(@NotNull Plugin plugin, @NotNull String name, @Nullable Timing groupHandler) {
+         Timing timing = of(plugin, name, groupHandler);
+@@ -128,22 +88,10 @@ public final class Timings {
+         return timing;
+     }
+ 
+-    /**
+-     * Gets whether or not the Spigot Timings system is enabled
+-     *
+-     * @return Enabled or not
+-     */
+     public static boolean isTimingsEnabled() {
+         return timingsEnabled;
+     }
+ 
+-    /**
+-     * <p>Sets whether or not the Spigot Timings system should be enabled</p>
+-     *
+-     * Calling this will reset timing data.
+-     *
+-     * @param enabled Should timings be reported
+-     */
+     public static void setTimingsEnabled(boolean enabled) {
+         // Purpur start - we don't do that here...
+         timingsEnabled = false;
+@@ -182,51 +130,19 @@ public final class Timings {
+             .build();
+     }
+ 
+-    /**
+-     * <p>Sets whether or not the Timings should monitor at Verbose level.</p>
+-     *
+-     * <p>When Verbose is disabled, high-frequency timings will not be available.</p>
+-     *
+-     * @return Enabled or not
+-     */
+     public static boolean isVerboseTimingsEnabled() {
+         return verboseEnabled;
+     }
+ 
+-    /**
+-     * <p>Sets whether or not the Timings should monitor at Verbose level.</p>
+-     *
+-     * When Verbose is disabled, high-frequency timings will not be available.
+-     * Calling this will reset timing data.
+-     *
+-     * @param enabled Should high-frequency timings be reported
+-     */
+     public static void setVerboseTimingsEnabled(boolean enabled) {
+         verboseEnabled = enabled;
+         TimingsManager.needsRecheckEnabled = true;
+     }
+ 
+-    /**
+-     * <p>Gets the interval between Timing History report generation.</p>
+-     *
+-     * Defaults to 5 minutes (6000 ticks)
+-     *
+-     * @return Interval in ticks
+-     */
+     public static int getHistoryInterval() {
+         return historyInterval;
+     }
+ 
+-    /**
+-     * <p>Sets the interval between Timing History report generations.</p>
+-     *
+-     * <p>Defaults to 5 minutes (6000 ticks)</p>
+-     *
+-     * This will recheck your history length, so lowering this value will lower your
+-     * history length if you need more than 60 history windows.
+-     *
+-     * @param interval Interval in ticks
+-     */
+     public static void setHistoryInterval(int interval) {
+         historyInterval = Math.max(20*60, interval);
+         // Recheck the history length with the new Interval
+@@ -235,28 +151,10 @@ public final class Timings {
+         }
+     }
+ 
+-    /**
+-     * Gets how long in ticks Timings history is kept for the server.
+-     *
+-     * Defaults to 1 hour (72000 ticks)
+-     *
+-     * @return Duration in Ticks
+-     */
+     public static int getHistoryLength() {
+         return historyLength;
+     }
+ 
+-    /**
+-     * Sets how long Timing History reports are kept for the server.
+-     *
+-     * Defaults to 1 hours(72000 ticks)
+-     *
+-     * This value is capped at a maximum of getHistoryInterval() * MAX_HISTORY_FRAMES (12)
+-     *
+-     * Will not reset Timing Data but may truncate old history if the new length is less than old length.
+-     *
+-     * @param length Duration in ticks
+-     */
+     public static void setHistoryLength(int length) {
+         // Cap at 12 History Frames, 1 hour at 5 minute frames.
+         int maxLength = historyInterval * MAX_HISTORY_FRAMES;
+@@ -276,19 +174,10 @@ public final class Timings {
+         TimingsManager.HISTORY.addAll(oldQueue);
+     }
+ 
+-    /**
+-     * Resets all Timing Data
+-     */
+     public static void reset() {
+         TimingsManager.reset();
+     }
+ 
+-    /**
+-     * Generates a report and sends it to the specified command sender.
+-     *
+-     * If sender is null, ConsoleCommandSender will be used.
+-     * @param sender The sender to send to, or null to use the ConsoleCommandSender
+-     */
+     public static void generateReport(@Nullable CommandSender sender) {
+         if (sender == null) {
+             sender = Bukkit.getConsoleSender();
+@@ -296,22 +185,11 @@ public final class Timings {
+         requestingReport.add(sender);
+     }
+ 
+-    /**
+-     * Generates a report and sends it to the specified listener.
+-     * Use with {@link org.bukkit.command.BufferedCommandSender} to get full response when done!
+-     * @param sender The listener to send responses too.
+-     */
+     public static void generateReport(@NotNull TimingsReportListener sender) {
+         Preconditions.checkNotNull(sender);
+         requestingReport.add(sender);
+     }
+ 
+-    /*
+-    =================
+-    Protected API: These are for internal use only in Bukkit/CraftBukkit
+-    These do not have isPrimaryThread() checks in the startTiming/stopTiming
+-    =================
+-    */
+     @NotNull
+     static TimingHandler ofSafe(@NotNull String name) {
+         return ofSafe(null, name, null);
+@@ -335,5 +213,6 @@ public final class Timings {
+     static TimingHandler ofSafe(@Nullable String groupName, @NotNull String name, @Nullable Timing groupHandler) {
+         return TimingsManager.getHandler(groupName, name, groupHandler);
+     }
++     */ // Plazma - Remove timings
+ }
+ 
+diff --git a/src/main/java/co/aikar/timings/TimingsCommand.java b/src/main/java/co/aikar/timings/TimingsCommand.java
+index 1abfcee0f6d632f4cd8d74b4994a90c9ea9d254c..18ddc321c4a23689d93c4340e0010dc67e84f138 100644
+--- a/src/main/java/co/aikar/timings/TimingsCommand.java
++++ b/src/main/java/co/aikar/timings/TimingsCommand.java
+@@ -61,6 +61,7 @@ public class TimingsCommand extends BukkitCommand {
+             sender.sendMessage(mm.deserialize("<gold><click:open_url:'https://spark.lucko.me/docs/Command-Usage'>https://spark.lucko.me/docs/Command-Usage</click>"));
+             return true;
+         }
++        /* // Plazma - Remove timings
+         if (args.length < 1) {
+             sender.sendMessage(text("Usage: " + this.usageMessage, NamedTextColor.RED));
+             return true;
+@@ -109,6 +110,7 @@ public class TimingsCommand extends BukkitCommand {
+         } else {
+             sender.sendMessage(text("Usage: " + this.usageMessage, NamedTextColor.RED));
+         }
++         */ // Plazma - Remove timings
+         return true;
+     }
+ 
+diff --git a/src/main/java/co/aikar/timings/TimingsManager.java b/src/main/java/co/aikar/timings/TimingsManager.java
+index 5e1558ca3ffeeaf2645fa003965474a442d650bf..f6aa204db5ef216e1eb06be5e5e307067cfcf05c 100644
+--- a/src/main/java/co/aikar/timings/TimingsManager.java
++++ b/src/main/java/co/aikar/timings/TimingsManager.java
+@@ -23,6 +23,7 @@
+  */
+ package co.aikar.timings;
+ 
++/* // Plazma - Remove timings
+ import co.aikar.util.LoadingMap;
+ import com.google.common.collect.EvictingQueue;
+ import org.bukkit.Bukkit;
+@@ -38,12 +39,13 @@ import java.util.concurrent.ConcurrentHashMap;
+ import java.util.logging.Level;
+ import org.jetbrains.annotations.NotNull;
+ import org.jetbrains.annotations.Nullable;
++ */ // Plazma - Remove timings
+ 
+ /**
+  * @deprecated Timings will likely be replaced with Spark in the future
+  */
+ @Deprecated(forRemoval = true)
+-public final class TimingsManager {
++interface TimingsManager { /* // Plazma - Remove timings
+     static final Map<TimingIdentifier, TimingHandler> TIMING_MAP = LoadingMap.of(
+         new ConcurrentHashMap<>(4096, .5F), TimingHandler::new
+     );
+@@ -65,17 +67,10 @@ public final class TimingsManager {
+ 
+     private TimingsManager() {}
+ 
+-    /**
+-     * Resets all timing data on the next tick
+-     */
+     static void reset() {
+         needsFullReset = true;
+     }
+ 
+-    /**
+-     * Ticked every tick by CraftBukkit to count the number of times a timer
+-     * caused TPS loss.
+-     */
+     static void tick() {
+         if (Timings.timingsEnabled) {
+             boolean violated = FULL_SERVER_TICK.isViolated();
+@@ -139,16 +134,6 @@ public final class TimingsManager {
+         return TIMING_MAP.get(new TimingIdentifier(group, name, parent));
+     }
+ 
+-
+-    /**
+-     * <p>Due to access restrictions, we need a helper method to get a Command TimingHandler with String group</p>
+-     *
+-     * Plugins should never call this
+-     *
+-     * @param pluginName Plugin this command is associated with
+-     * @param command    Command to get timings for
+-     * @return TimingHandler
+-     */
+     @NotNull
+     public static Timing getCommandTiming(@Nullable String pluginName, @NotNull Command command) {
+         Plugin plugin = null;
+@@ -170,13 +155,6 @@ public final class TimingsManager {
+         return Timings.ofSafe(plugin, "Command: " + pluginName + ":" + command.getTimingName());
+     }
+ 
+-    /**
+-     * Looks up the class loader for the specified class, and if it is a PluginClassLoader, return the
+-     * Plugin that created this class.
+-     *
+-     * @param clazz Class to check
+-     * @return Plugin if created by a plugin
+-     */
+     @Nullable
+     public static Plugin getPluginByClassloader(@Nullable Class<?> clazz) {
+         if (clazz == null) {
+@@ -189,4 +167,5 @@ public final class TimingsManager {
+         }
+         return null;
+     }
++     */ // Plazma - Remove timings
+ }
+diff --git a/src/main/java/co/aikar/timings/TimingsReportListener.java b/src/main/java/co/aikar/timings/TimingsReportListener.java
+index 3af5b8ea795311582044c712de50d29412024b77..d5b52c8bf0bd23d9e3c0ba708c758694771a07ac 100644
+--- a/src/main/java/co/aikar/timings/TimingsReportListener.java
++++ b/src/main/java/co/aikar/timings/TimingsReportListener.java
+@@ -1,5 +1,6 @@
+ package co.aikar.timings;
+ 
++/* // Plazma - Remove timings
+ import com.google.common.base.Preconditions;
+ import com.google.common.collect.Lists;
+ import org.bukkit.Bukkit;
+@@ -11,10 +12,11 @@ import org.jetbrains.annotations.NotNull;
+ import org.jetbrains.annotations.Nullable;
+ 
+ import java.util.List;
++ */ // Plazma - Remove timings
+ 
+ @Deprecated(forRemoval = true)
+ @SuppressWarnings("WeakerAccess")
+-public class TimingsReportListener implements net.kyori.adventure.audience.ForwardingAudience, MessageCommandSender {
++interface TimingsReportListener { /* implements net.kyori.adventure.audience.ForwardingAudience, MessageCommandSender { // Plazma - Remove timings
+     private final List<CommandSender> senders;
+     private final Runnable onDone;
+     private String timingsURL;
+@@ -84,4 +86,5 @@ public class TimingsReportListener implements net.kyori.adventure.audience.Forwa
+             this.senders.add(Bukkit.getConsoleSender());
+         }
+     }
++     */ // Plazma - Remove timings
+ }
+diff --git a/src/main/java/co/aikar/timings/UnsafeTimingHandler.java b/src/main/java/co/aikar/timings/UnsafeTimingHandler.java
+index 632c4961515f5052551f841cfa840e60bba7a257..0656b8e86eaee12161a8bb16d1b46301fd5cea13 100644
+--- a/src/main/java/co/aikar/timings/UnsafeTimingHandler.java
++++ b/src/main/java/co/aikar/timings/UnsafeTimingHandler.java
+@@ -23,10 +23,12 @@
+  */
+ package co.aikar.timings;
+ 
++/* // Plazma - Remove timings
+ import org.bukkit.Bukkit;
+ import org.jetbrains.annotations.NotNull;
++ */ // Plazma - Remove timings
+ 
+-class UnsafeTimingHandler extends TimingHandler {
++interface UnsafeTimingHandler { /* extends TimingHandler { // Plazma - Remove timings
+ 
+     UnsafeTimingHandler(@NotNull TimingIdentifier id) {
+         super(id);
+@@ -50,4 +52,5 @@ class UnsafeTimingHandler extends TimingHandler {
+         checkThread();
+         super.stopTiming();
+     }
++     */ // Plazma - Remove timings
+ }
+diff --git a/src/main/java/org/bukkit/command/Command.java b/src/main/java/org/bukkit/command/Command.java
+index b791358f90fe92bc2264d9a26492245763813af3..8c10f2dc17cfede217f3a1b615777ea4dd308f76 100644
+--- a/src/main/java/org/bukkit/command/Command.java
++++ b/src/main/java/org/bukkit/command/Command.java
+@@ -33,7 +33,7 @@ public abstract class Command {
+     protected String usageMessage;
+     private String permission;
+     private net.kyori.adventure.text.Component permissionMessage; // Paper
+-    public co.aikar.timings.Timing timings; // Paper
++    // public co.aikar.timings.Timing timings; // Paper // Plazma - Remove timings
+     @NotNull public String getTimingName() {return getName();} // Paper
+ 
+     protected Command(@NotNull String name) {
+diff --git a/src/main/java/org/bukkit/command/FormattedCommandAlias.java b/src/main/java/org/bukkit/command/FormattedCommandAlias.java
+index 9d4f553c04784cca63901a56a7aea62a5cae1d72..321082710aa84627405d4f1453246b6a729659cc 100644
+--- a/src/main/java/org/bukkit/command/FormattedCommandAlias.java
++++ b/src/main/java/org/bukkit/command/FormattedCommandAlias.java
+@@ -12,7 +12,7 @@ public class FormattedCommandAlias extends Command {
+ 
+     public FormattedCommandAlias(@NotNull String alias, @NotNull String[] formatStrings) {
+         super(alias);
+-        timings = co.aikar.timings.TimingsManager.getCommandTiming("minecraft", this); // Spigot
++        //timings = co.aikar.timings.TimingsManager.getCommandTiming("minecraft", this); // Spigot // Plazma - Remove timings
+         this.formatStrings = formatStrings;
+     }
+ 
+diff --git a/src/main/java/org/bukkit/command/SimpleCommandMap.java b/src/main/java/org/bukkit/command/SimpleCommandMap.java
+index 5349f16136d9348c374a7dfe5b89a71dfcb0e66d..c0c2f7671122f767af3a94a3aadefdfa4b492f3a 100644
+--- a/src/main/java/org/bukkit/command/SimpleCommandMap.java
++++ b/src/main/java/org/bukkit/command/SimpleCommandMap.java
+@@ -34,7 +34,7 @@ public class SimpleCommandMap implements CommandMap {
+         register("bukkit", new VersionCommand("version"));
+         register("bukkit", new ReloadCommand("reload"));
+         //register("bukkit", new PluginsCommand("plugins")); // Paper
+-        register("bukkit", new co.aikar.timings.TimingsCommand("timings")); // Paper
++        //register("bukkit", new co.aikar.timings.TimingsCommand("timings")); // Paper // Plazma - Remove timings
+     }
+ 
+     public void setFallbackCommands() {
+@@ -66,7 +66,7 @@ public class SimpleCommandMap implements CommandMap {
+      */
+     @Override
+     public boolean register(@NotNull String label, @NotNull String fallbackPrefix, @NotNull Command command) {
+-        command.timings = co.aikar.timings.TimingsManager.getCommandTiming(fallbackPrefix, command); // Paper
++        // command.timings = co.aikar.timings.TimingsManager.getCommandTiming(fallbackPrefix, command); // Paper // Plazma - Remove timings
+         label = label.toLowerCase(java.util.Locale.ENGLISH).trim();
+         fallbackPrefix = fallbackPrefix.toLowerCase(java.util.Locale.ENGLISH).trim();
+         boolean registered = register(label, command, false, fallbackPrefix);
+@@ -156,11 +156,13 @@ public class SimpleCommandMap implements CommandMap {
+         parsedArgs = event.getArgs();
+         // Purpur end
+ 
++        /* // Plazma - Remove timings
+         // Paper start - Plugins do weird things to workaround normal registration
+         if (target.timings == null) {
+             target.timings = co.aikar.timings.TimingsManager.getCommandTiming(null, target);
+         }
+         // Paper end
++         */ // Plazma - Remove timings
+ 
+         try {
+             //try (co.aikar.timings.Timing ignored = target.timings.startTiming()) { // Paper - use try with resources // Purpur
+diff --git a/src/main/java/org/bukkit/plugin/SimplePluginManager.java b/src/main/java/org/bukkit/plugin/SimplePluginManager.java
+index 899d67fa782fac639fe7fb096e05c551d75bd647..1d9906c508ca916297b8e121f8826532b66f83e2 100644
+--- a/src/main/java/org/bukkit/plugin/SimplePluginManager.java
++++ b/src/main/java/org/bukkit/plugin/SimplePluginManager.java
+@@ -707,6 +707,7 @@ public final class SimplePluginManager implements PluginManager {
+         Preconditions.checkArgument(plugin != null, "Plugin cannot be null");
+         if (true) {this.paperPluginManager.registerEvent(event, listener, priority, executor, plugin, ignoreCancelled); return;} // Paper
+ 
++        /* // Plazma - Remove timings
+         if (!plugin.isEnabled()) {
+             throw new IllegalPluginAccessException("Plugin attempted to register " + event + " while not enabled");
+         }
+@@ -717,6 +718,7 @@ public final class SimplePluginManager implements PluginManager {
+         } else {
+             getEventListeners(event).register(new RegisteredListener(listener, executor, priority, plugin, ignoreCancelled));
+         }
++         */ // Plazma - Remove timings
+     }
+ 
+     @NotNull
+@@ -946,8 +948,9 @@ public final class SimplePluginManager implements PluginManager {
+ 
+     @Override
+     public boolean useTimings() {
+-        if (true) {return this.paperPluginManager.useTimings();} // Paper
+-        return co.aikar.timings.Timings.isTimingsEnabled(); // Spigot
++        return false;
++        // if (true) {return this.paperPluginManager.useTimings();} // Paper // Plazma - Remove timings
++        // return co.aikar.timings.Timings.isTimingsEnabled(); // Spigot // Plazma - Remove timings
+     }
+ 
+     /**
+@@ -956,7 +959,7 @@ public final class SimplePluginManager implements PluginManager {
+      * @param use True if per event timing code should be used
+      */
+     public void useTimings(boolean use) {
+-        co.aikar.timings.Timings.setTimingsEnabled(use); // Paper
++        // co.aikar.timings.Timings.setTimingsEnabled(use); // Paper // Plazma - Remove timings
+     }
+ 
+     // Paper start
+diff --git a/src/main/java/org/bukkit/plugin/java/JavaPluginLoader.java b/src/main/java/org/bukkit/plugin/java/JavaPluginLoader.java
+index 0c6ca7588fb3d6b6497ddf032fe75e5c6c9719e5..e5d4ac1b8b4ca3846e2a9ea63f6b6eb05f7b70bd 100644
+--- a/src/main/java/org/bukkit/plugin/java/JavaPluginLoader.java
++++ b/src/main/java/org/bukkit/plugin/java/JavaPluginLoader.java
+@@ -43,7 +43,7 @@ import org.bukkit.plugin.TimedRegisteredListener;
+ import org.bukkit.plugin.UnknownDependencyException;
+ import org.jetbrains.annotations.NotNull;
+ import org.jetbrains.annotations.Nullable;
+-import org.spigotmc.CustomTimingsHandler; // Spigot
++// import org.spigotmc.CustomTimingsHandler; // Spigot // Plazma - Remove timings
+ import org.yaml.snakeyaml.error.YAMLException;
+ 
+ /**
+@@ -294,7 +294,7 @@ public final class JavaPluginLoader implements PluginLoader {
+                 }
+             }
+ 
+-            EventExecutor executor = new co.aikar.timings.TimedEventExecutor(new EventExecutor() { // Paper
++            EventExecutor executor = new EventExecutor() { // Paper // Plazma - Remove timings
+                 @Override
+                 public void execute(@NotNull Listener listener, @NotNull Event event) throws EventException { // Paper
+                     try {
+@@ -308,7 +308,7 @@ public final class JavaPluginLoader implements PluginLoader {
+                         throw new EventException(t);
+                     }
+                 }
+-            }, plugin, method, eventClass); // Paper
++            }; // Paper // Plazma - Remove timings
+             if (false) { // Spigot - RL handles useTimings check now
+                 eventSet.add(new TimedRegisteredListener(listener, executor, eh.priority(), plugin, eh.ignoreCancelled()));
+             } else {
+diff --git a/src/main/java/org/spigotmc/CustomTimingsHandler.java b/src/main/java/org/spigotmc/CustomTimingsHandler.java
+index 9c2d605c50cbf9aefa56ec209df9f6cea1392e89..cb2bd5f58544493a5ae0d2b765be806e35639baa 100644
+--- a/src/main/java/org/spigotmc/CustomTimingsHandler.java
++++ b/src/main/java/org/spigotmc/CustomTimingsHandler.java
+@@ -23,6 +23,7 @@
+  */
+ package org.spigotmc;
+ 
++/* // Plazma - Remove timings
+ import org.bukkit.Bukkit;
+ import org.jetbrains.annotations.NotNull;
+ import org.bukkit.plugin.AuthorNagException;
+@@ -32,6 +33,7 @@ import co.aikar.timings.TimingsManager;
+ 
+ import java.lang.reflect.Method;
+ import java.util.logging.Level;
++ */ // Plazma - Remove timings
+ 
+ /**
+  * This is here for legacy purposes incase any plugin used it.
+@@ -39,10 +41,9 @@ import java.util.logging.Level;
+  * If you use this, migrate ASAP as this will be removed in the future!
+  *
+  * @deprecated
+- * @see co.aikar.timings.Timings#of
+  */
+ @Deprecated(forRemoval = true)
+-public final class CustomTimingsHandler {
++interface CustomTimingsHandler { /* // Plazma - Remove timings
+     private final Timing handler;
+ 
+     public CustomTimingsHandler(@NotNull String name) {
+@@ -61,7 +62,7 @@ public final class CustomTimingsHandler {
+         handler = timing;
+     }
+ 
+-    public void startTiming() { /*handler.startTiming();*/ } // Purpur
+-    public void stopTiming() { /*handler.stopTiming();*/ } // Purpur
+-
++    public void startTiming() { handler.startTiming(); } // Purpur // Plazma - IDE Parsing problem
++    public void stopTiming() { handler.stopTiming(); } // Purpur // Plazma - IDE Parsing problem
++    */ // Plazma - Remove timings
+ }
