@@ -1,0 +1,33 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: AlphaKR93 <dev@alpha93.kr>
+Date: Wed, 27 Sep 2023 22:11:15 +0900
+Subject: [PATCH] Apply various optimizations
+
+[REFERENCE PATCHES]
+Akarin - Swaps the predicate order of collision
+
+diff --git a/src/main/java/net/minecraft/world/entity/Entity.java b/src/main/java/net/minecraft/world/entity/Entity.java
+index f2c6b52fe7fbb05afa0074684cd195f6ae598f1f..f16a347e0e263a0479a73cb14626e31c9de37e6c 100644
+--- a/src/main/java/net/minecraft/world/entity/Entity.java
++++ b/src/main/java/net/minecraft/world/entity/Entity.java
+@@ -2154,8 +2154,9 @@ public abstract class Entity implements Nameable, EntityAccess, CommandSource, S
+     public void playerTouch(Player player) {}
+ 
+     public void push(Entity entity) {
++        if (entity.noPhysics || this.noPhysics) return; // Plazma - Swaps the predicate order of collision
+         if (!this.isPassengerOfSameVehicle(entity)) {
+-            if (!entity.noPhysics && !this.noPhysics) {
++            //if (!entity.noPhysics && !this.noPhysics) { // Plazma - Swaps the predicate order of collision
+                 if (this.level.paperConfig().collisions.onlyPlayersCollide && !(entity instanceof ServerPlayer || this instanceof ServerPlayer)) return; // Paper - Collision option for requiring a player participant
+                 double d0 = entity.getX() - this.getX();
+                 double d1 = entity.getZ() - this.getZ();
+@@ -2183,8 +2184,7 @@ public abstract class Entity implements Nameable, EntityAccess, CommandSource, S
+                         entity.push(d0, 0.0D, d1);
+                     }
+                 }
+-
+-            }
++            //} // Plazma - Swaps the predicate order of collision
+         }
+     }
+ 

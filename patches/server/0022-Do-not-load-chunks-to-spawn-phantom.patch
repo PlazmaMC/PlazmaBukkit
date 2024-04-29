@@ -1,0 +1,30 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: AlphaKR93 <dev@alpha93.kr>
+Date: Sun, 5 Nov 2023 12:07:06 +0900
+Subject: [PATCH] Do not load chunks to spawn phantom
+
+
+diff --git a/src/main/java/net/minecraft/world/level/levelgen/PhantomSpawner.java b/src/main/java/net/minecraft/world/level/levelgen/PhantomSpawner.java
+index 0847aef56d8608cb1403485f231f30b2527f35ab..fee30f686a5d1ee50a00c2073efd5b0a80e85179 100644
+--- a/src/main/java/net/minecraft/world/level/levelgen/PhantomSpawner.java
++++ b/src/main/java/net/minecraft/world/level/levelgen/PhantomSpawner.java
+@@ -71,6 +71,7 @@ public class PhantomSpawner implements CustomSpawner {
+ 
+                                     if (randomsource.nextInt(j) >= world.paperConfig().entities.behavior.playerInsomniaStartTicks) { // Paper - Ability to control player's insomnia and phantoms
+                                         BlockPos blockposition1 = blockposition.above(20 + randomsource.nextInt(15)).east(-10 + randomsource.nextInt(21)).south(-10 + randomsource.nextInt(21));
++                                        if (!world.plazmaConfig().entity.phantom.loadChunksToSpawn && !world.hasChunkAt(blockposition1)) continue; // Plazma - Do not load chunks to spawn phantom
+                                         BlockState iblockdata = world.getBlockState(blockposition1);
+                                         FluidState fluid = world.getFluidState(blockposition1);
+ 
+diff --git a/src/main/java/org/plazmamc/plazma/configurations/WorldConfigurations.java b/src/main/java/org/plazmamc/plazma/configurations/WorldConfigurations.java
+index c8b10b3499fbdf41f0b268d8a9da729e3432bb66..922d1d250f2e2e5a4177bcf5fe7487ff2b43413b 100644
+--- a/src/main/java/org/plazmamc/plazma/configurations/WorldConfigurations.java
++++ b/src/main/java/org/plazmamc/plazma/configurations/WorldConfigurations.java
+@@ -32,6 +32,7 @@ public class WorldConfigurations extends ConfigurationPart {
+         public Phantom phantom;
+         public class Phantom extends ConfigurationPart {
+ 
++            public boolean loadChunksToSpawn = !OPTIMIZE;
+ 
+         }
+ 

@@ -1,0 +1,641 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: AlphaKR93 <dev@alpha93.kr>
+Date: Sat, 27 Apr 2024 14:02:18 +0900
+Subject: [PATCH] Completely remove Timings
+
+
+diff --git a/src/main/java/co/aikar/timings/MinecraftTimings.java b/src/main/java/co/aikar/timings/MinecraftTimings.java
+index 4b467f1af93452d13829f756d55dee18b8889d40..7e20ec279c9fb75b92ca3bf938adeeb126641aa5 100644
+--- a/src/main/java/co/aikar/timings/MinecraftTimings.java
++++ b/src/main/java/co/aikar/timings/MinecraftTimings.java
+@@ -1,5 +1,6 @@
+ package co.aikar.timings;
+ 
++/* // Plazma - Completely remove Timings
+ import com.google.common.collect.MapMaker;
+ import io.papermc.paper.configuration.GlobalConfiguration;
+ import net.minecraft.commands.functions.CommandFunction;
+@@ -12,10 +13,11 @@ import org.bukkit.scheduler.BukkitTask;
+ import org.bukkit.craftbukkit.scheduler.CraftTask;
+ 
+ import java.util.Map;
++ */ // Plazma - Completely remove Timings
+ 
+-// TODO: Re-implement missing timers
++// TODO: Re-implement missing timers // Plazma - nah you cant
+ @Deprecated(forRemoval = true)
+-public final class MinecraftTimings {
++interface MinecraftTimings { /* // Plazma - Completely remove Timings
+ 
+     public static final Timing serverOversleep = Timings.ofSafe("Server Oversleep");
+     public static final Timing playerListTimer = Timings.ofSafe("Player List");
+@@ -59,12 +61,6 @@ public final class MinecraftTimings {
+         return Timings.ofSafe(taskName);
+     }
+ 
+-    /**
+-     * Gets a timer associated with a plugins tasks.
+-     * @param bukkitTask
+-     * @param period
+-     * @return
+-     */
+     public static Timing getPluginTaskTimings(BukkitTask bukkitTask, long period) {
+         if (!bukkitTask.isSync()) {
+             return NullTimingHandler.NULL;
+@@ -110,11 +106,6 @@ public final class MinecraftTimings {
+         return Timings.ofSafe(plugin, name.toString());
+     }
+ 
+-    /**
+-     * Get a named timer for the specified entity type to track type specific timings.
+-     * @param entityType
+-     * @return
+-     */
+     public static Timing getEntityTimings(String entityType, String type) {
+         return Timings.ofSafe("Minecraft", "## tickEntity - " + entityType + " - " + type, tickEntityTimer);
+     }
+@@ -127,11 +118,6 @@ public final class MinecraftTimings {
+         return Timings.ofSafe("## Sensor - " + type + " (Default rate: " + rate + ")");
+     }
+ 
+-    /**
+-     * Get a named timer for the specified tile entity type to track type specific timings.
+-     * @param entity
+-     * @return
+-     */
+     public static Timing getTileEntityTimings(BlockEntity entity) {
+         String entityType = entity.getClass().getName();
+         return Timings.ofSafe("Minecraft", "## tickTileEntity - " + entityType, tickTileEntityTimer);
+@@ -150,10 +136,10 @@ public final class MinecraftTimings {
+     public static Timing getBlockTiming(Block block) {
+         return Timings.ofSafe("## Scheduled Block: " + block.toString(), scheduledBlocksTimer);
+     }
+-/*
++
+     public static Timing getStructureTiming(StructureGenerator structureGenerator) {
+         return Timings.ofSafe("Structure Generator - " + structureGenerator.getName(), structureGenerationTimer);
+-    }*/
++    }
+ 
+     public static Timing getPacketTiming(Packet packet) {
+         return Timings.ofSafe("## Packet - " + packet.getClass().getName(), packetProcessTimer);
+@@ -178,4 +164,6 @@ public final class MinecraftTimings {
+         co.aikar.timings.Timings.setHistoryInterval(config.historyInterval * 20);
+         co.aikar.timings.Timings.setHistoryLength(config.historyLength * 20);
+     }
++     */ // Plazma - Completely remove Timings
++
+ }
+diff --git a/src/main/java/co/aikar/timings/TimingsExport.java b/src/main/java/co/aikar/timings/TimingsExport.java
+index b35a9f4c5f8960864c402ede8a51fb5ab9c4fcc0..46085a9c12efc6a1766e704c9bb0fbf454d60c8a 100644
+--- a/src/main/java/co/aikar/timings/TimingsExport.java
++++ b/src/main/java/co/aikar/timings/TimingsExport.java
+@@ -23,6 +23,7 @@
+  */
+ package co.aikar.timings;
+ 
++/* // Plazma - Completely remove Timings
+ import com.google.common.collect.Sets;
+ import io.papermc.paper.adventure.PaperAdventure;
+ import net.kyori.adventure.text.event.ClickEvent;
+@@ -64,10 +65,11 @@ import static co.aikar.util.JSONUtil.toArray;
+ import static co.aikar.util.JSONUtil.toArrayMapper;
+ import static co.aikar.util.JSONUtil.toObjectMapper;
+ import static net.kyori.adventure.text.Component.text;
++ */ // Plazma - Completely remove Timings
+ 
+ @SuppressWarnings({"rawtypes", "SuppressionAnnotation"})
+ @Deprecated(forRemoval = true)
+-public class TimingsExport extends Thread {
++interface TimingsExport { /* extends Thread { // Plazma - Completely remove Timings
+ 
+     private final TimingsReportListener listeners;
+     private final Map out;
+@@ -81,9 +83,6 @@ public class TimingsExport extends Thread {
+         this.history = history;
+     }
+ 
+-    /**
+-     * Checks if any pending reports are being requested, and builds one if needed.
+-     */
+     public static void reportTimings() {
+         if (Timings.requestingReport.isEmpty()) {
+             return;
+@@ -386,4 +385,6 @@ public class TimingsExport extends Thread {
+             }
+         }
+     }
++     */ // Plazma - Completely remove Timings
++
+ }
+diff --git a/src/main/java/co/aikar/timings/WorldTimingsHandler.java b/src/main/java/co/aikar/timings/WorldTimingsHandler.java
+index 22687667ec69a954261e55e59261286ac1b8b8cd..9115fab47c5d69aa9c563b8ade7f916b99827e4f 100644
+--- a/src/main/java/co/aikar/timings/WorldTimingsHandler.java
++++ b/src/main/java/co/aikar/timings/WorldTimingsHandler.java
+@@ -1,15 +1,18 @@
+ package co.aikar.timings;
+ 
++/* // Plazma - Completely remove Timings
+ import net.minecraft.server.level.ServerLevel;
+ import net.minecraft.world.level.Level;
+ import net.minecraft.world.level.storage.PrimaryLevelData;
++ */ // Plazma - Completely remove Timings
+ 
+ /**
+  * Set of timers per world, to track world specific timings.
+  */
+ // TODO: Re-implement missing timers
+ @Deprecated(forRemoval = true)
+-public class WorldTimingsHandler {
++interface WorldTimingsHandler {
++    /* // Plazma - Completely remove Timings
+     public final Timing mobSpawn;
+     public final Timing doChunkUnload;
+     public final Timing doPortalForcer;
+@@ -137,4 +140,5 @@ public class WorldTimingsHandler {
+     public static Timing getTickList(ServerLevel worldserver, String timingsType) {
+         return Timings.ofSafe(((PrimaryLevelData) worldserver.getLevelData()).getLevelName() + " - Scheduled " + timingsType);
+     }
++     */ // Plazma - Completely remove Timings
+ }
+diff --git a/src/main/java/io/papermc/paper/configuration/GlobalConfiguration.java b/src/main/java/io/papermc/paper/configuration/GlobalConfiguration.java
+index c71daa5d3665cec2836770e5f04da222bc5f90ed..da06919b1911f87e64732716217f85d6ba606e8f 100644
+--- a/src/main/java/io/papermc/paper/configuration/GlobalConfiguration.java
++++ b/src/main/java/io/papermc/paper/configuration/GlobalConfiguration.java
+@@ -1,6 +1,6 @@
+ package io.papermc.paper.configuration;
+ 
+-import co.aikar.timings.MinecraftTimings;
++// import co.aikar.timings.MinecraftTimings; // Plazma - Completely remove Timings
+ import com.mojang.logging.LogUtils;
+ import io.papermc.paper.configuration.constraint.Constraints;
+ import io.papermc.paper.configuration.type.number.IntOr;
+@@ -91,6 +91,7 @@ public class GlobalConfiguration extends ConfigurationPart {
+         public boolean useDisplayNameInQuitMessage = false;
+     }
+ 
++    /* // Plazma - Completely remove Timings
+     @Deprecated(forRemoval = true)
+     public Timings timings;
+ 
+@@ -113,6 +114,7 @@ public class GlobalConfiguration extends ConfigurationPart {
+             MinecraftTimings.processConfig(this);
+         }
+     }
++     */ // Plazma - Completely remove Timings
+ 
+     public Proxies proxies;
+ 
+diff --git a/src/main/java/io/papermc/paper/plugin/manager/PaperEventManager.java b/src/main/java/io/papermc/paper/plugin/manager/PaperEventManager.java
+index 7ce9ebba8ce304d1f3f21d4f15ee5f3560d7700b..2a79e3423724b5005f1918b80e06051dfcfc5bf9 100644
+--- a/src/main/java/io/papermc/paper/plugin/manager/PaperEventManager.java
++++ b/src/main/java/io/papermc/paper/plugin/manager/PaperEventManager.java
+@@ -1,6 +1,6 @@
+ package io.papermc.paper.plugin.manager;
+ 
+-import co.aikar.timings.TimedEventExecutor;
++// import co.aikar.timings.TimedEventExecutor; // Plazma - Completely remove Timings
+ import com.destroystokyo.paper.event.server.ServerExceptionEvent;
+ import com.destroystokyo.paper.exception.ServerEventException;
+ import com.google.common.collect.Sets;
+@@ -95,7 +95,7 @@ class PaperEventManager {
+             throw new IllegalPluginAccessException("Plugin attempted to register " + event + " while not enabled");
+         }
+ 
+-        executor = new TimedEventExecutor(executor, plugin, null, event);
++        // executor = new TimedEventExecutor(executor, plugin, null, event); // Plazma - Completely remove Timings
+         this.getEventListeners(event).register(new RegisteredListener(listener, executor, priority, plugin, ignoreCancelled));
+     }
+ 
+@@ -182,7 +182,7 @@ class PaperEventManager {
+                 }
+             }
+ 
+-            EventExecutor executor = new TimedEventExecutor(EventExecutor.create(method, eventClass), plugin, method, eventClass);
++            EventExecutor executor = EventExecutor.create(method, eventClass); // Plazma - Completely remove Timings
+             eventSet.add(new RegisteredListener(listener, executor, eh.priority(), plugin, eh.ignoreCancelled()));
+         }
+         return ret;
+diff --git a/src/main/java/io/papermc/paper/plugin/manager/PaperPluginManagerImpl.java b/src/main/java/io/papermc/paper/plugin/manager/PaperPluginManagerImpl.java
+index dab211c458311869c61779305580a1c7da830f71..efa194f99807a61c02923dbaf58fac542bd9229f 100644
+--- a/src/main/java/io/papermc/paper/plugin/manager/PaperPluginManagerImpl.java
++++ b/src/main/java/io/papermc/paper/plugin/manager/PaperPluginManagerImpl.java
+@@ -227,7 +227,8 @@ public class PaperPluginManagerImpl implements PluginManager, DependencyContext
+ 
+     @Override
+     public boolean useTimings() {
+-        return co.aikar.timings.Timings.isTimingsEnabled();
++        return false;
++        // return co.aikar.timings.Timings.isTimingsEnabled(); // Plazma - Completely remove Timings
+     }
+ 
+     @Override
+diff --git a/src/main/java/net/minecraft/network/protocol/PacketUtils.java b/src/main/java/net/minecraft/network/protocol/PacketUtils.java
+index 620edb63cacd15e38f7fc859efd4095bfb5e5f72..85e6a5d5d3266d0d042ee62a89adbb5f0d3880e6 100644
+--- a/src/main/java/net/minecraft/network/protocol/PacketUtils.java
++++ b/src/main/java/net/minecraft/network/protocol/PacketUtils.java
+@@ -49,7 +49,7 @@ public class PacketUtils {
+                 try { // Paper - detailed watchdog information
+                 if (listener instanceof ServerCommonPacketListenerImpl serverCommonPacketListener && serverCommonPacketListener.processedDisconnect) return; // CraftBukkit - Don't handle sync packets for kicked players
+                 if (listener.shouldHandleMessage(packet)) {
+-                    co.aikar.timings.Timing timing = co.aikar.timings.MinecraftTimings.getPacketTiming(packet); // Paper - timings
++                    // co.aikar.timings.Timing timing = co.aikar.timings.MinecraftTimings.getPacketTiming(packet); // Paper - timings // Plazma - Completely remove Timings
+                     try { // Paper - timings // Purpur
+                         packet.handle(listener);
+                     } catch (Exception exception) {
+diff --git a/src/main/java/net/minecraft/server/MinecraftServer.java b/src/main/java/net/minecraft/server/MinecraftServer.java
+index 93564ba734f6b82ffde07b1321180fc24a0ff50f..25d560594d2fb38a6b94bb4b1677ff79603d5645 100644
+--- a/src/main/java/net/minecraft/server/MinecraftServer.java
++++ b/src/main/java/net/minecraft/server/MinecraftServer.java
+@@ -3,7 +3,7 @@ package net.minecraft.server;
+ import com.google.common.base.Preconditions;
+ import com.google.common.base.Splitter;
+ import com.google.common.collect.ImmutableList;
+-import co.aikar.timings.Timings;
++// import co.aikar.timings.Timings; // Plazma - Completely remove Timings
+ import com.destroystokyo.paper.event.server.PaperServerListPingEvent;
+ import com.google.common.base.Stopwatch;
+ import com.google.common.collect.Lists;
+@@ -189,7 +189,7 @@ import org.bukkit.craftbukkit.Main;
+ import org.bukkit.event.server.ServerLoadEvent;
+ // CraftBukkit end
+ 
+-import co.aikar.timings.MinecraftTimings; // Paper
++//import co.aikar.timings.MinecraftTimings; // Paper // Plazma - Completely remove Timings
+ 
+ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTask> implements ServerInfo, CommandSource, AutoCloseable {
+ 
+@@ -975,7 +975,7 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
+ 
+         MinecraftServer.LOGGER.info("Stopping server");
+         Commands.COMMAND_SENDING_POOL.shutdownNow(); // Paper - Perf: Async command map building; Shutdown and don't bother finishing
+-        MinecraftTimings.stopServer(); // Paper
++        //MinecraftTimings.stopServer(); // Paper // Plazma - Completely remove Timings
+         // Purpur start
+         if (upnp) {
+             if (dev.omega24.upnp4j.UPnP4J.close(this.getPort(), dev.omega24.upnp4j.util.Protocol.TCP)) {
+diff --git a/src/main/java/net/minecraft/server/dedicated/DedicatedServer.java b/src/main/java/net/minecraft/server/dedicated/DedicatedServer.java
+index 2a73508dd8a59c6af8b65ab2db97b6e20b104c57..27b14e60bb7ef73a73d49c561056ee42b2d7637f 100644
+--- a/src/main/java/net/minecraft/server/dedicated/DedicatedServer.java
++++ b/src/main/java/net/minecraft/server/dedicated/DedicatedServer.java
+@@ -58,7 +58,7 @@ import org.apache.logging.log4j.Level;
+ import org.apache.logging.log4j.LogManager;
+ import org.apache.logging.log4j.io.IoBuilder;
+ import org.bukkit.command.CommandSender;
+-import co.aikar.timings.MinecraftTimings; // Paper
++// import co.aikar.timings.MinecraftTimings; // Paper // Plazma - Completely remove Timings
+ import org.bukkit.event.server.ServerCommandEvent;
+ import org.bukkit.craftbukkit.util.Waitable; // Paper
+ import org.bukkit.event.server.RemoteServerCommandEvent;
+@@ -830,7 +830,7 @@ public class DedicatedServer extends MinecraftServer implements ServerInterface
+                     }
+                 };
+                 waitableArray[0] = waitable;
+-                co.aikar.timings.Timings.generateReport(new co.aikar.timings.TimingsReportListener(sender, waitable));
++                // co.aikar.timings.Timings.generateReport(new co.aikar.timings.TimingsReportListener(sender, waitable)); // Plazma - Completely remove Timings
+             } else {
+             // Paper end
+             ConsoleInput serverCommand = new ConsoleInput(event.getCommand(), wrapper);
+diff --git a/src/main/java/net/minecraft/server/level/ChunkMap.java b/src/main/java/net/minecraft/server/level/ChunkMap.java
+index d1056b1c91edc3ec06c78e65c8fa2dd1f000c43f..3f78dfb3af583e6b0a960b1d87393744a9da3baf 100644
+--- a/src/main/java/net/minecraft/server/level/ChunkMap.java
++++ b/src/main/java/net/minecraft/server/level/ChunkMap.java
+@@ -1,6 +1,6 @@
+ package net.minecraft.server.level;
+ 
+-import co.aikar.timings.Timing; // Paper
++// import co.aikar.timings.Timing; // Paper // Plazma - Completely remove Timings
+ import com.google.common.collect.ImmutableList;
+ import com.google.common.collect.ImmutableList.Builder;
+ import com.google.common.collect.Iterables;
+diff --git a/src/main/java/net/minecraft/server/level/ServerLevel.java b/src/main/java/net/minecraft/server/level/ServerLevel.java
+index 80789e6a31cb0dbbe780154f3bb7353685950e07..84491e05bfbd045c79b48e8524a8a874cad0964b 100644
+--- a/src/main/java/net/minecraft/server/level/ServerLevel.java
++++ b/src/main/java/net/minecraft/server/level/ServerLevel.java
+@@ -1,7 +1,7 @@
+ package net.minecraft.server.level;
+ 
+ import com.google.common.annotations.VisibleForTesting;
+-import co.aikar.timings.TimingHistory; // Paper
++// import co.aikar.timings.TimingHistory; // Paper // Plazma - Completely remove Timings
+ import com.google.common.collect.Lists;
+ import com.mojang.datafixers.DataFixer;
+ import com.mojang.datafixers.util.Pair;
+@@ -1463,9 +1463,9 @@ public class ServerLevel extends Level implements WorldGenLevel {
+                 currentlyTickingEntity.lazySet(entity);
+             }
+             // Paper end - log detailed entity tick information
+-        ++TimingHistory.entityTicks; // Paper - timings
++        // ++TimingHistory.entityTicks; // Paper - timings // Plazma - Completely remove Timings
+         // Spigot start
+-        co.aikar.timings.Timing timer; // Paper
++        // co.aikar.timings.Timing timer; // Paper // Plazma - Completely remove Timings
+         /*if (!org.spigotmc.ActivationRange.checkIfActive(entity)) { // Paper - comment out - EAR 2, reimplement below
+             entity.tickCount++;
+             timer = entity.getType().inactiveTickTimer.startTiming(); try { // Paper - timings
+@@ -1488,7 +1488,7 @@ public class ServerLevel extends Level implements WorldGenLevel {
+         });*/ // Purpur
+         //gameprofilerfiller.incrementCounter("tickNonPassenger"); // Purpur
+         if (isActive) { // Paper - EAR 2
+-            TimingHistory.activatedEntityTicks++;
++            // TimingHistory.activatedEntityTicks++; // Plazma - Completely remove Timings
+         entity.tick();
+         entity.postTick(); // CraftBukkit
+         } else { entity.inactiveTick(); } // Paper - EAR 2
+diff --git a/src/main/java/net/minecraft/server/players/PlayerList.java b/src/main/java/net/minecraft/server/players/PlayerList.java
+index ef4b1fb1532e1939d9a7e5337edc80b334b78318..5c0786fd473e16f931ab1c24bc622fcac40301c3 100644
+--- a/src/main/java/net/minecraft/server/players/PlayerList.java
++++ b/src/main/java/net/minecraft/server/players/PlayerList.java
+@@ -1,6 +1,6 @@
+ package net.minecraft.server.players;
+ 
+-import co.aikar.timings.MinecraftTimings;
++// import co.aikar.timings.MinecraftTimings; // Plazma - Completely remove Timings
+ import com.google.common.collect.Lists;
+ import com.google.common.collect.Maps;
+ import com.google.common.collect.Sets;
+diff --git a/src/main/java/net/minecraft/world/entity/EntityType.java b/src/main/java/net/minecraft/world/entity/EntityType.java
+index a9e2a758669550530eb29475ba99fe42e520f6ae..c74e18522c9569eb405b3d02097f5e9b3a8c9f86 100644
+--- a/src/main/java/net/minecraft/world/entity/EntityType.java
++++ b/src/main/java/net/minecraft/world/entity/EntityType.java
+@@ -344,10 +344,10 @@ public class EntityType<T extends Entity> implements FeatureElement, EntityTypeT
+         this(factory, spawnGroup, saveable, summonable, fireImmune, spawnableFarFromPlayer, canSpawnInside, dimensions, maxTrackDistance, trackTickInterval, requiredFeatures, "custom");
+     }
+     public EntityType(EntityType.EntityFactory<T> factory, MobCategory spawnGroup, boolean saveable, boolean summonable, boolean fireImmune, boolean spawnableFarFromPlayer, ImmutableSet<Block> canSpawnInside, EntityDimensions dimensions, int maxTrackDistance, int trackTickInterval, FeatureFlagSet requiredFeatures, String id) {
+-        this.tickTimer = co.aikar.timings.MinecraftTimings.getEntityTimings(id, "tick");
+-        this.inactiveTickTimer = co.aikar.timings.MinecraftTimings.getEntityTimings(id, "inactiveTick");
+-        this.passengerTickTimer = co.aikar.timings.MinecraftTimings.getEntityTimings(id, "passengerTick");
+-        this.passengerInactiveTickTimer = co.aikar.timings.MinecraftTimings.getEntityTimings(id, "passengerInactiveTick");
++        // this.tickTimer = co.aikar.timings.MinecraftTimings.getEntityTimings(id, "tick"); // Plazma - Completely remove Timings
++        // this.inactiveTickTimer = co.aikar.timings.MinecraftTimings.getEntityTimings(id, "inactiveTick"); // Plazma - Completely remove Timings
++        // this.passengerTickTimer = co.aikar.timings.MinecraftTimings.getEntityTimings(id, "passengerTick"); // Plazma - Completely remove Timings
++        // this.passengerInactiveTickTimer = co.aikar.timings.MinecraftTimings.getEntityTimings(id, "passengerInactiveTick"); // Plazma - Completely remove Timings
+         // Paper end
+         this.builtInRegistryHolder = BuiltInRegistries.ENTITY_TYPE.createIntrusiveHolder(this);
+         this.factory = factory;
+@@ -721,10 +721,10 @@ public class EntityType<T extends Entity> implements FeatureElement, EntityTypeT
+     }
+ 
+     // Paper start - timings
+-    public final co.aikar.timings.Timing tickTimer;
+-    public final co.aikar.timings.Timing inactiveTickTimer;
+-    public final co.aikar.timings.Timing passengerTickTimer;
+-    public final co.aikar.timings.Timing passengerInactiveTickTimer;
++    // public final co.aikar.timings.Timing tickTimer; // Plazma - Completely remove Timings
++    // public final co.aikar.timings.Timing inactiveTickTimer; // Plazma - Completely remove Timings
++    // public final co.aikar.timings.Timing passengerTickTimer; // Plazma - Completely remove Timings
++    // public final co.aikar.timings.Timing passengerInactiveTickTimer; // Plazma - Completely remove Timings
+     // Paper end
+     public boolean trackDeltas() {
+         return this != EntityType.PLAYER && this != EntityType.LLAMA_SPIT && this != EntityType.WITHER && this != EntityType.BAT && this != EntityType.ITEM_FRAME && this != EntityType.GLOW_ITEM_FRAME && this != EntityType.LEASH_KNOT && this != EntityType.PAINTING && this != EntityType.END_CRYSTAL && this != EntityType.EVOKER_FANGS;
+diff --git a/src/main/java/net/minecraft/world/entity/ai/behavior/Behavior.java b/src/main/java/net/minecraft/world/entity/ai/behavior/Behavior.java
+index 8f7d9f8a5138bcd572691d66c814aaa7c308b317..5db4a2b790680ed86a6106473d43fb0b2887f875 100644
+--- a/src/main/java/net/minecraft/world/entity/ai/behavior/Behavior.java
++++ b/src/main/java/net/minecraft/world/entity/ai/behavior/Behavior.java
+@@ -16,7 +16,7 @@ public abstract class Behavior<E extends LivingEntity> implements BehaviorContro
+     private final int maxDuration;
+     // Paper start - configurable behavior tick rate and timings
+     private final String configKey;
+-    private final co.aikar.timings.Timing timing;
++    // private final co.aikar.timings.Timing timing; // Plazma - Completely remove Timings
+     // Paper end - configurable behavior tick rate and timings
+ 
+     public Behavior(Map<MemoryModuleType<?>, MemoryStatus> requiredMemoryState) {
+@@ -38,7 +38,7 @@ public abstract class Behavior<E extends LivingEntity> implements BehaviorContro
+             key = key.substring(lastSeparator + 1);
+         }
+         this.configKey = key.toLowerCase(java.util.Locale.ROOT);
+-        this.timing = co.aikar.timings.MinecraftTimings.getBehaviorTimings(configKey);
++        // this.timing = co.aikar.timings.MinecraftTimings.getBehaviorTimings(configKey); // Plazma - Completely remove Timings
+         // Paper end - configurable behavior tick rate and timings
+     }
+ 
+diff --git a/src/main/java/net/minecraft/world/entity/ai/sensing/Sensor.java b/src/main/java/net/minecraft/world/entity/ai/sensing/Sensor.java
+index e553f52de2e0b30511ac1b73cb436374017cd7d7..21f4e5c3dd3e528f3184940a2351259a02fcb131 100644
+--- a/src/main/java/net/minecraft/world/entity/ai/sensing/Sensor.java
++++ b/src/main/java/net/minecraft/world/entity/ai/sensing/Sensor.java
+@@ -28,7 +28,7 @@ public abstract class Sensor<E extends LivingEntity> {
+     private long timeToTick;
+     // Paper start - configurable sensor tick rate and timings
+     private final String configKey;
+-    private final co.aikar.timings.Timing timing;
++    // private final co.aikar.timings.Timing timing; // Plazma - Completely remove Timings
+     // Paper end
+ 
+     public Sensor(int senseInterval) {
+@@ -39,7 +39,7 @@ public abstract class Sensor<E extends LivingEntity> {
+             key = key.substring(lastSeparator + 1);
+         }
+         this.configKey = key.toLowerCase(java.util.Locale.ROOT);
+-        this.timing = co.aikar.timings.MinecraftTimings.getSensorTimings(configKey, senseInterval);
++        // this.timing = co.aikar.timings.MinecraftTimings.getSensorTimings(configKey, senseInterval); // Plazma - Completely remove Timings
+         // Paper end
+         this.scanRate = senseInterval;
+         this.timeToTick = (long)RANDOM.nextInt(senseInterval);
+diff --git a/src/main/java/net/minecraft/world/level/Level.java b/src/main/java/net/minecraft/world/level/Level.java
+index 16e6716f70d5b9090f29f8b2320302d98dd087c2..c20f3dfdfb4efced687da115be0293887d69f966 100644
+--- a/src/main/java/net/minecraft/world/level/Level.java
++++ b/src/main/java/net/minecraft/world/level/Level.java
+@@ -179,7 +179,7 @@ public abstract class Level implements LevelAccessor, AutoCloseable {
+     // Plazma end - Configurable Plazma
+     public final com.destroystokyo.paper.antixray.ChunkPacketBlockController chunkPacketBlockController; // Paper - Anti-Xray
+     public final org.purpurmc.purpur.PurpurWorldConfig purpurConfig; // Purpur
+-    public final co.aikar.timings.WorldTimingsHandler timings; // Paper
++    // public final co.aikar.timings.WorldTimingsHandler timings; // Paper // Plazma - Completely remove Timings
+     public static BlockPos lastPhysicsProblem; // Spigot
+     private org.spigotmc.TickLimiter entityLimiter;
+     private org.spigotmc.TickLimiter tileLimiter;
+@@ -352,7 +352,7 @@ public abstract class Level implements LevelAccessor, AutoCloseable {
+             public void onBorderSetDamageSafeZOne(WorldBorder border, double safeZoneRadius) {}
+         });
+         // CraftBukkit end
+-        this.timings = new co.aikar.timings.WorldTimingsHandler(this); // Paper - code below can generate new world and access timings
++        // this.timings = new co.aikar.timings.WorldTimingsHandler(this); // Paper - code below can generate new world and access timings // Plazma - Completely remove Timings
+         this.keepSpawnInMemory = this.paperConfig().spawn.keepSpawnLoaded; // Paper - Option to keep spawn chunks loaded
+         this.entityLimiter = new org.spigotmc.TickLimiter(this.spigotConfig.entityMaxTickTime);
+         this.tileLimiter = new org.spigotmc.TickLimiter(this.spigotConfig.tileMaxTickTime);
+@@ -1362,7 +1362,7 @@ public abstract class Level implements LevelAccessor, AutoCloseable {
+ 
+         //this.timings.tileEntityTick.stopTiming(); // Spigot // Purpur
+         this.tickingBlockEntities = false;
+-        co.aikar.timings.TimingHistory.tileEntityTicks += this.blockEntityTickers.size(); // Paper
++        // co.aikar.timings.TimingHistory.tileEntityTicks += this.blockEntityTickers.size(); // Paper // Plazma - Completely remove Timings
+         //gameprofilerfiller.pop(); // Purpur
+         this.spigotConfig.currentPrimedTnt = 0; // Spigot
+     }
+diff --git a/src/main/java/net/minecraft/world/level/block/Block.java b/src/main/java/net/minecraft/world/level/block/Block.java
+index 284149925440f413d23a9ec3ce704e70a74f4c08..608a00e6be7c8c5ae922aaa738f875559ab708f5 100644
+--- a/src/main/java/net/minecraft/world/level/block/Block.java
++++ b/src/main/java/net/minecraft/world/level/block/Block.java
+@@ -114,6 +114,7 @@ public class Block extends BlockBehaviour implements ItemLike {
+             this != Blocks.STRUCTURE_BLOCK &&
+             this != Blocks.JIGSAW;
+     }
++    /* // Plazma - Completely remove Timings
+     public co.aikar.timings.Timing timing;
+     public co.aikar.timings.Timing getTiming() {
+         if (timing == null) {
+@@ -121,6 +122,7 @@ public class Block extends BlockBehaviour implements ItemLike {
+         }
+         return timing;
+     }
++     */ // Plazma - Completely remove Timings
+     // Paper end
+     @Nullable
+     private String descriptionId;
+diff --git a/src/main/java/net/minecraft/world/level/block/entity/BlockEntity.java b/src/main/java/net/minecraft/world/level/block/entity/BlockEntity.java
+index e9701ed4e5b35ace1accd2b46f082191d8ab6497..f2200a6098210ae3137e266a1f079ffd6971504d 100644
+--- a/src/main/java/net/minecraft/world/level/block/entity/BlockEntity.java
++++ b/src/main/java/net/minecraft/world/level/block/entity/BlockEntity.java
+@@ -23,14 +23,14 @@ import org.bukkit.craftbukkit.persistence.CraftPersistentDataTypeRegistry;
+ import org.bukkit.inventory.InventoryHolder;
+ // CraftBukkit end
+ 
+-import org.spigotmc.CustomTimingsHandler; // Spigot
+-import co.aikar.timings.MinecraftTimings; // Paper
+-import co.aikar.timings.Timing; // Paper
++// import org.spigotmc.CustomTimingsHandler; // Spigot // Plazma - Completely remove Timings
++// import co.aikar.timings.MinecraftTimings; // Paper // Plazma - Completely remove Timings
++// import co.aikar.timings.Timing; // Paper // Plazma - Completely remove Timings
+ 
+ public abstract class BlockEntity {
+     static boolean ignoreTileUpdates; // Paper - Perf: Optimize Hoppers
+ 
+-    public Timing tickTimer = MinecraftTimings.getTileEntityTimings(this); // Paper
++    // public Timing tickTimer = MinecraftTimings.getTileEntityTimings(this); // Paper // Plazma - Completely remove Timings
+     // CraftBukkit start - data containers
+     private static final CraftPersistentDataTypeRegistry DATA_TYPE_REGISTRY = new CraftPersistentDataTypeRegistry();
+     public CraftPersistentDataContainer persistentDataContainer;
+diff --git a/src/main/java/org/bukkit/craftbukkit/Main.java b/src/main/java/org/bukkit/craftbukkit/Main.java
+index e8df8e8520cea5d21197c61a172f7211a3a2c34d..27a106e3844309e5b7ca12d1fd2374cf20f4ba48 100644
+--- a/src/main/java/org/bukkit/craftbukkit/Main.java
++++ b/src/main/java/org/bukkit/craftbukkit/Main.java
+@@ -366,8 +366,8 @@ public class Main {
+             tryPreloadClass("org.jline.terminal.impl.MouseSupport");
+             tryPreloadClass("org.jline.terminal.impl.MouseSupport$1");
+             tryPreloadClass("org.jline.terminal.Terminal$MouseTracking");
+-            tryPreloadClass("co.aikar.timings.TimingHistory");
+-            tryPreloadClass("co.aikar.timings.TimingHistory$MinuteReport");
++            // tryPreloadClass("co.aikar.timings.TimingHistory"); // Plazma - Completely remove Timings
++            // tryPreloadClass("co.aikar.timings.TimingHistory$MinuteReport"); // Plazma - Completely remove Timings
+             tryPreloadClass("io.netty.channel.AbstractChannelHandlerContext");
+             tryPreloadClass("io.netty.channel.AbstractChannelHandlerContext$11");
+             tryPreloadClass("io.netty.channel.AbstractChannelHandlerContext$12");
+diff --git a/src/main/java/org/bukkit/craftbukkit/scheduler/CraftScheduler.java b/src/main/java/org/bukkit/craftbukkit/scheduler/CraftScheduler.java
+index 6bab5f9e40987d1a8ca9c17118d2a14135df5dff..14fd658f987f21993f334ae1524f880e3ce12b86 100644
+--- a/src/main/java/org/bukkit/craftbukkit/scheduler/CraftScheduler.java
++++ b/src/main/java/org/bukkit/craftbukkit/scheduler/CraftScheduler.java
+@@ -1,6 +1,6 @@
+ package org.bukkit.craftbukkit.scheduler;
+ 
+-import co.aikar.timings.MinecraftTimings; // Paper
++// import co.aikar.timings.MinecraftTimings; // Paper // Plazma - Completely remove Timings
+ import com.google.common.base.Preconditions;
+ import com.google.common.util.concurrent.ThreadFactoryBuilder;
+ import java.util.ArrayList;
+@@ -304,7 +304,7 @@ public class CraftScheduler implements BukkitScheduler {
+                         }
+                         return false;
+                     }
+-                }){{this.timings=co.aikar.timings.MinecraftTimings.getCancelTasksTimer();}}; // Paper
++                });//{{this.timings=co.aikar.timings.MinecraftTimings.getCancelTasksTimer();}}; // Paper // Plazma - Completely remove Timings
+         this.handle(task, 0L);
+         for (CraftTask taskPending = this.head.getNext(); taskPending != null; taskPending = taskPending.getNext()) {
+             if (taskPending == task) {
+@@ -344,7 +344,7 @@ public class CraftScheduler implements BukkitScheduler {
+                             }
+                         }
+                     }
+-                }){{this.timings=co.aikar.timings.MinecraftTimings.getCancelTasksTimer(plugin);}}; // Paper
++                });//{{this.timings=co.aikar.timings.MinecraftTimings.getCancelTasksTimer(plugin);}}; // Paper // Plazma - Completely remove Timings
+         this.handle(task, 0L);
+         for (CraftTask taskPending = this.head.getNext(); taskPending != null; taskPending = taskPending.getNext()) {
+             if (taskPending == task) {
+diff --git a/src/main/java/org/bukkit/craftbukkit/scheduler/CraftTask.java b/src/main/java/org/bukkit/craftbukkit/scheduler/CraftTask.java
+index 5835dc236b3f5291a804f7fb14a12eb466d4e0ba..5b943a792f6b005a094bc06f59899bd28cf576a1 100644
+--- a/src/main/java/org/bukkit/craftbukkit/scheduler/CraftTask.java
++++ b/src/main/java/org/bukkit/craftbukkit/scheduler/CraftTask.java
+@@ -2,14 +2,14 @@ package org.bukkit.craftbukkit.scheduler;
+ 
+ import java.util.function.Consumer;
+ 
+-import co.aikar.timings.NullTimingHandler;
++// import co.aikar.timings.NullTimingHandler; // Plazma - Completely remove Timings
+ import org.bukkit.Bukkit;
+ import org.bukkit.plugin.Plugin;
+ import org.bukkit.scheduler.BukkitTask;
+ 
+-import org.spigotmc.CustomTimingsHandler; // Spigot
+-import co.aikar.timings.MinecraftTimings; // Paper
+-import co.aikar.timings.Timing; // Paper
++// import org.spigotmc.CustomTimingsHandler; // Spigot // Plazma - Completely remove Timings
++// import co.aikar.timings.MinecraftTimings; // Paper // Plazma - Completely remove Timings
++// import co.aikar.timings.Timing; // Paper // Plazma - Completely remove Timings
+ 
+ public class CraftTask implements BukkitTask, Runnable { // Spigot
+ 
+@@ -31,7 +31,7 @@ public class CraftTask implements BukkitTask, Runnable { // Spigot
+     private long nextRun;
+     public final Runnable rTask; // Paper
+     public final Consumer<BukkitTask> cTask; // Paper
+-    public Timing timings; // Paper
++    // public Timing timings; // Paper // Plazma - Completely remove Timings
+     private final Plugin plugin;
+     private final int id;
+     private final long createdAt = System.nanoTime();
+@@ -55,7 +55,7 @@ public class CraftTask implements BukkitTask, Runnable { // Spigot
+         this.id = id;
+         this.period = CraftTask.NO_REPEATING;
+         this.taskName = taskName;
+-        this.timings = MinecraftTimings.getInternalTaskName(taskName);
++        // this.timings = MinecraftTimings.getInternalTaskName(taskName); // Plazma - Completely remove Timings
+     }
+     // Paper end
+ 
+@@ -76,7 +76,7 @@ public class CraftTask implements BukkitTask, Runnable { // Spigot
+         }
+         this.id = id;
+         this.period = period;
+-        timings = task != null ? MinecraftTimings.getPluginTaskTimings(this, period) : NullTimingHandler.NULL; // Paper
++        // timings = task != null ? MinecraftTimings.getPluginTaskTimings(this, period) : NullTimingHandler.NULL; // Paper // Plazma - Completely remove Timings
+     }
+ 
+     @Override
+diff --git a/src/main/java/org/bukkit/craftbukkit/util/CraftMagicNumbers.java b/src/main/java/org/bukkit/craftbukkit/util/CraftMagicNumbers.java
+index e29dc1101c7aa4b7b2a2d2e732e27a1a14a2a234..544d6f4831341802ac156080e30b2b500cd9f0da 100644
+--- a/src/main/java/org/bukkit/craftbukkit/util/CraftMagicNumbers.java
++++ b/src/main/java/org/bukkit/craftbukkit/util/CraftMagicNumbers.java
+@@ -217,7 +217,7 @@ public final class CraftMagicNumbers implements UnsafeValues {
+     // Paper start
+     @Override
+     public void reportTimings() {
+-        co.aikar.timings.TimingsExport.reportTimings();
++        //co.aikar.timings.TimingsExport.reportTimings(); // Plazma - Completely remove Timings
+     }
+     // Paper end
+ 
+@@ -495,9 +495,9 @@ public final class CraftMagicNumbers implements UnsafeValues {
+         return new CraftDamageSourceBuilder(damageType);
+     }
+     // Paper start
+-    @Override
++    @Override @Deprecated // Plazma - Completely remove Timings
+     public String getTimingsServerName() {
+-        return io.papermc.paper.configuration.GlobalConfiguration.get().timings.serverName;
++        return null; //io.papermc.paper.configuration.GlobalConfiguration.get().timings.serverName; // Plazma - Completely remove Timings
+     }
+ 
+     @Override
+diff --git a/src/main/java/org/spigotmc/ActivationRange.java b/src/main/java/org/spigotmc/ActivationRange.java
+index 56e52b16b419c882440a15947f037ae1a902bc70..e0e1c873703c1d3482d5bc82294490a44dd3a7a9 100644
+--- a/src/main/java/org/spigotmc/ActivationRange.java
++++ b/src/main/java/org/spigotmc/ActivationRange.java
+@@ -35,7 +35,7 @@ import net.minecraft.world.entity.projectile.FireworkRocketEntity;
+ import net.minecraft.world.entity.projectile.ThrowableProjectile;
+ import net.minecraft.world.entity.projectile.ThrownTrident;
+ import net.minecraft.world.entity.raid.Raider;
+-import co.aikar.timings.MinecraftTimings;
++// import co.aikar.timings.MinecraftTimings; // Plazma - Completely remove Timings
+ import net.minecraft.world.entity.schedule.Activity;
+ import net.minecraft.world.level.Level;
+ import net.minecraft.world.phys.AABB;

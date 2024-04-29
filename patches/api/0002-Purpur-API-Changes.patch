@@ -1,6 +1,6 @@
 From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
 From: granny <contact@granny.dev>
-Date: Sun, 3 Mar 2024 00:58:34 +0000
+Date: Fri, 26 Apr 2024 18:07:21 +0900
 Subject: [PATCH] Purpur API Changes
 
 PurpurMC
@@ -25,7 +25,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 
 diff --git a/build.gradle.kts b/build.gradle.kts
-index 28a3ee2f2df6f93a894793abc03d357a9010a399..0588b113b02a05e946dd92fce489662bc01a41eb 100644
+index 9164120d299d062c62529a7ef74eac0ded367993..09e541dcbbb43699b4402036b8a3cc86a0ac9aad 100644
 --- a/build.gradle.kts
 +++ b/build.gradle.kts
 @@ -129,6 +129,8 @@ tasks.jar {
@@ -185,11 +185,24 @@ index a736d7bcdc5861a01b66ba36158db1c716339346..22fc165fd9c95f0f3ae1be7a0857e48c
      class DummyVersionFetcher implements VersionFetcher {
  
          @Override
+diff --git a/src/main/java/gg/pufferfish/pufferfish/simd/SIMDChecker.java b/src/main/java/gg/pufferfish/pufferfish/simd/SIMDChecker.java
+index ab5fea0b03224bf249352ce340e94704ff713345..3441cdad70da1bd523c5933b1a914688718c2657 100644
+--- a/src/main/java/gg/pufferfish/pufferfish/simd/SIMDChecker.java
++++ b/src/main/java/gg/pufferfish/pufferfish/simd/SIMDChecker.java
+@@ -15,7 +15,7 @@ public class SIMDChecker {
+ 	@Deprecated
+ 	public static boolean canEnable(Logger logger) {
+ 		try {
+-			if (SIMDDetection.getJavaVersion() != 17 && SIMDDetection.getJavaVersion() != 18 && SIMDDetection.getJavaVersion() != 19) {
++			if (SIMDDetection.getJavaVersion() < 17 || SIMDDetection.getJavaVersion() > 21) {
+ 				return false;
+ 			} else {
+ 				SIMDDetection.testRun = true;
 diff --git a/src/main/java/org/bukkit/Bukkit.java b/src/main/java/org/bukkit/Bukkit.java
-index ca27559cf4aa1c2e44fdca2022e213b1b1c80f4e..d218cd30fc0733a83e3e0ba3279eb21561b0b08e 100644
+index 9a428153f34291bdc026a71f7e60e285b7794b0c..53ce0fb2dac9c22680ab934f535b5a2037139445 100644
 --- a/src/main/java/org/bukkit/Bukkit.java
 +++ b/src/main/java/org/bukkit/Bukkit.java
-@@ -2862,4 +2862,127 @@ public final class Bukkit {
+@@ -2884,4 +2884,127 @@ public final class Bukkit {
      public static Server.Spigot spigot() {
          return server.spigot();
      }
@@ -408,10 +421,10 @@ index 918a045165cdcde264bc24082b7afebb407271de..687d11619379aead7f665d4a5f8f8bcc
 +    // Purpur end
  }
 diff --git a/src/main/java/org/bukkit/Material.java b/src/main/java/org/bukkit/Material.java
-index f9af60356da4668cec8b24e73f5747ab82e35a91..b304ad1307cdd6785653b1eab9781e070fb14c5a 100644
+index ec117c47401ea1a04beb0e5ee9d4d394db7c5c4e..5b058d709751a5b720e209931774e09fcc9c960c 100644
 --- a/src/main/java/org/bukkit/Material.java
 +++ b/src/main/java/org/bukkit/Material.java
-@@ -11557,4 +11557,40 @@ public enum Material implements Keyed, Translatable, net.kyori.adventure.transla
+@@ -11559,4 +11559,40 @@ public enum Material implements Keyed, Translatable, net.kyori.adventure.transla
      public boolean isEnabledByFeature(@NotNull World world) {
          return Bukkit.getDataPackManager().isEnabledByFeature(this, world);
      }
@@ -453,10 +466,10 @@ index f9af60356da4668cec8b24e73f5747ab82e35a91..b304ad1307cdd6785653b1eab9781e07
 +    // Purpur end
  }
 diff --git a/src/main/java/org/bukkit/OfflinePlayer.java b/src/main/java/org/bukkit/OfflinePlayer.java
-index abb5109ed08a3a651c2c27d4d17a3d49eb06da1e..98308b759907e03b168f7e06704a91925ffcd3fd 100644
+index 30298a629b39bd43ce14b414fc697b2dfcbea89c..ce00af9121de7a910aaea4e0685a06d4cf31b4e3 100644
 --- a/src/main/java/org/bukkit/OfflinePlayer.java
 +++ b/src/main/java/org/bukkit/OfflinePlayer.java
-@@ -545,4 +545,106 @@ public interface OfflinePlayer extends ServerOperator, AnimalTamer, Configuratio
+@@ -557,4 +557,106 @@ public interface OfflinePlayer extends ServerOperator, AnimalTamer, Configuratio
       */
      @Nullable
      public Location getLocation();
@@ -564,10 +577,10 @@ index abb5109ed08a3a651c2c27d4d17a3d49eb06da1e..98308b759907e03b168f7e06704a9192
 +    // Purpur end - OfflinePlayer API
  }
 diff --git a/src/main/java/org/bukkit/Server.java b/src/main/java/org/bukkit/Server.java
-index b4f8281d3797ec825a7671f38077cd65d5a1d76e..be0e4c789a02d67160287c39cf6bdf8ef2229afc 100644
+index 4ff1b38eb65f97344257204cf018f176f247ed36..c15b0b05870a469ea5d314c9fac6a57a045f463c 100644
 --- a/src/main/java/org/bukkit/Server.java
 +++ b/src/main/java/org/bukkit/Server.java
-@@ -2214,6 +2214,18 @@ public interface Server extends PluginMessageRecipient, net.kyori.adventure.audi
+@@ -2235,6 +2235,18 @@ public interface Server extends PluginMessageRecipient, net.kyori.adventure.audi
          }
          // Paper end
  
@@ -586,7 +599,7 @@ index b4f8281d3797ec825a7671f38077cd65d5a1d76e..be0e4c789a02d67160287c39cf6bdf8e
          /**
           * Sends the component to the player
           *
-@@ -2497,4 +2509,105 @@ public interface Server extends PluginMessageRecipient, net.kyori.adventure.audi
+@@ -2518,4 +2530,105 @@ public interface Server extends PluginMessageRecipient, net.kyori.adventure.audi
       */
      boolean isOwnedByCurrentRegion(@NotNull Entity entity);
      // Paper end - Folia region threading API
@@ -693,10 +706,10 @@ index b4f8281d3797ec825a7671f38077cd65d5a1d76e..be0e4c789a02d67160287c39cf6bdf8e
 +    // Purpur end
  }
 diff --git a/src/main/java/org/bukkit/World.java b/src/main/java/org/bukkit/World.java
-index c5fe36050eeaff80cfb989fe2f38370215af6fe5..565ce4b0c5eb300953aaefa786b9f8938c771f2a 100644
+index e6f66d70d024cf4f0536a5bf8e51bf7b306335df..07e75978b4fc0e446e8aa46a40be5e371dc1c11b 100644
 --- a/src/main/java/org/bukkit/World.java
 +++ b/src/main/java/org/bukkit/World.java
-@@ -4213,6 +4213,86 @@ public interface World extends RegionAccessor, WorldInfo, PluginMessageRecipient
+@@ -4233,6 +4233,86 @@ public interface World extends RegionAccessor, WorldInfo, PluginMessageRecipient
      @Nullable
      public DragonBattle getEnderDragonBattle();
  
@@ -946,10 +959,10 @@ index 138d2530de2410f4a9424dabd3e5ce0cd1c1dcd2..10a8d64ad2da0be2c14f34c3e7d1957c
      // Paper start
      /**
 diff --git a/src/main/java/org/bukkit/entity/Entity.java b/src/main/java/org/bukkit/entity/Entity.java
-index d9929d9311e4b2b0ae13a8f6f13563257263f298..a36fc32dd83339b6939cb4046538ec6285042397 100644
+index 23def071492ccd715693d534cc506936e18f0f46..706096924ffd3b578866693e2937de4182fad554 100644
 --- a/src/main/java/org/bukkit/entity/Entity.java
 +++ b/src/main/java/org/bukkit/entity/Entity.java
-@@ -1104,4 +1104,55 @@ public interface Entity extends Metadatable, CommandSender, Nameable, Persistent
+@@ -1144,4 +1144,55 @@ public interface Entity extends Metadatable, CommandSender, Nameable, Persistent
       */
      @NotNull String getScoreboardEntryName();
      // Paper end - entity scoreboard name
@@ -1098,13 +1111,13 @@ index bcc6ba95bd21c7972865838c636a03f50b6c1f1a..c3fcd8dd7dbb1e1a18e17c014c1e6411
 +    // Purpur end
  }
 diff --git a/src/main/java/org/bukkit/entity/LivingEntity.java b/src/main/java/org/bukkit/entity/LivingEntity.java
-index e67455efc84f1e06d3396291d104ce65fee4591b..744b869c028324d5de30d2d64ab080b050fa3c47 100644
+index 65112eae8b92344796850b1e4c89e75443eab2fe..5369d802d37863a1efc0c031520147ceedcadc78 100644
 --- a/src/main/java/org/bukkit/entity/LivingEntity.java
 +++ b/src/main/java/org/bukkit/entity/LivingEntity.java
-@@ -1310,4 +1310,41 @@ public interface LivingEntity extends Attributable, Damageable, ProjectileSource
+@@ -1445,4 +1445,41 @@ public interface LivingEntity extends Attributable, Damageable, ProjectileSource
       */
      void setBodyYaw(float bodyYaw);
-     // Paper end
+     // Paper end - body yaw API
 +
 +    // Purpur start
 +    /**
@@ -1169,10 +1182,10 @@ index bc84b892cae5fe7019a3ad481e9da79956efa1fe..48eb5b00c460cccde29d327cef1d63fc
 +    // Purpur end
  }
 diff --git a/src/main/java/org/bukkit/entity/Player.java b/src/main/java/org/bukkit/entity/Player.java
-index 254a02ddb5dc867c9dd6c2086791f7ab94247fd3..6dc63bfe85d83a7cff369f06c57ebe0aa04c63a3 100644
+index d048ae07cc33fd77d128cc1ebf88b0804969fa3c..8bbbdad40bc6a1932d8f79ec95c0a92037b3dac5 100644
 --- a/src/main/java/org/bukkit/entity/Player.java
 +++ b/src/main/java/org/bukkit/entity/Player.java
-@@ -3687,4 +3687,123 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
+@@ -3752,4 +3752,123 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
      @Override
      Spigot spigot();
      // Spigot end
@@ -1473,7 +1486,7 @@ index f680545b6b59bf8d2ad154b0472dda4cba42a162..58a62ba0635f9158bf18043da89aba75
 +    // Purpur end
  }
 diff --git a/src/main/java/org/bukkit/inventory/ItemStack.java b/src/main/java/org/bukkit/inventory/ItemStack.java
-index 245a730a54c4b241a9a67eccceefafd2763bd238..54dd0bd043a37f6519fc8a318856a4825d389669 100644
+index 7414b4fa690d393a8e9557cc1fd1ce12fa426940..591759aef6c7c3333cbdab596c6619af9185c3c2 100644
 --- a/src/main/java/org/bukkit/inventory/ItemStack.java
 +++ b/src/main/java/org/bukkit/inventory/ItemStack.java
 @@ -17,6 +17,18 @@ import org.bukkit.inventory.meta.ItemMeta;
@@ -1495,7 +1508,7 @@ index 245a730a54c4b241a9a67eccceefafd2763bd238..54dd0bd043a37f6519fc8a318856a482
  
  /**
   * Represents a stack of items.
-@@ -1033,4 +1045,635 @@ public class ItemStack implements Cloneable, ConfigurationSerializable, Translat
+@@ -1061,4 +1073,635 @@ public class ItemStack implements Cloneable, ConfigurationSerializable, Translat
          return Bukkit.getUnsafe().computeTooltipLines(this, tooltipContext, player);
      }
      // Paper end - expose itemstack tooltip lines
