@@ -10,8 +10,10 @@ plugins {
     alias(libs.plugins.paperweight)
 }
 
+val jdkVersion = property("jdkVersion").toString().toInt()
+
 kotlin.jvmToolchain {
-    languageVersion = JavaLanguageVersion.of(17)
+    languageVersion = JavaLanguageVersion.of(jdkVersion)
 }
 
 repositories {
@@ -33,7 +35,7 @@ allprojects {
     apply(plugin = "java")
     apply(plugin = "maven-publish")
 
-    java.toolchain.languageVersion.set(JavaLanguageVersion.of(17))
+    java.toolchain.languageVersion.set(JavaLanguageVersion.of(jdkVersion))
 
     publishing {
         repositories {
@@ -59,7 +61,7 @@ subprojects {
         withType<JavaCompile>().configureEach {
             options.compilerArgs.addAll(listOf("--add-modules=jdk.incubator.vector", "-Xmaxwarns", "1"))
             options.encoding = Charsets.UTF_8.name()
-            options.release = 17
+            options.release = jdkVersion
         }
     
         withType<Javadoc> {
@@ -118,12 +120,19 @@ paperweight {
 }
 
 alwaysUpToDate {
-    paperRepository.set("https://github.com/PaperMC/Paper")
-    paperBranch.set("master")
-    purpurRepository.set("https://github.com/PurpurMC/Purpur")
-    purpurBranch.set("ver/1.20.4")
-    pufferfishRepository.set("https://github.com/pufferfish-gg/Pufferfish")
-    pufferfishBranch.set("ver/1.20")
+
+    paperRepoName.set("org.plazmamc.alwaysuptodate.paper.repository")
+    paperBranchName.set("paperBranch")
+    paperCommitName.set("paperCommit")
+
+    purpurRepoName.set("org.plazmamc.alwaysuptodate.purpur.repository")
+    purpurBranchName.set("purpurBranch")
+    purpurCommitName.set("purpurCommit")
+
+    pufferfishRepoName.set("pufferfishRepo")
+    pufferfishBranchName.set("pufferfishBranch")
+    pufferfishToggleName.set("usePufferfish")
+
 }
 
 tasks {

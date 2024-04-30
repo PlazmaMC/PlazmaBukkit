@@ -14,7 +14,7 @@ kotlin.jvmToolchain {
 }
 
 dependencies {
-    shadow("io.papermc.paperweight:paperweight-patcher:1.5.11-SNAPSHOT")
+    shadow("io.papermc.paperweight:paperweight-patcher:1.6.2-SNAPSHOT")
 }
 
 tasks {

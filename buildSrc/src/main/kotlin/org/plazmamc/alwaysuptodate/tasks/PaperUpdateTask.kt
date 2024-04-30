@@ -14,23 +14,33 @@ abstract class PaperUpdateTask : Task() {
     override fun init() {
         outputs.upToDateWhen {
             project.checkCommit(
-                property.paperRepository.get(),
-                property.paperBranch.get(),
-                "purpurCommit"
+                project.property(property.paperRepoName.get()).toString(),
+                project.property(property.paperBranchName.get()).toString(),
+                property.paperCommitName.get()
             )
         }
     }
 
     @TaskAction
     fun update() {
-        if (project.checkCommit(property.paperRepository.get(), property.paperBranch.get(), "purpurCommit")) return
+        if (project.checkCommit(
+                project.property(property.paperRepoName.get()).toString(),
+                project.property(property.purpurBranchName.get()).toString(),
+                property.purpurCommitName.get()
+        )) return
+
         project.createCompareComment(
-            property.paperRepository.get(),
-            property.paperBranch.get(),
-            project.properties["paperCommit"] as String,
+            project.property(property.paperRepoName.get()).toString(),
+            project.property(property.paperBranchName.get()).toString(),
+            project.property(property.paperCommitName.get()).toString(),
             true
         )
-        updatePaperCommit(property.paperRepository.get(), property.paperBranch.get(), project.file("gradle.properties"))
+
+        updatePaperCommit(
+            project.property(property.paperRepoName.get()).toString(),
+            project.property(property.paperBranchName.get()).toString(),
+            project.file("gradle.properties")
+        )
     }
 
 }

@@ -18,7 +18,11 @@ abstract class CheckPaperCommitTask : Task() {
 
     @TaskAction
     fun check() {
-        println(project.checkCommit(property.paperRepository.get(), property.paperBranch.get(), "paperCommit"))
+        println(project.checkCommit(
+            project.property(property.paperRepoName.get()).toString(),
+            project.property(property.paperBranchName.get()).toString(),
+            property.paperCommitName.get()
+        ))
     }
 
 }
@@ -29,17 +33,21 @@ abstract class CheckPurpurCommitTask : Task() {
 
     @TaskAction
     fun check() {
-        println(project.checkCommit(property.purpurRepository.get(), property.purpurBranch.get(), "purpurCommit"))
+        println(project.checkCommit(
+            project.property(property.purpurRepoName.get()).toString(),
+            project.property(property.purpurBranchName.get()).toString(),
+            property.purpurCommitName.get()
+        ))
     }
 
 }
 
 fun Project.getLatest(repository: String, branch: String) : String {
     val regex = "[a-z0-9]{40}\trefs/heads/$branch".toRegex()
+    val temp = Git(project.pathIO)("ls-remote", repository).readText()
 
-    return Git(project.pathIO)("ls-remote", repository).readText()?.lines()
-        ?.filterNot { regex.matches(it) }?.first()?.split("\t")?.first()
-        ?: throw AlwaysUpToDateException("Failed to get latest Purpur commit")
+    return temp?.lines()?.first { regex.matches(it) }?.split("\t")?.first()
+        ?: throw AlwaysUpToDateException("Failed to get latest commit of $repository")
 }
 
 fun Project.checkCommit(repository: String, branch: String, propertyName: String) : Boolean {
@@ -54,7 +62,7 @@ fun Project.createCompareComment(repository: String, branch: String, before: Str
     val rawRepo = URI.create(repository).path.substring(1)
 
     if (!clear) builder.append(project.file("compare.txt").readText())
-    builder.append("\n\n[${rawRepo.split("/").last()} Changes]")
+    builder.append("\n\n[${rawRepo.split("/").last()} Changes]\n")
 
     gson.fromJson<JsonObject>(URI.create("https://api.github.com/repos/$rawRepo/compare/$before...$branch").toURL().readText())["commits"].asJsonArray.forEach {
         val commit = it.asJsonObject

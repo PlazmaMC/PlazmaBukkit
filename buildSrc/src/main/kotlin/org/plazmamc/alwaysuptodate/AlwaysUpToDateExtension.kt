@@ -4,13 +4,16 @@ import org.gradle.api.provider.Property
 
 interface AlwaysUpToDateExtension {
 
-    val paperRepository: Property<String>
-    val paperBranch: Property<String>
+    val paperBranchName: Property<String>
+    val paperRepoName: Property<String>
+    val paperCommitName: Property<String>
 
-    val pufferfishRepository: Property<String>
-    val pufferfishBranch: Property<String>
+    val pufferfishToggleName: Property<String>
+    val pufferfishBranchName: Property<String>
+    val pufferfishRepoName: Property<String>
 
-    val purpurRepository: Property<String>
-    val purpurBranch: Property<String>
+    val purpurBranchName: Property<String>
+    val purpurRepoName: Property<String>
+    val purpurCommitName: Property<String>
 
 }

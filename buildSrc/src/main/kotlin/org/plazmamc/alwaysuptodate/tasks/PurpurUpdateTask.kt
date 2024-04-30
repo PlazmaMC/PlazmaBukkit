@@ -11,6 +11,7 @@ import org.plazmamc.alwaysuptodate.utils.Gradle
 import org.plazmamc.alwaysuptodate.utils.addCommit
 import org.plazmamc.alwaysuptodate.utils.clone
 import java.nio.file.Path
+import java.util.Calendar
 import kotlin.io.path.createDirectories
 import kotlin.io.path.exists
 
@@ -19,7 +20,7 @@ abstract class PurpurUpdateTask : Task() {
     private val property = project.extensions["alwaysUpToDate"] as AlwaysUpToDateExtension
     private val pufferfishCommit = """
         Pufferfish
-        Copyright (C) 2024 Pufferfish Studios LLC
+        Copyright (C) ${Calendar.getInstance().get(Calendar.YEAR)} Pufferfish Studios LLC
 
         This program is free software: you can redistribute it and/or modify
         it under the terms of the GNU General Public License as published by
@@ -36,7 +37,7 @@ abstract class PurpurUpdateTask : Task() {
     """.trimIndent()
     private val purpurCommit = """
         PurpurMC
-        Copyright (C) 2024 PurpurMC
+        Copyright (C) ${Calendar.getInstance().get(Calendar.YEAR)} PurpurMC
         
         Permission is hereby granted, free of charge, to any person obtaining a copy
         of this software and associated documentation files (the "Software"), to deal
@@ -60,51 +61,141 @@ abstract class PurpurUpdateTask : Task() {
     override fun init() {
         outputs.upToDateWhen {
             project.checkCommit(
-                property.purpurRepository.get(),
-                property.purpurBranch.get(),
-                "purpurCommit"
+                project.property(property.purpurRepoName.get()).toString(),
+                project.property(property.purpurBranchName.get()).toString(),
+                property.purpurCommitName.get()
             )
         }
     }
 
-    @TaskAction
-    fun update() {
-        if (project.checkCommit(property.purpurRepository.get(), property.purpurBranch.get(), "purpurCommit")) return
-        Git.checkForGit()
-
-        project.createCompareComment(
-            property.purpurRepository.get(),
-            property.purpurBranch.get(),
-            project.properties["purpurCommit"] as String,
-            true
-        )
-        val dir = project.layout.cache.resolve("AlwaysUpToDate/UpdatePurpur")
-        if (dir.exists()) dir.toFile().deleteRecursively()
-
-        dir.createDirectories()
-
+    private fun withoutPufferfish(dir: Path) {
         val git = Git(dir)
-        val pufferfish = git.clone("Pufferfish", property.pufferfishRepository.get(), property.pufferfishBranch.get(), dir)
-        val purpur = git.clone("Purpur", property.purpurRepository.get(), property.purpurBranch.get(), dir)
+        val purpur = git.clone(
+            "Purpur",
+            project.property(property.purpurRepoName.get()).toString(),
+            project.property(property.purpurBranchName.get()).toString(),
+            dir
+        )
+        val purpurPatches = purpur.resolve("patches")
 
-        updatePaperCommit(property.paperRepository.get(), property.paperBranch.get(), pufferfish.resolve("gradle.properties").toFile(), "paperRef=")
-        updatePaperCommit(property.paperRepository.get(), property.paperBranch.get(), purpur.resolve("gradle.properties").toFile())
+        project.properties.let {
+            it[property.paperRepoName.get()].toString() to it[property.paperBranchName.get()].toString()
+        }.also {
+            updatePaperCommit(it.first, it.second, purpur.resolve("gradle.properties").toFile())
 
-        if (!project.checkCommit(property.paperRepository.get(), property.paperBranch.get(), "paperCommit")) {
+            if (project.checkCommit(
+                it.first,
+                it.second,
+                property.paperCommitName.get()
+            )) return@also
+
             project.createCompareComment(
-                property.paperRepository.get(),
-                property.paperBranch.get(),
-                project.properties["paperCommit"] as String
+                it.first,
+                it.second,
+                project.property(property.paperCommitName.get()).toString()
             )
             updatePaperCommit(
-                property.paperRepository.get(),
-                property.paperBranch.get(),
+                it.first,
+                it.second,
                 project.file("gradle.properties")
             )
         }
 
-        val latestCommit = git("ls-remote", property.purpurRepository.get()).readText()?.lines()
-            ?.filterNot { "[a-z0-9]{40}\trefs/heads/${property.purpurBranch.get()}".toRegex().matches(it) }?.first()?.split("\t")?.first()
+        val latestCommit = git("ls-remote", project.property(property.purpurRepoName.get()).toString()).readText()?.lines()
+            ?.filterNot { "[a-z0-9]{40}\trefs/heads/${project.property(property.purpurBranchName.get())}".toRegex().matches(it) }
+            ?.first()?.split("\t")?.first()
+            ?: throw AlwaysUpToDateException("Failed to get latest Purpur commit")
+
+        val purpurGradle = Gradle(purpur)
+        purpurGradle("applyPatches").executeOut()
+
+        purpur.resolve("Purpur-Server").also {
+            val dotGit = it.resolve(".git").toFile()
+            dotGit.deleteRecursively()
+            copySource(it)
+
+            val paper = purpur.resolve(".gradle/caches/paperweight/upstreams/paper/Paper-Server")
+            copySource(paper)
+            Git(paper)("add", ".").executeOut()
+            Git(paper)("commit", "-m", "Vanilla Sources", "--author=Vanilla <auto@mated.null>").executeOut()
+            Thread.sleep(1_000)
+            paper.resolve(".git").toFile().copyRecursively(dotGit, overwrite = true)
+            Git(it).addCommit("Purpur Server Changes\n\n$purpurCommit", "--author=granny <contact@granny.dev>")
+        }
+
+        purpur.resolve("Purpur-API").also {
+            val dotGit = it.resolve(".git").toFile()
+            dotGit.deleteRecursively()
+
+            val paper = purpur.resolve(".gradle/caches/paperweight/upstreams/paper/Paper-API")
+            Git(paper)("add", ".").executeOut()
+            Git(paper)("commit", "-m", "Vanilla Sources", "--author=Vanilla <auto@mated.null>").executeOut()
+            Thread.sleep(1_000)
+            paper.resolve(".git").toFile().copyRecursively(dotGit, overwrite = true)
+            Git(it).addCommit("Purpur API Changes\n\n$purpurCommit", "--author=granny <contact@granny.dev>")
+        }
+
+        purpurGradle("rebuildPatches").executeOut()
+        project.layout.projectDirectory.path.resolve("patches").also {
+            with(purpurPatches.resolve("server")) {
+                val target = it.resolve("server")
+                copyPatch(this, target, "0001-Purpur-Server-Changes.patch")
+            }
+
+            with(purpurPatches.resolve("api")) {
+                val target = it.resolve("api")
+                copyPatch(this, target, "0001-Purpur-API-Changes.patch")
+            }
+        }
+
+        project.file("gradle.properties").writeText(
+            project.file("gradle.properties").readText()
+                .replace("purpurCommit = .*".toRegex(), "purpurCommit = $latestCommit")
+        )
+    }
+
+    private fun withPufferfish(dir: Path) {
+        val git = Git(dir)
+        val pufferfish = git.clone(
+            "Pufferfish",
+            project.property(property.pufferfishRepoName.get()).toString(),
+            project.property(property.pufferfishBranchName.get()).toString(),
+            dir
+        )
+        val purpur = git.clone(
+            "Purpur",
+            project.property(property.purpurRepoName.get()).toString(),
+            project.property(property.purpurBranchName.get()).toString(),
+            dir
+        )
+
+        project.properties.let {
+            it[property.paperRepoName.get()].toString() to it[property.paperBranchName.get()].toString()
+        }.also {
+            updatePaperCommit(it.first, it.second, pufferfish.resolve("gradle.properties").toFile(), "paperRef=")
+            updatePaperCommit(it.first, it.second, purpur.resolve("gradle.properties").toFile())
+
+            if (project.checkCommit(
+                    it.first,
+                    it.second,
+                    property.paperCommitName.get()
+            )) return@also
+
+            project.createCompareComment(
+                it.first,
+                it.second,
+                project.property(property.paperCommitName.get()).toString()
+            )
+            updatePaperCommit(
+                it.first,
+                it.second,
+                project.file("gradle.properties")
+            )
+        }
+
+        val latestCommit = git("ls-remote", project.property(property.purpurRepoName.get()).toString()).readText()?.lines()
+            ?.filterNot { "[a-z0-9]{40}\trefs/heads/${project.property(property.purpurBranchName.get())}".toRegex().matches(it) }
+            ?.first()?.split("\t")?.first()
             ?: throw AlwaysUpToDateException("Failed to get latest Purpur commit")
 
         val purpurGradle = Gradle(purpur)
@@ -159,6 +250,31 @@ abstract class PurpurUpdateTask : Task() {
         }
 
         project.file("gradle.properties").writeText(project.file("gradle.properties").readText().replace("purpurCommit = .*".toRegex(), "purpurCommit = $latestCommit"))
+    }
+
+    @TaskAction
+    fun update() {
+        if (project.checkCommit(
+                project.property(property.purpurRepoName.get()).toString(),
+                project.property(property.purpurBranchName.get()).toString(),
+                property.purpurCommitName.get()
+        )) return
+
+        Git.checkForGit()
+
+        project.createCompareComment(
+            project.property(property.purpurRepoName.get()).toString(),
+            project.property(property.purpurBranchName.get()).toString(),
+            project.property(property.purpurCommitName.get()).toString(),
+            true
+        )
+        val dir = project.layout.cache.resolve("AlwaysUpToDate/UpdatePurpur")
+        if (dir.exists()) dir.toFile().deleteRecursively()
+
+        dir.createDirectories()
+
+        if (project.property(property.pufferfishToggleName.get()).toString().toBoolean()) withPufferfish(dir)
+        else withoutPufferfish(dir)
     }
 
     private fun copySource(dir: Path) {
