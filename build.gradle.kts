@@ -85,6 +85,9 @@ subprojects {
         mavenCentral()
         maven("https://jitpack.io")
         maven("https://papermc.io/repo/repository/maven-public/")
+        maven(url = "https://s01.oss.sonatype.org/content/repositories/snapshots/") {
+            name = "sonatype-oss-snapshots"
+        }
     }
 }
 

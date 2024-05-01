@@ -1,0 +1,154 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: AlphaKR93 <dev@alpha93.kr>
+Date: Sun, 5 Nov 2023 10:13:14 +0900
+Subject: [PATCH] Always agree EULA on development mode
+
+
+diff --git a/build.gradle.kts b/build.gradle.kts
+index e2c178e4136fa99427f4e394da363caf7872edcd..4ce3329a2d8a5eb04b3b65a7bbdf0b88e4a4bc2d 100644
+--- a/build.gradle.kts
++++ b/build.gradle.kts
+@@ -20,6 +20,7 @@ dependencies {
+     implementation(common.asm.commons)
+     implementation(common.log4j.iostreams)
+     implementation(common.commons.lang2)
++    implementation(common.adventure.serializer.ansi)
+     implementation(server.velocity) { isTransitive = false }
+ 
+     runtimeOnly(common.maven.provider)
+diff --git a/src/main/java/io/papermc/paper/configuration/Configurations.java b/src/main/java/io/papermc/paper/configuration/Configurations.java
+index 3ac80b85ba7c4a4e0b0b4aa06fa92f6e4e376c28..d32a963b0210438ae9f313af47125423a2263bf8 100644
+--- a/src/main/java/io/papermc/paper/configuration/Configurations.java
++++ b/src/main/java/io/papermc/paper/configuration/Configurations.java
+@@ -85,16 +85,17 @@ public abstract class Configurations<G, W> {
+     }
+ 
+     protected static ContextMap createWorldContextMap(ServerLevel level) {
+-        return createWorldContextMap(level.convertable.levelDirectory.path(), level.serverLevelData.getLevelName(), level.dimension().location(), level.spigotConfig, level.registryAccess());
++        return createWorldContextMap(level.convertable.levelDirectory.path(), level.serverLevelData.getLevelName(), level.dimension().location(), level.spigotConfig, level.registryAccess(), level.getGameRules());
+     }
+ 
+-    public static ContextMap createWorldContextMap(Path dir, String levelName, ResourceLocation worldKey, org.spigotmc.SpigotWorldConfig spigotConfig, RegistryAccess registryAccess) {
++    public static ContextMap createWorldContextMap(Path dir, String levelName, ResourceLocation worldKey, org.spigotmc.SpigotWorldConfig spigotConfig, RegistryAccess registryAccess, final GameRules gameRules) {
+         return ContextMap.builder()
+             .put(WORLD_DIRECTORY, dir)
+             .put(WORLD_NAME, levelName)
+             .put(WORLD_KEY, worldKey)
+             .put(SPIGOT_WORLD_CONFIG_CONTEXT_KEY, com.google.common.base.Suppliers.ofInstance(spigotConfig))
+             .put(REGISTRY_ACCESS, registryAccess)
++            .put(GAME_RULES, gameRules)
+             .build();
+     }
+ 
+@@ -290,7 +291,7 @@ public abstract class Configurations<G, W> {
+     }
+ 
+     // Make sure to run version transforms on the default world config first via #setupWorldDefaultsConfig
+-    public W createWorldConfig(final ContextMap contextMap) throws IOException {
++    public W createWorldConfig(final ContextMap contextMap) {
+         final String levelName = contextMap.require(WORLD_NAME);
+         try {
+             return this.createWorldConfig(contextMap, creator(this.worldConfigClass(), false));
+diff --git a/src/main/java/io/papermc/paper/configuration/PaperConfigurations.java b/src/main/java/io/papermc/paper/configuration/PaperConfigurations.java
+index 27a2914fabdc2c5ac70e402a41f5c9bb7bfe3c51..72c2a84fbf4368d9f80888579878f7247b77f363 100644
+--- a/src/main/java/io/papermc/paper/configuration/PaperConfigurations.java
++++ b/src/main/java/io/papermc/paper/configuration/PaperConfigurations.java
+@@ -225,7 +225,7 @@ public class PaperConfigurations extends Configurations<GlobalConfiguration, Wor
+     }
+      */ // Plazma - Configurable Plazma
+ 
+-    private static ConfigurationOptions defaultOptions(ConfigurationOptions options) {
++    protected static ConfigurationOptions defaultOptions(ConfigurationOptions options) {
+         return options.serializers(builder -> builder
+             .register(MapSerializer.TYPE, new MapSerializer(false))
+             .register(new EnumValueSerializer())
+@@ -238,7 +238,7 @@ public class PaperConfigurations extends Configurations<GlobalConfiguration, Wor
+         return defaultGlobalFactoryBuilder(super.createGlobalObjectMapperFactoryBuilder());
+     }
+ 
+-    private static ObjectMapper.Factory.Builder defaultGlobalFactoryBuilder(ObjectMapper.Factory.Builder builder) {
++    protected static ObjectMapper.Factory.Builder defaultGlobalFactoryBuilder(ObjectMapper.Factory.Builder builder) {
+         return builder.addDiscoverer(InnerClassFieldDiscoverer.globalConfig());
+     }
+ 
+@@ -318,7 +318,7 @@ public class PaperConfigurations extends Configurations<GlobalConfiguration, Wor
+ 
+     @Override
+     protected void applyWorldConfigTransformations(final ContextMap contextMap, final ConfigurationNode node, final @Nullable ConfigurationNode defaultsNode) throws ConfigurateException {
+-        super.applyWorldConfigTransformations(contextMap, node); // Plazma - Configurable Plazma
++        super.applyWorldConfigTransformations(contextMap, node, defaultsNode); // Plazma - Configurable Plazma
+ 
+         final ConfigurationTransformation.VersionedBuilder versionedBuilder = Transformations.versionedBuilder();
+         V29_ZeroWorldHeight.apply(versionedBuilder);
+diff --git a/src/main/java/net/minecraft/network/chat/Component.java b/src/main/java/net/minecraft/network/chat/Component.java
+index 6dcade427f19771b08e04cfa036dedcfac30b5cd..4a0b4b0fa1c84bca2b970a4a0a51fd795de488c0 100644
+--- a/src/main/java/net/minecraft/network/chat/Component.java
++++ b/src/main/java/net/minecraft/network/chat/Component.java
+@@ -189,7 +189,7 @@ public interface Component extends Message, FormattedText, Iterable<Component> {
+     }
+ 
+     static MutableComponent translatable(String key) {
+-        return MutableComponent.create(new TranslatableContents(key, (String) null, TranslatableContents.NO_ARGS));
++        return MutableComponent.create(new TranslatableContents(key, (String) null, org.plazmamc.plazma.constants.Empty.OBJECT)); // Plazma - Reduce allocations
+     }
+ 
+     static MutableComponent translatable(String key, Object... args) {
+@@ -209,7 +209,7 @@ public interface Component extends Message, FormattedText, Iterable<Component> {
+     }
+ 
+     static MutableComponent translatableWithFallback(String key, @Nullable String fallback) {
+-        return MutableComponent.create(new TranslatableContents(key, fallback, TranslatableContents.NO_ARGS));
++        return MutableComponent.create(new TranslatableContents(key, fallback, org.plazmamc.plazma.constants.Empty.OBJECT)); // Plazma - Reduce allocations
+     }
+ 
+     static MutableComponent translatableWithFallback(String key, @Nullable String fallback, Object... args) {
+diff --git a/src/main/java/net/minecraft/server/Main.java b/src/main/java/net/minecraft/server/Main.java
+index d06b81b7c72f4cd7f6212c470fa0e7d620054122..69ebe97bcff3e8ea4cd2a3575bedaaa829e826b2 100644
+--- a/src/main/java/net/minecraft/server/Main.java
++++ b/src/main/java/net/minecraft/server/Main.java
+@@ -171,6 +171,7 @@ public class Main {
+ 
+             // Spigot Start
+             boolean eulaAgreed = Boolean.getBoolean( "com.mojang.eula.agree" );
++            eulaAgreed = eulaAgreed || Boolean.getBoolean("Paper.isRunDev"); // Plazma - Always agree EULA on development mode
+             if ( eulaAgreed )
+             {
+                 System.err.println( "You have used the Spigot command line EULA agreement flag." );
+diff --git a/src/main/java/net/minecraft/server/MinecraftServer.java b/src/main/java/net/minecraft/server/MinecraftServer.java
+index 5afac92929226388bff73aba6cef253b7624b9ce..7cd380fe9e837bbe8ed50c5444fd714f08d5dadf 100644
+--- a/src/main/java/net/minecraft/server/MinecraftServer.java
++++ b/src/main/java/net/minecraft/server/MinecraftServer.java
+@@ -313,6 +313,7 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
+     @Deprecated(forRemoval = true) // Paper
+     public final double[] recentTps = new double[ 4 ]; // Purpur
+     // Spigot end
++    public final io.papermc.paper.configuration.PaperConfigurations paperConfigurations; // Paper - add paper configuration files
+     public final org.plazmamc.plazma.configurations.PlazmaConfigurations plazmaConfigurations; // Plazma - Configurable Plazma
+     public static long currentTickLong = 0L; // Paper - track current tick as a long
+     public boolean isIteratingOverLevels = false; // Paper - Throw exception on world create while being ticked
+diff --git a/src/main/java/net/minecraft/world/item/MapItem.java b/src/main/java/net/minecraft/world/item/MapItem.java
+index b5c584e5cf767ab7ecfd6b2104d1d31ba0f61d60..043f068345ca3c50209c1c3cc1feb6277a3da61a 100644
+--- a/src/main/java/net/minecraft/world/item/MapItem.java
++++ b/src/main/java/net/minecraft/world/item/MapItem.java
+@@ -274,7 +274,7 @@ public class MapItem extends ComplexItem {
+         if (!world.isClientSide) {
+             MapItemSavedData mapItemSavedData = getSavedData(stack, world);
+             if (mapItemSavedData != null) {
+-                if (skipTickWhenCraftNotPresent && worldmap.mapView.getRenderers().stream().noneMatch(mapRenderer -> mapRenderer.getClass() == org.bukkit.craftbukkit.map.CraftMapRenderer.class)) return; // Plazma - SparklyPaper port; Skip map item ticking if the craft map renderer is not present
++                if (skipTickWhenCraftNotPresent && mapItemSavedData.mapView.getRenderers().stream().noneMatch(mapRenderer -> mapRenderer.getClass() == org.bukkit.craftbukkit.map.CraftMapRenderer.class)) return; // Plazma - SparklyPaper port; Skip map item ticking if the craft map renderer is not present
+                 if (entity instanceof Player player) {
+                     mapItemSavedData.tickCarriedBy(player, stack);
+                 }
+diff --git a/src/test/java/org/bukkit/support/DummyServer.java b/src/test/java/org/bukkit/support/DummyServer.java
+index 37b3c3fe0be6366f0cdb868467d6dcb6f2904c41..aae4590428d570244e52cb927a043120aec4d160 100644
+--- a/src/test/java/org/bukkit/support/DummyServer.java
++++ b/src/test/java/org/bukkit/support/DummyServer.java
+@@ -61,8 +61,6 @@ public final class DummyServer {
+ 
+             // Plazma start - Configurable Plazma
+             net.minecraft.server.MinecraftServer handle = mock(withSettings().stubOnly());
+-            when(handle.random()).thenReturn(net.minecraft.util.RandomSource.create());
+-            when(handle.getFixerUpper()).thenReturn(net.minecraft.util.datafix.DataFixers.getDataFixer());
+             net.minecraft.server.MinecraftServer.setServer(handle);
+             // Plazma end - Configurable Plazma
+ 

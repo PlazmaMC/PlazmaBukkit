@@ -9,10 +9,10 @@ Copyright (C) 2024 SparklyPower
 Based on commit: 29212936a832106c4d68e2a2017acbea2fdd3cc4
 
 diff --git a/src/main/java/net/minecraft/server/level/ServerEntity.java b/src/main/java/net/minecraft/server/level/ServerEntity.java
-index 04b98e23eed926d8473cc2464e04a5b9f18f1140..cf098d4a3111771c13766285c5ec5f1fc1f539a4 100644
+index 39e7dcf3c92c9203c190782be401c00c010b8aeb..bb03ef9c06bf55be279d5f5ecc95099ad7b1b10e 100644
 --- a/src/main/java/net/minecraft/server/level/ServerEntity.java
 +++ b/src/main/java/net/minecraft/server/level/ServerEntity.java
-@@ -74,6 +74,7 @@ public class ServerEntity {
+@@ -78,6 +78,7 @@ public class ServerEntity {
      private List<SynchedEntityData.DataValue<?>> trackedDataValues;
      // CraftBukkit start
      public final Set<ServerPlayerConnection> trackedPlayers; // Purpur - private -> public
@@ -20,7 +20,7 @@ index 04b98e23eed926d8473cc2464e04a5b9f18f1140..cf098d4a3111771c13766285c5ec5f1f
  
      public ServerEntity(ServerLevel worldserver, Entity entity, int i, boolean flag, Consumer<Packet<?>> consumer, Set<ServerPlayerConnection> trackedPlayers) {
          this.trackedPlayers = trackedPlayers;
-@@ -210,12 +211,14 @@ public class ServerEntity {
+@@ -208,12 +209,14 @@ public class ServerEntity {
  
                  if ((this.trackDelta || this.entity.hasImpulse || this.entity instanceof LivingEntity && ((LivingEntity) this.entity).isFallFlying()) && this.tickCount > 0) {
                      Vec3 vec3d1 = this.entity.getDeltaMovement();
@@ -57,10 +57,10 @@ index f890738d3bb9fb5e70a9d323c6cec97f9948f9cf..52e72277c661b67a54bc5ce584efb041
      }
  }
 diff --git a/src/main/java/net/minecraft/world/item/MapItem.java b/src/main/java/net/minecraft/world/item/MapItem.java
-index 8d3c1897044f9a2bbe1911e1a72dc9a00fb246df..a68112a1d1904edfc84acb6c209e13f0836d97e0 100644
+index 608390ed36710a419de1542b80340dd3fcc7299c..b5c584e5cf767ab7ecfd6b2104d1d31ba0f61d60 100644
 --- a/src/main/java/net/minecraft/world/item/MapItem.java
 +++ b/src/main/java/net/minecraft/world/item/MapItem.java
-@@ -313,12 +313,14 @@ public class MapItem extends ComplexItem {
+@@ -268,11 +268,13 @@ public class MapItem extends ComplexItem {
          }
      }
  
@@ -68,13 +68,12 @@ index 8d3c1897044f9a2bbe1911e1a72dc9a00fb246df..a68112a1d1904edfc84acb6c209e13f0
      @Override
      public void inventoryTick(ItemStack stack, Level world, Entity entity, int slot, boolean selected) {
          if (!world.isClientSide) {
-             MapItemSavedData worldmap = MapItem.getSavedData(stack, world);
- 
-             if (worldmap != null) {
+             MapItemSavedData mapItemSavedData = getSavedData(stack, world);
+             if (mapItemSavedData != null) {
 +                if (skipTickWhenCraftNotPresent && worldmap.mapView.getRenderers().stream().noneMatch(mapRenderer -> mapRenderer.getClass() == org.bukkit.craftbukkit.map.CraftMapRenderer.class)) return; // Plazma - SparklyPaper port; Skip map item ticking if the craft map renderer is not present
-                 if (entity instanceof Player) {
-                     Player entityhuman = (Player) entity;
- 
+                 if (entity instanceof Player player) {
+                     mapItemSavedData.tickCarriedBy(player, stack);
+                 }
 diff --git a/src/main/java/org/bukkit/craftbukkit/map/CraftMapColorCache.java b/src/main/java/org/bukkit/craftbukkit/map/CraftMapColorCache.java
 index 8149b9c51b78eb5c689b7218a2ca3aab60e73bcf..b9a303f6280a2f6ad3616da152922a4f4a504281 100644
 --- a/src/main/java/org/bukkit/craftbukkit/map/CraftMapColorCache.java
