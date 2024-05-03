@@ -1,0 +1,411 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: AlphaKR93 <dev@alpha93.kr>
+Date: Wed, 21 Dec 2022 19:31:24 +0900
+Subject: [PATCH] Rebrand
+
+
+diff --git a/build.gradle.kts b/build.gradle.kts
+index feaff0406fa47ffb265ce316b057fb52aa367870..902c2eeedeeced8135ec97f64f08420c0996731b 100644
+--- a/build.gradle.kts
++++ b/build.gradle.kts
+@@ -12,12 +12,10 @@ configurations.named(log4jPlugins.compileClasspathConfigurationName) {
+ val alsoShade: Configuration by configurations.creating
+ 
+ dependencies {
+-    // Purpur start
+-    implementation(project(":purpur-api"))
+-    implementation("io.papermc.paper:paper-mojangapi:${project.version}") {
+-        exclude("io.papermc.paper", "paper-api")
+-    }
+-    // Purpur end
++    // Plazma start - Rebrand
++    implementation(project(":plazma-api"))
++    implementation(project(":plazma-mojangapi"))
++    // Plazma end
+ 
+     // Plazma start - Use Gradle Version Catalogs
+     implementation(server.bundles.implementation)
+@@ -57,7 +55,7 @@ tasks.jar {
+         attributes(
+             "Main-Class" to "org.bukkit.craftbukkit.Main",
+             "Implementation-Title" to "CraftBukkit",
+-            "Implementation-Version" to "git-Purpur-$implementationVersion", // Pufferfish // Purpur
++            "Implementation-Version" to "git-Plazma-$implementationVersion", // Pufferfish // Purpur // Plazma - Setup Gradle Project
+             "Implementation-Vendor" to date, // Paper
+             "Specification-Title" to "Bukkit",
+             "Specification-Version" to project.version,
+diff --git a/src/main/java/com/destroystokyo/paper/Metrics.java b/src/main/java/com/destroystokyo/paper/Metrics.java
+index 8cde30544e14f8fc2dac32966ae3c21f8cf3a551..1de03b16c513d83550077bab46b52ae6e40eb98e 100644
+--- a/src/main/java/com/destroystokyo/paper/Metrics.java
++++ b/src/main/java/com/destroystokyo/paper/Metrics.java
+@@ -593,7 +593,7 @@ public class Metrics {
+             boolean logFailedRequests = config.getBoolean("logFailedRequests", false);
+             // Only start Metrics, if it's enabled in the config
+             if (config.getBoolean("enabled", true)) {
+-                Metrics metrics = new Metrics("Purpur", serverUUID, logFailedRequests, Bukkit.getLogger()); // Pufferfish // Purpur
++                Metrics metrics = new Metrics("Plazma", serverUUID, logFailedRequests, Bukkit.getLogger()); // Pufferfish // Purpur // Plazma - Rebrand
+ 
+                 metrics.addCustomChart(new Metrics.SimplePie("minecraft_version", () -> {
+                     String minecraftVersion = Bukkit.getVersion();
+@@ -603,7 +603,7 @@ public class Metrics {
+ 
+                 metrics.addCustomChart(new Metrics.SingleLineChart("players", () -> Bukkit.getOnlinePlayers().size()));
+                 metrics.addCustomChart(new Metrics.SimplePie("online_mode", () -> Bukkit.getOnlineMode() ? "online" : (io.papermc.paper.configuration.GlobalConfiguration.get().proxies.isProxyOnlineMode() ? "bungee" : "offline"))); // Purpur
+-                metrics.addCustomChart(new Metrics.SimplePie("purpur_version", () -> (org.bukkit.craftbukkit.Main.class.getPackage().getImplementationVersion() != null) ? org.bukkit.craftbukkit.Main.class.getPackage().getImplementationVersion() : "unknown")); // Purpur
++                metrics.addCustomChart(new Metrics.SimplePie("plazma_version", () -> (org.bukkit.craftbukkit.Main.class.getPackage().getImplementationVersion() != null) ? org.bukkit.craftbukkit.Main.class.getPackage().getImplementationVersion() : "unknown")); // Purpur // Plazma // Plazma - Rebrand
+ 
+                 metrics.addCustomChart(new Metrics.DrilldownPie("java_version", () -> {
+                     Map<String, Map<String, Integer>> map = new HashMap<>();
+diff --git a/src/main/java/com/destroystokyo/paper/PaperVersionFetcher.java b/src/main/java/com/destroystokyo/paper/PaperVersionFetcher.java
+index 462a6eed350fd660ddaf25d567bb6e97b77d0b2b..80159d9c8432f21aa774d3ade9e2ae84b2d5261c 100644
+--- a/src/main/java/com/destroystokyo/paper/PaperVersionFetcher.java
++++ b/src/main/java/com/destroystokyo/paper/PaperVersionFetcher.java
+@@ -20,10 +20,11 @@ import java.util.stream.StreamSupport;
+ public class PaperVersionFetcher implements VersionFetcher {
+     private static final java.util.regex.Pattern VER_PATTERN = java.util.regex.Pattern.compile("^([0-9\\.]*)\\-.*R"); // R is an anchor, will always give '-R' at end
+     // Purpur start
+-    private static final String DOWNLOAD_PAGE = "https://purpurmc.org/downloads";
++    private static final String DOWNLOAD_PAGE = "https://github.com/PlazmaMC/Plazma/releases"; // Plazma // Plazma - Rebrand
+     private static int distance = -2; public int distance() { return distance; }
+     // Purpur end
+     private static @Nullable String mcVer;
++    public static final boolean DEVELOPMENT = false; // Plazma
+ 
+     @Override
+     public long getCacheTime() {
+@@ -33,8 +34,8 @@ public class PaperVersionFetcher implements VersionFetcher {
+     @Nonnull
+     @Override
+     public Component getVersionMessage(@Nonnull String serverVersion) {
+-        String[] parts = serverVersion.substring("git-Purpur-".length()).split("[-\\s]"); // Purpur
+-        final Component updateMessage = getUpdateStatusMessage("PurpurMC/Purpur", "ver/" + getMinecraftVersion(), parts[0]); // Purpur
++        String[] parts = serverVersion.substring("git-Plazma-".length()).split("[-\\s]"); // Purpur // Plazma // Plazma - Rebrand
++        final Component updateMessage = getUpdateStatusMessage("PlazmaMC/PlazmaBukkit", (DEVELOPMENT ? "dev/" : "ver/") + getMinecraftVersion(), parts[0]); // Purpur // Plazma // Plazma - Rebrand
+         final Component history = getHistory();
+ 
+         return history != null ? Component.join(net.kyori.adventure.text.JoinConfiguration.separator(Component.newline()), history, updateMessage) : updateMessage; // Purpur
+@@ -47,7 +48,7 @@ public class PaperVersionFetcher implements VersionFetcher {
+                 String result = matcher.group();
+                 mcVer = result.substring(0, result.length() - 2); // strip 'R' anchor and trailing '-'
+             } else {
+-                org.bukkit.Bukkit.getLogger().warning("Unable to match version to pattern! Report to Purpur!"); // Purpur
++                org.bukkit.Bukkit.getLogger().warning("Unable to match version to pattern! Report to Plazma!"); // Purpur // Plazma // Plazma - Rebrand
+                 org.bukkit.Bukkit.getLogger().warning("Pattern: " + VER_PATTERN.toString());
+                 org.bukkit.Bukkit.getLogger().warning("Version: " + org.bukkit.Bukkit.getBukkitVersion());
+             }
+@@ -57,6 +58,7 @@ public class PaperVersionFetcher implements VersionFetcher {
+     }
+ 
+     private static Component getUpdateStatusMessage(@Nonnull String repo, @Nonnull String branch, @Nonnull String versionInfo) {
++        /* // Plazma - Disable CI Checking
+         //int distance; // Purpur - use field
+         try {
+             int jenkinsBuild = Integer.parseInt(versionInfo);
+@@ -65,6 +67,11 @@ public class PaperVersionFetcher implements VersionFetcher {
+             versionInfo = versionInfo.replace("\"", "");
+             distance = fetchDistanceFromGitHub(repo, branch, versionInfo);
+         }
++        // Plazma start - Disable CI Checking
++         */
++        versionInfo = versionInfo.replace("\"", ""); // Plazma
++        distance = fetchDistanceFromGitHub(repo, branch, versionInfo); // Plazma
++        // Plazma end - Disable CI Checking
+ 
+         switch (distance) {
+             case -1:
+@@ -83,6 +90,7 @@ public class PaperVersionFetcher implements VersionFetcher {
+         }
+     }
+ 
++    /* // Plazma - Disable CI Checking
+     private static int fetchDistanceFromSiteApi(int jenkinsBuild, @Nullable String siteApiVersion) {
+         if (siteApiVersion == null) { return -1; }
+         try {
+@@ -102,6 +110,7 @@ public class PaperVersionFetcher implements VersionFetcher {
+             return -1;
+         }
+     }
++     */ // Plazma - Disable CI Checking
+ 
+     // Contributed by Techcable <Techcable@outlook.com> in GH-65
+     private static int fetchDistanceFromGitHub(@Nonnull String repo, @Nonnull String branch, @Nonnull String hash) {
+diff --git a/src/main/java/com/destroystokyo/paper/console/PaperConsole.java b/src/main/java/com/destroystokyo/paper/console/PaperConsole.java
+index 3cb56595822799926a8141e60a42f5d1edfc6de5..aa5f7dbaa62d83168055f2d389ba1ed512d1741b 100644
+--- a/src/main/java/com/destroystokyo/paper/console/PaperConsole.java
++++ b/src/main/java/com/destroystokyo/paper/console/PaperConsole.java
+@@ -17,7 +17,7 @@ public final class PaperConsole extends SimpleTerminalConsole {
+     @Override
+     protected LineReader buildReader(LineReaderBuilder builder) {
+         builder
+-                .appName("Purpur") // Purpur
++                .appName("Plazma") // Purpur // Plazma - Rebrand
+                 .variable(LineReader.HISTORY_FILE, java.nio.file.Paths.get(".console_history"))
+                 .completer(new ConsoleCommandCompleter(this.server))
+                 .option(LineReader.Option.COMPLETE_IN_WORD, true);
+diff --git a/src/main/java/net/minecraft/CrashReport.java b/src/main/java/net/minecraft/CrashReport.java
+index c366d84518979e842a6f10f969a5951539ecac93..570b379596cc3088745d3f42b3d917f94c2d9c29 100644
+--- a/src/main/java/net/minecraft/CrashReport.java
++++ b/src/main/java/net/minecraft/CrashReport.java
+@@ -37,7 +37,7 @@ public class CrashReport {
+         io.papermc.paper.util.StacktraceDeobfuscator.INSTANCE.deobfuscateThrowable(cause); // Paper
+         this.title = message;
+         this.exception = cause;
+-        this.systemReport.setDetail("CraftBukkit Information", new org.bukkit.craftbukkit.CraftCrashReport()); // CraftBukkit
++        this.systemReport.setDetail("Plazma Information", new org.bukkit.craftbukkit.CraftCrashReport()); // CraftBukkit // Plazma - Rebrand
+     }
+ 
+     public String getTitle() {
+@@ -127,7 +127,7 @@ public class CrashReport {
+         stringbuilder.append("---- Minecraft Crash Report ----\n");
+         // Purpur start
+         stringbuilder.append("// ");
+-        stringbuilder.append("// DO NOT REPORT THIS TO PAPER! REPORT TO PURPUR INSTEAD!");
++        stringbuilder.append("// DO NOT REPORT THIS TO PAPER OR PURPUR! REPORT TO PLAZMA INSTEAD!"); // Plazma - Rebrand
+         // Purpur end
+         stringbuilder.append("// ");
+         stringbuilder.append(CrashReport.getErrorComment());
+diff --git a/src/main/java/net/minecraft/server/Main.java b/src/main/java/net/minecraft/server/Main.java
+index 411f1f8c6be072cfc5ba88cbec38dbc4300a41d1..2579b32009a5f5e288edf56ee8f1246cd70343fc 100644
+--- a/src/main/java/net/minecraft/server/Main.java
++++ b/src/main/java/net/minecraft/server/Main.java
+@@ -107,6 +107,26 @@ public class Main {
+             */ // CraftBukkit end
+ 
+         try {
++            // Plazma start - Branding
++            // System.out.println("""
++            //
++            //     \033[38;2;236;61;151m┏\033[38;2;236;61;157m━\033[38;2;237;62;163m━\033[38;2;237;62;169m━\033[38;2;238;62;175m━\033[38;2;238;63;181m━\033[38;2;239;63;187m┓\033[38;2;239;63;193m \033[38;2;239;64;200m┏\033[38;2;240;64;206m━\033[38;2;240;64;212m┓\033[38;2;241;65;218m \033[38;2;241;65;224m \033[38;2;242;65;230m \033[38;2;242;66;236m \033[38;2;242;66;242m \033[38;2;237;66;243m \033[38;2;232;67;243m┏\033[38;2;227;67;244m━\033[38;2;221;67;244m━\033[38;2;216;68;244m━\033[38;2;211;68;245m━\033[38;2;205;69;245m┓\033[38;2;200;69;246m \033[38;2;195;69;246m┏\033[38;2;189;70;246m━\033[38;2;184;70;247m━\033[38;2;179;70;247m━\033[38;2;173;71;247m━\033[38;2;168;71;248m━\033[38;2;163;72;248m━\033[38;2;157;72;249m┓\033[38;2;152;72;249m┏\033[38;2;147;73;249m━\033[38;2;141;73;250m━\033[38;2;136;74;250m┓\033[38;2;131;74;250m \033[38;2;125;74;251m \033[38;2;120;75;251m \033[38;2;115;75;251m┏\033[38;2;109;76;252m━\033[38;2;104;76;252m━\033[38;2;99;77;252m┓\033[38;2;94;77;253m \033[38;2;88;77;253m┏\033[38;2;83;78;253m━\033[38;2;78;79;254m━\033[38;2;79;85;254m━\033[38;2;79;91;254m━\033[38;2;80;97;255m┓\033[38;2;80;103;255m\s
++            //     \033[38;2;236;61;151m┃\033[38;2;236;61;157m┏\033[38;2;237;62;163m━\033[38;2;237;62;169m━\033[38;2;238;62;175m━\033[38;2;238;63;181m┓\033[38;2;239;63;187m┗\033[38;2;239;63;193m┓\033[38;2;239;64;200m┃\033[38;2;240;64;206m \033[38;2;240;64;212m┃\033[38;2;241;65;218m \033[38;2;241;65;224m \033[38;2;242;65;230m \033[38;2;242;66;236m \033[38;2;242;66;242m \033[38;2;237;66;243m┏\033[38;2;232;67;243m┛\033[38;2;227;67;244m┏\033[38;2;221;67;244m━\033[38;2;216;68;244m━\033[38;2;211;68;245m┓\033[38;2;205;69;245m┗\033[38;2;200;69;246m┓\033[38;2;195;69;246m┗\033[38;2;189;70;246m━\033[38;2;184;70;247m━\033[38;2;179;70;247m┓\033[38;2;173;71;247m \033[38;2;168;71;248m \033[38;2;163;72;248m┏\033[38;2;157;72;249m┛\033[38;2;152;72;249m┃\033[38;2;147;73;249m \033[38;2;141;73;250m \033[38;2;136;74;250m┗\033[38;2;131;74;250m┓\033[38;2;125;74;251m \033[38;2;120;75;251m┏\033[38;2;115;75;251m┛\033[38;2;109;76;252m \033[38;2;104;76;252m \033[38;2;99;77;252m┃\033[38;2;94;77;253m┏\033[38;2;88;77;253m┛\033[38;2;83;78;253m┏\033[38;2;78;79;254m━\033[38;2;79;85;254m━\033[38;2;79;91;254m┓\033[38;2;80;97;255m┗\033[38;2;80;103;255m┓
++            //     \033[38;2;236;61;151m┃\033[38;2;236;61;157m┗\033[38;2;237;62;163m━\033[38;2;237;62;169m━\033[38;2;238;62;175m━\033[38;2;238;63;181m┛\033[38;2;239;63;187m┏\033[38;2;239;63;193m┛\033[38;2;239;64;200m┃\033[38;2;240;64;206m \033[38;2;240;64;212m┃\033[38;2;241;65;218m \033[38;2;241;65;224m \033[38;2;242;65;230m \033[38;2;242;66;236m \033[38;2;242;66;242m \033[38;2;237;66;243m┃\033[38;2;232;67;243m \033[38;2;227;67;244m┗\033[38;2;221;67;244m━\033[38;2;216;68;244m━\033[38;2;211;68;245m┛\033[38;2;205;69;245m \033[38;2;200;69;246m┃\033[38;2;195;69;246m \033[38;2;189;70;246m \033[38;2;184;70;247m┏\033[38;2;179;70;247m┛\033[38;2;173;71;247m \033[38;2;168;71;248m┏\033[38;2;163;72;248m┛\033[38;2;157;72;249m \033[38;2;152;72;249m┃\033[38;2;147;73;249m \033[38;2;141;73;250m┏\033[38;2;136;74;250m┓\033[38;2;131;74;250m┗\033[38;2;125;74;251m━\033[38;2;120;75;251m┛\033[38;2;115;75;251m┏\033[38;2;109;76;252m┓\033[38;2;104;76;252m \033[38;2;99;77;252m┃\033[38;2;94;77;253m┃\033[38;2;88;77;253m \033[38;2;83;78;253m┗\033[38;2;78;79;254m━\033[38;2;79;85;254m━\033[38;2;79;91;254m┛\033[38;2;80;97;255m \033[38;2;80;103;255m┃
++            //     \033[38;2;236;61;151m┃\033[38;2;236;61;157m \033[38;2;237;62;163m┏\033[38;2;237;62;169m━\033[38;2;238;62;175m━\033[38;2;238;63;181m━\033[38;2;239;63;187m┛\033[38;2;239;63;193m \033[38;2;239;64;200m┃\033[38;2;240;64;206m \033[38;2;240;64;212m┃\033[38;2;241;65;218m \033[38;2;241;65;224m \033[38;2;242;65;230m \033[38;2;242;66;236m \033[38;2;242;66;242m \033[38;2;237;66;243m┃\033[38;2;232;67;243m \033[38;2;227;67;244m┏\033[38;2;221;67;244m━\033[38;2;216;68;244m━\033[38;2;211;68;245m┓\033[38;2;205;69;245m \033[38;2;200;69;246m┃\033[38;2;195;69;246m \033[38;2;189;70;246m┏\033[38;2;184;70;247m┛\033[38;2;179;70;247m \033[38;2;173;71;247m┏\033[38;2;168;71;248m┛\033[38;2;163;72;248m \033[38;2;157;72;249m \033[38;2;152;72;249m┃\033[38;2;147;73;249m \033[38;2;141;73;250m┃\033[38;2;136;74;250m┗\033[38;2;131;74;250m┓\033[38;2;125;74;251m \033[38;2;120;75;251m┏\033[38;2;115;75;251m┛\033[38;2;109;76;252m┃\033[38;2;104;76;252m \033[38;2;99;77;252m┃\033[38;2;94;77;253m┃\033[38;2;88;77;253m \033[38;2;83;78;253m┏\033[38;2;78;79;254m━\033[38;2;79;85;254m━\033[38;2;79;91;254m┓\033[38;2;80;97;255m \033[38;2;80;103;255m┃
++            //     \033[38;2;236;61;151m┃\033[38;2;236;61;157m \033[38;2;237;62;163m┃\033[38;2;237;62;169m \033[38;2;238;62;175m \033[38;2;238;63;181m \033[38;2;239;63;187m \033[38;2;239;63;193m \033[38;2;239;64;200m┃\033[38;2;240;64;206m \033[38;2;240;64;212m┗\033[38;2;241;65;218m━\033[38;2;241;65;224m━\033[38;2;242;65;230m━\033[38;2;242;66;236m━\033[38;2;242;66;242m┓\033[38;2;237;66;243m┃\033[38;2;232;67;243m \033[38;2;227;67;244m┃\033[38;2;221;67;244m \033[38;2;216;68;244m \033[38;2;211;68;245m┃\033[38;2;205;69;245m \033[38;2;200;69;246m┃\033[38;2;195;69;246m┏\033[38;2;189;70;246m┛\033[38;2;184;70;247m \033[38;2;179;70;247m \033[38;2;173;71;247m┗\033[38;2;168;71;248m━\033[38;2;163;72;248m━\033[38;2;157;72;249m┓\033[38;2;152;72;249m┃\033[38;2;147;73;249m \033[38;2;141;73;250m┃\033[38;2;136;74;250m \033[38;2;131;74;250m┗\033[38;2;125;74;251m━\033[38;2;120;75;251m┛\033[38;2;115;75;251m \033[38;2;109;76;252m┃\033[38;2;104;76;252m \033[38;2;99;77;252m┃\033[38;2;94;77;253m┃\033[38;2;88;77;253m \033[38;2;83;78;253m┃\033[38;2;78;79;254m \033[38;2;79;85;254m \033[38;2;79;91;254m┃\033[38;2;80;97;255m \033[38;2;80;103;255m┃
++            //     \033[38;2;236;61;151m┗\033[38;2;236;61;157m━\033[38;2;237;62;163m┛\033[38;2;237;62;169m \033[38;2;238;62;175m \033[38;2;238;63;181m \033[38;2;239;63;187m \033[38;2;239;63;193m \033[38;2;239;64;200m┗\033[38;2;240;64;206m━\033[38;2;240;64;212m━\033[38;2;241;65;218m━\033[38;2;241;65;224m━\033[38;2;242;65;230m━\033[38;2;242;66;236m━\033[38;2;242;66;242m┛\033[38;2;237;66;243m┗\033[38;2;232;67;243m━\033[38;2;227;67;244m┛\033[38;2;221;67;244m \033[38;2;216;68;244m \033[38;2;211;68;245m┗\033[38;2;205;69;245m━\033[38;2;200;69;246m┛\033[38;2;195;69;246m┗\033[38;2;189;70;246m━\033[38;2;184;70;247m━\033[38;2;179;70;247m━\033[38;2;173;71;247m━\033[38;2;168;71;248m━\033[38;2;163;72;248m━\033[38;2;157;72;249m┛\033[38;2;152;72;249m┗\033[38;2;147;73;249m━\033[38;2;141;73;250m┛\033[38;2;136;74;250m \033[38;2;131;74;250m \033[38;2;125;74;251m \033[38;2;120;75;251m \033[38;2;115;75;251m \033[38;2;109;76;252m┗\033[38;2;104;76;252m━\033[38;2;99;77;252m┛\033[38;2;94;77;253m┗\033[38;2;88;77;253m━\033[38;2;83;78;253m┛\033[38;2;78;79;254m \033[38;2;79;85;254m \033[38;2;79;91;254m┗\033[38;2;80;97;255m━\033[38;2;80;103;255m┛\033[0m
++            //     """);
++            System.out.println("""
++                
++                \033[38;2;215;23;133m█\033[38;2;212;24;134m█\033[38;2;209;26;134m█\033[38;2;205;27;135m█\033[38;2;202;28;136m█\033[38;2;199;30;136m█\033[38;2;196;31;137m╗\033[38;2;193;33;138m  \033[38;2;190;34;138m█\033[38;2;186;35;139m█\033[38;2;183;37;140m╗\033[38;2;180;38;140m \033[38;2;177;39;141m \033[38;2;174;41;142m \033[38;2;170;42;142m \033[38;2;167;43;143m  \033[38;2;164;45;144m \033[38;2;161;46;144m█\033[38;2;158;47;145m█\033[38;2;155;49;146m█\033[38;2;151;50;146m█\033[38;2;148;52;147m█\033[38;2;145;53;148m╗\033[38;2;142;54;148m  \033[38;2;139;56;149m█\033[38;2;135;57;149m█\033[38;2;132;58;150m█\033[38;2;129;60;151m█\033[38;2;126;61;151m█\033[38;2;123;62;152m█\033[38;2;120;64;153m█\033[38;2;116;65;153m╗ \033[38;2;113;67;154m█\033[38;2;110;68;155m█\033[38;2;107;69;155m█\033[38;2;104;71;156m╗\033[38;2;101;72;157m \033[38;2;97;73;157m \033[38;2;94;75;158m \033[38;2;91;76;159m█\033[38;2;88;77;159m█\033[38;2;85;79;160m█\033[38;2;81;80;161m╗ \033[38;2;78;81;161m \033[38;2;75;83;162m█\033[38;2;72;84;163m█\033[38;2;69;86;163m█\033[38;2;66;87;164m█\033[38;2;62;88;165m█\033[38;2;59;90;165m╗\033[38;2;56;91;166m\s
++                \033[38;2;215;23;133m█\033[38;2;212;24;134m█\033[38;2;209;26;134m╔\033[38;2;205;27;135m═\033[38;2;202;28;136m═\033[38;2;199;30;136m█\033[38;2;196;31;137m█\033[38;2;193;33;138m╗ \033[38;2;190;34;138m█\033[38;2;186;35;139m█\033[38;2;183;37;140m║\033[38;2;180;38;140m \033[38;2;177;39;141m \033[38;2;174;41;142m \033[38;2;170;42;142m \033[38;2;167;43;143m  \033[38;2;164;45;144m█\033[38;2;161;46;144m█\033[38;2;158;47;145m╔\033[38;2;155;49;146m═\033[38;2;151;50;146m═\033[38;2;148;52;147m█\033[38;2;145;53;148m█\033[38;2;142;54;148m╗ \033[38;2;139;56;149m╚\033[38;2;135;57;149m═\033[38;2;132;58;150m═\033[38;2;129;60;151m█\033[38;2;126;61;151m█\033[38;2;123;62;152m█\033[38;2;120;64;153m╔\033[38;2;116;65;153m╝ \033[38;2;113;67;154m█\033[38;2;110;68;155m█\033[38;2;107;69;155m█\033[38;2;104;71;156m█\033[38;2;101;72;157m╗\033[38;2;97;73;157m \033[38;2;94;75;158m█\033[38;2;91;76;159m█\033[38;2;88;77;159m█\033[38;2;85;79;160m█\033[38;2;81;80;161m║ \033[38;2;78;81;161m█\033[38;2;75;83;162m█\033[38;2;72;84;163m╔\033[38;2;69;86;163m═\033[38;2;66;87;164m═\033[38;2;62;88;165m█\033[38;2;59;90;165m█\033[38;2;56;91;166m╗
++                \033[38;2;215;23;133m█\033[38;2;212;24;134m█\033[38;2;209;26;134m█\033[38;2;205;27;135m█\033[38;2;202;28;136m█\033[38;2;199;30;136m█\033[38;2;196;31;137m╔\033[38;2;193;33;138m╝ \033[38;2;190;34;138m█\033[38;2;186;35;139m█\033[38;2;183;37;140m║\033[38;2;180;38;140m \033[38;2;177;39;141m \033[38;2;174;41;142m \033[38;2;170;42;142m \033[38;2;167;43;143m  \033[38;2;164;45;144m█\033[38;2;161;46;144m█\033[38;2;158;47;145m█\033[38;2;155;49;146m█\033[38;2;151;50;146m█\033[38;2;148;52;147m█\033[38;2;145;53;148m█\033[38;2;142;54;148m║ \033[38;2;139;56;149m \033[38;2;135;57;149m \033[38;2;132;58;150m█\033[38;2;129;60;151m█\033[38;2;126;61;151m█\033[38;2;123;62;152m╔\033[38;2;120;64;153m╝\033[38;2;116;65;153m  \033[38;2;113;67;154m█\033[38;2;110;68;155m█\033[38;2;107;69;155m╔\033[38;2;104;71;156m█\033[38;2;101;72;157m█\033[38;2;97;73;157m█\033[38;2;94;75;158m█\033[38;2;91;76;159m╔\033[38;2;88;77;159m█\033[38;2;85;79;160m█\033[38;2;81;80;161m║ \033[38;2;78;81;161m█\033[38;2;75;83;162m█\033[38;2;72;84;163m█\033[38;2;69;86;163m█\033[38;2;66;87;164m█\033[38;2;62;88;165m█\033[38;2;59;90;165m█\033[38;2;56;91;166m║
++                \033[38;2;215;23;133m█\033[38;2;212;24;134m█\033[38;2;209;26;134m╔\033[38;2;205;27;135m═\033[38;2;202;28;136m═\033[38;2;199;30;136m═\033[38;2;196;31;137m╝\033[38;2;193;33;138m  \033[38;2;190;34;138m█\033[38;2;186;35;139m█\033[38;2;183;37;140m║\033[38;2;180;38;140m \033[38;2;177;39;141m \033[38;2;174;41;142m \033[38;2;170;42;142m \033[38;2;167;43;143m  \033[38;2;164;45;144m█\033[38;2;161;46;144m█\033[38;2;158;47;145m╔\033[38;2;155;49;146m═\033[38;2;151;50;146m═\033[38;2;148;52;147m█\033[38;2;145;53;148m█\033[38;2;142;54;148m║ \033[38;2;139;56;149m \033[38;2;135;57;149m█\033[38;2;132;58;150m█\033[38;2;129;60;151m█\033[38;2;126;61;151m╔\033[38;2;123;62;152m╝\033[38;2;120;64;153m \033[38;2;116;65;153m  \033[38;2;113;67;154m█\033[38;2;110;68;155m█\033[38;2;107;69;155m║\033[38;2;104;71;156m╚\033[38;2;101;72;157m█\033[38;2;97;73;157m█\033[38;2;94;75;158m╔\033[38;2;91;76;159m╝\033[38;2;88;77;159m█\033[38;2;85;79;160m█\033[38;2;81;80;161m║ \033[38;2;78;81;161m█\033[38;2;75;83;162m█\033[38;2;72;84;163m╔\033[38;2;69;86;163m═\033[38;2;66;87;164m═\033[38;2;62;88;165m█\033[38;2;59;90;165m█\033[38;2;56;91;166m║
++                \033[38;2;215;23;133m█\033[38;2;212;24;134m█\033[38;2;209;26;134m║\033[38;2;205;27;135m \033[38;2;202;28;136m \033[38;2;199;30;136m \033[38;2;196;31;137m \033[38;2;193;33;138m  \033[38;2;190;34;138m█\033[38;2;186;35;139m█\033[38;2;183;37;140m█\033[38;2;180;38;140m█\033[38;2;177;39;141m█\033[38;2;174;41;142m█\033[38;2;170;42;142m█\033[38;2;167;43;143m╗ \033[38;2;164;45;144m█\033[38;2;161;46;144m█\033[38;2;158;47;145m║\033[38;2;155;49;146m \033[38;2;151;50;146m \033[38;2;148;52;147m█\033[38;2;145;53;148m█\033[38;2;142;54;148m║ \033[38;2;139;56;149m█\033[38;2;135;57;149m█\033[38;2;132;58;150m█\033[38;2;129;60;151m█\033[38;2;126;61;151m█\033[38;2;123;62;152m█\033[38;2;120;64;153m█\033[38;2;116;65;153m╗ \033[38;2;113;67;154m█\033[38;2;110;68;155m█\033[38;2;107;69;155m║\033[38;2;104;71;156m \033[38;2;101;72;157m╚\033[38;2;97;73;157m═\033[38;2;94;75;158m╝\033[38;2;91;76;159m \033[38;2;88;77;159m█\033[38;2;85;79;160m█\033[38;2;81;80;161m║ \033[38;2;78;81;161m█\033[38;2;75;83;162m█\033[38;2;72;84;163m║\033[38;2;69;86;163m \033[38;2;66;87;164m \033[38;2;62;88;165m█\033[38;2;59;90;165m█\033[38;2;56;91;166m║
++                \033[38;2;215;23;133m╚\033[38;2;212;24;134m═\033[38;2;209;26;134m╝\033[38;2;205;27;135m \033[38;2;202;28;136m \033[38;2;199;30;136m \033[38;2;196;31;137m \033[38;2;193;33;138m  \033[38;2;190;34;138m╚\033[38;2;186;35;139m═\033[38;2;183;37;140m═\033[38;2;180;38;140m═\033[38;2;177;39;141m═\033[38;2;174;41;142m═\033[38;2;170;42;142m═\033[38;2;167;43;143m╝ \033[38;2;164;45;144m╚\033[38;2;161;46;144m═\033[38;2;158;47;145m╝\033[38;2;155;49;146m \033[38;2;151;50;146m \033[38;2;148;52;147m╚\033[38;2;145;53;148m═\033[38;2;142;54;148m╝ \033[38;2;139;56;149m╚\033[38;2;135;57;149m═\033[38;2;132;58;150m═\033[38;2;129;60;151m═\033[38;2;126;61;151m═\033[38;2;123;62;152m═\033[38;2;120;64;153m═\033[38;2;116;65;153m╝ \033[38;2;113;67;154m╚\033[38;2;110;68;155m═\033[38;2;107;69;155m╝\033[38;2;104;71;156m \033[38;2;101;72;157m \033[38;2;97;73;157m \033[38;2;94;75;158m \033[38;2;91;76;159m \033[38;2;88;77;159m╚\033[38;2;85;79;160m═\033[38;2;81;80;161m╝ \033[38;2;78;81;161m╚\033[38;2;75;83;162m═\033[38;2;72;84;163m╝\033[38;2;69;86;163m \033[38;2;66;87;164m \033[38;2;62;88;165m╚\033[38;2;59;90;165m═\033[38;2;56;91;166m╝\033[0m
++                """);
++            // Plazma end
+ 
+             Path path = (Path) optionset.valueOf("pidFile"); // CraftBukkit
+ 
+diff --git a/src/main/java/net/minecraft/server/MinecraftServer.java b/src/main/java/net/minecraft/server/MinecraftServer.java
+index dfeae138e830e95ab823b6349a91160b02622208..e121cc57ec5bf6f5b1d81e2fd4f551063ac60d64 100644
+--- a/src/main/java/net/minecraft/server/MinecraftServer.java
++++ b/src/main/java/net/minecraft/server/MinecraftServer.java
+@@ -963,7 +963,7 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
+         shutdownThread = Thread.currentThread();
+         org.spigotmc.WatchdogThread.doStop(); // Paper
+         if (!isSameThread()) {
+-            MinecraftServer.LOGGER.info("Stopping main thread (Ignore any thread death message you see! - DO NOT REPORT THREAD DEATH TO PURPUR)"); // Purpur
++            MinecraftServer.LOGGER.info("Stopping main thread (Ignore any thread death message you see! - DO NOT REPORT THREAD DEATH TO PLAZMA)"); // Purpur // Plazma - Rebrand
+             while (this.getRunningThread().isAlive()) {
+                 this.getRunningThread().stop();
+                 try {
+diff --git a/src/main/java/net/minecraft/server/dedicated/DedicatedServerProperties.java b/src/main/java/net/minecraft/server/dedicated/DedicatedServerProperties.java
+index 842f382de43df5d5c321422372ec30ccdd7859d7..5b7ed096999dbb7e95fb7d615e737f19604f58ff 100644
+--- a/src/main/java/net/minecraft/server/dedicated/DedicatedServerProperties.java
++++ b/src/main/java/net/minecraft/server/dedicated/DedicatedServerProperties.java
+@@ -56,7 +56,7 @@ public class DedicatedServerProperties extends Settings<DedicatedServerPropertie
+     public final boolean onlineMode = this.get("online-mode", true);
+     public final boolean preventProxyConnections = this.get("prevent-proxy-connections", false);
+     public final String serverIp = this.get("server-ip", "");
+-    public final String serverName = this.get("server-name", "Unknown Server"); // Purpur
++    public final String serverName = this.get("server-name", "A Plazma Server"); // Purpur // Plazma - Rebrand
+     public final boolean spawnAnimals = this.get("spawn-animals", true);
+     public final boolean spawnNpcs = this.get("spawn-npcs", true);
+     public final boolean pvp = this.get("pvp", true);
+diff --git a/src/main/java/net/minecraft/server/gui/MinecraftServerGui.java b/src/main/java/net/minecraft/server/gui/MinecraftServerGui.java
+index 8f74c2ec5252b6265549589310d742337c91cb2c..e34c3d00887240cc0f78f6b95da4116a22438626 100644
+--- a/src/main/java/net/minecraft/server/gui/MinecraftServerGui.java
++++ b/src/main/java/net/minecraft/server/gui/MinecraftServerGui.java
+@@ -56,7 +56,7 @@ public class MinecraftServerGui extends JComponent {
+             ;
+         }
+ 
+-        final JFrame jframe = new JFrame("Purpur Minecraft server"); // Purpur
++        final JFrame jframe = new JFrame("Plazma Minecraft server"); // Purpur // Plazma - Rebrand
+         final MinecraftServerGui servergui = new MinecraftServerGui(server);
+ 
+         jframe.setDefaultCloseOperation(2);
+@@ -64,7 +64,7 @@ public class MinecraftServerGui extends JComponent {
+         jframe.pack();
+         jframe.setLocationRelativeTo((Component) null);
+         jframe.setVisible(true);
+-        jframe.setName("Purpur Minecraft server"); // Paper - Improve ServerGUI // Purpur
++        jframe.setName("Plazma Minecraft server"); // Paper - Improve ServerGUI // Purpur // Plazma - Rebrand
+ 
+         // Paper start - Improve ServerGUI
+         try {
+@@ -76,7 +76,7 @@ public class MinecraftServerGui extends JComponent {
+         jframe.addWindowListener(new WindowAdapter() {
+             public void windowClosing(WindowEvent windowevent) {
+                 if (!servergui.isClosing.getAndSet(true)) {
+-                    jframe.setTitle("Purpur Minecraft server - shutting down!"); // Purpur
++                    jframe.setTitle("Plazma Minecraft server - shutting down!"); // Purpur // Plazma - Rebrand
+                     server.halt(true);
+                     servergui.runFinalizers();
+                 }
+diff --git a/src/main/java/net/minecraft/world/level/chunk/storage/RegionFileStorage.java b/src/main/java/net/minecraft/world/level/chunk/storage/RegionFileStorage.java
+index f6e3b745fc417354380d4a969f83aee430bad785..ce0686759f0c32e9ffcb26f99503215a49873b91 100644
+--- a/src/main/java/net/minecraft/world/level/chunk/storage/RegionFileStorage.java
++++ b/src/main/java/net/minecraft/world/level/chunk/storage/RegionFileStorage.java
+@@ -155,7 +155,7 @@ public class RegionFileStorage implements AutoCloseable {
+ 
+     // Paper start
+     private static void printOversizedLog(String msg, Path file, int x, int z) {
+-        org.apache.logging.log4j.LogManager.getLogger().fatal(msg + " (" + file.toString().replaceAll(".+[\\\\/]", "") + " - " + x + "," + z + ") Go clean it up to remove this message. /minecraft:tp " + (x<<4)+" 128 "+(z<<4) + " - DO NOT REPORT THIS TO PAPER - You may ask for help on Discord, but do not file an issue. These error messages can not be removed.");
++        org.apache.logging.log4j.LogManager.getLogger().fatal(msg + " (" + file.toString().replaceAll(".+[\\\\/]", "") + " - " + x + "," + z + ") Go clean it up to remove this message. /minecraft:tp " + (x<<4)+" 128 "+(z<<4) + " - DO NOT REPORT THIS TO PLAZMA - You may ask for help on Discord, but do not file an issue. These error messages can not be removed."); // Plazma - Rebrand
+     }
+ 
+     private static CompoundTag readOversizedChunk(RegionFile regionfile, ChunkPos chunkCoordinate) throws IOException {
+diff --git a/src/main/java/org/bukkit/craftbukkit/CraftServer.java b/src/main/java/org/bukkit/craftbukkit/CraftServer.java
+index 8d754bf77cb88d8ddf964f3221183e4097f06d13..dca6cce8768c8c08e4abba249c30731dbdec7763 100644
+--- a/src/main/java/org/bukkit/craftbukkit/CraftServer.java
++++ b/src/main/java/org/bukkit/craftbukkit/CraftServer.java
+@@ -268,7 +268,7 @@ import javax.annotation.Nullable; // Paper
+ import javax.annotation.Nonnull; // Paper
+ 
+ public final class CraftServer implements Server {
+-    private final String serverName = "Purpur"; // Paper // Pufferfish // Purpur
++    private final String serverName = "Plazma"; // Paper // Pufferfish // Purpur // Plazma - Rebrand
+     private final String serverVersion;
+     private final String bukkitVersion = Versioning.getBukkitVersion();
+     private final Logger logger = Logger.getLogger("Minecraft");
+diff --git a/src/main/java/org/bukkit/craftbukkit/Main.java b/src/main/java/org/bukkit/craftbukkit/Main.java
+index 222865a3cee62f244a566092a7d814efe478ee01..333c8a313208652700c21fc2ac629296b5b02078 100644
+--- a/src/main/java/org/bukkit/craftbukkit/Main.java
++++ b/src/main/java/org/bukkit/craftbukkit/Main.java
+@@ -142,7 +142,7 @@ public class Main {
+ 
+                 this.acceptsAll(Main.asList("noconsole"), "Disables the console");
+ 
+-                this.acceptsAll(Main.asList("v", "version"), "Show the CraftBukkit Version");
++                this.acceptsAll(Main.asList("v", "version"), "Show the Plazma Version"); // Plazma - Rebrand
+ 
+                 this.acceptsAll(Main.asList("demo"), "Demo mode");
+ 
+@@ -187,7 +187,7 @@ public class Main {
+                 acceptsAll(asList("server-name"), "Name of the server")
+                         .withRequiredArg()
+                         .ofType(String.class)
+-                        .defaultsTo("Unknown Server")
++                        .defaultsTo("A Plazma Server") // Plazma - Rebrand
+                         .describedAs("Name");
+                 // Paper end
+             }
+diff --git a/src/main/java/org/bukkit/craftbukkit/scheduler/CraftScheduler.java b/src/main/java/org/bukkit/craftbukkit/scheduler/CraftScheduler.java
+index ca8ae8e1c51b937dac916e0b0dc94b5e2e61efeb..2058af0975e510b3f86d7dbb1811062b9b0dc342 100644
+--- a/src/main/java/org/bukkit/craftbukkit/scheduler/CraftScheduler.java
++++ b/src/main/java/org/bukkit/craftbukkit/scheduler/CraftScheduler.java
+@@ -503,7 +503,7 @@ public class CraftScheduler implements BukkitScheduler {
+                 this.parsePending();
+             } else {
+                 // this.debugTail = this.debugTail.setNext(new CraftAsyncDebugger(currentTick + CraftScheduler.RECENT_TICKS, task.getOwner(), task.getTaskClass())); // Paper
+-                task.getOwner().getLogger().log(Level.SEVERE, "Unexpected Async Task in the Sync Scheduler. Report this to Purpur"); // Paper // Purpur
++                task.getOwner().getLogger().log(Level.SEVERE, "Unexpected Async Task in the Sync Scheduler. Report this to Plazma"); // Paper // Purpur // Plazma - Rebrand
+                 // We don't need to parse pending
+                 // (async tasks must live with race-conditions if they attempt to cancel between these few lines of code)
+             }
+diff --git a/src/main/java/org/bukkit/craftbukkit/util/Versioning.java b/src/main/java/org/bukkit/craftbukkit/util/Versioning.java
+index 99597258e8e88cd9e2c901c4ac3ff7faeeabee2b..0aa8dfa94368fb119644760e3686a7c01f510456 100644
+--- a/src/main/java/org/bukkit/craftbukkit/util/Versioning.java
++++ b/src/main/java/org/bukkit/craftbukkit/util/Versioning.java
+@@ -8,22 +8,25 @@ import java.util.logging.Logger;
+ import org.bukkit.Bukkit;
+ 
+ public final class Versioning {
+-    public static String getBukkitVersion() {
+-        String result = "Unknown-Version";
+-
+-        InputStream stream = Bukkit.class.getClassLoader().getResourceAsStream("META-INF/maven/org.purpurmc.purpur/purpur-api/pom.properties"); // Pufferfish // Purpur
++    // Plazma start - Rebrand & Improve Versioning
++    public static String version = "Unknown-Version";
++    static {
++        InputStream stream = Bukkit.class.getClassLoader().getResourceAsStream("META-INF/maven/org.plazmamc.plazma/plazma-api/pom.properties");
+         Properties properties = new Properties();
+ 
+         if (stream != null) {
+             try {
+                 properties.load(stream);
+ 
+-                result = properties.getProperty("version");
++                version = properties.getProperty("version");
+             } catch (IOException ex) {
+-                Logger.getLogger(Versioning.class.getName()).log(Level.SEVERE, "Could not get Bukkit version!", ex);
++                Logger.getLogger(Versioning.class.getName()).log(Level.SEVERE, "Could not get Plazma version!", ex);
+             }
+         }
++    }
+ 
+-        return result;
++    public static String getBukkitVersion() {
++        return version;
+     }
++    // Plazma end - Rebrand & Improve Versioning
+ }
+diff --git a/src/main/java/org/purpurmc/purpur/PurpurConfig.java b/src/main/java/org/purpurmc/purpur/PurpurConfig.java
+index 046304d9149472eaffb3ff5f4fa22a230969de86..79456fab220fc797f0f28fc9657f3a406d751900 100644
+--- a/src/main/java/org/purpurmc/purpur/PurpurConfig.java
++++ b/src/main/java/org/purpurmc/purpur/PurpurConfig.java
+@@ -231,7 +231,7 @@ public class PurpurConfig {
+         deathMessageOnlyBroadcastToAffectedPlayer = getBoolean("settings.broadcasts.death.only-broadcast-to-affected-player", deathMessageOnlyBroadcastToAffectedPlayer);
+     }
+ 
+-    public static String serverModName = "Purpur";
++    public static String serverModName = "Plazma"; // Plazma - Rebrand
+     private static void serverModName() {
+         serverModName = getString("settings.server-mod-name", serverModName);
+     }
+diff --git a/src/main/java/org/spigotmc/WatchdogThread.java b/src/main/java/org/spigotmc/WatchdogThread.java
+index a353eb9f45af7b7f9bfd92a4a89403335b841840..29a4709c1085d133bd7753ac9744f6c9701ac345 100644
+--- a/src/main/java/org/spigotmc/WatchdogThread.java
++++ b/src/main/java/org/spigotmc/WatchdogThread.java
+@@ -155,14 +155,14 @@ public final class WatchdogThread extends io.papermc.paper.util.TickThread // Pa
+                 if (isLongTimeout) {
+                 // Paper end
+                 log.log( Level.SEVERE, "------------------------------" );
+-                log.log( Level.SEVERE, "The server has stopped responding! This is (probably) not a Purpur bug." ); // Paper // Purpur
++                log.log( Level.SEVERE, "The server has stopped responding! This is (probably) not a Plazma bug." ); // Paper // Purpur // Plazma - Rebrand
+                 log.log( Level.SEVERE, "If you see a plugin in the Server thread dump below, then please report it to that author" );
+                 log.log( Level.SEVERE, "\t *Especially* if it looks like HTTP or MySQL operations are occurring" );
+                 log.log( Level.SEVERE, "If you see a world save or edit, then it means you did far more than your server can handle at once" );
+                 log.log( Level.SEVERE, "\t If this is the case, consider increasing timeout-time in spigot.yml but note that this will replace the crash with LARGE lag spikes" );
+-                log.log( Level.SEVERE, "If you are unsure or still think this is a Purpur bug, please report this to https://github.com/PurpurMC/Purpur/issues" ); // Purpur
++                log.log( Level.SEVERE, "If you are unsure or still think this is a Plazma bug, please report this to https://github.com/PlazmaMC/PlazmaBukkit/issues" ); // Purpur // Plazma - Rebrand
+                 log.log( Level.SEVERE, "Be sure to include ALL relevant console errors and Minecraft crash reports" );
+-                log.log( Level.SEVERE, "Purpur version: " + Bukkit.getServer().getVersion() ); // Purpur
++                log.log( Level.SEVERE, "Plazma version: " + Bukkit.getServer().getVersion() ); // Purpur // Plazma - Rebrand
+                 //
+                 if ( net.minecraft.world.level.Level.lastPhysicsProblem != null )
+                 {
+@@ -184,12 +184,12 @@ public final class WatchdogThread extends io.papermc.paper.util.TickThread // Pa
+                 // Paper end
+                 } else
+                 {
+-                    log.log(Level.SEVERE, "--- DO NOT REPORT THIS TO PURPUR - THIS IS NOT A BUG OR A CRASH  - " + Bukkit.getServer().getVersion() + " ---"); // Purpur
++                    log.log(Level.SEVERE, "--- DO NOT REPORT THIS TO PLAZMA - THIS IS NOT A BUG OR A CRASH  - " + Bukkit.getServer().getVersion() + " ---"); // Purpur // Plazma - Rebrand
+                     log.log(Level.SEVERE, "The server has not responded for " + (currentTime - lastTick) / 1000 + " seconds! Creating thread dump");
+                 }
+                 // Paper end - Different message for short timeout
+                 log.log( Level.SEVERE, "------------------------------" );
+-                log.log( Level.SEVERE, "Server thread dump (Look for plugins here before reporting to Purpur!):" ); // Paper // Purpur
++                log.log( Level.SEVERE, "Server thread dump (Look for plugins here before reporting to Plazma!):" ); // Paper // Purpur // Plazma - Rebrand
+                 io.papermc.paper.chunk.system.scheduling.ChunkTaskScheduler.dumpAllChunkLoadInfo(isLongTimeout); // Paper - rewrite chunk system
+                 this.dumpTickingInfo(); // Paper - log detailed tick information
+                 WatchdogThread.dumpThread( ManagementFactory.getThreadMXBean().getThreadInfo( MinecraftServer.getServer().serverThread.getId(), Integer.MAX_VALUE ), log );
+@@ -205,7 +205,7 @@ public final class WatchdogThread extends io.papermc.paper.util.TickThread // Pa
+                     WatchdogThread.dumpThread( thread, log );
+                 }
+                 } else {
+-                    log.log(Level.SEVERE, "--- DO NOT REPORT THIS TO PURPUR - THIS IS NOT A BUG OR A CRASH ---"); // Purpur
++                    log.log(Level.SEVERE, "--- DO NOT REPORT THIS TO PLAZMA - THIS IS NOT A BUG OR A CRASH ---"); // Purpur // Plazma - Rebrand
+                 }
+ 
+                 log.log( Level.SEVERE, "------------------------------" );
