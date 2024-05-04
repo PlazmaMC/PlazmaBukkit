@@ -18,10 +18,10 @@ index b47a8a082170bcb630c4354be7c77a4cac71d105..7fe6b99e146e7374cd29534f1e89046e
              double d1 = (double) (center.y - maxRange);
              double d2 = (double) (center.x + maxRange);
 diff --git a/src/main/java/net/minecraft/server/level/ServerPlayer.java b/src/main/java/net/minecraft/server/level/ServerPlayer.java
-index 305b90d10a499e9731f5178433fb10207e428091..47a4e4082571e43946b510a8447627923ee4086c 100644
+index 42a623254bd2886d09eb0cfeb01dd12d0dda19cf..feed838fe1ff9db60f1971cbafc25baf9af69fac 100644
 --- a/src/main/java/net/minecraft/server/level/ServerPlayer.java
 +++ b/src/main/java/net/minecraft/server/level/ServerPlayer.java
-@@ -456,7 +456,7 @@ public class ServerPlayer extends Player {
+@@ -482,7 +482,7 @@ public class ServerPlayer extends Player {
              long l = k * k;
              int i1 = l > 2147483647L ? Integer.MAX_VALUE : (int) l;
              int j1 = this.getCoprime(i1);
@@ -30,7 +30,7 @@ index 305b90d10a499e9731f5178433fb10207e428091..47a4e4082571e43946b510a844762792
  
              for (int l1 = 0; l1 < i1; ++l1) {
                  int i2 = (k1 + j1 * l1) % i1;
-@@ -493,7 +493,7 @@ public class ServerPlayer extends Player {
+@@ -519,7 +519,7 @@ public class ServerPlayer extends Player {
              long l = k * k;
              int i1 = l > 2147483647L ? Integer.MAX_VALUE : (int) l;
              int j1 = this.getCoprime(i1);
@@ -40,18 +40,18 @@ index 305b90d10a499e9731f5178433fb10207e428091..47a4e4082571e43946b510a844762792
              for (int l1 = 0; l1 < i1; ++l1) {
                  int i2 = (k1 + j1 * l1) % i1;
 diff --git a/src/main/java/net/minecraft/server/network/ServerLoginPacketListenerImpl.java b/src/main/java/net/minecraft/server/network/ServerLoginPacketListenerImpl.java
-index c0729d3a38e0b9924711c0ca96afd138fa69fa3b..d45a435a3aa8fc5b8f028e0455c3789b36cbdf12 100644
+index 3b4fadb37eafb2f7b0ce4d6b276d2fdaa8287521..75104b17725f723327007d75b7923f33c6eeb9bd 100644
 --- a/src/main/java/net/minecraft/server/network/ServerLoginPacketListenerImpl.java
 +++ b/src/main/java/net/minecraft/server/network/ServerLoginPacketListenerImpl.java
-@@ -71,7 +71,7 @@ public class ServerLoginPacketListenerImpl implements ServerLoginPacketListener,
+@@ -91,7 +91,7 @@ public class ServerLoginPacketListenerImpl implements ServerLoginPacketListener,
          this.serverId = "";
          this.server = server;
          this.connection = connection;
 -        this.challenge = Ints.toByteArray(RandomSource.create().nextInt());
 +        this.challenge = Ints.toByteArray((org.plazmamc.plazma.configurations.GlobalConfiguration.get().misc.reduceRandom ? server.random() : RandomSource.create()).nextInt()); // Plazma - Reduce create random instance
+         this.transferred = transferred;
      }
  
-     @Override
 diff --git a/src/main/java/net/minecraft/server/rcon/thread/QueryThreadGs4.java b/src/main/java/net/minecraft/server/rcon/thread/QueryThreadGs4.java
 index 0e0867d7add9a024bbe9471f8ff92bbb25996a3d..034b41aa8c8a5571f21530a4e8588b1cc110ecf3 100644
 --- a/src/main/java/net/minecraft/server/rcon/thread/QueryThreadGs4.java
@@ -79,7 +79,7 @@ index 3fac11bf02652b5f51f30f99bdf516504467d0d2..add054ac26890b627d1eee87d1b0f88a
  
      public ShufflingList() {
 diff --git a/src/main/java/net/minecraft/world/entity/ai/sensing/Sensor.java b/src/main/java/net/minecraft/world/entity/ai/sensing/Sensor.java
-index e553f52de2e0b30511ac1b73cb436374017cd7d7..cbb94ec3111865563e451e758e5b9813f3c6102f 100644
+index 09a7b418ddf564c0be13297f7c216db2e7ae1578..0eebd9e50e8a26c40e246bcc9feb18cba137ee7d 100644
 --- a/src/main/java/net/minecraft/world/entity/ai/sensing/Sensor.java
 +++ b/src/main/java/net/minecraft/world/entity/ai/sensing/Sensor.java
 @@ -8,7 +8,7 @@ import net.minecraft.world.entity.ai.memory.MemoryModuleType;
@@ -105,7 +105,7 @@ index 3d792957f27fd4bdfad8d76262a8e2a2012bf35f..2d96cf85fb9250bbbddb8065307a4792
      private static final Codec<Pair<UUID, Integer>> SUSPECT_ANGER_PAIR = RecordCodecBuilder.create(
          instance -> instance.group(
 diff --git a/src/main/java/net/minecraft/world/entity/npc/WanderingTraderSpawner.java b/src/main/java/net/minecraft/world/entity/npc/WanderingTraderSpawner.java
-index 752b38d45d59d8b3cd492246e5aa4f378a78734d..38b534e4613641046ed3cd048f52dff0888acda2 100644
+index 96e9fce5f9084737d2fcf4deb83305733b480179..0a5277638a0d5197d7bbce301bc5f74de40a321a 100644
 --- a/src/main/java/net/minecraft/world/entity/npc/WanderingTraderSpawner.java
 +++ b/src/main/java/net/minecraft/world/entity/npc/WanderingTraderSpawner.java
 @@ -32,7 +32,7 @@ public class WanderingTraderSpawner implements CustomSpawner {
@@ -118,7 +118,7 @@ index 752b38d45d59d8b3cd492246e5aa4f378a78734d..38b534e4613641046ed3cd048f52dff0
      private int tickDelay;
      private int spawnDelay;
 diff --git a/src/main/java/net/minecraft/world/entity/projectile/FishingHook.java b/src/main/java/net/minecraft/world/entity/projectile/FishingHook.java
-index 91497f5e6c07fcf1b05eca6846c51e1a15ed3bc0..1317d8289898798a9d86a4c995a4a1a317631bf7 100644
+index 35299affb699d745804a3b60cb78b9323f3e068e..75890635b357bc54a03ed00bcfb3e287f1eb2cff 100644
 --- a/src/main/java/net/minecraft/world/entity/projectile/FishingHook.java
 +++ b/src/main/java/net/minecraft/world/entity/projectile/FishingHook.java
 @@ -87,7 +87,7 @@ public class FishingHook extends Projectile {
@@ -131,10 +131,10 @@ index 91497f5e6c07fcf1b05eca6846c51e1a15ed3bc0..1317d8289898798a9d86a4c995a4a1a3
          this.currentState = FishingHook.FishHookState.FLYING;
          this.noCulling = true;
 diff --git a/src/main/java/net/minecraft/world/entity/raid/Raid.java b/src/main/java/net/minecraft/world/entity/raid/Raid.java
-index bf2c23fad919820512ce031cf28a000b249b2876..cb81994735650ec7c54b3f5a97d94e069d254c35 100644
+index fdff9788eaf663be79214b2ca491f0f0444f6136..de50b06f13df481fa59e1abe16d5181b8124b427 100644
 --- a/src/main/java/net/minecraft/world/entity/raid/Raid.java
 +++ b/src/main/java/net/minecraft/world/entity/raid/Raid.java
-@@ -114,7 +114,7 @@ public class Raid {
+@@ -118,7 +118,7 @@ public class Raid {
  
      public Raid(int id, ServerLevel world, BlockPos pos) {
          this.raidEvent = new ServerBossEvent(Raid.RAID_NAME_COMPONENT, BossEvent.BossBarColor.RED, BossEvent.BossBarOverlay.NOTCHED_10);
@@ -143,7 +143,7 @@ index bf2c23fad919820512ce031cf28a000b249b2876..cb81994735650ec7c54b3f5a97d94e06
          this.waveSpawnPos = Optional.empty();
          this.id = id;
          this.level = world;
-@@ -128,7 +128,7 @@ public class Raid {
+@@ -132,7 +132,7 @@ public class Raid {
  
      public Raid(ServerLevel world, CompoundTag nbt) {
          this.raidEvent = new ServerBossEvent(Raid.RAID_NAME_COMPONENT, BossEvent.BossBarColor.RED, BossEvent.BossBarOverlay.NOTCHED_10);
@@ -153,10 +153,10 @@ index bf2c23fad919820512ce031cf28a000b249b2876..cb81994735650ec7c54b3f5a97d94e06
          this.level = world;
          this.id = nbt.getInt("Id");
 diff --git a/src/main/java/net/minecraft/world/inventory/EnchantmentMenu.java b/src/main/java/net/minecraft/world/inventory/EnchantmentMenu.java
-index 1a686780e5aadcbdcfceb770ce8e283b38115209..6c1ba9631e56c336ed3ddee8e6435734597a3aa3 100644
+index c3a644b0f8c7c5622acc9e1a496f95d432718806..ce8fb88b31af1d27a7118735154673a9f05499ec 100644
 --- a/src/main/java/net/minecraft/world/inventory/EnchantmentMenu.java
 +++ b/src/main/java/net/minecraft/world/inventory/EnchantmentMenu.java
-@@ -97,7 +97,7 @@ public class EnchantmentMenu extends AbstractContainerMenu {
+@@ -95,7 +95,7 @@ public class EnchantmentMenu extends AbstractContainerMenu {
              }
              // Purpur end
          };
@@ -166,23 +166,23 @@ index 1a686780e5aadcbdcfceb770ce8e283b38115209..6c1ba9631e56c336ed3ddee8e6435734
          this.costs = new int[3];
          this.enchantClue = new int[]{-1, -1, -1};
 diff --git a/src/main/java/net/minecraft/world/level/Explosion.java b/src/main/java/net/minecraft/world/level/Explosion.java
-index 0be03430d8257d918b7cf646af518473ae027399..824f210af6d8467ed596ece1573740d99b92b7ba 100644
+index f5e84bf8817e2d53557e0909d8c9e0e0e8206a16..1792f18397d733d87ef067a7daaf076be4163c63 100644
 --- a/src/main/java/net/minecraft/world/level/Explosion.java
 +++ b/src/main/java/net/minecraft/world/level/Explosion.java
-@@ -92,7 +92,7 @@ public class Explosion {
+@@ -93,7 +93,7 @@ public class Explosion {
      }
  
-     public Explosion(Level world, @Nullable Entity entity, @Nullable DamageSource damageSource, @Nullable ExplosionDamageCalculator behavior, double x, double y, double z, float power, boolean createFire, Explosion.BlockInteraction destructionType, ParticleOptions particle, ParticleOptions emitterParticle, SoundEvent soundEvent) {
+     public Explosion(Level world, @Nullable Entity entity, @Nullable DamageSource damageSource, @Nullable ExplosionDamageCalculator behavior, double x, double y, double z, float power, boolean createFire, Explosion.BlockInteraction destructionType, ParticleOptions particle, ParticleOptions emitterParticle, Holder<SoundEvent> soundEvent) {
 -        this.random = RandomSource.create();
 +        this.random = world.plazmaConfig().misc.reduceRandom ? world.getRandom() : RandomSource.create(); // Plazma - Reduce create random instace
          this.toBlow = new ObjectArrayList();
          this.hitPlayers = Maps.newHashMap();
          this.level = world;
 diff --git a/src/main/java/net/minecraft/world/level/Level.java b/src/main/java/net/minecraft/world/level/Level.java
-index 16e6716f70d5b9090f29f8b2320302d98dd087c2..72420d9e79d4b480fa060f9b910cea7b677a1427 100644
+index 648b21e3a83e0c35be739bd4ebfa930b84b1e4dd..9e8faa787fe3f924da898244a00eb3da3354d68b 100644
 --- a/src/main/java/net/minecraft/world/level/Level.java
 +++ b/src/main/java/net/minecraft/world/level/Level.java
-@@ -122,16 +122,16 @@ public abstract class Level implements LevelAccessor, AutoCloseable {
+@@ -121,16 +121,16 @@ public abstract class Level implements LevelAccessor, AutoCloseable {
      public final Thread thread;
      private final boolean isDebug;
      private int skyDarken;
@@ -198,14 +198,14 @@ index 16e6716f70d5b9090f29f8b2320302d98dd087c2..72420d9e79d4b480fa060f9b910cea7b
      @Deprecated
 -    private final RandomSource threadSafeRandom = RandomSource.createThreadSafe();
 +    private final RandomSource threadSafeRandom = org.plazmamc.plazma.configurations.GlobalConfiguration.get().misc.ignoreThreadSafeRandom ? random : RandomSource.createThreadSafe(); // Plazma - Reduce create random instace
-     private final ResourceKey<DimensionType> dimensionTypeId;
      private final Holder<DimensionType> dimensionTypeRegistration;
      public final WritableLevelData levelData;
+     // private final Supplier<ProfilerFiller> profiler; // Plazma - Completely remove Mojang's Profiler
 diff --git a/src/main/java/net/minecraft/world/level/block/entity/TheEndGatewayBlockEntity.java b/src/main/java/net/minecraft/world/level/block/entity/TheEndGatewayBlockEntity.java
-index 4997f120aa9877c199fbcaa0c2f65226e13b5a23..af393eaf3d21a260f0bfff5eaeb78c389161bffd 100644
+index fb9611866671880fc7a1a969da928b8f2ad15269..44962ecedf724e941e59913188afe4cfad252fc8 100644
 --- a/src/main/java/net/minecraft/world/level/block/entity/TheEndGatewayBlockEntity.java
 +++ b/src/main/java/net/minecraft/world/level/block/entity/TheEndGatewayBlockEntity.java
-@@ -363,7 +363,7 @@ public class TheEndGatewayBlockEntity extends TheEndPortalBlockEntity {
+@@ -357,7 +357,7 @@ public class TheEndGatewayBlockEntity extends TheEndPortalBlockEntity {
      }
  
      private static void spawnGatewayPortal(ServerLevel world, BlockPos pos, EndGatewayConfiguration config) {
@@ -215,7 +215,7 @@ index 4997f120aa9877c199fbcaa0c2f65226e13b5a23..af393eaf3d21a260f0bfff5eaeb78c38
  
      @Override
 diff --git a/src/main/java/net/minecraft/world/level/chunk/ChunkGeneratorStructureState.java b/src/main/java/net/minecraft/world/level/chunk/ChunkGeneratorStructureState.java
-index 798e22fb4d685b5845ebf687e8004e94f13a9751..189f425565c9c38b29031ae26de667422eb3b6bb 100644
+index a6b6e5ea191c0e2cd7a2e4f01b89d8af40a83c1b..6908248519c39a1fb4454c1d6c8503c36d7ddaa0 100644
 --- a/src/main/java/net/minecraft/world/level/chunk/ChunkGeneratorStructureState.java
 +++ b/src/main/java/net/minecraft/world/level/chunk/ChunkGeneratorStructureState.java
 @@ -224,7 +224,7 @@ public class ChunkGeneratorStructureState {
@@ -241,7 +241,7 @@ index 7bbe93966fa00b7001da53bf2f22f4d942b7cc22..6c5eececc83571b0f60e7f672ed185e1
                  } else if (flag1) {
                      fight.setRespawnStage(SUMMONING_DRAGON); // CraftBukkit - decompile error
 diff --git a/src/main/java/net/minecraft/world/level/dimension/end/EndDragonFight.java b/src/main/java/net/minecraft/world/level/dimension/end/EndDragonFight.java
-index d4f903c402765c6e8e1db99e148613748f530726..c8d76fdee94a0ffb76fcb476ca386acf154dda28 100644
+index 18a1b4325cac81b040596071dab99ef9bf6f3142..ab492b184a4ecdefc423823fc72abd800b71f016 100644
 --- a/src/main/java/net/minecraft/world/level/dimension/end/EndDragonFight.java
 +++ b/src/main/java/net/minecraft/world/level/dimension/end/EndDragonFight.java
 @@ -472,7 +472,7 @@ public class EndDragonFight {

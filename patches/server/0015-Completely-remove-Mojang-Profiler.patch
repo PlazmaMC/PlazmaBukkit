@@ -5,20 +5,20 @@ Subject: [PATCH] Completely remove Mojang Profiler
 
 
 diff --git a/src/main/java/net/minecraft/commands/Commands.java b/src/main/java/net/minecraft/commands/Commands.java
-index b203394ed62807e7d5df433830993f1d2ee14939..e86d6dc83f77ef17c0e4458470009e5ca642f583 100644
+index f9d0e8ee9414b3897f268ba78a1469ddf868f51a..58d89000af36f72d629d8e0873d6efbbbb720fe1 100644
 --- a/src/main/java/net/minecraft/commands/Commands.java
 +++ b/src/main/java/net/minecraft/commands/Commands.java
-@@ -434,7 +434,7 @@ public class Commands {
+@@ -429,7 +429,7 @@ public class Commands {
              int j = minecraftserver.getGameRules().getInt(GameRules.RULE_MAX_COMMAND_FORK_COUNT);
  
              try {
--                ExecutionContext executioncontext1 = new ExecutionContext<>(i, j, minecraftserver.getProfiler());
-+                ExecutionContext executioncontext1 = new ExecutionContext<>(i, j); //, minecraftserver.getProfiler()); // Plazma - Completely remove Mojang Profiler
+-                ExecutionContext<CommandSourceStack> executioncontext1 = new ExecutionContext<>(i, j, minecraftserver.getProfiler());
++                ExecutionContext<CommandSourceStack> executioncontext1 = new ExecutionContext<>(i, j/*, minecraftserver.getProfiler()*/); // Plazma  - Completely remove Mojang's Profiler
  
                  try {
                      Commands.CURRENT_EXECUTION_CONTEXT.set(executioncontext1);
 diff --git a/src/main/java/net/minecraft/commands/execution/ExecutionContext.java b/src/main/java/net/minecraft/commands/execution/ExecutionContext.java
-index f626a2f28f2aebb3237cebb6afef3c4fa1a6cb37..ec845d3d371021f1c16a4c5466cd1a1d94092d3b 100644
+index f626a2f28f2aebb3237cebb6afef3c4fa1a6cb37..467e17bfce31d0919d603698c9d88a04b05033dc 100644
 --- a/src/main/java/net/minecraft/commands/execution/ExecutionContext.java
 +++ b/src/main/java/net/minecraft/commands/execution/ExecutionContext.java
 @@ -12,7 +12,7 @@ import net.minecraft.commands.ExecutionCommandSource;
@@ -26,7 +26,7 @@ index f626a2f28f2aebb3237cebb6afef3c4fa1a6cb37..ec845d3d371021f1c16a4c5466cd1a1d
  import net.minecraft.commands.execution.tasks.CallFunction;
  import net.minecraft.commands.functions.InstantiatedFunction;
 -import net.minecraft.util.profiling.ProfilerFiller;
-+//import net.minecraft.util.profiling.ProfilerFiller; // Plazma - Completely remove Mojang Profiler
++//import net.minecraft.util.profiling.ProfilerFiller; // Plazma - Completely remove Mojang's Profiler
  import org.slf4j.Logger;
  
  public class ExecutionContext<T> implements AutoCloseable {
@@ -35,7 +35,7 @@ index f626a2f28f2aebb3237cebb6afef3c4fa1a6cb37..ec845d3d371021f1c16a4c5466cd1a1d
      private final int commandLimit;
      private final int forkLimit;
 -    private final ProfilerFiller profiler;
-+    //private final ProfilerFiller profiler; // Plazma - Completely remove Mojang Profiler
++    //private final ProfilerFiller profiler; // Plazma - Completely remove Mojang's Profiler
      @Nullable
      private TraceCallbacks tracer;
      private int commandQuota;
@@ -44,11 +44,11 @@ index f626a2f28f2aebb3237cebb6afef3c4fa1a6cb37..ec845d3d371021f1c16a4c5466cd1a1d
      private int currentFrameDepth;
  
 -    public ExecutionContext(int maxCommandChainLength, int maxCommandForkCount, ProfilerFiller profiler) {
-+    public ExecutionContext(int maxCommandChainLength, int maxCommandForkCount/*, ProfilerFiller profiler*/) { // Plazma - Completely remove Mojang Profiler
++    public ExecutionContext(int maxCommandChainLength, int maxCommandForkCount/*, ProfilerFiller profiler*/) { // Plazma - Completely remove Mojang's Profiler
          this.commandLimit = maxCommandChainLength;
          this.forkLimit = maxCommandForkCount;
 -        this.profiler = profiler;
-+        //this.profiler = profiler; // Plazma - Completely remove Mojang Profiler
++        //this.profiler = profiler; // Plazma - Completely remove Mojang's Profiler
          this.commandQuota = maxCommandChainLength;
      }
  
@@ -56,32 +56,32 @@ index f626a2f28f2aebb3237cebb6afef3c4fa1a6cb37..ec845d3d371021f1c16a4c5466cd1a1d
          return this.tracer;
      }
  
-+    /* // Plazma - Completely remove Mojang Profiler
++    /* // Plazma - Completely remove Mojang's Profiler
      public ProfilerFiller profiler() {
          return this.profiler;
      }
-+     */ // Plazma - Completely remove Mojang Profiler
++     */ // Plazma - Completely remove Mojang's Profiler
  
      public int forkLimit() {
          return this.forkLimit;
 diff --git a/src/main/java/net/minecraft/server/MinecraftServer.java b/src/main/java/net/minecraft/server/MinecraftServer.java
-index 1cbb3c1142a480201971fae718e6b15a3e4c9d53..74be6ec20b6484ddbffcc5f9e5c6d742640183df 100644
+index 2903c9a2480ac505f0931d29ac3c5013037e65f1..4a265c97ea872b178286394e2b8d2382166e4cf0 100644
 --- a/src/main/java/net/minecraft/server/MinecraftServer.java
 +++ b/src/main/java/net/minecraft/server/MinecraftServer.java
-@@ -111,18 +111,18 @@ import net.minecraft.util.SignatureValidator;
- import net.minecraft.util.TimeUtil;
- import net.minecraft.util.Unit;
- import net.minecraft.util.datafix.DataFixers;
+@@ -104,18 +104,18 @@ import net.minecraft.util.datafix.DataFixers;
+ import net.minecraft.util.debugchart.RemoteDebugSampleType;
+ import net.minecraft.util.debugchart.SampleLogger;
+ import net.minecraft.util.debugchart.TpsDebugDimensions;
 -import net.minecraft.util.profiling.EmptyProfileResults;
 -import net.minecraft.util.profiling.ProfileResults;
 -import net.minecraft.util.profiling.ProfilerFiller;
 -import net.minecraft.util.profiling.ResultField;
 -import net.minecraft.util.profiling.SingleTickProfiler;
-+// import net.minecraft.util.profiling.EmptyProfileResults; // Plazma - Completely remove Mojang Profiler
-+// import net.minecraft.util.profiling.ProfileResults; // Plazma - Completely remove Mojang Profiler
-+// import net.minecraft.util.profiling.ProfilerFiller; // Plazma - Completely remove Mojang Profiler
-+// import net.minecraft.util.profiling.ResultField; // Plazma - Completely remove Mojang Profiler
-+// import net.minecraft.util.profiling.SingleTickProfiler; // Plazma - Completely remove Mojang Profiler
++// import net.minecraft.util.profiling.EmptyProfileResults; // Plazma - Completely remove Mojang's Profiler
++// import net.minecraft.util.profiling.ProfileResults; // Plazma - Completely remove Mojang's Profiler
++// import net.minecraft.util.profiling.ProfilerFiller; // Plazma - Completely remove Mojang's Profiler
++// import net.minecraft.util.profiling.ResultField; // Plazma - Completely remove Mojang's Profiler
++// import net.minecraft.util.profiling.SingleTickProfiler; // Plazma - Completely remove Mojang's Profiler
  import net.minecraft.util.profiling.jfr.JvmProfiler;
  import net.minecraft.util.profiling.jfr.callback.ProfiledDuration;
 -import net.minecraft.util.profiling.metrics.profiling.ActiveMetricsRecorder;
@@ -89,15 +89,15 @@ index 1cbb3c1142a480201971fae718e6b15a3e4c9d53..74be6ec20b6484ddbffcc5f9e5c6d742
 -import net.minecraft.util.profiling.metrics.profiling.MetricsRecorder;
 -import net.minecraft.util.profiling.metrics.profiling.ServerMetricsSamplersProvider;
 -import net.minecraft.util.profiling.metrics.storage.MetricsPersister;
-+// import net.minecraft.util.profiling.metrics.profiling.ActiveMetricsRecorder; // Plazma - Completely remove Mojang Profiler
-+// import net.minecraft.util.profiling.metrics.profiling.InactiveMetricsRecorder; // Plazma - Completely remove Mojang Profiler
-+// import net.minecraft.util.profiling.metrics.profiling.MetricsRecorder; // Plazma - Completely remove Mojang Profiler
-+// import net.minecraft.util.profiling.metrics.profiling.ServerMetricsSamplersProvider; // Plazma - Completely remove Mojang Profiler
-+// import net.minecraft.util.profiling.metrics.storage.MetricsPersister; // Plazma - Completely remove Mojang Profiler
++// import net.minecraft.util.profiling.metrics.profiling.ActiveMetricsRecorder; // Plazma - Completely remove Mojang's Profiler
++// import net.minecraft.util.profiling.metrics.profiling.InactiveMetricsRecorder; // Plazma - Completely remove Mojang's Profiler
++// import net.minecraft.util.profiling.metrics.profiling.MetricsRecorder; // Plazma - Completely remove Mojang's Profiler
++// import net.minecraft.util.profiling.metrics.profiling.ServerMetricsSamplersProvider; // Plazma - Completely remove Mojang's Profiler
++// import net.minecraft.util.profiling.metrics.storage.MetricsPersister; // Plazma - Completely remove Mojang's Profiler
  import net.minecraft.util.thread.ReentrantBlockableEventLoop;
  import net.minecraft.world.Difficulty;
  import net.minecraft.world.RandomSequences;
-@@ -217,14 +217,14 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
+@@ -220,14 +220,14 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
      public LevelStorageSource.LevelStorageAccess storageSource;
      public final PlayerDataStorage playerDataStorage;
      private final List<Runnable> tickables = Lists.newArrayList();
@@ -109,122 +109,117 @@ index 1cbb3c1142a480201971fae718e6b15a3e4c9d53..74be6ec20b6484ddbffcc5f9e5c6d742
 -    @Nullable
 -    private MinecraftServer.TimeProfiler debugCommandProfiler;
 -    private boolean debugCommandProfilerDelayStart;
-+    // private MetricsRecorder metricsRecorder; // Plazma - Completely remove Mojang Profiler
-+    // private ProfilerFiller profiler; // Plazma - Completely remove Mojang Profiler
-+    // private Consumer<ProfileResults> onMetricsRecordingStopped; // Plazma - Completely remove Mojang Profiler
-+    // private Consumer<Path> onMetricsRecordingFinished; // Plazma - Completely remove Mojang Profiler
-+    // private boolean willStartRecordingMetrics; // Plazma - Completely remove Mojang Profiler
-+    // @Nullable // Plazma - Completely remove Mojang Profiler
-+    // private MinecraftServer.TimeProfiler debugCommandProfiler; // Plazma - Completely remove Mojang Profiler
-+    // private boolean debugCommandProfilerDelayStart; // Plazma - Completely remove Mojang Profiler
++    // private MetricsRecorder metricsRecorder; // Plazma - Completely remove Mojang's Profiler
++    // private ProfilerFiller profiler; // Plazma - Completely remove Mojang's Profiler
++    // private Consumer<ProfileResults> onMetricsRecordingStopped; // Plazma - Completely remove Mojang's Profiler
++    // private Consumer<Path> onMetricsRecordingFinished; // Plazma - Completely remove Mojang's Profiler
++    // private boolean willStartRecordingMetrics; // Plazma - Completely remove Mojang's Profiler
++    // @Nullable // Plazma - Completely remove Mojang's Profiler
++    // private MinecraftServer.TimeProfiler debugCommandProfiler // Plazma - Completely remove Mojang's Profiler;
++    // private boolean debugCommandProfilerDelayStart; // Plazma - Completely remove Mojang's Profiler
      private ServerConnectionListener connection;
      public final ChunkProgressListenerFactory progressListenerFactory;
      @Nullable
-@@ -2495,10 +2495,12 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
+@@ -2577,10 +2577,12 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
          }
      }
  
-+    /* // Plazma - Completely remove Mojang Profiler
++    /* // Plazma - Completely remove Mojang's Profiler
      public ProfilerFiller getProfiler() {
-         if (true || gg.pufferfish.pufferfish.PufferfishConfig.disableMethodProfiler) return net.minecraft.util.profiling.InactiveProfiler.INSTANCE; // Pufferfish // Purpur
+         //if (true || gg.pufferfish.pufferfish.PufferfishConfig.disableMethodProfiler) return net.minecraft.util.profiling.InactiveProfiler.INSTANCE; // Pufferfish // Purpur // Purpur - TODO: Pufferfish
          return this.profiler;
      }
-+     */ // Plazma - Completely remove Mojang Profiler
++     */ // Plazma - Completely remove Mojang's Profiler
  
      public abstract boolean isSingleplayerOwner(GameProfile profile);
  
-@@ -2737,6 +2739,7 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
+@@ -2824,6 +2826,7 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
      }
      // CraftBukkit end
  
-+    /* // Plazma - Completely remove Mojang Profiler
++    /* // Plazma - Completely remove Mojang's Profiler
      private void startMetricsRecordingTick() {
          if (false && this.willStartRecordingMetrics) { // Purpur
              this.metricsRecorder = ActiveMetricsRecorder.createStarted(new ServerMetricsSamplersProvider(Util.timeSource, this.isDedicatedServer()), Util.timeSource, Util.ioPool(), new MetricsPersister("server"), this.onMetricsRecordingStopped, (path) -> {
-@@ -2763,12 +2766,13 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
+@@ -2850,12 +2853,12 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
      }
  
      public void startRecordingMetrics(Consumer<ProfileResults> resultConsumer, Consumer<Path> dumpConsumer) {
 -        /*this.onMetricsRecordingStopped = (methodprofilerresults) -> { // Purpur
--            this.stopRecordingMetrics();
--            resultConsumer.accept(methodprofilerresults);
--        };
--        this.onMetricsRecordingFinished = dumpConsumer;
++        this.onMetricsRecordingStopped = (methodprofilerresults) -> { // Purpur // Plazma - IDE problem
+             this.stopRecordingMetrics();
+             resultConsumer.accept(methodprofilerresults);
+         };
+         this.onMetricsRecordingFinished = dumpConsumer;
 -        this.willStartRecordingMetrics = true;*/ // Purpur
-+        // Plazma start - IDE Error
-+        // this.onMetricsRecordingStopped = (methodprofilerresults) -> { // Purpur
-+        //     this.stopRecordingMetrics();
-+        //     resultConsumer.accept(methodprofilerresults);
-+        // };
-+        // this.onMetricsRecordingFinished = dumpConsumer;
-+        // this.willStartRecordingMetrics = true; // Purpur
++        this.willStartRecordingMetrics = true; // Purpur // Plazma - IDE problem
      }
  
      public void stopRecordingMetrics() {
-@@ -2783,6 +2787,7 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
+@@ -2870,6 +2873,7 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
          //this.metricsRecorder.cancel(); // Purpur
          //this.profiler = this.metricsRecorder.getProfiler(); // Purpur
      }
-+     */ // Plazma - Completely remove Mojang Profiler
++     */ // Plazma - Completely remove Mojang's Profiler
  
      public Path getWorldPath(LevelResource worldSavePath) {
          return this.storageSource.getLevelPath(worldSavePath);
-@@ -2829,6 +2834,7 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
+@@ -2920,6 +2924,7 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
          return this.isSaving;
      }
  
-+    /* // Plazma - Completely remove Mojang Profiler
++    /* // Plazma - Completely remove Mojang's Profiler
      public boolean isTimeProfilerRunning() {
          return false; //this.debugCommandProfilerDelayStart || this.debugCommandProfiler != null; // Purpur
      }
-@@ -2847,6 +2853,7 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
+@@ -2938,6 +2943,7 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
              return methodprofilerresults;
          }
      }
-+     */ // Plazma - Completely remove Mojang Profiler
++     */ // Plazma - Completely remove Mojang's Profiler
  
      public int getMaxChainedNeighborUpdates() {
          return 1000000;
-@@ -2884,6 +2891,7 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
+@@ -2989,6 +2995,7 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
          }
      }
  
-+    /* // Plazma - Completely remove Mojang Profiler
++    /* // Plazma - Completely remove Mojang's Profiler
      private static class TimeProfiler {
  
          final long startNanos;
-@@ -2933,6 +2941,7 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
+@@ -3038,6 +3045,7 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
              };
          }
      }
-+     */ // Plazma - Completely remove Mojang Profiler
++     */ // Plazma - Completely remove Mojang's Profiler
  
      public static record ServerResourcePackInfo(UUID id, String url, String hash, boolean isRequired, @Nullable Component prompt) {
  
 diff --git a/src/main/java/net/minecraft/server/ServerAdvancementManager.java b/src/main/java/net/minecraft/server/ServerAdvancementManager.java
-index 31718823250a1490b783f426fff65bf5a067b6f4..619bab6faff5917bfe8d253a33edc8d8abec2cb8 100644
+index b4f15c51faae544bc0a4fcc33760df66e1397f87..19803d24870db355a1567d0ec5132108724563b1 100644
 --- a/src/main/java/net/minecraft/server/ServerAdvancementManager.java
 +++ b/src/main/java/net/minecraft/server/ServerAdvancementManager.java
-@@ -25,7 +25,7 @@ import net.minecraft.resources.ResourceLocation;
+@@ -26,7 +26,7 @@ import net.minecraft.resources.ResourceLocation;
  import net.minecraft.server.packs.resources.ResourceManager;
  import net.minecraft.server.packs.resources.SimpleJsonResourceReloadListener;
  import net.minecraft.util.ProblemReporter;
 -import net.minecraft.util.profiling.ProfilerFiller;
-+//import net.minecraft.util.profiling.ProfilerFiller; // Plazma - Completely remove Mojang Profiler
- import net.minecraft.world.level.storage.loot.LootDataManager;
++// import net.minecraft.util.profiling.ProfilerFiller; // Plazma - Completely remove Mojang's Profiler
  import org.slf4j.Logger;
  
+ public class ServerAdvancementManager extends SimpleJsonResourceReloadListener {
 @@ -42,7 +42,7 @@ public class ServerAdvancementManager extends SimpleJsonResourceReloadListener {
-         this.lootData = conditionManager;
+         this.registries = registryLookup;
      }
  
 -    protected void apply(Map<ResourceLocation, JsonElement> prepared, ResourceManager manager, ProfilerFiller profiler) {
-+    protected void apply(Map<ResourceLocation, JsonElement> prepared, ResourceManager manager/*, ProfilerFiller profiler*/) { // Plazma - Completely remove Mojang Profiler
++    protected void apply(Map<ResourceLocation, JsonElement> prepared, ResourceManager manager/*, ProfilerFiller profiler*/) { // Plazma - Completely remove Mojang's Profiler
+         RegistryOps<JsonElement> registryops = this.registries.createSerializationContext(JsonOps.INSTANCE);
          Builder<ResourceLocation, AdvancementHolder> builder = ImmutableMap.builder();
  
-         prepared.forEach((minecraftkey, jsonelement) -> {
 diff --git a/src/main/java/net/minecraft/server/ServerFunctionLibrary.java b/src/main/java/net/minecraft/server/ServerFunctionLibrary.java
-index 981c3023044f3cc6dc22ada20cd4bedcf7a28db3..75a7f4db9fee80cceea268d3a61b54d81b004605 100644
+index bae0d208b31aa0a6977c30f2f8484ab3c316bc71..05d8ca83abf69226aae43ec6f75055726de06e8a 100644
 --- a/src/main/java/net/minecraft/server/ServerFunctionLibrary.java
 +++ b/src/main/java/net/minecraft/server/ServerFunctionLibrary.java
 @@ -26,7 +26,7 @@ import net.minecraft.server.packs.resources.PreparableReloadListener;
@@ -232,7 +227,7 @@ index 981c3023044f3cc6dc22ada20cd4bedcf7a28db3..75a7f4db9fee80cceea268d3a61b54d8
  import net.minecraft.server.packs.resources.ResourceManager;
  import net.minecraft.tags.TagLoader;
 -import net.minecraft.util.profiling.ProfilerFiller;
-+//import net.minecraft.util.profiling.ProfilerFiller; // Plazma - Completely remove Mojang Profiler
++// import net.minecraft.util.profiling.ProfilerFiller; // Plazma - Completely remove Mojang's Profiler
  import net.minecraft.world.phys.Vec2;
  import net.minecraft.world.phys.Vec3;
  import org.slf4j.Logger;
@@ -242,13 +237,13 @@ index 981c3023044f3cc6dc22ada20cd4bedcf7a28db3..75a7f4db9fee80cceea268d3a61b54d8
          ResourceManager manager,
 -        ProfilerFiller prepareProfiler,
 -        ProfilerFiller applyProfiler,
-+        //ProfilerFiller prepareProfiler, // Plazma - Completely remove Mojang Profiler
-+        //ProfilerFiller applyProfiler, // Plazma - Completely remove Mojang Profiler
++        // ProfilerFiller prepareProfiler, // Plazma - Completely remove Mojang's Profiler
++        // ProfilerFiller applyProfiler, // Plazma - Completely remove Mojang's Profiler
          Executor prepareExecutor,
          Executor applyExecutor
      ) {
 diff --git a/src/main/java/net/minecraft/server/ServerFunctionManager.java b/src/main/java/net/minecraft/server/ServerFunctionManager.java
-index 92aa26881818fec92d0663e2ccf507165c34c733..3b162ddc8dd57abf5ad37e22ed7f0f6f0379c1e1 100644
+index 775b24a9e55528944b629fd85e1f6ebef9a9892f..579e0b0040ea3315fc7c0e209574b7fef799d2d1 100644
 --- a/src/main/java/net/minecraft/server/ServerFunctionManager.java
 +++ b/src/main/java/net/minecraft/server/ServerFunctionManager.java
 @@ -16,7 +16,7 @@ import net.minecraft.commands.functions.CommandFunction;
@@ -256,18 +251,18 @@ index 92aa26881818fec92d0663e2ccf507165c34c733..3b162ddc8dd57abf5ad37e22ed7f0f6f
  import net.minecraft.nbt.CompoundTag;
  import net.minecraft.resources.ResourceLocation;
 -import net.minecraft.util.profiling.ProfilerFiller;
-+//import net.minecraft.util.profiling.ProfilerFiller; // Plazma - Completely remove Mojang Profiler
++// import net.minecraft.util.profiling.ProfilerFiller; // Plazma - Completely remove Mojang's Profiler
  import org.slf4j.Logger;
  
  public class ServerFunctionManager {
 diff --git a/src/main/java/net/minecraft/server/commands/PerfCommand.java b/src/main/java/net/minecraft/server/commands/PerfCommand.java
-index 8c587f829c5e8c6b6df3150024c4ae704988c47b..a350f18b6be2fa1f18898dac69ebf0b1cba95b38 100644
+index 8c587f829c5e8c6b6df3150024c4ae704988c47b..319f484b535143a94ee2da11114acacce5d12ccf 100644
 --- a/src/main/java/net/minecraft/server/commands/PerfCommand.java
 +++ b/src/main/java/net/minecraft/server/commands/PerfCommand.java
 @@ -1,36 +1,39 @@
  package net.minecraft.server.commands;
  
-+// Plazma start - Completely remove Mojang Profiler
++// Plazma start - Completely remove Mojang's Profiler
  import com.mojang.brigadier.CommandDispatcher;
  import com.mojang.brigadier.exceptions.CommandSyntaxException;
 -import com.mojang.brigadier.exceptions.SimpleCommandExceptionType;
@@ -364,9 +359,9 @@ index 8c587f829c5e8c6b6df3150024c4ae704988c47b..a350f18b6be2fa1f18898dac69ebf0b1
      }
 +     */
  }
-+// Plazma end - Completely remove Mojang Profiler
++// Plazma end - Completely remove Mojang's Profiler
 diff --git a/src/main/java/net/minecraft/server/level/ChunkMap.java b/src/main/java/net/minecraft/server/level/ChunkMap.java
-index 9116b3d298a9bb6e550d299f76ff1243da824cbe..618f2166417b88c92d99a7cf6f10e769eedc95a3 100644
+index 4e6fccec4f5ca14562bf5bae495ac36c14982d85..73c1f17f1e6fa63e98081304f8cbd336902d9ac6 100644
 --- a/src/main/java/net/minecraft/server/level/ChunkMap.java
 +++ b/src/main/java/net/minecraft/server/level/ChunkMap.java
 @@ -68,7 +68,7 @@ import net.minecraft.server.level.progress.ChunkProgressListener;
@@ -374,42 +369,42 @@ index 9116b3d298a9bb6e550d299f76ff1243da824cbe..618f2166417b88c92d99a7cf6f10e769
  import net.minecraft.util.CsvOutput;
  import net.minecraft.util.Mth;
 -import net.minecraft.util.profiling.ProfilerFiller;
-+//import net.minecraft.util.profiling.ProfilerFiller; // Plazma - Completely remove Mojang Profiler
++//import net.minecraft.util.profiling.ProfilerFiller; // Plazma - Completely remove Mojang's Profiler
  import net.minecraft.util.thread.BlockableEventLoop;
  import net.minecraft.util.thread.ProcessorHandle;
  import net.minecraft.util.thread.ProcessorMailbox;
 diff --git a/src/main/java/net/minecraft/server/level/ServerChunkCache.java b/src/main/java/net/minecraft/server/level/ServerChunkCache.java
-index 7b3ba500f465b999ce11964b0e4e30f36005536e..a57b6db99d8b2a41c43a84662b6d023b5a3c470a 100644
+index 476a04d87a61b021816d2970e86042bde32d95a2..fce8968087ddb951f3c154f28d567a42acafca7e 100644
 --- a/src/main/java/net/minecraft/server/level/ServerChunkCache.java
 +++ b/src/main/java/net/minecraft/server/level/ServerChunkCache.java
-@@ -23,7 +23,7 @@ import net.minecraft.core.SectionPos;
+@@ -21,7 +21,7 @@ import net.minecraft.core.SectionPos;
  import net.minecraft.network.protocol.Packet;
  import net.minecraft.server.level.progress.ChunkProgressListener;
  import net.minecraft.util.VisibleForDebug;
 -import net.minecraft.util.profiling.ProfilerFiller;
-+//import net.minecraft.util.profiling.ProfilerFiller; // Plazma - Completely remove Mojang Profiler
++// import net.minecraft.util.profiling.ProfilerFiller; // Plazma - Completely remove Mojang's Profiler
  import net.minecraft.util.thread.BlockableEventLoop;
  import net.minecraft.world.entity.Entity;
  import net.minecraft.world.entity.ai.village.poi.PoiManager;
 diff --git a/src/main/java/net/minecraft/server/level/ServerLevel.java b/src/main/java/net/minecraft/server/level/ServerLevel.java
-index f5d1c1629a762b0ff5534d546610b1f59f385921..8fc95714ceebc5d5c1b4015a039b7bd375decb6d 100644
+index f03b59754f5900fa47985b4118cacccadf04920f..7a864b55555adbe8bb88a816bbfdbbb59afc6d52 100644
 --- a/src/main/java/net/minecraft/server/level/ServerLevel.java
 +++ b/src/main/java/net/minecraft/server/level/ServerLevel.java
-@@ -78,7 +78,7 @@ import net.minecraft.util.Mth;
- import net.minecraft.util.ProgressListener;
+@@ -79,7 +79,7 @@ import net.minecraft.util.ProgressListener;
  import net.minecraft.util.RandomSource;
  import net.minecraft.util.Unit;
+ import net.minecraft.util.datafix.DataFixTypes;
 -import net.minecraft.util.profiling.ProfilerFiller;
-+//import net.minecraft.util.profiling.ProfilerFiller; // Plazma - Completely remove Mojang Profiler
++// import net.minecraft.util.profiling.ProfilerFiller;  // Plazma - Completely remove Mojang's Profiler
  import net.minecraft.util.valueproviders.IntProvider;
  import net.minecraft.util.valueproviders.UniformInt;
  import net.minecraft.world.DifficultyInstance;
-@@ -695,15 +695,15 @@ public class ServerLevel extends Level implements WorldGenLevel {
+@@ -700,15 +700,15 @@ public class ServerLevel extends Level implements WorldGenLevel {
          // Holder holder = worlddimension.type(); // CraftBukkit - decompile error
  
          // Objects.requireNonNull(minecraftserver); // CraftBukkit - decompile error
--        super(iworlddataserver, resourcekey, minecraftserver.registryAccess(), worlddimension.type(), minecraftserver::getProfiler, false, flag, i, minecraftserver.getMaxChainedNeighborUpdates(), gen, biomeProvider, env, spigotConfig -> minecraftserver.paperConfigurations.createWorldConfig(io.papermc.paper.configuration.PaperConfigurations.createWorldContextMap(convertable_conversionsession.levelDirectory.path(), iworlddataserver.getLevelName(), resourcekey.location(), spigotConfig, minecraftserver.registryAccess())), spigotConfig -> minecraftserver.plazmaConfigurations.createWorldConfig(org.plazmamc.plazma.configurations.PlazmaConfigurations.createWorldContextMap(convertable_conversionsession.levelDirectory.path(), iworlddataserver.getLevelName(), resourcekey.location(), spigotConfig, minecraftserver.registryAccess())), executor); // Paper - create paper world configs; Async-Anti-Xray: Pass executor // Plazma - Configurable Plazma
-+        super(iworlddataserver, resourcekey, minecraftserver.registryAccess(), worlddimension.type(), /*minecraftserver::getProfiler,*/ false, flag, i, minecraftserver.getMaxChainedNeighborUpdates(), gen, biomeProvider, env, spigotConfig -> minecraftserver.paperConfigurations.createWorldConfig(io.papermc.paper.configuration.PaperConfigurations.createWorldContextMap(convertable_conversionsession.levelDirectory.path(), iworlddataserver.getLevelName(), resourcekey.location(), spigotConfig, minecraftserver.registryAccess())), spigotConfig -> minecraftserver.plazmaConfigurations.createWorldConfig(org.plazmamc.plazma.configurations.PlazmaConfigurations.createWorldContextMap(convertable_conversionsession.levelDirectory.path(), iworlddataserver.getLevelName(), resourcekey.location(), spigotConfig, minecraftserver.registryAccess())), executor); // Paper - create paper world configs; Async-Anti-Xray: Pass executor // Plazma - Configurable Plazma // Plazma - Completely remove Mojang Profiler
+-        super(iworlddataserver, resourcekey, minecraftserver.registryAccess(), worlddimension.type(), minecraftserver::getProfiler, false, flag, i, minecraftserver.getMaxChainedNeighborUpdates(), gen, biomeProvider, env, spigotConfig -> minecraftserver.paperConfigurations.createWorldConfig(io.papermc.paper.configuration.PaperConfigurations.createWorldContextMap(convertable_conversionsession.levelDirectory.path(), iworlddataserver.getLevelName(), resourcekey.location(), spigotConfig, minecraftserver.registryAccess(), iworlddataserver.getGameRules())), spigotConfig -> minecraftserver.plazmaConfigurations.createWorldConfig(org.plazmamc.plazma.configurations.PlazmaConfigurations.createWorldContextMap(convertable_conversionsession.levelDirectory.path(), iworlddataserver.getLevelName(), resourcekey.location(), spigotConfig, minecraftserver.registryAccess(), iworlddataserver.getGameRules())), executor); // Paper - create paper world configs; Async-Anti-Xray: Pass executor // Plazma - Configurable Plazma
++        super(iworlddataserver, resourcekey, minecraftserver.registryAccess(), worlddimension.type(), /*minecraftserver::getProfiler,*/ false, flag, i, minecraftserver.getMaxChainedNeighborUpdates(), gen, biomeProvider, env, spigotConfig -> minecraftserver.paperConfigurations.createWorldConfig(io.papermc.paper.configuration.PaperConfigurations.createWorldContextMap(convertable_conversionsession.levelDirectory.path(), iworlddataserver.getLevelName(), resourcekey.location(), spigotConfig, minecraftserver.registryAccess(), iworlddataserver.getGameRules())), spigotConfig -> minecraftserver.plazmaConfigurations.createWorldConfig(org.plazmamc.plazma.configurations.PlazmaConfigurations.createWorldContextMap(convertable_conversionsession.levelDirectory.path(), iworlddataserver.getLevelName(), resourcekey.location(), spigotConfig, minecraftserver.registryAccess(), iworlddataserver.getGameRules())), executor); // Paper - create paper world configs; Async-Anti-Xray: Pass executor // Plazma - Configurable Plazma // Plazma - Completely remove Mojang's Profiler
          this.pvpMode = minecraftserver.isPvpAllowed();
          this.convertable = convertable_conversionsession;
          this.uuid = WorldUUID.getUUID(convertable_conversionsession.levelDirectory.path().toFile());
@@ -418,13 +413,13 @@ index f5d1c1629a762b0ff5534d546610b1f59f385921..8fc95714ceebc5d5c1b4015a039b7bd3
          this.entityTickList = new EntityTickList();
 -        this.blockTicks = new LevelTicks<>(this::isPositionTickingWithEntitiesLoaded, this.getProfilerSupplier());
 -        this.fluidTicks = new LevelTicks<>(this::isPositionTickingWithEntitiesLoaded, this.getProfilerSupplier());
-+        this.blockTicks = new LevelTicks<>(this::isPositionTickingWithEntitiesLoaded/*, this.getProfilerSupplier()*/); // Plazma - Completely remove Mojang Profiler
-+        this.fluidTicks = new LevelTicks<>(this::isPositionTickingWithEntitiesLoaded/*, this.getProfilerSupplier()*/); // Plazma - Completely remove Mojang Profiler
++        this.blockTicks = new LevelTicks<>(this::isPositionTickingWithEntitiesLoaded/*, this.getProfilerSupplier()*/); // Plazma - Completely remove Mojang's Profiler
++        this.fluidTicks = new LevelTicks<>(this::isPositionTickingWithEntitiesLoaded/*, this.getProfilerSupplier()*/); // Plazma - Completely remove Mojang's Profiler
+         this.pathTypesByPosCache = new PathTypeCache();
          this.navigatingMobs = new ObjectOpenHashSet();
          this.blockEvents = new ObjectLinkedOpenHashSet();
-         this.blockEventsToReschedule = new ArrayList(64);
 diff --git a/src/main/java/net/minecraft/server/packs/resources/PreparableReloadListener.java b/src/main/java/net/minecraft/server/packs/resources/PreparableReloadListener.java
-index 60d33ac7ab7b610e9d5104ac9c7029ba4fc26cdf..dcbb7f0aadf106ecfe0a0935213e6143b84688aa 100644
+index 60d33ac7ab7b610e9d5104ac9c7029ba4fc26cdf..097d7101c802070f554345057bf34dcb6f504cf3 100644
 --- a/src/main/java/net/minecraft/server/packs/resources/PreparableReloadListener.java
 +++ b/src/main/java/net/minecraft/server/packs/resources/PreparableReloadListener.java
 @@ -2,14 +2,14 @@ package net.minecraft.server.packs.resources;
@@ -432,7 +427,7 @@ index 60d33ac7ab7b610e9d5104ac9c7029ba4fc26cdf..dcbb7f0aadf106ecfe0a0935213e6143
  import java.util.concurrent.CompletableFuture;
  import java.util.concurrent.Executor;
 -import net.minecraft.util.profiling.ProfilerFiller;
-+//import net.minecraft.util.profiling.ProfilerFiller; // Plazma - Completely remove Mojang Profiler
++//import net.minecraft.util.profiling.ProfilerFiller; // Plazma - Completely remove Mojang's Profiler
  
  public interface PreparableReloadListener {
      CompletableFuture<Void> reload(
@@ -440,13 +435,13 @@ index 60d33ac7ab7b610e9d5104ac9c7029ba4fc26cdf..dcbb7f0aadf106ecfe0a0935213e6143
          ResourceManager manager,
 -        ProfilerFiller prepareProfiler,
 -        ProfilerFiller applyProfiler,
-+        //ProfilerFiller prepareProfiler, // Plazma - Completely remove Mojang Profiler
-+        //ProfilerFiller applyProfiler, // Plazma - Completely remove Mojang Profiler
++        //ProfilerFiller prepareProfiler, // Plazma - Completely remove Mojang's Profiler
++        //ProfilerFiller applyProfiler, // Plazma - Completely remove Mojang's Profiler
          Executor prepareExecutor,
          Executor applyExecutor
      );
 diff --git a/src/main/java/net/minecraft/server/packs/resources/ResourceManagerReloadListener.java b/src/main/java/net/minecraft/server/packs/resources/ResourceManagerReloadListener.java
-index 0c25f3ed0a8a538edc7cadd3476100c9b3631f7a..dd6229790a66c1f4cb726f4606b188308683dfb0 100644
+index 0c25f3ed0a8a538edc7cadd3476100c9b3631f7a..ea73502f9e2ac9422031ebc24bf94aaae34e6ba2 100644
 --- a/src/main/java/net/minecraft/server/packs/resources/ResourceManagerReloadListener.java
 +++ b/src/main/java/net/minecraft/server/packs/resources/ResourceManagerReloadListener.java
 @@ -3,15 +3,15 @@ package net.minecraft.server.packs.resources;
@@ -454,7 +449,7 @@ index 0c25f3ed0a8a538edc7cadd3476100c9b3631f7a..dd6229790a66c1f4cb726f4606b18830
  import java.util.concurrent.Executor;
  import net.minecraft.util.Unit;
 -import net.minecraft.util.profiling.ProfilerFiller;
-+//import net.minecraft.util.profiling.ProfilerFiller; // Plazma - Completely remove Mojang Profiler
++//import net.minecraft.util.profiling.ProfilerFiller; // Plazma - Completely remove Mojang's Profiler
  
  public interface ResourceManagerReloadListener extends PreparableReloadListener {
      @Override
@@ -463,13 +458,13 @@ index 0c25f3ed0a8a538edc7cadd3476100c9b3631f7a..dd6229790a66c1f4cb726f4606b18830
          ResourceManager manager,
 -        ProfilerFiller prepareProfiler,
 -        ProfilerFiller applyProfiler,
-+        //ProfilerFiller prepareProfiler, // Plazma - Completely remove Mojang Profiler
-+        //ProfilerFiller applyProfiler, // Plazma - Completely remove Mojang Profiler
++        //ProfilerFiller prepareProfiler, // Plazma - Completely remove Mojang's Profiler
++        //ProfilerFiller applyProfiler, // Plazma - Completely remove Mojang's Profiler
          Executor prepareExecutor,
          Executor applyExecutor
      ) {
 diff --git a/src/main/java/net/minecraft/server/packs/resources/SimpleJsonResourceReloadListener.java b/src/main/java/net/minecraft/server/packs/resources/SimpleJsonResourceReloadListener.java
-index 8246e06392c06f70309c1876561bd00b59ba589f..027a0f2cb9c02fe0af7ba9e3824682aee30495ec 100644
+index 8246e06392c06f70309c1876561bd00b59ba589f..0df1be595c6784f06eab328f6b7f6f62a5e056ec 100644
 --- a/src/main/java/net/minecraft/server/packs/resources/SimpleJsonResourceReloadListener.java
 +++ b/src/main/java/net/minecraft/server/packs/resources/SimpleJsonResourceReloadListener.java
 @@ -12,7 +12,7 @@ import java.util.Map.Entry;
@@ -477,7 +472,7 @@ index 8246e06392c06f70309c1876561bd00b59ba589f..027a0f2cb9c02fe0af7ba9e3824682ae
  import net.minecraft.resources.ResourceLocation;
  import net.minecraft.util.GsonHelper;
 -import net.minecraft.util.profiling.ProfilerFiller;
-+//import net.minecraft.util.profiling.ProfilerFiller; // Plazma - Completely remove Mojang Profiler
++//import net.minecraft.util.profiling.ProfilerFiller; // Plazma - Completely remove Mojang's Profiler
  import org.slf4j.Logger;
  
  public abstract class SimpleJsonResourceReloadListener extends SimplePreparableReloadListener<Map<ResourceLocation, JsonElement>> {
@@ -486,12 +481,12 @@ index 8246e06392c06f70309c1876561bd00b59ba589f..027a0f2cb9c02fe0af7ba9e3824682ae
  
      @Override
 -    protected Map<ResourceLocation, JsonElement> prepare(ResourceManager resourceManager, ProfilerFiller profilerFiller) {
-+    protected Map<ResourceLocation, JsonElement> prepare(ResourceManager resourceManager/*, ProfilerFiller profilerFiller*/) { // Plazma - Completely remove Mojang Profiler
++    protected Map<ResourceLocation, JsonElement> prepare(ResourceManager resourceManager/*, ProfilerFiller profilerFiller*/) { // Plazma - Completely remove Mojang's Profiler
          Map<ResourceLocation, JsonElement> map = new HashMap<>();
          scanDirectory(resourceManager, this.directory, this.gson, map);
          return map;
 diff --git a/src/main/java/net/minecraft/server/packs/resources/SimplePreparableReloadListener.java b/src/main/java/net/minecraft/server/packs/resources/SimplePreparableReloadListener.java
-index 298e3eddd600f0b2e48ce2d4080cf68adff59a3a..2b3aef017a31dbf859c0525de6f24cd2b971236d 100644
+index 298e3eddd600f0b2e48ce2d4080cf68adff59a3a..2bd55b0353b6db1e2d1ae7d7e0890c352283dc7f 100644
 --- a/src/main/java/net/minecraft/server/packs/resources/SimplePreparableReloadListener.java
 +++ b/src/main/java/net/minecraft/server/packs/resources/SimplePreparableReloadListener.java
 @@ -2,24 +2,24 @@ package net.minecraft.server.packs.resources;
@@ -499,7 +494,7 @@ index 298e3eddd600f0b2e48ce2d4080cf68adff59a3a..2b3aef017a31dbf859c0525de6f24cd2
  import java.util.concurrent.CompletableFuture;
  import java.util.concurrent.Executor;
 -import net.minecraft.util.profiling.ProfilerFiller;
-+//import net.minecraft.util.profiling.ProfilerFiller; // Plazma - Completely remove Mojang Profiler
++//import net.minecraft.util.profiling.ProfilerFiller; // Plazma - Completely remove Mojang's Profiler
  
  public abstract class SimplePreparableReloadListener<T> implements PreparableReloadListener {
      @Override
@@ -508,26 +503,26 @@ index 298e3eddd600f0b2e48ce2d4080cf68adff59a3a..2b3aef017a31dbf859c0525de6f24cd2
          ResourceManager manager,
 -        ProfilerFiller prepareProfiler,
 -        ProfilerFiller applyProfiler,
-+        //ProfilerFiller prepareProfiler, // Plazma - Completely remove Mojang Profiler
-+        //ProfilerFiller applyProfiler, // Plazma - Completely remove Mojang Profiler
++        //ProfilerFiller prepareProfiler, // Plazma - Completely remove Mojang's Profiler
++        //ProfilerFiller applyProfiler, // Plazma - Completely remove Mojang's Profiler
          Executor prepareExecutor,
          Executor applyExecutor
      ) {
 -        return CompletableFuture.<T>supplyAsync(() -> this.prepare(manager, prepareProfiler), prepareExecutor)
-+        return CompletableFuture.<T>supplyAsync(() -> this.prepare(manager/*, prepareProfiler*/), prepareExecutor) // Plazma - Completely remove Mojang Profiler
++        return CompletableFuture.<T>supplyAsync(() -> this.prepare(manager/*, prepareProfiler*/), prepareExecutor) // Plazma - Completely remove Mojang's Profiler
              .thenCompose(synchronizer::wait)
 -            .thenAcceptAsync(prepared -> this.apply((T)prepared, manager, applyProfiler), applyExecutor);
-+            .thenAcceptAsync(prepared -> this.apply((T)prepared, manager/*, applyProfiler*/), applyExecutor); // Plazma - Completely remove Mojang Profiler
++            .thenAcceptAsync(prepared -> this.apply((T)prepared, manager/*, applyProfiler*/), applyExecutor); // Plazma - Completely remove Mojang's Profiler
      }
  
 -    protected abstract T prepare(ResourceManager manager, ProfilerFiller profiler);
-+    protected abstract T prepare(ResourceManager manager/*, ProfilerFiller profiler*/); // Plazma - Completely remove Mojang Profiler
++    protected abstract T prepare(ResourceManager manager/*, ProfilerFiller profiler*/); // Plazma - Completely remove Mojang's Profiler
  
 -    protected abstract void apply(T prepared, ResourceManager manager, ProfilerFiller profiler);
-+    protected abstract void apply(T prepared, ResourceManager manager/*, ProfilerFiller profiler*/); // Plazma - Completely remove Mojang Profiler
++    protected abstract void apply(T prepared, ResourceManager manager/*, ProfilerFiller profiler*/); // Plazma - Completely remove Mojang's Profiler
  }
 diff --git a/src/main/java/net/minecraft/server/packs/resources/SimpleReloadInstance.java b/src/main/java/net/minecraft/server/packs/resources/SimpleReloadInstance.java
-index 5a8ed7c2a0217366c0d7e6341006037c114f8097..138be404edcac9c6a9e8080114ce742ebc4c2e95 100644
+index 5a8ed7c2a0217366c0d7e6341006037c114f8097..8f3990ca74d00d8566255687a778b4ed749bbde0 100644
 --- a/src/main/java/net/minecraft/server/packs/resources/SimpleReloadInstance.java
 +++ b/src/main/java/net/minecraft/server/packs/resources/SimpleReloadInstance.java
 @@ -10,7 +10,7 @@ import java.util.concurrent.Executor;
@@ -535,7 +530,7 @@ index 5a8ed7c2a0217366c0d7e6341006037c114f8097..138be404edcac9c6a9e8080114ce742e
  import net.minecraft.Util;
  import net.minecraft.util.Unit;
 -import net.minecraft.util.profiling.InactiveProfiler;
-+//import net.minecraft.util.profiling.InactiveProfiler; // Plazma - Completely remove Mojang Profiler
++//import net.minecraft.util.profiling.InactiveProfiler; // Plazma - Completely remove Mojang's Profiler
  
  public class SimpleReloadInstance<S> implements ReloadInstance {
      private static final int PREPARATION_PROGRESS_WEIGHT = 2;
@@ -549,7 +544,7 @@ index 5a8ed7c2a0217366c0d7e6341006037c114f8097..138be404edcac9c6a9e8080114ce742e
              initialStage
          );
 diff --git a/src/main/java/net/minecraft/tags/TagManager.java b/src/main/java/net/minecraft/tags/TagManager.java
-index 7b9b8a6824fe5587773c1108628a0144d94169a1..d960cf466ffbdcf3f157b6e410eb0755d09543a3 100644
+index cd178d9a30263a3fc68d2b997974a1f9a0c8bab5..f81cd35f9babe7906d3738aa135ac88d78cdfdab 100644
 --- a/src/main/java/net/minecraft/tags/TagManager.java
 +++ b/src/main/java/net/minecraft/tags/TagManager.java
 @@ -14,7 +14,7 @@ import net.minecraft.resources.ResourceKey;
@@ -557,7 +552,7 @@ index 7b9b8a6824fe5587773c1108628a0144d94169a1..d960cf466ffbdcf3f157b6e410eb0755
  import net.minecraft.server.packs.resources.PreparableReloadListener;
  import net.minecraft.server.packs.resources.ResourceManager;
 -import net.minecraft.util.profiling.ProfilerFiller;
-+//import net.minecraft.util.profiling.ProfilerFiller; // Plazma - Completely remove Mojang Profiler
++// import net.minecraft.util.profiling.ProfilerFiller; // Plazma - Completely remove Mojang's Profiler
  
  public class TagManager implements PreparableReloadListener {
      private static final Map<ResourceKey<? extends Registry<?>>, String> CUSTOM_REGISTRY_DIRECTORIES = Map.of(
@@ -567,19 +562,19 @@ index 7b9b8a6824fe5587773c1108628a0144d94169a1..d960cf466ffbdcf3f157b6e410eb0755
          ResourceManager manager,
 -        ProfilerFiller prepareProfiler,
 -        ProfilerFiller applyProfiler,
-+        //ProfilerFiller prepareProfiler, // Plazma - Completely remove Mojang Profiler
-+        //ProfilerFiller applyProfiler, // Plazma - Completely remove Mojang Profiler
++        // ProfilerFiller prepareProfiler, // Plazma - Completely remove Mojang's Profiler
++        // ProfilerFiller applyProfiler, // Plazma - Completely remove Mojang's Profiler
          Executor prepareExecutor,
          Executor applyExecutor
      ) {
 diff --git a/src/main/java/net/minecraft/util/profiling/ActiveProfiler.java b/src/main/java/net/minecraft/util/profiling/ActiveProfiler.java
-index 600a7036b503f60cc9c95f189f73c2dbf020e2e1..5d8dddca2a9e3a3440ccd2a2fd565f2afcffbb40 100644
+index 600a7036b503f60cc9c95f189f73c2dbf020e2e1..bbc7e78d38a720b00456efd71f7d8ee36bf967ff 100644
 --- a/src/main/java/net/minecraft/util/profiling/ActiveProfiler.java
 +++ b/src/main/java/net/minecraft/util/profiling/ActiveProfiler.java
 @@ -1,5 +1,6 @@
  package net.minecraft.util.profiling;
  
-+/* <editor-fold desc="Removed class" defaultstate="collapsed"> // Plazma - Completely remove Mojang Profiler
++/* <editor-fold desc="Removed class" defaultstate="collapsed"> // Plazma - Completely remove Mojang's Profiler
  import com.google.common.collect.Lists;
  import com.google.common.collect.Maps;
  import com.mojang.logging.LogUtils;
@@ -587,10 +582,10 @@ index 600a7036b503f60cc9c95f189f73c2dbf020e2e1..5d8dddca2a9e3a3440ccd2a2fd565f2a
  import net.minecraft.util.profiling.metrics.MetricCategory;
  import org.apache.commons.lang3.tuple.Pair;
  import org.slf4j.Logger;
-+ */ // Plazma - Completely remove Mojang Profiler
++ */ // Plazma - Completely remove Mojang's Profiler
  
 -public class ActiveProfiler implements ProfileCollector {
-+interface ActiveProfiler {/* implements ProfileCollector { // Plazma - Completely remove Mojang Profiler
++interface ActiveProfiler {/* implements ProfileCollector { // Plazma - Completely remove Mojang's Profiler
      private static final long WARNING_TIME_NANOS = Duration.ofMillis(100L).toNanos();
      private static final Logger LOGGER = LogUtils.getLogger();
      private final List<String> paths = Lists.newArrayList();
@@ -598,22 +593,22 @@ index 600a7036b503f60cc9c95f189f73c2dbf020e2e1..5d8dddca2a9e3a3440ccd2a2fd565f2a
              return Object2LongMaps.unmodifiable(this.counters);
          }
      }
-+    </editor-fold> */ // Plazma - Completely remove Mojang Profiler
++    </editor-fold> */ // Plazma - Completely remove Mojang's Profiler
  }
 diff --git a/src/main/java/net/minecraft/util/profiling/ContinuousProfiler.java b/src/main/java/net/minecraft/util/profiling/ContinuousProfiler.java
-index 4424bca7effa4fef26453afcd06d86e6a30d7b8f..e8e662b07d9a31bbaa6e3bcc22c0b036dfe4def6 100644
+index 4424bca7effa4fef26453afcd06d86e6a30d7b8f..04012ab769a21bff11305fb4f01e72f71e3b5bd8 100644
 --- a/src/main/java/net/minecraft/util/profiling/ContinuousProfiler.java
 +++ b/src/main/java/net/minecraft/util/profiling/ContinuousProfiler.java
 @@ -1,9 +1,11 @@
  package net.minecraft.util.profiling;
  
-+/* <editor-fold desc="Removed class" defaultstate="collapsed"> // Plazma - Completely remove Mojang Profiler
++/* <editor-fold desc="Removed class" defaultstate="collapsed"> // Plazma - Completely remove Mojang's Profiler
  import java.util.function.IntSupplier;
  import java.util.function.LongSupplier;
-+ */ // Plazma - Completely remove Mojang Profiler
++ */ // Plazma - Completely remove Mojang's Profiler
  
 -public class ContinuousProfiler {
-+interface ContinuousProfiler { /* // Plazma - Completely remove Mojang Profiler
++interface ContinuousProfiler { /* // Plazma - Completely remove Mojang's Profiler
      private final LongSupplier realTime;
      private final IntSupplier tickCount;
      private ProfileCollector profiler = InactiveProfiler.INSTANCE;
@@ -621,23 +616,23 @@ index 4424bca7effa4fef26453afcd06d86e6a30d7b8f..e8e662b07d9a31bbaa6e3bcc22c0b036
      public ProfileResults getResults() {
          return this.profiler.getResults();
      }
-+    </editor-fold> */ // Plazma - Completely remove Mojang Profiler
++    </editor-fold> */ // Plazma - Completely remove Mojang's Profiler
  }
 diff --git a/src/main/java/net/minecraft/util/profiling/EmptyProfileResults.java b/src/main/java/net/minecraft/util/profiling/EmptyProfileResults.java
-index 843e28baf089349851d7794c496e518ca396e92d..3bfd3d5d88a8b9ba790693ee45b7f21f87a34e5a 100644
+index 843e28baf089349851d7794c496e518ca396e92d..25d0ffdfdd50cfd794f735a00bc0131a102d7911 100644
 --- a/src/main/java/net/minecraft/util/profiling/EmptyProfileResults.java
 +++ b/src/main/java/net/minecraft/util/profiling/EmptyProfileResults.java
 @@ -1,10 +1,12 @@
  package net.minecraft.util.profiling;
  
-+/* <editor-fold desc="Removed class" defaultstate="collapsed"> // Plazma - Completely remove Mojang Profiler
++/* <editor-fold desc="Removed class" defaultstate="collapsed"> // Plazma - Completely remove Mojang's Profiler
  import java.nio.file.Path;
  import java.util.Collections;
  import java.util.List;
-+ */ // Plazma - Completely remove Mojang Profiler
++ */ // Plazma - Completely remove Mojang's Profiler
  
 -public class EmptyProfileResults implements ProfileResults {
-+interface EmptyProfileResults { /*implements ProfileResults { // Plazma - Completely remove Mojang Profiler
++interface EmptyProfileResults { /*implements ProfileResults { // Plazma - Completely remove Mojang's Profiler
      public static final EmptyProfileResults EMPTY = new EmptyProfileResults();
  
      private EmptyProfileResults() {
@@ -645,16 +640,16 @@ index 843e28baf089349851d7794c496e518ca396e92d..3bfd3d5d88a8b9ba790693ee45b7f21f
      public String getProfilerResults() {
          return "";
      }
-+     </editor-fold> */ // Plazma - Completely remove Mojang Profiler
++     </editor-fold> */ // Plazma - Completely remove Mojang's Profiler
  }
 diff --git a/src/main/java/net/minecraft/util/profiling/FilledProfileResults.java b/src/main/java/net/minecraft/util/profiling/FilledProfileResults.java
-index fc3a3a32e6432c284b29216989385f8b0993c315..50fc93ec6bedccb74ec0347299c148daf0fb5abb 100644
+index fc3a3a32e6432c284b29216989385f8b0993c315..ac32c5e8aab03f949b7848cac35e475f30810ecb 100644
 --- a/src/main/java/net/minecraft/util/profiling/FilledProfileResults.java
 +++ b/src/main/java/net/minecraft/util/profiling/FilledProfileResults.java
 @@ -1,5 +1,6 @@
  package net.minecraft.util.profiling;
  
-+/* <editor-fold desc="Removed class" defaultstate="collapsed"> // Plazma - Completely remove Mojang Profiler
++/* <editor-fold desc="Removed class" defaultstate="collapsed"> // Plazma - Completely remove Mojang's Profiler
  import com.google.common.base.Splitter;
  import com.google.common.collect.Lists;
  import com.google.common.collect.Maps;
@@ -662,10 +657,10 @@ index fc3a3a32e6432c284b29216989385f8b0993c315..50fc93ec6bedccb74ec0347299c148da
  import org.apache.commons.io.IOUtils;
  import org.apache.commons.lang3.ObjectUtils;
  import org.slf4j.Logger;
-+ */ // Plazma - Completely remove Mojang Profiler
++ */ // Plazma - Completely remove Mojang's Profiler
  
 -public class FilledProfileResults implements ProfileResults {
-+interface FilledProfileResults {/* implements ProfileResults { // Plazma - Completely remove Mojang Profiler
++interface FilledProfileResults {/* implements ProfileResults { // Plazma - Completely remove Mojang's Profiler
      private static final Logger LOGGER = LogUtils.getLogger();
      private static final ProfilerPathEntry EMPTY = new ProfilerPathEntry() {
          @Override
@@ -673,26 +668,26 @@ index fc3a3a32e6432c284b29216989385f8b0993c315..50fc93ec6bedccb74ec0347299c148da
              }
          }
      }
-+    </editor-fold> */ // Plazma - Completely remove Mojang Profiler
++    </editor-fold> */ // Plazma - Completely remove Mojang's Profiler
  }
 diff --git a/src/main/java/net/minecraft/util/profiling/InactiveProfiler.java b/src/main/java/net/minecraft/util/profiling/InactiveProfiler.java
-index 5d2d8018460c04f7314c872441a8b21bc296c1ea..bbab8ea9b07cca407c8b0a5a62cd7cf2e712e0cf 100644
+index 5d2d8018460c04f7314c872441a8b21bc296c1ea..124beebb323e39b7cc9cc123019cb32d13b384cb 100644
 --- a/src/main/java/net/minecraft/util/profiling/InactiveProfiler.java
 +++ b/src/main/java/net/minecraft/util/profiling/InactiveProfiler.java
 @@ -1,13 +1,15 @@
  package net.minecraft.util.profiling;
  
-+/* <editor-fold desc="Removed class" defaultstate="collapsed"> // Plazma - Completely remove Mojang Profiler
++/* <editor-fold desc="Removed class" defaultstate="collapsed"> // Plazma - Completely remove Mojang's Profiler
  import com.google.common.collect.ImmutableSet;
  import java.util.Set;
  import java.util.function.Supplier;
  import javax.annotation.Nullable;
  import net.minecraft.util.profiling.metrics.MetricCategory;
  import org.apache.commons.lang3.tuple.Pair;
-+ */ // Plazma - Completely remove Mojang Profiler
++ */ // Plazma - Completely remove Mojang's Profiler
  
 -public class InactiveProfiler implements ProfileCollector {
-+interface InactiveProfiler { /* implements ProfileCollector { // Plazma - Completely remove Mojang Profiler
++interface InactiveProfiler { /* implements ProfileCollector { // Plazma - Completely remove Mojang's Profiler
      public static final InactiveProfiler INSTANCE = new InactiveProfiler();
  
      private InactiveProfiler() {
@@ -700,46 +695,46 @@ index 5d2d8018460c04f7314c872441a8b21bc296c1ea..bbab8ea9b07cca407c8b0a5a62cd7cf2
      public Set<Pair<String, MetricCategory>> getChartedPaths() {
          return ImmutableSet.of();
      }
-+    </editor-fold> */ // Plazma - Completely remove Mojang Profiler
++    </editor-fold> */ // Plazma - Completely remove Mojang's Profiler
  }
 diff --git a/src/main/java/net/minecraft/util/profiling/ProfileCollector.java b/src/main/java/net/minecraft/util/profiling/ProfileCollector.java
-index fe47a3ce6318ad74bd4d9b10dbf5ee06c94b6939..eb3287d06f2072624a95d3a15355cab8c6cadf31 100644
+index fe47a3ce6318ad74bd4d9b10dbf5ee06c94b6939..b3c84a9bca9b66c58837b94732bd9be12c213029 100644
 --- a/src/main/java/net/minecraft/util/profiling/ProfileCollector.java
 +++ b/src/main/java/net/minecraft/util/profiling/ProfileCollector.java
 @@ -1,15 +1,18 @@
  package net.minecraft.util.profiling;
  
-+/* <editor-fold desc="Removed class" defaultstate="collapsed">  // Plazma - Completely remove Mojang Profiler
++/* <editor-fold desc="Removed class" defaultstate="collapsed">  // Plazma - Completely remove Mojang's Profiler
  import java.util.Set;
  import javax.annotation.Nullable;
  import net.minecraft.util.profiling.metrics.MetricCategory;
  import org.apache.commons.lang3.tuple.Pair;
-+ */ // Plazma - Completely remove Mojang Profiler
++ */ // Plazma - Completely remove Mojang's Profiler
  
 -public interface ProfileCollector extends ProfilerFiller {
-+interface ProfileCollector { /* extends ProfilerFiller { // Plazma - Completely remove Mojang Profiler
++interface ProfileCollector { /* extends ProfilerFiller { // Plazma - Completely remove Mojang's Profiler
      ProfileResults getResults();
  
      @Nullable
      ActiveProfiler.PathEntry getEntry(String name);
  
      Set<Pair<String, MetricCategory>> getChartedPaths();
-+    </editor-fold> */ // Plazma - Completely remove Mojang Profiler
++    </editor-fold> */ // Plazma - Completely remove Mojang's Profiler
  }
 diff --git a/src/main/java/net/minecraft/util/profiling/ProfileResults.java b/src/main/java/net/minecraft/util/profiling/ProfileResults.java
-index afefd549cf9792a91dd8919c12697a693200d042..0e81cf4d0cbf23eae5b9713a8f969742c7e63dec 100644
+index afefd549cf9792a91dd8919c12697a693200d042..46c2447650e108065a19420a71e29775f69c746f 100644
 --- a/src/main/java/net/minecraft/util/profiling/ProfileResults.java
 +++ b/src/main/java/net/minecraft/util/profiling/ProfileResults.java
 @@ -1,9 +1,11 @@
  package net.minecraft.util.profiling;
  
-+/* <editor-fold desc="Removed class" defaultstate="collapsed"> // Plazma - Completely remove Mojang Profiler
++/* <editor-fold desc="Removed class" defaultstate="collapsed"> // Plazma - Completely remove Mojang's Profiler
  import java.nio.file.Path;
  import java.util.List;
 + */
  
 -public interface ProfileResults {
-+interface ProfileResults { /* { // Plazma - Completely remove Mojang Profiler
++interface ProfileResults { /* { // Plazma - Completely remove Mojang's Profiler
      char PATH_SEPARATOR = '\u001e';
  
      List<ResultField> getTimes(String parentPath);
@@ -747,22 +742,22 @@ index afefd549cf9792a91dd8919c12697a693200d042..0e81cf4d0cbf23eae5b9713a8f969742
      static String demanglePath(String path) {
          return path.replace('\u001e', '.');
      }
-+     </editor-fold> */ // Plazma - Completely remove Mojang Profiler
++     </editor-fold> */ // Plazma - Completely remove Mojang's Profiler
  }
 diff --git a/src/main/java/net/minecraft/util/profiling/ProfilerFiller.java b/src/main/java/net/minecraft/util/profiling/ProfilerFiller.java
-index 223c3665126c576eddb1a8f7c9f5bc60c6ff9818..7fc5aa5b468186d793ebbdbafbf757367a6f9b1a 100644
+index 223c3665126c576eddb1a8f7c9f5bc60c6ff9818..7623bbd58d9a95e04e9260f85d39e5f9ebb1c75b 100644
 --- a/src/main/java/net/minecraft/util/profiling/ProfilerFiller.java
 +++ b/src/main/java/net/minecraft/util/profiling/ProfilerFiller.java
 @@ -1,9 +1,11 @@
  package net.minecraft.util.profiling;
  
-+/* <editor-fold desc="Removed class" defaultstate="collapsed"> // Plazma - Completely remove Mojang Profiler
++/* <editor-fold desc="Removed class" defaultstate="collapsed"> // Plazma - Completely remove Mojang's Profiler
  import java.util.function.Supplier;
  import net.minecraft.util.profiling.metrics.MetricCategory;
-+ */ // Plazma - Completely remove Mojang Profiler
++ */ // Plazma - Completely remove Mojang's Profiler
  
 -public interface ProfilerFiller {
-+interface ProfilerFiller { /* // Plazma - Completely remove Mojang Profiler
++interface ProfilerFiller { /* // Plazma - Completely remove Mojang's Profiler
      String ROOT = "root";
  
      @io.papermc.paper.annotation.DoNotUse // Purpur
@@ -770,20 +765,20 @@ index 223c3665126c576eddb1a8f7c9f5bc60c6ff9818..7fc5aa5b468186d793ebbdbafbf75736
              };
          }
      }
-+    </editor-fold> */ // Plazma - Completely remove Mojang Profiler
++    </editor-fold> */ // Plazma - Completely remove Mojang's Profiler
  }
 diff --git a/src/main/java/net/minecraft/util/profiling/ProfilerPathEntry.java b/src/main/java/net/minecraft/util/profiling/ProfilerPathEntry.java
-index c073262f663309e6f73e67b303927b3996ea0c16..c2788315122e34ba4725e9fdbb4f471e0a168aff 100644
+index c073262f663309e6f73e67b303927b3996ea0c16..2fae8377f0cb3ff22c2d4e2b8e8322f76e00f5ff 100644
 --- a/src/main/java/net/minecraft/util/profiling/ProfilerPathEntry.java
 +++ b/src/main/java/net/minecraft/util/profiling/ProfilerPathEntry.java
 @@ -1,8 +1,8 @@
  package net.minecraft.util.profiling;
  
 -import it.unimi.dsi.fastutil.objects.Object2LongMap;
-+// <editor-fold desc="Removed class" defaultstate="collapsed"> import it.unimi.dsi.fastutil.objects.Object2LongMap; // Plazma - Completely remove Mojang Profiler
++// <editor-fold desc="Removed class" defaultstate="collapsed"> import it.unimi.dsi.fastutil.objects.Object2LongMap; // Plazma - Completely remove Mojang's Profiler
  
 -public interface ProfilerPathEntry {
-+interface ProfilerPathEntry { /* // Plazma - Completely remove Mojang Profiler
++interface ProfilerPathEntry { /* // Plazma - Completely remove Mojang's Profiler
      long getDuration();
  
      long getMaxDuration();
@@ -791,17 +786,17 @@ index c073262f663309e6f73e67b303927b3996ea0c16..c2788315122e34ba4725e9fdbb4f471e
      long getCount();
  
      Object2LongMap<String> getCounters();
-+    </editor-fold> */ // Plazma - Completely remove Mojang Profiler
++    </editor-fold> */ // Plazma - Completely remove Mojang's Profiler
  }
 diff --git a/src/main/java/net/minecraft/util/profiling/ResultField.java b/src/main/java/net/minecraft/util/profiling/ResultField.java
-index 179dd48aeeacc0b2a42c99f6213dd23683159681..9e225f5181465032bc517bc2dec3ec129375a0ad 100644
+index 179dd48aeeacc0b2a42c99f6213dd23683159681..892926e44cc8a271a839881e108f6aa8420f60e6 100644
 --- a/src/main/java/net/minecraft/util/profiling/ResultField.java
 +++ b/src/main/java/net/minecraft/util/profiling/ResultField.java
 @@ -1,6 +1,6 @@
  package net.minecraft.util.profiling;
  
 -public final class ResultField implements Comparable<ResultField> {
-+interface ResultField { /* <editor-fold desc="Removed class" defaultstate="collapsed"> implements Comparable<ResultField> { // Plazma - Completely remove Mojang Profiler
++interface ResultField { /* <editor-fold desc="Removed class" defaultstate="collapsed"> implements Comparable<ResultField> { // Plazma - Completely remove Mojang's Profiler
      public final double percentage;
      public final double globalPercentage;
      public final long count;
@@ -809,26 +804,26 @@ index 179dd48aeeacc0b2a42c99f6213dd23683159681..9e225f5181465032bc517bc2dec3ec12
      public int getColor() {
          return (this.name.hashCode() & 11184810) + 4473924;
      }
-+     </editor-fold> */ // Plazma - Completely remove Mojang Profiler
++     </editor-fold> */ // Plazma - Completely remove Mojang's Profiler
  }
 diff --git a/src/main/java/net/minecraft/util/profiling/SingleTickProfiler.java b/src/main/java/net/minecraft/util/profiling/SingleTickProfiler.java
-index 563d82c9153c88b651d6991caae4374c285a3065..b590a585dd4fd07a84e5971586c9a31c2a4273f0 100644
+index 563d82c9153c88b651d6991caae4374c285a3065..a028709d3e1fba0e697b8ad097efb95311a2403e 100644
 --- a/src/main/java/net/minecraft/util/profiling/SingleTickProfiler.java
 +++ b/src/main/java/net/minecraft/util/profiling/SingleTickProfiler.java
 @@ -1,13 +1,15 @@
  package net.minecraft.util.profiling;
  
-+/* <editor-fold desc="Removed class" defaultstate="collapsed"> // Plazma - Completely remove Mojang Profiler
++/* <editor-fold desc="Removed class" defaultstate="collapsed"> // Plazma - Completely remove Mojang's Profiler
  import com.mojang.logging.LogUtils;
  import java.io.File;
  import java.util.function.LongSupplier;
  import javax.annotation.Nullable;
  import net.minecraft.Util;
  import org.slf4j.Logger;
-+ */ // Plazma - Completely remove Mojang Profiler
++ */ // Plazma - Completely remove Mojang's Profiler
  
 -public class SingleTickProfiler {
-+interface SingleTickProfiler { /* // Plazma - Completely remove Mojang Profiler
++interface SingleTickProfiler { /* // Plazma - Completely remove Mojang's Profiler
      private static final Logger LOGGER = LogUtils.getLogger();
      private final LongSupplier realTime;
      private final long saveThreshold;
@@ -836,17 +831,17 @@ index 563d82c9153c88b651d6991caae4374c285a3065..b590a585dd4fd07a84e5971586c9a31c
      public static ProfilerFiller decorateFiller(ProfilerFiller profiler, @Nullable SingleTickProfiler monitor) {
          return monitor != null ? ProfilerFiller.tee(monitor.startTick(), profiler) : profiler;
      }
-+    </editor-fold> */ // Plazma - Completely remove Mojang Profiler
++    </editor-fold> */ // Plazma - Completely remove Mojang's Profiler
  }
 diff --git a/src/main/java/net/minecraft/util/profiling/metrics/MetricCategory.java b/src/main/java/net/minecraft/util/profiling/metrics/MetricCategory.java
-index 6c40f626197337826f2172211b9b05015ff659bd..a6a17ee7dcd464095bb26cd8f77b1c9b3a923389 100644
+index fc84538abcb3e8617e91a4b54c968f1ab2900cf8..b2e626bb31ffef87175fbd1aa316062a445c032d 100644
 --- a/src/main/java/net/minecraft/util/profiling/metrics/MetricCategory.java
 +++ b/src/main/java/net/minecraft/util/profiling/metrics/MetricCategory.java
 @@ -1,6 +1,6 @@
  package net.minecraft.util.profiling.metrics;
  
 -public enum MetricCategory {
-+interface MetricCategory { /* <editor-fold desc="Removed class" defaultstate="collapsed"> // Plazma - Completely remove Mojang Profiler
++interface MetricCategory { /* <editor-fold desc="Removed class" defaultstate="collapsed"> // Plazma - Completely remove Mojang's Profiler
      PATH_FINDING("pathfinding"),
      EVENT_LOOPS("event-loops"),
      MAIL_BOXES("mailboxes"),
@@ -854,16 +849,16 @@ index 6c40f626197337826f2172211b9b05015ff659bd..a6a17ee7dcd464095bb26cd8f77b1c9b
      public String getDescription() {
          return this.description;
      }
-+    </editor-fold> */ // Plazma - Completely remove Mojang Profiler
++    </editor-fold> */ // Plazma - Completely remove Mojang's Profiler
  }
 diff --git a/src/main/java/net/minecraft/util/profiling/metrics/MetricSampler.java b/src/main/java/net/minecraft/util/profiling/metrics/MetricSampler.java
-index dd2bf15d22e5839ca986d3e824fb785786af86c8..1c9a40dfb43fa5bd473f59db365ecf08297bac3d 100644
+index dd2bf15d22e5839ca986d3e824fb785786af86c8..4e6d03e2e7975ad2299f3ca9944c3e29f6d24eb7 100644
 --- a/src/main/java/net/minecraft/util/profiling/metrics/MetricSampler.java
 +++ b/src/main/java/net/minecraft/util/profiling/metrics/MetricSampler.java
 @@ -1,5 +1,6 @@
  package net.minecraft.util.profiling.metrics;
  
-+/* <editor-fold desc="Removed class" defaultstate="collapsed"> // Plazma - Completely remove Mojang Profiler
++/* <editor-fold desc="Removed class" defaultstate="collapsed"> // Plazma - Completely remove Mojang's Profiler
  import io.netty.buffer.ByteBuf;
  import io.netty.buffer.ByteBufAllocator;
  import it.unimi.dsi.fastutil.ints.Int2DoubleMap;
@@ -871,10 +866,10 @@ index dd2bf15d22e5839ca986d3e824fb785786af86c8..1c9a40dfb43fa5bd473f59db365ecf08
  import java.util.function.DoubleSupplier;
  import java.util.function.ToDoubleFunction;
  import javax.annotation.Nullable;
-+ */ // Plazma - Completely remove Mojang Profiler
++ */ // Plazma - Completely remove Mojang's Profiler
  
 -public class MetricSampler {
-+interface MetricSampler { /* // Plazma - Completely remove Mojang Profiler
++interface MetricSampler { /* // Plazma - Completely remove Mojang's Profiler
      private final String name;
      private final MetricCategory category;
      private final DoubleSupplier sampler;
@@ -882,10 +877,10 @@ index dd2bf15d22e5839ca986d3e824fb785786af86c8..1c9a40dfb43fa5bd473f59db365ecf08
              return bl2;
          }
      }
-+    </editor-fold> */ // Plazma - Completely remove Mojang Profiler
++    </editor-fold> */ // Plazma - Completely remove Mojang's Profiler
  }
 diff --git a/src/main/java/net/minecraft/util/profiling/metrics/MetricsRegistry.java b/src/main/java/net/minecraft/util/profiling/metrics/MetricsRegistry.java
-index c22a91ee393744a4eaffe1fff168b18ac1bc55bd..d2e6a7b661d1d3166a58cc3cc681bebdb229215c 100644
+index c22a91ee393744a4eaffe1fff168b18ac1bc55bd..f93afd84b47041f6ccc6a651fbe1831931befbc7 100644
 --- a/src/main/java/net/minecraft/util/profiling/metrics/MetricsRegistry.java
 +++ b/src/main/java/net/minecraft/util/profiling/metrics/MetricsRegistry.java
 @@ -1,13 +1,15 @@
@@ -898,10 +893,10 @@ index c22a91ee393744a4eaffe1fff168b18ac1bc55bd..d2e6a7b661d1d3166a58cc3cc681bebd
  import java.util.WeakHashMap;
  import java.util.stream.Collectors;
  import javax.annotation.Nullable;
-+ */ // Plazma - Completely remove Mojang Profiler
++ */ // Plazma - Completely remove Mojang's Profiler
  
 -public class MetricsRegistry {
-+interface MetricsRegistry { /* // Plazma - Completely remove Mojang Profiler
++interface MetricsRegistry { /* // Plazma - Completely remove Mojang's Profiler
      public static final MetricsRegistry INSTANCE = new MetricsRegistry();
      private final WeakHashMap<ProfilerMeasured, Void> measuredInstances = new WeakHashMap<>();
  
@@ -909,28 +904,28 @@ index c22a91ee393744a4eaffe1fff168b18ac1bc55bd..d2e6a7b661d1d3166a58cc3cc681bebd
              return Objects.hash(super.hashCode(), this.delegates);
          }
      }
-+     </editor-fold> */ // Plazma - Completely remove Mojang Profiler
++     </editor-fold> */ // Plazma - Completely remove Mojang's Profiler
  }
 diff --git a/src/main/java/net/minecraft/util/profiling/metrics/MetricsSamplerProvider.java b/src/main/java/net/minecraft/util/profiling/metrics/MetricsSamplerProvider.java
-index 07f78c451e5330296c38f6b599d979610a03381f..54f78126dda64bb5f624eb8bd88b310b22c8c973 100644
+index 07f78c451e5330296c38f6b599d979610a03381f..b6ea87aa3fef7b03ec83d789b9ce588f1b2d9b13 100644
 --- a/src/main/java/net/minecraft/util/profiling/metrics/MetricsSamplerProvider.java
 +++ b/src/main/java/net/minecraft/util/profiling/metrics/MetricsSamplerProvider.java
 @@ -1,9 +1,11 @@
  package net.minecraft.util.profiling.metrics;
  
-+/* <editor-fold desc="Removed class" defaultstate="collapsed"> // Plazma - Completely remove Mojang Profiler
++/* <editor-fold desc="Removed class" defaultstate="collapsed"> // Plazma - Completely remove Mojang's Profiler
  import java.util.Set;
  import java.util.function.Supplier;
  import net.minecraft.util.profiling.ProfileCollector;
-+ */ // Plazma - Completely remove Mojang Profiler
++ */ // Plazma - Completely remove Mojang's Profiler
  
 -public interface MetricsSamplerProvider {
 -    Set<MetricSampler> samplers(Supplier<ProfileCollector> profilerSupplier);
 +interface MetricsSamplerProvider {
-+    //Set<MetricSampler> samplers(Supplier<ProfileCollector> profilerSupplier); </editor-fold> // Plazma - Completely remove Mojang Profiler
++    //Set<MetricSampler> samplers(Supplier<ProfileCollector> profilerSupplier); </editor-fold> // Plazma - Completely remove Mojang's Profiler
  }
 diff --git a/src/main/java/net/minecraft/util/profiling/metrics/ProfilerMeasured.java b/src/main/java/net/minecraft/util/profiling/metrics/ProfilerMeasured.java
-index 3057e9caa1936d114e07b3dfbd0dffd8aca1223c..4103faed61d1c2296bf46ce99ee8d165be12e839 100644
+index 3057e9caa1936d114e07b3dfbd0dffd8aca1223c..976dcc062391c6b3a05a8848b029ee8424cda63b 100644
 --- a/src/main/java/net/minecraft/util/profiling/metrics/ProfilerMeasured.java
 +++ b/src/main/java/net/minecraft/util/profiling/metrics/ProfilerMeasured.java
 @@ -2,6 +2,6 @@ package net.minecraft.util.profiling.metrics;
@@ -939,17 +934,17 @@ index 3057e9caa1936d114e07b3dfbd0dffd8aca1223c..4103faed61d1c2296bf46ce99ee8d165
  
 -public interface ProfilerMeasured {
 -    List<MetricSampler> profiledMetrics();
-+interface ProfilerMeasured { // Plazma - Completely remove Mojang Profiler
-+    // List<MetricSampler> profiledMetrics(); </editor-fold> // Plazma - Completely remove Mojang Profiler
++interface ProfilerMeasured { // Plazma - Completely remove Mojang's Profiler
++    // List<MetricSampler> profiledMetrics(); </editor-fold> // Plazma - Completely remove Mojang's Profiler
  }
 diff --git a/src/main/java/net/minecraft/util/profiling/metrics/profiling/ActiveMetricsRecorder.java b/src/main/java/net/minecraft/util/profiling/metrics/profiling/ActiveMetricsRecorder.java
-index 9b8e774dfbfc9e06e9bf04ff789737511d6966ba..a42cbf219342bf12fc0d36ba5a4d394cf0562e17 100644
+index 9b8e774dfbfc9e06e9bf04ff789737511d6966ba..746b7f8a136d2611e1d72e71425ee32a219454dd 100644
 --- a/src/main/java/net/minecraft/util/profiling/metrics/profiling/ActiveMetricsRecorder.java
 +++ b/src/main/java/net/minecraft/util/profiling/metrics/profiling/ActiveMetricsRecorder.java
 @@ -1,5 +1,6 @@
  package net.minecraft.util.profiling.metrics.profiling;
  
-+/* <editor-fold desc="Removed class" defaultstate="collapsed"> // Plazma - Completely remove Mojang Profiler
++/* <editor-fold desc="Removed class" defaultstate="collapsed"> // Plazma - Completely remove Mojang's Profiler
  import com.google.common.collect.ImmutableSet;
  import com.google.common.collect.Lists;
  import it.unimi.dsi.fastutil.objects.Object2ObjectOpenHashMap;
@@ -957,10 +952,10 @@ index 9b8e774dfbfc9e06e9bf04ff789737511d6966ba..a42cbf219342bf12fc0d36ba5a4d394c
  import net.minecraft.util.profiling.metrics.MetricsSamplerProvider;
  import net.minecraft.util.profiling.metrics.storage.MetricsPersister;
  import net.minecraft.util.profiling.metrics.storage.RecordedDeviation;
-+ */ // Plazma - Completely remove Mojang Profiler
++ */ // Plazma - Completely remove Mojang's Profiler
  
 -public class ActiveMetricsRecorder implements MetricsRecorder {
-+interface ActiveMetricsRecorder {/*implements MetricsRecorder { // Plazma - Completely remove Mojang Profiler
++interface ActiveMetricsRecorder {/*implements MetricsRecorder { // Plazma - Completely remove Mojang's Profiler
      public static final int PROFILING_MAX_DURATION_SECONDS = 10;
      @Nullable
      private static Consumer<Path> globalOnReportFinished = null;
@@ -968,22 +963,22 @@ index 9b8e774dfbfc9e06e9bf04ff789737511d6966ba..a42cbf219342bf12fc0d36ba5a4d394c
      public static void registerGlobalCompletionCallback(Consumer<Path> consumer) {
          globalOnReportFinished = consumer;
      }
-+    </editor-fold> */ // Plazma - Completely remove Mojang Profiler
++    </editor-fold> */ // Plazma - Completely remove Mojang's Profiler
  }
 diff --git a/src/main/java/net/minecraft/util/profiling/metrics/profiling/InactiveMetricsRecorder.java b/src/main/java/net/minecraft/util/profiling/metrics/profiling/InactiveMetricsRecorder.java
-index 12d7b7c86115b667bd8f940206985d9ed4b837d4..cf58add13a2de5db5e9db1712cef7d1c203ec6db 100644
+index 12d7b7c86115b667bd8f940206985d9ed4b837d4..0feece395aaaec1be498af95454238270c0bfd01 100644
 --- a/src/main/java/net/minecraft/util/profiling/metrics/profiling/InactiveMetricsRecorder.java
 +++ b/src/main/java/net/minecraft/util/profiling/metrics/profiling/InactiveMetricsRecorder.java
 @@ -1,9 +1,11 @@
  package net.minecraft.util.profiling.metrics.profiling;
  
-+/* <editor-fold desc="Removed class" defaultstate="collapsed"> // Plazma - Completely remove Mojang Profiler
++/* <editor-fold desc="Removed class" defaultstate="collapsed"> // Plazma - Completely remove Mojang's Profiler
  import net.minecraft.util.profiling.InactiveProfiler;
  import net.minecraft.util.profiling.ProfilerFiller;
-+ */ // Plazma - Completely remove Mojang Profiler
++ */ // Plazma - Completely remove Mojang's Profiler
  
 -public class InactiveMetricsRecorder implements MetricsRecorder {
-+interface InactiveMetricsRecorder { /* implements MetricsRecorder { // Plazma - Completely remove Mojang Profiler
++interface InactiveMetricsRecorder { /* implements MetricsRecorder { // Plazma - Completely remove Mojang's Profiler
      public static final MetricsRecorder INSTANCE = new InactiveMetricsRecorder();
  
      @Override
@@ -991,20 +986,20 @@ index 12d7b7c86115b667bd8f940206985d9ed4b837d4..cf58add13a2de5db5e9db1712cef7d1c
      @Override
      public void endTick() {
      }
-+    </editor-fold> */ // Plazma - Completely remove Mojang Profiler
++    </editor-fold> */ // Plazma - Completely remove Mojang's Profiler
  }
 diff --git a/src/main/java/net/minecraft/util/profiling/metrics/profiling/MetricsRecorder.java b/src/main/java/net/minecraft/util/profiling/metrics/profiling/MetricsRecorder.java
-index 48e7211e01691a677c52cf1f5982b0c179eaf83b..f9f64aa5d8a8215d4a7f549c4a2cde2993df17f4 100644
+index 48e7211e01691a677c52cf1f5982b0c179eaf83b..9aa963c3e8d58832d4b0ce1e7f1122eee3773928 100644
 --- a/src/main/java/net/minecraft/util/profiling/metrics/profiling/MetricsRecorder.java
 +++ b/src/main/java/net/minecraft/util/profiling/metrics/profiling/MetricsRecorder.java
 @@ -1,8 +1,8 @@
  package net.minecraft.util.profiling.metrics.profiling;
  
 -import net.minecraft.util.profiling.ProfilerFiller;
-+// <editor-fold desc="Removed class" defaultstate="collapsed"> import net.minecraft.util.profiling.ProfilerFiller; // Plazma - Completely remove Mojang Profiler
++// <editor-fold desc="Removed class" defaultstate="collapsed"> import net.minecraft.util.profiling.ProfilerFiller; // Plazma - Completely remove Mojang's Profiler
  
 -public interface MetricsRecorder {
-+interface MetricsRecorder { /* // Plazma - Completely remove Mojang Profiler
++interface MetricsRecorder { /* // Plazma - Completely remove Mojang's Profiler
      void end();
  
      void cancel();
@@ -1012,16 +1007,16 @@ index 48e7211e01691a677c52cf1f5982b0c179eaf83b..f9f64aa5d8a8215d4a7f549c4a2cde29
      ProfilerFiller getProfiler();
  
      void endTick();
-+    </editor-fold> */ // Plazma - Completely remove Mojang Profiler
++    </editor-fold> */ // Plazma - Completely remove Mojang's Profiler
  }
 diff --git a/src/main/java/net/minecraft/util/profiling/metrics/profiling/ProfilerSamplerAdapter.java b/src/main/java/net/minecraft/util/profiling/metrics/profiling/ProfilerSamplerAdapter.java
-index cf47ee0f4ec9ffb130b04c7cf92e7907f9b791ef..db2e6ac76b31c15767a202b7426555ae9cf9fa93 100644
+index cf47ee0f4ec9ffb130b04c7cf92e7907f9b791ef..63cbfb116ac524498eac756ae95f1e0a19aed7fa 100644
 --- a/src/main/java/net/minecraft/util/profiling/metrics/profiling/ProfilerSamplerAdapter.java
 +++ b/src/main/java/net/minecraft/util/profiling/metrics/profiling/ProfilerSamplerAdapter.java
 @@ -1,5 +1,6 @@
  package net.minecraft.util.profiling.metrics.profiling;
  
-+/* <editor-fold desc="Removed class" defaultstate="collapsed"> // Plazma - Completely remove Mojang Profiler
++/* <editor-fold desc="Removed class" defaultstate="collapsed"> // Plazma - Completely remove Mojang's Profiler
  import it.unimi.dsi.fastutil.objects.ObjectOpenHashSet;
  import java.util.Set;
  import java.util.function.Supplier;
@@ -1029,10 +1024,10 @@ index cf47ee0f4ec9ffb130b04c7cf92e7907f9b791ef..db2e6ac76b31c15767a202b7426555ae
  import net.minecraft.util.profiling.ProfileCollector;
  import net.minecraft.util.profiling.metrics.MetricCategory;
  import net.minecraft.util.profiling.metrics.MetricSampler;
-+ */ // Plazma - Completely remove Mojang Profiler
++ */ // Plazma - Completely remove Mojang's Profiler
  
 -public class ProfilerSamplerAdapter {
-+interface ProfilerSamplerAdapter {/* // Plazma - Completely remove Mojang Profiler
++interface ProfilerSamplerAdapter {/* // Plazma - Completely remove Mojang's Profiler
      private final Set<String> previouslyFoundSamplerNames = new ObjectOpenHashSet<>();
  
      public Set<MetricSampler> newSamplersFoundInProfiler(Supplier<ProfileCollector> profilerSupplier) {
@@ -1040,16 +1035,16 @@ index cf47ee0f4ec9ffb130b04c7cf92e7907f9b791ef..db2e6ac76b31c15767a202b7426555ae
              return pathEntry == null ? 0.0 : (double)pathEntry.getMaxDuration() / (double)TimeUtil.NANOSECONDS_PER_MILLISECOND;
          });
      }
-+    </editor-fold> */ // Plazma - Completely remove Mojang Profiler
++    </editor-fold> */ // Plazma - Completely remove Mojang's Profiler
  }
 diff --git a/src/main/java/net/minecraft/util/profiling/metrics/profiling/ServerMetricsSamplersProvider.java b/src/main/java/net/minecraft/util/profiling/metrics/profiling/ServerMetricsSamplersProvider.java
-index 978412a8b9e24d7d79c94911f0cf7d20796389e1..c8bcf6f053beb3197fdfaec629f0896199b34165 100644
+index 978412a8b9e24d7d79c94911f0cf7d20796389e1..7bcbb6d4a828cf65ff2599554e24c1228657fa73 100644
 --- a/src/main/java/net/minecraft/util/profiling/metrics/profiling/ServerMetricsSamplersProvider.java
 +++ b/src/main/java/net/minecraft/util/profiling/metrics/profiling/ServerMetricsSamplersProvider.java
 @@ -1,5 +1,6 @@
  package net.minecraft.util.profiling.metrics.profiling;
  
-+/* <editor-fold desc="Removed class" defaultstate="collapsed"> // Plazma - Completely remove Mojang Profiler
++/* <editor-fold desc="Removed class" defaultstate="collapsed"> // Plazma - Completely remove Mojang's Profiler
  import com.google.common.base.Stopwatch;
  import com.google.common.base.Ticker;
  import com.google.common.collect.ImmutableSet;
@@ -1057,7 +1052,7 @@ index 978412a8b9e24d7d79c94911f0cf7d20796389e1..c8bcf6f053beb3197fdfaec629f08961
  import org.slf4j.Logger;
  import oshi.SystemInfo;
  import oshi.hardware.CentralProcessor;
-+ */ // Plazma - Completely remove Mojang Profiler
++ */ // Plazma - Completely remove Mojang's Profiler
  
 -public class ServerMetricsSamplersProvider implements MetricsSamplerProvider {
 +interface ServerMetricsSamplersProvider {/*implements MetricsSamplerProvider {
@@ -1068,16 +1063,16 @@ index 978412a8b9e24d7d79c94911f0cf7d20796389e1..c8bcf6f053beb3197fdfaec629f08961
              return this.currentLoad[index] * 100.0;
          }
      }
-+    </editor-fold> */ // Plazma - Completely remove Mojang Profiler
++    </editor-fold> */ // Plazma - Completely remove Mojang's Profiler
  }
 diff --git a/src/main/java/net/minecraft/util/profiling/metrics/storage/MetricsPersister.java b/src/main/java/net/minecraft/util/profiling/metrics/storage/MetricsPersister.java
-index 8579309bf1b6ad0e42aa9431a8d274ee810911fd..9f030526c7dec8ecca146a034c1266de6b15dafc 100644
+index 8579309bf1b6ad0e42aa9431a8d274ee810911fd..176e04d4e18eae86dd0e3c57831512aae5f0b19c 100644
 --- a/src/main/java/net/minecraft/util/profiling/metrics/storage/MetricsPersister.java
 +++ b/src/main/java/net/minecraft/util/profiling/metrics/storage/MetricsPersister.java
 @@ -1,5 +1,6 @@
  package net.minecraft.util.profiling.metrics.storage;
  
-+/* <editor-fold desc="Removed class" defaultstate="collapsed"> // Plazma - Completely remove Mojang Profiler
++/* <editor-fold desc="Removed class" defaultstate="collapsed"> // Plazma - Completely remove Mojang's Profiler
  import com.mojang.logging.LogUtils;
  import java.io.IOException;
  import java.io.UncheckedIOException;
@@ -1085,10 +1080,10 @@ index 8579309bf1b6ad0e42aa9431a8d274ee810911fd..9f030526c7dec8ecca146a034c1266de
  import net.minecraft.util.profiling.metrics.MetricSampler;
  import org.apache.commons.io.IOUtils;
  import org.slf4j.Logger;
-+ */ // Plazma - Completely remove Mojang Profiler
++ */ // Plazma - Completely remove Mojang's Profiler
  
 -public class MetricsPersister {
-+interface MetricsPersister { /* // Plazma - Completely remove Mojang Profiler
++interface MetricsPersister { /* // Plazma - Completely remove Mojang's Profiler
      public static final Path PROFILING_RESULTS_DIR = Paths.get("debug/profiling");
      public static final String METRICS_DIR_NAME = "metrics";
      public static final String DEVIATIONS_DIR_NAME = "deviations";
@@ -1096,22 +1091,22 @@ index 8579309bf1b6ad0e42aa9431a8d274ee810911fd..9f030526c7dec8ecca146a034c1266de
      private void saveProfilingTaskExecutionResult(ProfileResults result, Path directory) {
          result.saveResults(directory.resolve("profiling.txt"));
      }
-+    </editor-fold> */ // Plazma - Completely remove Mojang Profiler
++    </editor-fold> */ // Plazma - Completely remove Mojang's Profiler
  }
 diff --git a/src/main/java/net/minecraft/util/profiling/metrics/storage/RecordedDeviation.java b/src/main/java/net/minecraft/util/profiling/metrics/storage/RecordedDeviation.java
-index f012d23b22b1a9d1acb6c020c66dc727f7fe9e1a..0f8874fa65e2614388cdf3f79d714b600697191e 100644
+index f012d23b22b1a9d1acb6c020c66dc727f7fe9e1a..9be6accd64c6669a7e63e8e78889b958464f039f 100644
 --- a/src/main/java/net/minecraft/util/profiling/metrics/storage/RecordedDeviation.java
 +++ b/src/main/java/net/minecraft/util/profiling/metrics/storage/RecordedDeviation.java
 @@ -1,9 +1,11 @@
  package net.minecraft.util.profiling.metrics.storage;
  
-+/* <editor-fold desc="Removed class" defaultstate="collapsed"> // Plazma - Completely remove Mojang Profiler
++/* <editor-fold desc="Removed class" defaultstate="collapsed"> // Plazma - Completely remove Mojang's Profiler
  import java.time.Instant;
  import net.minecraft.util.profiling.ProfileResults;
-+ */ // Plazma - Completely remove Mojang Profiler
++ */ // Plazma - Completely remove Mojang's Profiler
  
 -public final class RecordedDeviation {
-+interface RecordedDeviation { /* // Plazma - Completely remove Mojang Profiler
++interface RecordedDeviation { /* // Plazma - Completely remove Mojang's Profiler
      public final Instant timestamp;
      public final int tick;
      public final ProfileResults profilerResultAtTick;
@@ -1119,53 +1114,53 @@ index f012d23b22b1a9d1acb6c020c66dc727f7fe9e1a..0f8874fa65e2614388cdf3f79d714b60
          this.tick = ticks;
          this.profilerResultAtTick = result;
      }
-+    </editor-fold> */ // Plazma - Completely remove Mojang Profiler
++    </editor-fold> */ // Plazma - Completely remove Mojang's Profiler
  }
 diff --git a/src/main/java/net/minecraft/util/thread/BlockableEventLoop.java b/src/main/java/net/minecraft/util/thread/BlockableEventLoop.java
-index d0dbe7e3c7c9c2727d5de456808765b2666108e4..698fb4881fe754502196fcc93fa636ba4e858cdd 100644
+index 43487a9ee202c5b0e5a416519939111f77b3059c..dee5cab2d8e28d968de5beb7084efeaf1a20da3a 100644
 --- a/src/main/java/net/minecraft/util/thread/BlockableEventLoop.java
 +++ b/src/main/java/net/minecraft/util/thread/BlockableEventLoop.java
-@@ -10,13 +10,13 @@ import java.util.concurrent.Executor;
- import java.util.concurrent.locks.LockSupport;
+@@ -11,13 +11,13 @@ import java.util.concurrent.locks.LockSupport;
  import java.util.function.BooleanSupplier;
  import java.util.function.Supplier;
+ import javax.annotation.CheckReturnValue;
 -import net.minecraft.util.profiling.metrics.MetricCategory;
 -import net.minecraft.util.profiling.metrics.MetricSampler;
 -import net.minecraft.util.profiling.metrics.MetricsRegistry;
 -import net.minecraft.util.profiling.metrics.ProfilerMeasured;
-+// import net.minecraft.util.profiling.metrics.MetricCategory; // Plazma - Completely remove Mojang Profiler
-+// import net.minecraft.util.profiling.metrics.MetricSampler; // Plazma - Completely remove Mojang Profiler
-+// import net.minecraft.util.profiling.metrics.MetricsRegistry; // Plazma - Completely remove Mojang Profiler
-+// import net.minecraft.util.profiling.metrics.ProfilerMeasured; // Plazma - Completely remove Mojang Profiler
++// import net.minecraft.util.profiling.metrics.MetricCategory; // Plazma - Completely remove Mojang's Profiler
++// import net.minecraft.util.profiling.metrics.MetricSampler; // Plazma - Completely remove Mojang's Profiler
++// import net.minecraft.util.profiling.metrics.MetricsRegistry; // Plazma - Completely remove Mojang's Profiler
++// import net.minecraft.util.profiling.metrics.ProfilerMeasured; // Plazma - Completely remove Mojang's Profiler
  import org.slf4j.Logger;
  
 -public abstract class BlockableEventLoop<R extends Runnable> implements ProfilerMeasured, ProcessorHandle<R>, Executor {
-+public abstract class BlockableEventLoop<R extends Runnable> implements /*ProfilerMeasured,*/ ProcessorHandle<R>, Executor { // Plazma - Completely remove Mojang Profiler
++public abstract class BlockableEventLoop<R extends Runnable> implements /*ProfilerMeasured,*/ ProcessorHandle<R>, Executor { // Plazma - Completely remove Mojang's Profiler
      private final String name;
      private static final Logger LOGGER = LogUtils.getLogger();
      private final Queue<R> pendingRunnables = Queues.newConcurrentLinkedQueue();
-@@ -24,7 +24,7 @@ public abstract class BlockableEventLoop<R extends Runnable> implements Profiler
+@@ -25,7 +25,7 @@ public abstract class BlockableEventLoop<R extends Runnable> implements Profiler
  
      protected BlockableEventLoop(String name) {
          this.name = name;
 -        MetricsRegistry.INSTANCE.add(this);
-+        //MetricsRegistry.INSTANCE.add(this); // Plazma - Completely remove Mojang Profiler
++        // MetricsRegistry.INSTANCE.add(this); // Plazma - Completely remove Mojang's Profiler
      }
  
      protected abstract R wrapRunnable(Runnable runnable);
-@@ -153,8 +153,10 @@ public abstract class BlockableEventLoop<R extends Runnable> implements Profiler
+@@ -155,8 +155,10 @@ public abstract class BlockableEventLoop<R extends Runnable> implements Profiler
          }
      }
  
-+    /* // Plazma - Completely remove Mojang Profiler
++    /* // Plazma - Completely remove Mojang's Profiler
      @Override
      public List<MetricSampler> profiledMetrics() {
          return ImmutableList.of(MetricSampler.create(this.name + "-pending-tasks", MetricCategory.EVENT_LOOPS, this::getPendingTasksCount));
      }
-+     */ // Plazma - Completely remove Mojang Profiler
++     */ // Plazma - Completely remove Mojang's Profiler
  }
 diff --git a/src/main/java/net/minecraft/util/thread/ProcessorMailbox.java b/src/main/java/net/minecraft/util/thread/ProcessorMailbox.java
-index 97c129f5949ca7cb7430e1cf56e881c00f129530..45d6803d6627c383ea99c74699994ee08acd9afe 100644
+index 97c129f5949ca7cb7430e1cf56e881c00f129530..5c4d902a6febe8ffadecbbc64b50ecdc60307588 100644
 --- a/src/main/java/net/minecraft/util/thread/ProcessorMailbox.java
 +++ b/src/main/java/net/minecraft/util/thread/ProcessorMailbox.java
 @@ -9,13 +9,13 @@ import java.util.concurrent.Executor;
@@ -1176,10 +1171,10 @@ index 97c129f5949ca7cb7430e1cf56e881c00f129530..45d6803d6627c383ea99c74699994ee0
 -import net.minecraft.util.profiling.metrics.MetricSampler;
 -import net.minecraft.util.profiling.metrics.MetricsRegistry;
 -import net.minecraft.util.profiling.metrics.ProfilerMeasured;
-+//import net.minecraft.util.profiling.metrics.MetricCategory; // Plazma - Completely remove Mojang Profiler
-+//import net.minecraft.util.profiling.metrics.MetricSampler; // Plazma - Completely remove Mojang Profiler
-+//import net.minecraft.util.profiling.metrics.MetricsRegistry; // Plazma - Completely remove Mojang Profiler
-+//import net.minecraft.util.profiling.metrics.ProfilerMeasured; // Plazma - Completely remove Mojang Profiler
++//import net.minecraft.util.profiling.metrics.MetricCategory; // Plazma - Completely remove Mojang's Profiler
++//import net.minecraft.util.profiling.metrics.MetricSampler; // Plazma - Completely remove Mojang's Profiler
++//import net.minecraft.util.profiling.metrics.MetricsRegistry; // Plazma - Completely remove Mojang's Profiler
++//import net.minecraft.util.profiling.metrics.ProfilerMeasured; // Plazma - Completely remove Mojang's Profiler
  import org.slf4j.Logger;
  
 -public class ProcessorMailbox<T> implements ProfilerMeasured, ProcessorHandle<T>, AutoCloseable, Runnable {
@@ -1192,7 +1187,7 @@ index 97c129f5949ca7cb7430e1cf56e881c00f129530..45d6803d6627c383ea99c74699994ee0
          this.queue = queue;
          this.name = name;
 -        MetricsRegistry.INSTANCE.add(this);
-+        //MetricsRegistry.INSTANCE.add(this); // Plazma - Completely remove Mojang Profiler
++        //MetricsRegistry.INSTANCE.add(this); // Plazma - Completely remove Mojang's Profiler
      }
  
      private boolean setAsScheduled() {
@@ -1200,142 +1195,139 @@ index 97c129f5949ca7cb7430e1cf56e881c00f129530..45d6803d6627c383ea99c74699994ee0
          return this.name;
      }
  
-+    /* // Plazma - Completely remove Mojang Profiler
++    /* // Plazma - Completely remove Mojang's Profiler
      @Override
      public List<MetricSampler> profiledMetrics() {
          return ImmutableList.of(MetricSampler.create(this.name + "-queue-size", MetricCategory.MAIL_BOXES, this::size));
      }
-+     */ // Plazma - Completely remove Mojang Profiler
++     */ // Plazma - Completely remove Mojang's Profiler
  }
 diff --git a/src/main/java/net/minecraft/world/entity/Mob.java b/src/main/java/net/minecraft/world/entity/Mob.java
-index dd275ece5887f5215cb785564af27152b29b370e..41ee792f572b13054084b9ad6c6e4cf67ed10290 100644
+index 56da8a4600688efd1987d82d4fcad1757e33f4f2..274ca06fbda0f54805fc82614d43b6e1a4a5d4a8 100644
 --- a/src/main/java/net/minecraft/world/entity/Mob.java
 +++ b/src/main/java/net/minecraft/world/entity/Mob.java
-@@ -149,8 +149,8 @@ public abstract class Mob extends LivingEntity implements Targeting {
-         this.pathfindingMalus = Maps.newEnumMap(BlockPathTypes.class);
+@@ -165,8 +165,8 @@ public abstract class Mob extends LivingEntity implements EquipmentUser, Targeti
+         this.pathfindingMalus = Maps.newEnumMap(PathType.class);
          this.restrictCenter = BlockPos.ZERO;
          this.restrictRadius = -1.0F;
 -        this.goalSelector = new GoalSelector(world.getProfilerSupplier());
 -        this.targetSelector = new GoalSelector(world.getProfilerSupplier());
-+        this.goalSelector = new GoalSelector(/*world.getProfilerSupplier()*/); // Plazma - Completely remove Mojang Profiler
-+        this.targetSelector = new GoalSelector(/*world.getProfilerSupplier()*/); // Plazma - Completely remove Mojang Profiler
++        this.goalSelector = new GoalSelector(/*world.getProfilerSupplier()*/); // Plazma - Completely remove Mojang's Profiler
++        this.targetSelector = new GoalSelector(/*world.getProfilerSupplier()*/); // Plazma - Completely remove Mojang's Profiler
          this.lookControl = new org.purpurmc.purpur.controller.LookControllerWASD(this); // Purpur
          this.moveControl = new org.purpurmc.purpur.controller.MoveControllerWASD(this); // Purpur
          this.jumpControl = new JumpControl(this);
 diff --git a/src/main/java/net/minecraft/world/entity/ai/goal/GoalSelector.java b/src/main/java/net/minecraft/world/entity/ai/goal/GoalSelector.java
-index a2cca3d528625d49411a94e2b6ec578fec9b10da..8f73b73eb472683c9a5cd5aea1d8f57ed7d810ed 100644
+index b4e4670536f6dcea109c029d75d9710cb386f1d0..9155d68c43239b535190cc7cb5ee92c60189f1ac 100644
 --- a/src/main/java/net/minecraft/world/entity/ai/goal/GoalSelector.java
 +++ b/src/main/java/net/minecraft/world/entity/ai/goal/GoalSelector.java
-@@ -12,7 +12,7 @@ import java.util.Map.Entry;
+@@ -8,7 +8,7 @@ import java.util.Map;
+ import java.util.Set;
  import java.util.function.Predicate;
  import java.util.function.Supplier;
- import java.util.stream.Stream;
 -import net.minecraft.util.profiling.ProfilerFiller;
-+//import net.minecraft.util.profiling.ProfilerFiller; // Plazma - Completely remove Mojang Profiler
- import org.slf4j.Logger;
++// import net.minecraft.util.profiling.ProfilerFiller; // Plazma - Completely remove Mojang's Profiler
  
  public class GoalSelector {
-@@ -30,7 +30,7 @@ public class GoalSelector {
+     private static final WrappedGoal NO_GOAL = new WrappedGoal(Integer.MAX_VALUE, new Goal() {
+@@ -24,14 +24,16 @@ public class GoalSelector {
      };
      private final Map<Goal.Flag, WrappedGoal> lockedFlags = new EnumMap<>(Goal.Flag.class);
-     private final Set<WrappedGoal> availableGoals = Sets.newLinkedHashSet();
+     private final Set<WrappedGoal> availableGoals = new ObjectLinkedOpenHashSet<>();
 -    private final Supplier<ProfilerFiller> profiler;
-+    //private final Supplier<ProfilerFiller> profiler; // Plazma - Completely remove Mojang Profiler
-     private final EnumSet<Goal.Flag> disabledFlags = EnumSet.noneOf(Goal.Flag.class); // Paper unused, but dummy to prevent plugins from crashing as hard. Theyll need to support paper in a special case if this is super important, but really doesn't seem like it would be.
-     private final com.destroystokyo.paper.util.set.OptimizedSmallEnumSet<net.minecraft.world.entity.ai.goal.Goal.Flag> goalTypes = new com.destroystokyo.paper.util.set.OptimizedSmallEnumSet<>(Goal.Flag.class); // Paper - remove streams from pathfindergoalselector
-     private int tickCount;
-@@ -38,9 +38,11 @@ public class GoalSelector {
-     private int curRate;
++    // private final Supplier<ProfilerFiller> profiler; // Plazma - Completely remove Mojang's Profiler
      private static final Goal.Flag[] GOAL_FLAG_VALUES = Goal.Flag.values(); // Paper - remove streams from pathfindergoalselector
+     private final com.destroystokyo.paper.util.set.OptimizedSmallEnumSet<net.minecraft.world.entity.ai.goal.Goal.Flag> goalTypes = new com.destroystokyo.paper.util.set.OptimizedSmallEnumSet<>(Goal.Flag.class); // Paper - remove streams from pathfindergoalselector
+     private int curRate;
  
-+    /* // Plazma - Completely remove Mojang Profiler
++    /* // Plazma - Completely remove Mojang's Profiler
      public GoalSelector(Supplier<ProfilerFiller> profiler) {
          this.profiler = profiler;
      }
-+     */ // Plazma - Completely remove Mojang Profiler
++     */ // Plazma - Completely remove Mojang's Profiler
  
      public void addGoal(int priority, Goal goal) {
          this.availableGoals.add(new WrappedGoal(priority, goal));
 diff --git a/src/main/java/net/minecraft/world/item/crafting/RecipeManager.java b/src/main/java/net/minecraft/world/item/crafting/RecipeManager.java
-index d87124f5356180a37e581febc6141fdc5f1395a7..681e3fcd759a26578e054f88e8048e392312b84b 100644
+index a31326e24cb68472c81cd781c5e3041772712862..03323be2a120c53ac5a3607f6154c99d0b990308 100644
 --- a/src/main/java/net/minecraft/world/item/crafting/RecipeManager.java
 +++ b/src/main/java/net/minecraft/world/item/crafting/RecipeManager.java
-@@ -37,7 +37,7 @@ import net.minecraft.resources.ResourceLocation;
+@@ -28,7 +28,7 @@ import net.minecraft.resources.RegistryOps;
+ import net.minecraft.resources.ResourceLocation;
  import net.minecraft.server.packs.resources.ResourceManager;
  import net.minecraft.server.packs.resources.SimpleJsonResourceReloadListener;
- import net.minecraft.util.GsonHelper;
 -import net.minecraft.util.profiling.ProfilerFiller;
-+//import net.minecraft.util.profiling.ProfilerFiller; // Plazma - Completely remove Mojang Profiler
- 
- public class RecipeManager extends SimpleJsonResourceReloadListener {
- 
-@@ -51,7 +51,7 @@ public class RecipeManager extends SimpleJsonResourceReloadListener {
-         super(RecipeManager.GSON, "recipes");
++// import net.minecraft.util.profiling.ProfilerFiller; // Plazma - Completely remove Mojang's Profiler
+ import net.minecraft.world.Container;
+ import net.minecraft.world.item.ItemStack;
+ import net.minecraft.world.level.Level;
+@@ -53,7 +53,7 @@ public class RecipeManager extends SimpleJsonResourceReloadListener {
+         this.registries = registryLookup;
      }
  
 -    protected void apply(Map<ResourceLocation, JsonElement> prepared, ResourceManager manager, ProfilerFiller profiler) {
-+    protected void apply(Map<ResourceLocation, JsonElement> prepared, ResourceManager manager/*, ProfilerFiller profiler*/) { // Plazma - Completely remove Profiler
++    protected void apply(Map<ResourceLocation, JsonElement> prepared, ResourceManager manager/*, ProfilerFiller profiler*/) { // Plazma - Completely remove Mojang's Profiler
          this.hasErrors = false;
-         // CraftBukkit start - SPIGOT-5667 make sure all types are populated and mutable
-         Map<RecipeType<?>, Object2ObjectLinkedOpenHashMap<ResourceLocation, RecipeHolder<?>>> map1 = Maps.newHashMap();
+         Builder<RecipeType<?>, RecipeHolder<?>> builder = ImmutableMultimap.builder();
+         com.google.common.collect.ImmutableMap.Builder<ResourceLocation, RecipeHolder<?>> com_google_common_collect_immutablemap_builder = ImmutableMap.builder();
 diff --git a/src/main/java/net/minecraft/world/level/Level.java b/src/main/java/net/minecraft/world/level/Level.java
-index 7578b6d4ee52ebafea16b7eaf88dcedbd1f093d8..16e6716f70d5b9090f29f8b2320302d98dd087c2 100644
+index 79ebec0543f730af403240e9c1c011777464a698..648b21e3a83e0c35be739bd4ebfa930b84b1e4dd 100644
 --- a/src/main/java/net/minecraft/world/level/Level.java
 +++ b/src/main/java/net/minecraft/world/level/Level.java
-@@ -36,7 +36,7 @@ import net.minecraft.sounds.SoundSource;
+@@ -35,7 +35,7 @@ import net.minecraft.sounds.SoundSource;
  import net.minecraft.util.AbortableIterationConsumer;
  import net.minecraft.util.Mth;
  import net.minecraft.util.RandomSource;
 -import net.minecraft.util.profiling.ProfilerFiller;
-+//import net.minecraft.util.profiling.ProfilerFiller; // Plazma - Completely remove Mojang Profiler
++// import net.minecraft.util.profiling.ProfilerFiller; // Plazma - Completely remove Mojang's Profiler
  import net.minecraft.world.DifficultyInstance;
  import net.minecraft.world.TickRateManager;
  import net.minecraft.world.damagesource.DamageSource;
-@@ -135,7 +135,7 @@ public abstract class Level implements LevelAccessor, AutoCloseable {
-     private final ResourceKey<DimensionType> dimensionTypeId;
+@@ -133,7 +133,7 @@ public abstract class Level implements LevelAccessor, AutoCloseable {
+     private final RandomSource threadSafeRandom = RandomSource.createThreadSafe();
      private final Holder<DimensionType> dimensionTypeRegistration;
      public final WritableLevelData levelData;
 -    private final Supplier<ProfilerFiller> profiler;
-+    //private final Supplier<ProfilerFiller> profiler; // Plazma - Completely remove Mojang Profiler
++    // private final Supplier<ProfilerFiller> profiler; // Plazma - Completely remove Mojang's Profiler
      public final boolean isClientSide;
      private final WorldBorder worldBorder;
      private final BiomeManager biomeManager;
-@@ -267,7 +267,7 @@ public abstract class Level implements LevelAccessor, AutoCloseable {
+@@ -263,7 +263,7 @@ public abstract class Level implements LevelAccessor, AutoCloseable {
  
-     //protected final io.papermc.paper.util.math.ThreadUnsafeRandom randomTickRandom = new io.papermc.paper.util.math.ThreadUnsafeRandom(java.util.concurrent.ThreadLocalRandom.current().nextLong()); public net.minecraft.util.RandomSource getThreadUnsafeRandom() { return this.randomTickRandom; } // Pufferfish - move thread unsafe random initialization // Pufferfish - getter // Purpur - dont break ABI
+     public abstract ResourceKey<LevelStem> getTypeKey();
  
 -    protected Level(WritableLevelData worlddatamutable, ResourceKey<Level> resourcekey, RegistryAccess iregistrycustom, Holder<DimensionType> holder, Supplier<ProfilerFiller> supplier, boolean flag, boolean flag1, long i, int j, org.bukkit.generator.ChunkGenerator gen, org.bukkit.generator.BiomeProvider biomeProvider, org.bukkit.World.Environment env, java.util.function.Function<org.spigotmc.SpigotWorldConfig, io.papermc.paper.configuration.WorldConfiguration> paperWorldConfigCreator, java.util.function.Function<org.spigotmc.SpigotWorldConfig, org.plazmamc.plazma.configurations.WorldConfigurations> plazmaWorldConfigurationCreator, java.util.concurrent.Executor executor) { // Paper - create paper world config; Async-Anti-Xray: Pass executor // Plazma - Configurable Plazma
-+    protected Level(WritableLevelData worlddatamutable, ResourceKey<Level> resourcekey, RegistryAccess iregistrycustom, Holder<DimensionType> holder, /*Supplier<ProfilerFiller> supplier,*/ boolean flag, boolean flag1, long i, int j, org.bukkit.generator.ChunkGenerator gen, org.bukkit.generator.BiomeProvider biomeProvider, org.bukkit.World.Environment env, java.util.function.Function<org.spigotmc.SpigotWorldConfig, io.papermc.paper.configuration.WorldConfiguration> paperWorldConfigCreator, java.util.function.Function<org.spigotmc.SpigotWorldConfig, org.plazmamc.plazma.configurations.WorldConfigurations> plazmaWorldConfigurationCreator, java.util.concurrent.Executor executor) { // Paper - create paper world config; Async-Anti-Xray: Pass executor // Plazma - Configurable Plazma // Plazma - Completely remove Mojang Profiler
++    protected Level(WritableLevelData worlddatamutable, ResourceKey<Level> resourcekey, RegistryAccess iregistrycustom, Holder<DimensionType> holder, /*Supplier<ProfilerFiller> supplier,*/ boolean flag, boolean flag1, long i, int j, org.bukkit.generator.ChunkGenerator gen, org.bukkit.generator.BiomeProvider biomeProvider, org.bukkit.World.Environment env, java.util.function.Function<org.spigotmc.SpigotWorldConfig, io.papermc.paper.configuration.WorldConfiguration> paperWorldConfigCreator, java.util.function.Function<org.spigotmc.SpigotWorldConfig, org.plazmamc.plazma.configurations.WorldConfigurations> plazmaWorldConfigurationCreator, java.util.concurrent.Executor executor) { // Paper - create paper world config; Async-Anti-Xray: Pass executor // Plazma - Configurable Plazma // Plazma - Completely remove Mojang's Profiler
          this.spigotConfig = new org.spigotmc.SpigotWorldConfig(((net.minecraft.world.level.storage.PrimaryLevelData) worlddatamutable).getLevelName()); // Spigot
          this.paperConfig = paperWorldConfigCreator.apply(this.spigotConfig); // Paper - create paper world config
          this.plazmaConfig = plazmaWorldConfigurationCreator.apply(this.spigotConfig); // Plazma - Configurable Plazma
-@@ -284,7 +284,7 @@ public abstract class Level implements LevelAccessor, AutoCloseable {
+@@ -280,7 +280,7 @@ public abstract class Level implements LevelAccessor, AutoCloseable {
          }
  
          // CraftBukkit end
 -        this.profiler = supplier;
-+        //this.profiler = supplier; // Plazma - Completely remove Mojang Profiler
++        // this.profiler = supplier; // Plazma - Completely remove Mojang's Profiler
          this.levelData = worlddatamutable;
          this.dimensionTypeRegistration = holder;
-         this.dimensionTypeId = (ResourceKey) holder.unwrapKey().orElseThrow(() -> {
-@@ -1850,6 +1850,7 @@ public abstract class Level implements LevelAccessor, AutoCloseable {
+         final DimensionType dimensionmanager = (DimensionType) holder.value();
+@@ -1841,6 +1841,7 @@ public abstract class Level implements LevelAccessor, AutoCloseable {
          return false;
      }
  
-+    /* // Plazma - Completely remove Mojang Profiler
++    /* // Plazma - Completely remove Mojang's Profi
      public ProfilerFiller getProfiler() {
-         if (true || gg.pufferfish.pufferfish.PufferfishConfig.disableMethodProfiler) return net.minecraft.util.profiling.InactiveProfiler.INSTANCE; // Pufferfish // Purpur
+         //if (true || gg.pufferfish.pufferfish.PufferfishConfig.disableMethodProfiler) return net.minecraft.util.profiling.InactiveProfiler.INSTANCE; // Pufferfish // Purpur // Purpur - TODO: Pufferfish
          return (ProfilerFiller) this.profiler.get();
-@@ -1858,6 +1859,7 @@ public abstract class Level implements LevelAccessor, AutoCloseable {
+@@ -1849,6 +1850,7 @@ public abstract class Level implements LevelAccessor, AutoCloseable {
      public Supplier<ProfilerFiller> getProfilerSupplier() {
          return this.profiler;
      }
-+     */ // Plazma - Completely remove Mojang Profiler
++     */ // Plazma - Completely remove Mojang's Profiler
  
      @Override
      public BiomeManager getBiomeManager() {
 diff --git a/src/main/java/net/minecraft/world/level/PathNavigationRegion.java b/src/main/java/net/minecraft/world/level/PathNavigationRegion.java
-index c5454b92ca2565461c799d7340160f9fb72c1b0f..9c242badd7e13f522e2b3c501d2fbbf5958b07b3 100644
+index c5454b92ca2565461c799d7340160f9fb72c1b0f..760a4f4b15a02f9cbb7a368961286ae3c64d9db3 100644
 --- a/src/main/java/net/minecraft/world/level/PathNavigationRegion.java
 +++ b/src/main/java/net/minecraft/world/level/PathNavigationRegion.java
 @@ -8,7 +8,7 @@ import net.minecraft.core.BlockPos;
@@ -1343,7 +1335,7 @@ index c5454b92ca2565461c799d7340160f9fb72c1b0f..9c242badd7e13f522e2b3c501d2fbbf5
  import net.minecraft.core.SectionPos;
  import net.minecraft.core.registries.Registries;
 -import net.minecraft.util.profiling.ProfilerFiller;
-+//import net.minecraft.util.profiling.ProfilerFiller; // Plazma - Completely remove Mojang Profiler
++//import net.minecraft.util.profiling.ProfilerFiller; // Plazma - Completely remove Mojang's Profiler
  import net.minecraft.server.level.ServerLevel;
  import net.minecraft.world.entity.Entity;
  import net.minecraft.world.level.biome.Biome;
@@ -1351,36 +1343,36 @@ index c5454b92ca2565461c799d7340160f9fb72c1b0f..9c242badd7e13f522e2b3c501d2fbbf5
          return this.level.getHeight();
      }
  
-+    /* // Plazma - Completely remove Mojang Profiler
++    /* // Plazma - Completely remove Mojang's Profiler
      public ProfilerFiller getProfiler() {
          return this.level.getProfiler();
      }
-+     */ // Plazma - Completely remove Mojang Profiler
++     */ // Plazma - Completely remove Mojang's Profiler
  }
 diff --git a/src/main/java/net/minecraft/world/level/chunk/LevelChunk.java b/src/main/java/net/minecraft/world/level/chunk/LevelChunk.java
-index 97724cbd6c1bf172379e98d4a3f6e8cda5cda823..17a13cc7b681afc9131fb919604a352961b81f60 100644
+index fd637415625fdabcac07e120e9168d09c06141d4..e33c7fe50aabdb8223dc96b9d2ac288292024db9 100644
 --- a/src/main/java/net/minecraft/world/level/chunk/LevelChunk.java
 +++ b/src/main/java/net/minecraft/world/level/chunk/LevelChunk.java
-@@ -25,7 +25,7 @@ import net.minecraft.network.FriendlyByteBuf;
+@@ -26,7 +26,7 @@ import net.minecraft.network.FriendlyByteBuf;
  import net.minecraft.network.protocol.game.ClientboundLevelChunkPacketData;
  import net.minecraft.server.level.FullChunkStatus;
  import net.minecraft.server.level.ServerLevel;
 -import net.minecraft.util.profiling.ProfilerFiller;
-+//import net.minecraft.util.profiling.ProfilerFiller; // Plazma - Completely remove Mojang Profiler
++// import net.minecraft.util.profiling.ProfilerFiller; // Plazma - Completely remove Mojang's Profiler
  import net.minecraft.world.entity.Entity;
  import net.minecraft.world.level.ChunkPos;
  import net.minecraft.world.level.Level;
-@@ -455,7 +455,7 @@ public class LevelChunk extends ChunkAccess {
+@@ -441,7 +441,7 @@ public class LevelChunk extends ChunkAccess {
                  }
  
                  if (LightEngine.hasDifferentLightProperties(this, blockposition, iblockdata1, iblockdata)) {
 -                    ProfilerFiller gameprofilerfiller = this.level.getProfiler();
-+                    //ProfilerFiller gameprofilerfiller = this.level.getProfiler(); // Plazma - Completely remove Mojang Profiler
++                    // ProfilerFiller gameprofilerfiller = this.level.getProfiler(); // Plazma - Completely remove Mojang's Profiler
  
                      //gameprofilerfiller.push("updateSkyLightSources"); // Purpur
                      // Paper - starlight - remove skyLightSources
 diff --git a/src/main/java/net/minecraft/world/level/pathfinder/PathFinder.java b/src/main/java/net/minecraft/world/level/pathfinder/PathFinder.java
-index 2046ac397f5c46cc45f233e36abbdbe717753fc7..2363169eaa8a4bf84810e7b46811ac23ca2d56e8 100644
+index 404080976208c30e9e95e5bee47c2a749e709a45..97a81d749d9fece6283fdd1b0ed89ce04be32c78 100644
 --- a/src/main/java/net/minecraft/world/level/pathfinder/PathFinder.java
 +++ b/src/main/java/net/minecraft/world/level/pathfinder/PathFinder.java
 @@ -12,8 +12,8 @@ import java.util.function.Function;
@@ -1389,17 +1381,17 @@ index 2046ac397f5c46cc45f233e36abbdbe717753fc7..2363169eaa8a4bf84810e7b46811ac23
  import net.minecraft.core.BlockPos;
 -import net.minecraft.util.profiling.ProfilerFiller;
 -import net.minecraft.util.profiling.metrics.MetricCategory;
-+//import net.minecraft.util.profiling.ProfilerFiller; // Plazma - Completely remove Mojang Profiler
-+//import net.minecraft.util.profiling.metrics.MetricCategory; // Plazma - Completely remove Mojang Profiler
++// import net.minecraft.util.profiling.ProfilerFiller; // Plazma - Completely remove Mojang's Profiler
++// import net.minecraft.util.profiling.metrics.MetricCategory; // Plazma - Completely remove Mojang's Profiler
  import net.minecraft.world.entity.Mob;
  import net.minecraft.world.level.PathNavigationRegion;
  
 @@ -44,7 +44,7 @@ public class PathFinder {
-                 map.add(new java.util.AbstractMap.SimpleEntry<>(this.nodeEvaluator.getGoal(pos.getX(), pos.getY(), pos.getZ()), pos));
+                 map.add(new java.util.AbstractMap.SimpleEntry<>(this.nodeEvaluator.getTarget(pos.getX(), pos.getY(), pos.getZ()), pos));
              }
              // Paper end - Perf: remove streams and optimize collection
 -            Path path = this.findPath(world.getProfiler(), node, map, followRange, distance, rangeMultiplier);
-+            Path path = this.findPath(/*world.getProfiler(),*/ node, map, followRange, distance, rangeMultiplier); // Plazma - Completely remove Mojang Profiler
++            Path path = this.findPath(/*world.getProfiler(), */node, map, followRange, distance, rangeMultiplier); // Plazma - Completely remove Mojang's Profiler
              this.nodeEvaluator.done();
              return path;
          }
@@ -1408,34 +1400,12 @@ index 2046ac397f5c46cc45f233e36abbdbe717753fc7..2363169eaa8a4bf84810e7b46811ac23
      @Nullable
      // Paper start - Perf: remove streams and optimize collection
 -    private Path findPath(ProfilerFiller profiler, Node startNode, List<Map.Entry<Target, BlockPos>> positions, float followRange, int distance, float rangeMultiplier) {
-+    private Path findPath(/*ProfilerFiller profiler,*/ Node startNode, List<Map.Entry<Target, BlockPos>> positions, float followRange, int distance, float rangeMultiplier) { // Plazma - Completely remove Mojang Profiler
++    private Path findPath(/*ProfilerFiller profiler, */Node startNode, List<Map.Entry<Target, BlockPos>> positions, float followRange, int distance, float rangeMultiplier) { // Plazma - Completely remove Mojang's Profiler
          //profiler.push("find_path"); // Purpur
          //profiler.markForCharting(MetricCategory.PATH_FINDING); // Purpur
          // Set<Target> set = positions.keySet();
-diff --git a/src/main/java/net/minecraft/world/level/storage/loot/LootDataManager.java b/src/main/java/net/minecraft/world/level/storage/loot/LootDataManager.java
-index 3ddf6ab00de2456ebf504985b88994f970e3b5c4..61c36d6d2a4a958ca63adbd2b4f6805261b13909 100644
---- a/src/main/java/net/minecraft/world/level/storage/loot/LootDataManager.java
-+++ b/src/main/java/net/minecraft/world/level/storage/loot/LootDataManager.java
-@@ -20,7 +20,7 @@ import net.minecraft.server.packs.resources.PreparableReloadListener;
- import net.minecraft.server.packs.resources.ResourceManager;
- import net.minecraft.server.packs.resources.SimpleJsonResourceReloadListener;
- import net.minecraft.util.ProblemReporter;
--import net.minecraft.util.profiling.ProfilerFiller;
-+//import net.minecraft.util.profiling.ProfilerFiller; // Plazma - Completely remove Mojang Profiler // Plazma - Completely remove Mojang Profiler
- import net.minecraft.world.level.storage.loot.parameters.LootContextParamSets;
- import org.bukkit.craftbukkit.CraftLootTable;
- import org.bukkit.craftbukkit.util.CraftNamespacedKey;
-@@ -37,7 +37,7 @@ public class LootDataManager implements PreparableReloadListener, LootDataResolv
-     public LootDataManager() {}
- 
-     @Override
--    public final CompletableFuture<Void> reload(PreparableReloadListener.PreparationBarrier synchronizer, ResourceManager manager, ProfilerFiller prepareProfiler, ProfilerFiller applyProfiler, Executor prepareExecutor, Executor applyExecutor) {
-+    public final CompletableFuture<Void> reload(PreparableReloadListener.PreparationBarrier synchronizer, ResourceManager manager, /*ProfilerFiller prepareProfiler, ProfilerFiller applyProfiler,*/ Executor prepareExecutor, Executor applyExecutor) { // Plazma - Completely remove Mojang Profiler
-         Map<LootDataType<?>, Map<ResourceLocation, ?>> map = new HashMap();
-         CompletableFuture<?>[] acompletablefuture = (CompletableFuture[]) LootDataType.values().map((lootdatatype) -> {
-             return LootDataManager.scheduleElementParse(lootdatatype, manager, prepareExecutor, map);
 diff --git a/src/main/java/net/minecraft/world/ticks/LevelTicks.java b/src/main/java/net/minecraft/world/ticks/LevelTicks.java
-index a6d62abd3102770652f914b9d697c6d3c2533cfc..bc46276b820b81b7686c31e1ccfb4a4be99fa812 100644
+index a6d62abd3102770652f914b9d697c6d3c2533cfc..7ad353388f975e271f597de8c262b9b8866547b4 100644
 --- a/src/main/java/net/minecraft/world/ticks/LevelTicks.java
 +++ b/src/main/java/net/minecraft/world/ticks/LevelTicks.java
 @@ -24,14 +24,14 @@ import net.minecraft.Util;
@@ -1443,7 +1413,7 @@ index a6d62abd3102770652f914b9d697c6d3c2533cfc..bc46276b820b81b7686c31e1ccfb4a4b
  import net.minecraft.core.SectionPos;
  import net.minecraft.core.Vec3i;
 -import net.minecraft.util.profiling.ProfilerFiller;
-+//import net.minecraft.util.profiling.ProfilerFiller; // Plazma - Completely remove Mojang Profiler
++//import net.minecraft.util.profiling.ProfilerFiller; // Plazma - Completely remove Mojang's Profiler
  import net.minecraft.world.level.ChunkPos;
  import net.minecraft.world.level.levelgen.structure.BoundingBox;
  
@@ -1451,7 +1421,7 @@ index a6d62abd3102770652f914b9d697c6d3c2533cfc..bc46276b820b81b7686c31e1ccfb4a4b
      private static final Comparator<LevelChunkTicks<?>> CONTAINER_DRAIN_ORDER = (a, b) -> ScheduledTick.INTRA_TICK_DRAIN_ORDER.compare(a.peek(), b.peek());
      private final LongPredicate tickCheck;
 -    private final Supplier<ProfilerFiller> profiler;
-+    //private final Supplier<ProfilerFiller> profiler; // Plazma - Completely remove Mojang Profiler
++    //private final Supplier<ProfilerFiller> profiler; // Plazma - Completely remove Mojang's Profiler
      private final Long2ObjectMap<LevelChunkTicks<T>> allContainers = new Long2ObjectOpenHashMap<>();
      private final Long2LongMap nextTickForContainer = Util.make(new Long2LongOpenHashMap(), map -> map.defaultReturnValue(Long.MAX_VALUE));
      private final Queue<LevelChunkTicks<T>> containersToTick = new PriorityQueue<>(CONTAINER_DRAIN_ORDER);
@@ -1460,10 +1430,10 @@ index a6d62abd3102770652f914b9d697c6d3c2533cfc..bc46276b820b81b7686c31e1ccfb4a4b
      };
  
 -    public LevelTicks(LongPredicate tickingFutureReadyPredicate, Supplier<ProfilerFiller> profilerGetter) {
-+    public LevelTicks(LongPredicate tickingFutureReadyPredicate/*, Supplier<ProfilerFiller> profilerGetter*/) { // Plazma - Completely remove Mojang Profiler
++    public LevelTicks(LongPredicate tickingFutureReadyPredicate/*, Supplier<ProfilerFiller> profilerGetter*/) { // Plazma - Completely remove Mojang's Profiler
          this.tickCheck = tickingFutureReadyPredicate;
 -        this.profiler = profilerGetter;
-+        //this.profiler = profilerGetter; // Plazma - Completely remove Mojang Profiler
++        //this.profiler = profilerGetter; // Plazma - Completely remove Mojang's Profiler
      }
  
      public void addContainer(ChunkPos pos, LevelChunkTicks<T> scheduler) {
@@ -1472,7 +1442,7 @@ index a6d62abd3102770652f914b9d697c6d3c2533cfc..bc46276b820b81b7686c31e1ccfb4a4b
          //ProfilerFiller profilerFiller = this.profiler.get(); // Purpur
          //profilerFiller.push("collect"); // Purpur
 -        this.collectTicks(time, maxTicks, null); // Purpur
-+        this.collectTicks(time, maxTicks/*, null*/); // Purpur // Plazma - Completely remove Mojang Profiler
++        this.collectTicks(time, maxTicks/*, null*/); // Purpur // Plazma - Completely remove Mojang's Profiler
          //profilerFiller.popPush("run"); // Purpur
          //profilerFiller.incrementCounter("ticksToRun", this.toRunThisTick.size()); // Purpur
          this.runCollectedTicks(ticker);
@@ -1481,7 +1451,7 @@ index a6d62abd3102770652f914b9d697c6d3c2533cfc..bc46276b820b81b7686c31e1ccfb4a4b
      }
  
 -    private void collectTicks(long time, int maxTicks, ProfilerFiller profiler) {
-+    private void collectTicks(long time, int maxTicks/*, ProfilerFiller profiler*/) { // Plazma - Completely remove Mojang Profiler
++    private void collectTicks(long time, int maxTicks/*, ProfilerFiller profiler*/) { // Plazma - Completely remove Mojang's Profiler
          this.sortContainersToTick(time);
          //profiler.incrementCounter("containersToTick", this.containersToTick.size()); // Purpur
          this.drainContainers(time, maxTicks);

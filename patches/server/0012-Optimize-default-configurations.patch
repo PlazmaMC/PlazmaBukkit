@@ -8,67 +8,8 @@ Subject: [PATCH] Optimize default configurations
 - AkiraDevelopment/SimplyMC
 - YouHaveTrouble/minecraft-exploits-and-how-to-fix-them
 
-diff --git a/src/main/java/gg/pufferfish/pufferfish/PufferfishConfig.java b/src/main/java/gg/pufferfish/pufferfish/PufferfishConfig.java
-index 8afc58f35deb49084a20b803e91ce4692ce6e4d6..1febd6d0743aadb4002b447c07ec43098ca96c18 100644
---- a/src/main/java/gg/pufferfish/pufferfish/PufferfishConfig.java
-+++ b/src/main/java/gg/pufferfish/pufferfish/PufferfishConfig.java
-@@ -64,7 +64,7 @@ public class PufferfishConfig {
- 		getString("info.version", "1.0");
- 		setComment("info",
- 				"Pufferfish Configuration",
--				"Check out Pufferfish Host for maximum performance server hosting: https://pufferfish.host",
-+				//"Check out Pufferfish Host for maximum performance server hosting: https://pufferfish.host", // Plazma - Sponsorblock
- 				"Join our Discord for support: https://discord.gg/reZw4vQV9H",
- 				"Download new builds at https://ci.pufferfish.host/job/Pufferfish");
- 		
-@@ -219,7 +219,7 @@ public class PufferfishConfig {
-     public static int maxProjectileLoadsPerTick;
-     public static int maxProjectileLoadsPerProjectile;
-     private static void projectileLoading() {
--        maxProjectileLoadsPerTick = getInt("projectile.max-loads-per-tick", 10, "Controls how many chunks are allowed", "to be sync loaded by projectiles in a tick.");
-+        maxProjectileLoadsPerTick = getInt("projectile.max-loads-per-tick", org.plazmamc.plazma.configurations.PlazmaConfigurations.optimize() ? 8 : 10, "Controls how many chunks are allowed", "to be sync loaded by projectiles in a tick."); // Plazma - Optimize default configurations
-         maxProjectileLoadsPerProjectile = getInt("projectile.max-loads-per-projectile", 10, "Controls how many chunks a projectile", "can load in its lifetime before it gets", "automatically removed.");
- 
-         setComment("projectile", "Optimizes projectile settings");
-@@ -233,7 +233,7 @@ public class PufferfishConfig {
-     public static int activationDistanceMod;
- 
-     private static void dynamicActivationOfBrains() throws IOException {
--        dearEnabled = getBoolean("dab.enabled", "activation-range.enabled", false); // Purpur
-+        dearEnabled = getBoolean("dab.enabled", "activation-range.enabled", org.plazmamc.plazma.configurations.PlazmaConfigurations.optimize()); // Purpur // Plazma - Optimize default configurations
-         startDistance = getInt("dab.start-distance", "activation-range.start-distance", 12,
-                 "This value determines how far away an entity has to be",
-                 "from the player to start being effected by DEAR.");
-@@ -241,7 +241,7 @@ public class PufferfishConfig {
-         maximumActivationPrio = getInt("dab.max-tick-freq", "activation-range.max-tick-freq", 20,
-                 "This value defines how often in ticks, the furthest entity",
-                 "will get their pathfinders and behaviors ticked. 20 = 1s");
--        activationDistanceMod = getInt("dab.activation-dist-mod", "activation-range.activation-dist-mod", 8,
-+        activationDistanceMod = getInt("dab.activation-dist-mod", "activation-range.activation-dist-mod", org.plazmamc.plazma.configurations.PlazmaConfigurations.optimize() ? 7 : 8, // Plazma - Optimize default configurations
-                 "This value defines how much distance modifies an entity's",
-                 "tick frequency. freq = (distanceToPlayer^2) / (2^value)",
-                 "If you want further away entities to tick less often, use 7.",
-@@ -261,8 +261,18 @@ public class PufferfishConfig {
- 	public static Map<String, Integer> projectileTimeouts;
- 	private static void projectileTimeouts() {
- 		// Set some defaults
-+		// Plazma start - Optimize default configurations
-+        if (org.plazmamc.plazma.configurations.PlazmaConfigurations.optimize()) {
-+            getInt("entity_timeouts.ARROW", 200);
-+            getInt("entity_timeouts.EGG", 200);
-+            getInt("entity_timeouts.ENDER_PEARL", 200);
-+            getInt("entity_timeouts.SNOWBALL", 200);
-+            getInt("entity_timeouts.LLAMA_SPIT", 200);
-+        } else {
-+        // Plazma end - Optimize default configurations
- 		getInt("entity_timeouts.SNOWBALL", -1);
- 		getInt("entity_timeouts.LLAMA_SPIT", -1);
-+		} // Plazma - Optimize default configurations
- 		setComment("entity_timeouts",
- 				"These values define a entity's maximum lifespan. If an",
- 				"entity is in this list and it has survived for longer than",
 diff --git a/src/main/java/io/papermc/paper/configuration/GlobalConfiguration.java b/src/main/java/io/papermc/paper/configuration/GlobalConfiguration.java
-index 30fe1c0645a07d663b08c0f988a1ab3a750bf7c4..c71daa5d3665cec2836770e5f04da222bc5f90ed 100644
+index b8a89bf8a7a0ef25f00ccc0e84ca64f4524fdc3e..08a3a1ea71fb5e3702ceec518de4871840e36930 100644
 --- a/src/main/java/io/papermc/paper/configuration/GlobalConfiguration.java
 +++ b/src/main/java/io/papermc/paper/configuration/GlobalConfiguration.java
 @@ -156,7 +156,7 @@ public class GlobalConfiguration extends ConfigurationPart {
@@ -80,7 +21,7 @@ index 30fe1c0645a07d663b08c0f988a1ab3a750bf7c4..c71daa5d3665cec2836770e5f04da222
      }
  
      public SpamLimiter spamLimiter;
-@@ -198,7 +198,7 @@ public class GlobalConfiguration extends ConfigurationPart {
+@@ -196,7 +196,7 @@ public class GlobalConfiguration extends ConfigurationPart {
      public Commands commands;
  
      public class Commands extends ConfigurationPart {
@@ -89,7 +30,7 @@ index 30fe1c0645a07d663b08c0f988a1ab3a750bf7c4..c71daa5d3665cec2836770e5f04da222
          public boolean fixTargetSelectorTagCompletion = true;
          public boolean timeCommandAffectsAllWorlds = false;
      }
-@@ -247,7 +247,7 @@ public class GlobalConfiguration extends ConfigurationPart {
+@@ -245,7 +245,7 @@ public class GlobalConfiguration extends ConfigurationPart {
          public BookSize bookSize;
  
          public class BookSize extends ConfigurationPart {
@@ -98,7 +39,7 @@ index 30fe1c0645a07d663b08c0f988a1ab3a750bf7c4..c71daa5d3665cec2836770e5f04da222
              public double totalMultiplier = 0.98D; // TODO this should probably be merged into the above inner class
          }
          public boolean resolveSelectorsInBooks = false;
-@@ -258,7 +258,15 @@ public class GlobalConfiguration extends ConfigurationPart {
+@@ -256,7 +256,15 @@ public class GlobalConfiguration extends ConfigurationPart {
      public class PacketLimiter extends ConfigurationPart {
          public Component kickMessage = Component.translatable("disconnect.exceeded_packet_rate", NamedTextColor.RED);
          public PacketLimit allPackets = new PacketLimit(7.0, 500.0, PacketLimit.ViolateAction.KICK);
@@ -115,7 +56,7 @@ index 30fe1c0645a07d663b08c0f988a1ab3a750bf7c4..c71daa5d3665cec2836770e5f04da222
  
          @ConfigSerializable
          public record PacketLimit(@Required double interval, @Required double maxPacketRate, ViolateAction action) {
-@@ -326,7 +334,7 @@ public class GlobalConfiguration extends ConfigurationPart {
+@@ -324,7 +332,7 @@ public class GlobalConfiguration extends ConfigurationPart {
                  executor.setMaximumPoolSize(_chatExecutorMaxSize);
              }
          }
@@ -125,7 +66,7 @@ index 30fe1c0645a07d663b08c0f988a1ab3a750bf7c4..c71daa5d3665cec2836770e5f04da222
          public boolean loadPermissionsYmlBeforePlugins = true;
          @Constraints.Min(4)
 diff --git a/src/main/java/io/papermc/paper/configuration/WorldConfiguration.java b/src/main/java/io/papermc/paper/configuration/WorldConfiguration.java
-index d3fdf62912d190f8b468b77230a927023c361074..6be96d4a772255ac03addd1775008d897ab34ac8 100644
+index efc91ff91827872c62b8bd060282549ccdcf67dd..1d926378887b9e42f1827e958f506be3e27d5ab5 100644
 --- a/src/main/java/io/papermc/paper/configuration/WorldConfiguration.java
 +++ b/src/main/java/io/papermc/paper/configuration/WorldConfiguration.java
 @@ -96,12 +96,32 @@ public class WorldConfiguration extends ConfigurationPart {
@@ -194,14 +135,14 @@ index d3fdf62912d190f8b468b77230a927023c361074..6be96d4a772255ac03addd1775008d89
          }
      }
  
-@@ -152,14 +193,14 @@ public class WorldConfiguration extends ConfigurationPart {
+@@ -151,14 +192,14 @@ public class WorldConfiguration extends ConfigurationPart {
          public ArmorStands armorStands;
  
          public class ArmorStands extends ConfigurationPart {
 -            public boolean doCollisionEntityLookups = true;
 -            public boolean tick = true;
-+            public boolean doCollisionEntityLookups = !org.plazmamc.plazma.Options.aggressiveOptimize; // Plazma - Optimize default configurations
-+            public boolean tick = !org.plazmamc.plazma.Options.aggressiveOptimize; // Plazma - Optimize default configurations
++            public boolean doCollisionEntityLookups = !org.plazmamc.plazma.Options.AGGRESSIVE; // Plazma - Optimize default configurations
++            public boolean tick = !org.plazmamc.plazma.Options.AGGRESSIVE; // Plazma - Optimize default configurations
          }
  
          public Markers markers;
@@ -212,7 +153,7 @@ index d3fdf62912d190f8b468b77230a927023c361074..6be96d4a772255ac03addd1775008d89
          }
  
          public Sniffer sniffer;
-@@ -182,7 +223,7 @@ public class WorldConfiguration extends ConfigurationPart {
+@@ -181,7 +222,7 @@ public class WorldConfiguration extends ConfigurationPart {
              @MergeMap
              public Reference2IntMap<MobCategory> spawnLimits = Util.make(new Reference2IntOpenHashMap<>(NaturalSpawner.SPAWNING_CATEGORIES.length), map -> Arrays.stream(NaturalSpawner.SPAWNING_CATEGORIES).forEach(mobCategory -> map.put(mobCategory, -1)));
              @MergeMap
@@ -221,7 +162,7 @@ index d3fdf62912d190f8b468b77230a927023c361074..6be96d4a772255ac03addd1775008d89
              @MergeMap
              public Reference2IntMap<MobCategory> ticksPerSpawn = Util.make(new Reference2IntOpenHashMap<>(NaturalSpawner.SPAWNING_CATEGORIES.length), map -> Arrays.stream(NaturalSpawner.SPAWNING_CATEGORIES).forEach(mobCategory -> map.put(mobCategory, -1)));
  
-@@ -383,7 +424,7 @@ public class WorldConfiguration extends ConfigurationPart {
+@@ -382,7 +423,7 @@ public class WorldConfiguration extends ConfigurationPart {
      public class Environment extends ConfigurationPart {
          public boolean disableThunder = false;
          public boolean disableIceAndSnow = false;
@@ -230,7 +171,7 @@ index d3fdf62912d190f8b468b77230a927023c361074..6be96d4a772255ac03addd1775008d89
          public boolean disableExplosionKnockback = false;
          public boolean generateFlatBedrock = false;
          public FrostedIce frostedIce;
-@@ -438,7 +479,7 @@ public class WorldConfiguration extends ConfigurationPart {
+@@ -434,7 +475,7 @@ public class WorldConfiguration extends ConfigurationPart {
      public Fixes fixes;
  
      public class Fixes extends ConfigurationPart {
@@ -239,7 +180,7 @@ index d3fdf62912d190f8b468b77230a927023c361074..6be96d4a772255ac03addd1775008d89
          public boolean disableUnloadedChunkEnderpearlExploit = true;
          public boolean preventTntFromMovingInWater = false;
          public boolean splitOverstackedLoot = true;
-@@ -466,9 +507,9 @@ public class WorldConfiguration extends ConfigurationPart {
+@@ -462,9 +503,9 @@ public class WorldConfiguration extends ConfigurationPart {
      public class Collisions extends ConfigurationPart {
          public boolean onlyPlayersCollide = false;
          public boolean allowVehicleCollisions = true;
@@ -251,7 +192,7 @@ index d3fdf62912d190f8b468b77230a927023c361074..6be96d4a772255ac03addd1775008d89
          public boolean allowPlayerCrammingDamage = false;
      }
  
-@@ -476,18 +517,41 @@ public class WorldConfiguration extends ConfigurationPart {
+@@ -472,18 +513,41 @@ public class WorldConfiguration extends ConfigurationPart {
  
      public class Chunks extends ConfigurationPart {
          public AutosavePeriod autoSaveInterval = AutosavePeriod.def();
@@ -301,7 +242,7 @@ index d3fdf62912d190f8b468b77230a927023c361074..6be96d4a772255ac03addd1775008d89
          });
          public boolean flushRegionsOnSave = false;
      }
-@@ -502,9 +566,9 @@ public class WorldConfiguration extends ConfigurationPart {
+@@ -498,9 +562,9 @@ public class WorldConfiguration extends ConfigurationPart {
      public TickRates tickRates;
  
      public class TickRates extends ConfigurationPart {
@@ -313,12 +254,12 @@ index d3fdf62912d190f8b468b77230a927023c361074..6be96d4a772255ac03addd1775008d89
          public int wetFarmland = 1;
          public int dryFarmland = 1;
          public Table<EntityType<?>, String, Integer> sensor = Util.make(HashBasedTable.create(), table -> table.put(EntityType.VILLAGER, "secondarypoisensor", 40));
-@@ -538,9 +602,9 @@ public class WorldConfiguration extends ConfigurationPart {
+@@ -534,9 +598,9 @@ public class WorldConfiguration extends ConfigurationPart {
  
      public class Misc extends ConfigurationPart {
          public int lightQueueSize = 20;
 -        public boolean updatePathfindingOnBlockUpdate = true;
-+        public boolean updatePathfindingOnBlockUpdate = !org.plazmamc.plazma.Options.aggressiveOptimize; // Plazma - Optimize default configurations
++        public boolean updatePathfindingOnBlockUpdate = !org.plazmamc.plazma.Options.AGGRESSIVE; // Plazma - Optimize default configurations
          public boolean showSignClickCommandFailureMsgsToPlayer = false;
 -        public RedstoneImplementation redstoneImplementation = RedstoneImplementation.VANILLA;
 +        public RedstoneImplementation redstoneImplementation = org.plazmamc.plazma.configurations.PlazmaConfigurations.optimize() ? RedstoneImplementation.ALTERNATE_CURRENT : RedstoneImplementation.VANILLA; // Plazma - Optimize default configurations
@@ -338,10 +279,10 @@ index 24763d3d270c29c95e0b3e85111145234f660a62..80ddc627e02e3c749e6b074afa93d357
      }
  
 diff --git a/src/main/java/net/minecraft/server/Main.java b/src/main/java/net/minecraft/server/Main.java
-index 23f0302f2d90b7229828890eb364bc2c9abc11d2..a9753f799ef944a46ee3cedd68c8aad7aacc2612 100644
+index 20d215e53b4a02d7f52197decf05fd1e6ee44669..f832834e02594eb35e08108054f395be3b2bed51 100644
 --- a/src/main/java/net/minecraft/server/Main.java
 +++ b/src/main/java/net/minecraft/server/Main.java
-@@ -153,7 +153,7 @@ public class Main {
+@@ -178,7 +178,7 @@ public class Main {
                  File configFile = (File) optionset.valueOf("bukkit-settings");
                  YamlConfiguration configuration = YamlConfiguration.loadConfiguration(configFile);
                  configuration.options().copyDefaults(true);
@@ -351,10 +292,10 @@ index 23f0302f2d90b7229828890eb364bc2c9abc11d2..a9753f799ef944a46ee3cedd68c8aad7
  
                  File commandFile = (File) optionset.valueOf("commands-settings");
 diff --git a/src/main/java/net/minecraft/server/dedicated/DedicatedServerProperties.java b/src/main/java/net/minecraft/server/dedicated/DedicatedServerProperties.java
-index a66dcea06424518290576c7647ae0717040586f9..41d5d15dfa2affdee68501efb2447a209c38992d 100644
+index 5b7ed096999dbb7e95fb7d615e737f19604f58ff..9684e7079c9586e764931e5b6c40961ac9eda853 100644
 --- a/src/main/java/net/minecraft/server/dedicated/DedicatedServerProperties.java
 +++ b/src/main/java/net/minecraft/server/dedicated/DedicatedServerProperties.java
-@@ -130,14 +130,14 @@ public class DedicatedServerProperties extends Settings<DedicatedServerPropertie
+@@ -131,14 +131,14 @@ public class DedicatedServerProperties extends Settings<DedicatedServerPropertie
          this.spawnMonsters = this.get("spawn-monsters", true);
          this.useNativeTransport = this.get("use-native-transport", true);
          this.enableCommandBlock = this.get("enable-command-block", false);
@@ -373,17 +314,17 @@ index a66dcea06424518290576c7647ae0717040586f9..41d5d15dfa2affdee68501efb2447a20
          this.maxPlayers = this.get("max-players", 20);
          this.networkCompressionThreshold = this.get("network-compression-threshold", 256);
          this.broadcastRconToOps = this.get("broadcast-rcon-to-ops", true);
-@@ -145,7 +145,7 @@ public class DedicatedServerProperties extends Settings<DedicatedServerPropertie
+@@ -146,7 +146,7 @@ public class DedicatedServerProperties extends Settings<DedicatedServerPropertie
          this.maxWorldSize = this.get("max-world-size", (integer) -> {
              return Mth.clamp(integer, 1, 29999984);
          }, 29999984);
 -        this.syncChunkWrites = this.get("sync-chunk-writes", true) && Boolean.getBoolean("Paper.enable-sync-chunk-writes"); // Paper - Hide sync chunk writes behind flag
-+        this.syncChunkWrites = this.get("sync-chunk-writes", false) && Boolean.getBoolean("Paper.enable-sync-chunk-writes"); // Paper - Hide sync chunk writes behind flag // Plazma - Show disabled by default
++        this.syncChunkWrites = Boolean.getBoolean("Paper.enable-sync-chunk-writes"); // Paper - Hide sync chunk writes behind flag // Plazma - Completely remove this setting
+         this.regionFileComression = this.get("region-file-compression", "deflate");
          this.enableJmxMonitoring = this.get("enable-jmx-monitoring", false);
          this.enableStatus = this.get("enable-status", true);
-         this.hideOnlinePlayers = this.get("hide-online-players", false);
 diff --git a/src/main/java/org/bukkit/craftbukkit/CraftServer.java b/src/main/java/org/bukkit/craftbukkit/CraftServer.java
-index ceea71c3e6886b03d017c44c287dc20928f63f09..e250196a4210c5b2fe5eadda6312ebc5e17590b8 100644
+index d06473349dff50a33b7843ae6dcde28f50fcd708..c1e5bc9cab10c51712dad1da8ad50e5d821b85b0 100644
 --- a/src/main/java/org/bukkit/craftbukkit/CraftServer.java
 +++ b/src/main/java/org/bukkit/craftbukkit/CraftServer.java
 @@ -426,7 +426,7 @@ public final class CraftServer implements Server {
@@ -396,18 +337,18 @@ index ceea71c3e6886b03d017c44c287dc20928f63f09..e250196a4210c5b2fe5eadda6312ebc5
          if (!this.configuration.isString("aliases")) {
              legacyAlias = this.configuration.getConfigurationSection("aliases");
 diff --git a/src/main/java/org/plazmamc/plazma/Options.java b/src/main/java/org/plazmamc/plazma/Options.java
-index a858b7ddef7f6877c0b92f4150e0dd37bea121aa..eab5ea835a524482f8cc043c7be190a835335ed2 100644
+index b02a0dddd99df1691c125660828a61cc4a5a4d02..739bcbb7388b948982202b35a708753103fa38e8 100644
 --- a/src/main/java/org/plazmamc/plazma/Options.java
 +++ b/src/main/java/org/plazmamc/plazma/Options.java
-@@ -3,5 +3,6 @@ package org.plazmamc.plazma;
- public interface Options {
+@@ -6,5 +6,6 @@ public interface Options {
  
-     boolean iKnowWhatIAmDoing = Boolean.getBoolean("Plazma.iKnowWhatIAmDoing");
-+    boolean aggressiveOptimize = Boolean.getBoolean("Plazma.aggressiveOptimize");
+     boolean NO_OPTIMIZE = getBoolean("Plazma.disableConfigOptimization");
+     boolean NO_WARN = getBoolean("Plazma.iKnowWhatIAmDoing");
++    boolean AGGRESSIVE = Boolean.getBoolean("Plazma.aggressiveOptimize");
  
  }
 diff --git a/src/main/java/org/purpurmc/purpur/PurpurConfig.java b/src/main/java/org/purpurmc/purpur/PurpurConfig.java
-index a937993f318ef5703420f57fe65c5d990ce2c4dd..65b9e4fc073d0e97c6f90587d20e3ecbdaaf2c71 100644
+index 79456fab220fc797f0f28fc9657f3a406d751900..2a9573ea2b9b01aa78270440ccb8238dbbd221f9 100644
 --- a/src/main/java/org/purpurmc/purpur/PurpurConfig.java
 +++ b/src/main/java/org/purpurmc/purpur/PurpurConfig.java
 @@ -49,6 +49,7 @@ public class PurpurConfig {
@@ -437,10 +378,10 @@ index a937993f318ef5703420f57fe65c5d990ce2c4dd..65b9e4fc073d0e97c6f90587d20e3ecb
      private static void networkSettings() {
          useUPnP = getBoolean("settings.network.upnp-port-forwarding", useUPnP);
 diff --git a/src/main/java/org/purpurmc/purpur/PurpurWorldConfig.java b/src/main/java/org/purpurmc/purpur/PurpurWorldConfig.java
-index 7dc82ffccc157a17335f1bc56ab81be3813294f6..d756c25e6d0af3153e510d0162e65348b1675366 100644
+index 8704cc621937beda692bf484cf5ef11b2d7d7e4c..6928d9e09e3591e457d760d81d112ae82c543b53 100644
 --- a/src/main/java/org/purpurmc/purpur/PurpurWorldConfig.java
 +++ b/src/main/java/org/purpurmc/purpur/PurpurWorldConfig.java
-@@ -425,7 +425,7 @@ public class PurpurWorldConfig {
+@@ -423,7 +423,7 @@ public class PurpurWorldConfig {
      public boolean idleTimeoutTargetPlayer = true;
      public String playerDeathExpDropEquation = "expLevel * 7";
      public int playerDeathExpDropMax = 100;
@@ -449,7 +390,7 @@ index 7dc82ffccc157a17335f1bc56ab81be3813294f6..d756c25e6d0af3153e510d0162e65348
      public boolean teleportOnNetherCeilingDamage = false;
      public boolean totemOfUndyingWorksInInventory = false;
      public boolean playerFixStuckPortal = false;
-@@ -3127,7 +3127,7 @@ public class PurpurWorldConfig {
+@@ -3118,7 +3118,7 @@ public class PurpurWorldConfig {
      public boolean zombieJockeyOnlyBaby = true;
      public double zombieJockeyChance = 0.05D;
      public boolean zombieJockeyTryExistingChickens = true;
