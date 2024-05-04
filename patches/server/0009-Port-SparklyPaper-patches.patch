@@ -6,8 +6,60 @@ Subject: [PATCH] Port SparklyPaper patches
 SparklyPower
 Copyright (C) 2024 SparklyPower
 
-Based on commit: e59f4a805cbfd6f95725a1848a3f352c0a9eb479
+Based on commit: 29212936a832106c4d68e2a2017acbea2fdd3cc4
 
+diff --git a/src/main/java/io/papermc/paper/command/MSPTCommand.java b/src/main/java/io/papermc/paper/command/MSPTCommand.java
+index 8b5293b0c696ef21d0101493ffa41b60bf0bc86b..03be23690a94a14d7343526acad67ccf53b85c70 100644
+--- a/src/main/java/io/papermc/paper/command/MSPTCommand.java
++++ b/src/main/java/io/papermc/paper/command/MSPTCommand.java
+@@ -78,6 +78,47 @@ public final class MSPTCommand extends Command {
+                 )
+             )
+         );
++
++        // Plazma start - Port SparklyPaper patches; Track World specific MSPT
++        sender.sendMessage(text());
++        sender.sendMessage(text().content("World tick times ").color(GOLD)
++            .append(text().color(YELLOW)
++                .append(
++                    text("("),
++                    text("avg", GRAY),
++                    text("/"),
++                    text("min", GRAY),
++                    text("/"),
++                    text("max", GRAY),
++                    text(")")
++                )
++            ).append(
++                text(" from last 5s"),
++                text(",", GRAY),
++                text(" 10s"),
++                text(",", GRAY),
++                text(" 1m"),
++                text(":", YELLOW)
++            )
++        );
++        for (net.minecraft.server.level.ServerLevel level: server.getAllLevels()) {
++            List<Component> worldTimes = new ArrayList<>();
++            worldTimes.addAll(eval(level.tickTimes5s.getTimes()));
++            worldTimes.addAll(eval(level.tickTimes10s.getTimes()));
++            worldTimes.addAll(eval(level.tickTimes60s.getTimes()));
++
++            sender.sendMessage(text().content("◴ " + level.getWorld().getName() + ": ").color(GOLD)
++                .append(text().color(GRAY)
++                    .append(
++                        worldTimes.get(0), SLASH, worldTimes.get(1), SLASH, worldTimes.get(2), text(", ", YELLOW),
++                        worldTimes.get(3), SLASH, worldTimes.get(4), SLASH, worldTimes.get(5), text(", ", YELLOW),
++                        worldTimes.get(6), SLASH, worldTimes.get(7), SLASH, worldTimes.get(8)
++                    )
++                )
++            );
++        }
++        // Plazma end - Port SparklyPaper patches; Track World specific MSPT
++
+         return true;
+     }
+ 
 diff --git a/src/main/java/io/papermc/paper/threadedregions/EntityScheduler.java b/src/main/java/io/papermc/paper/threadedregions/EntityScheduler.java
 index 62484ebf4550b05182f693a3180bbac5d5fd906d..8b39c463b90db2d4faa33471ddce65f775908f2f 100644
 --- a/src/main/java/io/papermc/paper/threadedregions/EntityScheduler.java
@@ -85,7 +137,7 @@ index f164256d59b761264876ca0c85f812d101bfd5de..deaeb134c47da8710afa747bf980bd00
          final TrackedChunk chunk = this.byChunk.get(CoordinateUtils.getChunkKey(chunkX, chunkZ));
  
 diff --git a/src/main/java/net/minecraft/server/MinecraftServer.java b/src/main/java/net/minecraft/server/MinecraftServer.java
-index 2903c9a2480ac505f0931d29ac3c5013037e65f1..5af9b69d58d5364e405f67257fd55fc5e89caa53 100644
+index 2903c9a2480ac505f0931d29ac3c5013037e65f1..39f7a4d3711a182b30d5b8eb77c2354170b26720 100644
 --- a/src/main/java/net/minecraft/server/MinecraftServer.java
 +++ b/src/main/java/net/minecraft/server/MinecraftServer.java
 @@ -323,6 +323,7 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
@@ -123,6 +175,22 @@ index 2903c9a2480ac505f0931d29ac3c5013037e65f1..5af9b69d58d5364e405f67257fd55fc5
          // Paper end - Folia scheduler API
          io.papermc.paper.adventure.providers.ClickCallbackProviderImpl.CALLBACK_MANAGER.handleQueue(this.tickCount); // Paper
          //this.profiler.push("commandFunctions"); // Purpur
+@@ -1808,7 +1807,15 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
+ 
+             try {
+                 //worldserver.timings.doTick.startTiming(); // Spigot // Purpur
++                // Plazma start - Port SparklyPaper patches; Track World specific MSPT
++                long before = Util.getNanos();
+                 worldserver.tick(shouldKeepTicking);
++                long after = Util.getNanos() - before;
++
++                worldserver.tickTimes5s.add(this.tickCount, after);
++                worldserver.tickTimes10s.add(this.tickCount, after);
++                worldserver.tickTimes60s.add(this.tickCount, after);
++                // Plazma end - Port SparklyPaper patches; Track World specific MSPT
+                 // Paper start
+                 for (final io.papermc.paper.chunk.SingleThreadChunkRegionManager regionManager : worldserver.getChunkSource().chunkMap.regionManagers) {
+                     regionManager.recalculateRegions();
 diff --git a/src/main/java/net/minecraft/server/level/ChunkMap.java b/src/main/java/net/minecraft/server/level/ChunkMap.java
 index 4e6fccec4f5ca14562bf5bae495ac36c14982d85..9162c6338dbb516ce60f4853e57da6e49be79282 100644
 --- a/src/main/java/net/minecraft/server/level/ChunkMap.java
@@ -182,6 +250,23 @@ index 39e7dcf3c92c9203c190782be401c00c010b8aeb..b86ae3929ec5d3c4eb69d92774dc445a
                  }
  
                  if (packet1 != null) {
+diff --git a/src/main/java/net/minecraft/server/level/ServerLevel.java b/src/main/java/net/minecraft/server/level/ServerLevel.java
+index f03b59754f5900fa47985b4118cacccadf04920f..94c61a1ace5b736e770a801990414f49ef8831e9 100644
+--- a/src/main/java/net/minecraft/server/level/ServerLevel.java
++++ b/src/main/java/net/minecraft/server/level/ServerLevel.java
+@@ -233,6 +233,12 @@ public class ServerLevel extends Level implements WorldGenLevel {
+     private final alternate.current.wire.WireHandler wireHandler = new alternate.current.wire.WireHandler(this); // Paper - optimize redstone (Alternate Current)
+     public boolean hasRidableMoveEvent = false; // Purpur
+ 
++    // Plazma start - Port SparklyPaper patches; Track World specific MSPT
++    public final MinecraftServer.TickTimes tickTimes5s = new MinecraftServer.TickTimes(100);
++    public final MinecraftServer.TickTimes tickTimes10s = new MinecraftServer.TickTimes(200);
++    public final MinecraftServer.TickTimes tickTimes60s = new MinecraftServer.TickTimes(1200);
++    // Plazma end - Port SparklyPaper patches; Track World specific MSPT
++
+     public LevelChunk getChunkIfLoaded(int x, int z) {
+         return this.chunkSource.getChunkAtIfLoadedImmediately(x, z); // Paper - Use getChunkIfLoadedImmediately
+     }
 diff --git a/src/main/java/net/minecraft/stats/ServerStatsCounter.java b/src/main/java/net/minecraft/stats/ServerStatsCounter.java
 index f890738d3bb9fb5e70a9d323c6cec97f9948f9cf..eb3fc1af68768383d524cf0f50c4f4b304b9d5ca 100644
 --- a/src/main/java/net/minecraft/stats/ServerStatsCounter.java

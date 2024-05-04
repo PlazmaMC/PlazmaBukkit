@@ -1,0 +1,136 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: AlphaKR93 <dev@alpha93.kr>
+Date: Sun, 5 May 2024 00:01:03 +0900
+Subject: [PATCH] Add more MSPT
+
+
+diff --git a/src/main/java/io/papermc/paper/command/MSPTCommand.java b/src/main/java/io/papermc/paper/command/MSPTCommand.java
+index 03be23690a94a14d7343526acad67ccf53b85c70..416c0a736edf47f76a37be0bc5fe8678cf89cdb3 100644
+--- a/src/main/java/io/papermc/paper/command/MSPTCommand.java
++++ b/src/main/java/io/papermc/paper/command/MSPTCommand.java
+@@ -45,8 +45,10 @@ public final class MSPTCommand extends Command {
+         MinecraftServer server = MinecraftServer.getServer();
+ 
+         List<Component> times = new ArrayList<>();
++        times.addAll(eval(server.tickTimes1s.getTimes())); // Plazma - Add more MSPT
+         times.addAll(eval(server.tickTimes5s.getTimes()));
+         times.addAll(eval(server.tickTimes10s.getTimes()));
++        times.addAll(eval(server.tickTimes30s.getTimes())); // Plazma - Add more MSPT
+         times.addAll(eval(server.tickTimes60s.getTimes()));
+ 
+         sender.sendMessage(text().content("Server tick times ").color(GOLD)
+@@ -61,12 +63,18 @@ public final class MSPTCommand extends Command {
+                     text(")")
+                 )
+             ).append(
+-                text(" from last 5s"),
++                // Plazma start - Add more MSPT
++                text(" from last 1s"),
++                text(",", GRAY),
++                text(" 5s"),
+                 text(",", GRAY),
+                 text(" 10s"),
+                 text(",", GRAY),
++                text(" 30s"),
++                text(",", GRAY),
+                 text(" 1m"),
+                 text(":", YELLOW)
++                // Plazma end - Add more MSPT
+             )
+         );
+         sender.sendMessage(text().content("◴ ").color(GOLD)
+@@ -74,7 +82,11 @@ public final class MSPTCommand extends Command {
+                 .append(
+                     times.get(0), SLASH, times.get(1), SLASH, times.get(2), text(", ", YELLOW),
+                     times.get(3), SLASH, times.get(4), SLASH, times.get(5), text(", ", YELLOW),
+-                    times.get(6), SLASH, times.get(7), SLASH, times.get(8)
++                    // Plazma start - Add more MSPT
++                    times.get(6), SLASH, times.get(7), SLASH, times.get(8), text(", ", YELLOW),
++                    times.get(9), SLASH, times.get(10), SLASH, times.get(11), text(", ", YELLOW),
++                    times.get(12), SLASH, times.get(13), SLASH, times.get(14), text(", ", YELLOW)
++                    // Plazma end - Add more MSPT
+                 )
+             )
+         );
+@@ -93,18 +105,26 @@ public final class MSPTCommand extends Command {
+                     text(")")
+                 )
+             ).append(
+-                text(" from last 5s"),
++                // Plazma start - Add more MSPT
++                text(" from last 1s"),
++                text(",", GRAY),
++                text(" 5s"),
+                 text(",", GRAY),
+                 text(" 10s"),
+                 text(",", GRAY),
++                text(" 30s"),
++                text(",", GRAY),
+                 text(" 1m"),
+                 text(":", YELLOW)
++                // Plazma end - Add more MSPT
+             )
+         );
+         for (net.minecraft.server.level.ServerLevel level: server.getAllLevels()) {
+             List<Component> worldTimes = new ArrayList<>();
++            worldTimes.addAll(eval(level.tickTimes1s.getTimes())); // Plazma - Add more MSPT
+             worldTimes.addAll(eval(level.tickTimes5s.getTimes()));
+             worldTimes.addAll(eval(level.tickTimes10s.getTimes()));
++            worldTimes.addAll(eval(level.tickTimes30s.getTimes())); // Plazma - Add more MSPT
+             worldTimes.addAll(eval(level.tickTimes60s.getTimes()));
+ 
+             sender.sendMessage(text().content("◴ " + level.getWorld().getName() + ": ").color(GOLD)
+@@ -112,7 +132,11 @@ public final class MSPTCommand extends Command {
+                     .append(
+                         worldTimes.get(0), SLASH, worldTimes.get(1), SLASH, worldTimes.get(2), text(", ", YELLOW),
+                         worldTimes.get(3), SLASH, worldTimes.get(4), SLASH, worldTimes.get(5), text(", ", YELLOW),
+-                        worldTimes.get(6), SLASH, worldTimes.get(7), SLASH, worldTimes.get(8)
++                        // Plazma start - Add more MSPT
++                        worldTimes.get(6), SLASH, worldTimes.get(7), SLASH, worldTimes.get(8), text(", ", YELLOW),
++                        worldTimes.get(9), SLASH, worldTimes.get(10), SLASH, worldTimes.get(11), text(", ", YELLOW),
++                        worldTimes.get(12), SLASH, worldTimes.get(13), SLASH, worldTimes.get(14), text(", ", YELLOW)
++                        // Plazma end - Add more MSPT
+                     )
+                 )
+             );
+diff --git a/src/main/java/net/minecraft/server/MinecraftServer.java b/src/main/java/net/minecraft/server/MinecraftServer.java
+index ee5914eddb70adbda4c24b7c31fc4ca34ce06005..b2a5d324d0f364193c7aee8ef55c50c57f17e250 100644
+--- a/src/main/java/net/minecraft/server/MinecraftServer.java
++++ b/src/main/java/net/minecraft/server/MinecraftServer.java
+@@ -257,8 +257,10 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
+     private final long[] tickTimesNanos;
+     private long aggregatedTickTimesNanos;
+     // Paper start - Add tick times API and /mspt command
++    public final TickTimes tickTimes1s = new TickTimes(20); // Plazma - Add more MSPT
+     public final TickTimes tickTimes5s = new TickTimes(100);
+     public final TickTimes tickTimes10s = new TickTimes(200);
++    public final TickTimes tickTimes30s = new TickTimes(600); // Plazma - Add more MSPT
+     public final TickTimes tickTimes60s = new TickTimes(1200);
+     // Paper end - Add tick times API and /mspt command
+     @Nullable
+@@ -1813,8 +1815,10 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
+                 worldserver.tick(shouldKeepTicking);
+                 long after = Util.getNanos() - before;
+ 
++                worldserver.tickTimes1s.add(this.tickCount, after); // Plazma - Add more MSPT
+                 worldserver.tickTimes5s.add(this.tickCount, after);
+                 worldserver.tickTimes10s.add(this.tickCount, after);
++                worldserver.tickTimes30s.add(this.tickCount, after); // Plazma - Add more MSPT
+                 worldserver.tickTimes60s.add(this.tickCount, after);
+                 // Plazma end - Port SparklyPaper patches; Track World specific MSPT
+                 // Paper start
+diff --git a/src/main/java/net/minecraft/server/level/ServerLevel.java b/src/main/java/net/minecraft/server/level/ServerLevel.java
+index 49307871db084a7f22a0f8570a27c9aa8f7f2f30..997a8eb1e0b72bee871cfff36cd9f66d5c87953b 100644
+--- a/src/main/java/net/minecraft/server/level/ServerLevel.java
++++ b/src/main/java/net/minecraft/server/level/ServerLevel.java
+@@ -234,8 +234,10 @@ public class ServerLevel extends Level implements WorldGenLevel {
+     public boolean hasRidableMoveEvent = false; // Purpur
+ 
+     // Plazma start - Port SparklyPaper patches; Track World specific MSPT
++    public final MinecraftServer.TickTimes tickTimes1s = new MinecraftServer.TickTimes(20); // Plazma - Add more MSPT
+     public final MinecraftServer.TickTimes tickTimes5s = new MinecraftServer.TickTimes(100);
+     public final MinecraftServer.TickTimes tickTimes10s = new MinecraftServer.TickTimes(200);
++    public final MinecraftServer.TickTimes tickTimes30s = new MinecraftServer.TickTimes(600); // Plazma - Add more MSPT
+     public final MinecraftServer.TickTimes tickTimes60s = new MinecraftServer.TickTimes(1200);
+     // Plazma end - Port SparklyPaper patches; Track World specific MSPT
+ 
