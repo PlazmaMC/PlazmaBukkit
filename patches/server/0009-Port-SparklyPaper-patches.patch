@@ -6,8 +6,149 @@ Subject: [PATCH] Port SparklyPaper patches
 SparklyPower
 Copyright (C) 2024 SparklyPower
 
-Based on commit: 29212936a832106c4d68e2a2017acbea2fdd3cc4
+Based on commit: e59f4a805cbfd6f95725a1848a3f352c0a9eb479
 
+diff --git a/src/main/java/io/papermc/paper/threadedregions/EntityScheduler.java b/src/main/java/io/papermc/paper/threadedregions/EntityScheduler.java
+index 62484ebf4550b05182f693a3180bbac5d5fd906d..8b39c463b90db2d4faa33471ddce65f775908f2f 100644
+--- a/src/main/java/io/papermc/paper/threadedregions/EntityScheduler.java
++++ b/src/main/java/io/papermc/paper/threadedregions/EntityScheduler.java
+@@ -41,6 +41,7 @@ public final class EntityScheduler {
+ 
+     private long tickCount = 0L;
+     private static final long RETIRED_TICK_COUNT = -1L;
++    private static final net.minecraft.server.MinecraftServer SERVER = net.minecraft.server.MinecraftServer.getServer();
+     private final Object stateLock = new Object();
+     private final Long2ObjectOpenHashMap<List<ScheduledTask>> oneTimeDelayed = new Long2ObjectOpenHashMap<>();
+ 
+@@ -61,14 +62,15 @@ public final class EntityScheduler {
+      * @throws IllegalStateException If the scheduler is already retired.
+      */
+     public void retire() {
++        final Entity thisEntity = this.entity.getHandleRaw(); // Plazma - Port SparklyPaper patches; Skip EntityScheduler's executeTick checks if there isn't any tasks to be run
+         synchronized (this.stateLock) {
+             if (this.tickCount == RETIRED_TICK_COUNT) {
+                 throw new IllegalStateException("Already retired");
+             }
+             this.tickCount = RETIRED_TICK_COUNT;
++            SERVER.entitiesWithScheduledTasks.remove(thisEntity); // Plazma - Port SparklyPaper patches; Skip EntityScheduler's executeTick checks if there isn't any tasks to be run
+         }
+ 
+-        final Entity thisEntity = this.entity.getHandleRaw();
+ 
+         // correctly handle and order retiring while running executeTick
+         for (int i = 0, len = this.currentlyExecuting.size(); i < len; ++i) {
+@@ -124,9 +126,12 @@ public final class EntityScheduler {
+             if (this.tickCount == RETIRED_TICK_COUNT) {
+                 return false;
+             }
+-            this.oneTimeDelayed.computeIfAbsent(this.tickCount + Math.max(1L, delay), (final long keyInMap) -> {
+-                return new ArrayList<>();
+-            }).add(task);
++            // Plazma start - Port SparklyPaper patches; Skip EntityScheduler's executeTick checks if there isn't any tasks to be run
++            SERVER.entitiesWithScheduledTasks.add(this.entity.getHandleRaw());
++            this.oneTimeDelayed.computeIfAbsent(
++                this.tickCount + Math.max(1L, delay), (final long keyInMap) -> new ArrayList<>()
++            ).add(task);
++            // Plazma end - Port SparklyPaper patches; Skip EntityScheduler's executeTick checks if there isn't any tasks to be run
+         }
+ 
+         return true;
+@@ -143,6 +148,12 @@ public final class EntityScheduler {
+         TickThread.ensureTickThread(thisEntity, "May not tick entity scheduler asynchronously");
+         final List<ScheduledTask> toRun;
+         synchronized (this.stateLock) {
++            // Plazma start - Port SparklyPaper patches; Skip EntityScheduler's executeTick checks if there isn't any tasks to be run
++            if (this.currentlyExecuting.isEmpty() && this.oneTimeDelayed.isEmpty()) {
++                SERVER.entitiesWithScheduledTasks.remove(thisEntity);
++                return;
++            }
++            // Plazma end - Port SparklyPaper patches; Skip EntityScheduler's executeTick checks if there isn't any tasks to be run
+             if (this.tickCount == RETIRED_TICK_COUNT) {
+                 throw new IllegalStateException("Ticking retired scheduler");
+             }
+diff --git a/src/main/java/io/papermc/paper/util/player/NearbyPlayers.java b/src/main/java/io/papermc/paper/util/player/NearbyPlayers.java
+index f164256d59b761264876ca0c85f812d101bfd5de..deaeb134c47da8710afa747bf980bd00aab846d6 100644
+--- a/src/main/java/io/papermc/paper/util/player/NearbyPlayers.java
++++ b/src/main/java/io/papermc/paper/util/player/NearbyPlayers.java
+@@ -106,6 +106,13 @@ public final class NearbyPlayers {
+         return chunk == null ? null : chunk.players[type.ordinal()];
+     }
+ 
++    // Plazma start - Port SparklyPaper patches; Cache coordinate key used for nearby players when ticking chunks
++    public ReferenceList<ServerPlayer> getPlayers(final long nearbyCoordKey, final NearbyMapType type) {
++        final TrackedChunk chunk = this.byChunk.get(nearbyCoordKey);
++        return chunk == null ? null : chunk.players[type.ordinal()];
++    }
++    // Plazma end - Port SparklyPaper patches; Cache coordinate key used for nearby players when ticking chunks
++
+     public ReferenceList<ServerPlayer> getPlayersByChunk(final int chunkX, final int chunkZ, final NearbyMapType type) {
+         final TrackedChunk chunk = this.byChunk.get(CoordinateUtils.getChunkKey(chunkX, chunkZ));
+ 
+diff --git a/src/main/java/net/minecraft/server/MinecraftServer.java b/src/main/java/net/minecraft/server/MinecraftServer.java
+index 2903c9a2480ac505f0931d29ac3c5013037e65f1..5af9b69d58d5364e405f67257fd55fc5e89caa53 100644
+--- a/src/main/java/net/minecraft/server/MinecraftServer.java
++++ b/src/main/java/net/minecraft/server/MinecraftServer.java
+@@ -323,6 +323,7 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
+     public volatile Thread shutdownThread; // Paper
+     public volatile boolean abnormalExit = false; // Paper
+     public static final long SERVER_INIT = System.nanoTime(); // Paper - Lag compensation
++    public final Set<Entity> entitiesWithScheduledTasks = java.util.concurrent.ConcurrentHashMap.newKeySet(); // Plazma - Port SparklyPaper patches; Skip EntityScheduler's executeTick checks if there isn't any tasks to be run
+ 
+     public static <S extends MinecraftServer> S spin(Function<Thread, S> serverFactory) {
+         AtomicReference<S> atomicreference = new AtomicReference();
+@@ -1731,17 +1732,15 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
+         //MinecraftTimings.bukkitSchedulerTimer.stopTiming(); // Spigot // Paper // Purpur
+         // Paper start - Folia scheduler API
+         ((io.papermc.paper.threadedregions.scheduler.FoliaGlobalRegionScheduler) Bukkit.getGlobalRegionScheduler()).tick();
+-        getAllLevels().forEach(level -> {
+-            for (final Entity entity : level.getEntityLookup().getAllCopy()) { // Paper - rewrite chunk system
+-                if (entity.isRemoved()) {
+-                    continue;
+-                }
+-                final org.bukkit.craftbukkit.entity.CraftEntity bukkit = entity.getBukkitEntityRaw();
+-                if (bukkit != null) {
+-                    bukkit.taskScheduler.executeTick();
+-                }
+-            }
+-        });
++        // Plazma start - Port SparklyPaper patches; Skip EntityScheduler's executeTick checks if there isn't any tasks to be run
++        for (final Entity entity: entitiesWithScheduledTasks) {
++            if (entity.isRemoved()) continue;
++
++            final org.bukkit.craftbukkit.entity.CraftEntity bukkit = entity.getBukkitEntityRaw();
++            //noinspection ConstantValue
++            if (bukkit != null) bukkit.taskScheduler.executeTick();
++        }
++        // Plazma end - Port SparklyPaper patches; Skip EntityScheduler's executeTick checks if there isn't any tasks to be run
+         // Paper end - Folia scheduler API
+         io.papermc.paper.adventure.providers.ClickCallbackProviderImpl.CALLBACK_MANAGER.handleQueue(this.tickCount); // Paper
+         //this.profiler.push("commandFunctions"); // Purpur
+diff --git a/src/main/java/net/minecraft/server/level/ChunkMap.java b/src/main/java/net/minecraft/server/level/ChunkMap.java
+index 4e6fccec4f5ca14562bf5bae495ac36c14982d85..9162c6338dbb516ce60f4853e57da6e49be79282 100644
+--- a/src/main/java/net/minecraft/server/level/ChunkMap.java
++++ b/src/main/java/net/minecraft/server/level/ChunkMap.java
+@@ -1439,7 +1439,7 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
+                 // Paper end - Configurable entity tracking range by Y
+ 
+                 // CraftBukkit start - respect vanish API
+-                if (flag && !player.getBukkitEntity().canSee(this.entity.getBukkitEntity())) { // Paper - only consider hits
++                if (flag && !player.getBukkitEntity().canSeeChunkMapUpdatePlauer(this.entity.getBukkitEntity())) { // Paper - only consider hits
+                     flag = false;
+                 }
+                 // CraftBukkit end
+diff --git a/src/main/java/net/minecraft/server/level/ServerChunkCache.java b/src/main/java/net/minecraft/server/level/ServerChunkCache.java
+index 476a04d87a61b021816d2970e86042bde32d95a2..53c0b48966558f43bb9bd7d29d9588f9d83e0de7 100644
+--- a/src/main/java/net/minecraft/server/level/ServerChunkCache.java
++++ b/src/main/java/net/minecraft/server/level/ServerChunkCache.java
+@@ -606,7 +606,7 @@ public class ServerChunkCache extends ChunkSource {
+ 
+                     // Paper start - optimise chunk tick iteration
+                     com.destroystokyo.paper.util.maplist.ReferenceList<ServerPlayer> playersNearby
+-                        = nearbyPlayers.getPlayers(chunkcoordintpair, io.papermc.paper.util.player.NearbyPlayers.NearbyMapType.SPAWN_RANGE);
++                        = nearbyPlayers.getPlayers(chunk1.nearbyPlayersCoordinateKey, io.papermc.paper.util.player.NearbyPlayers.NearbyMapType.SPAWN_RANGE);
+                     if (playersNearby == null) {
+                         continue;
+                     }
 diff --git a/src/main/java/net/minecraft/server/level/ServerEntity.java b/src/main/java/net/minecraft/server/level/ServerEntity.java
 index 39e7dcf3c92c9203c190782be401c00c010b8aeb..b86ae3929ec5d3c4eb69d92774dc445aa5b3093e 100644
 --- a/src/main/java/net/minecraft/server/level/ServerEntity.java
@@ -42,10 +183,25 @@ index 39e7dcf3c92c9203c190782be401c00c010b8aeb..b86ae3929ec5d3c4eb69d92774dc445a
  
                  if (packet1 != null) {
 diff --git a/src/main/java/net/minecraft/stats/ServerStatsCounter.java b/src/main/java/net/minecraft/stats/ServerStatsCounter.java
-index f890738d3bb9fb5e70a9d323c6cec97f9948f9cf..52e72277c661b67a54bc5ce584efb04134599dd3 100644
+index f890738d3bb9fb5e70a9d323c6cec97f9948f9cf..eb3fc1af68768383d524cf0f50c4f4b304b9d5ca 100644
 --- a/src/main/java/net/minecraft/stats/ServerStatsCounter.java
 +++ b/src/main/java/net/minecraft/stats/ServerStatsCounter.java
-@@ -243,7 +243,7 @@ public class ServerStatsCounter extends StatsCounter {
+@@ -90,12 +90,14 @@ public class ServerStatsCounter extends StatsCounter {
+         this.dirty.add(stat);
+     }
+ 
++    /* // Plazma - Port SparklyPaper patches; Skip dirty stats copy when requesting player stats
+     private Set<Stat<?>> getDirty() {
+         Set<Stat<?>> set = Sets.newHashSet(this.dirty);
+ 
+         this.dirty.clear();
+         return set;
+     }
++     */ // Plazma - Port SparklyPaper patches; Skip dirty stats copy when requesting player stats
+ 
+     public void parseLocal(DataFixer dataFixer, String json) {
+         try {
+@@ -243,7 +245,7 @@ public class ServerStatsCounter extends StatsCounter {
  
      public void sendStats(ServerPlayer player) {
          Object2IntMap<Stat<?>> object2intmap = new Object2IntOpenHashMap();
@@ -54,7 +210,7 @@ index f890738d3bb9fb5e70a9d323c6cec97f9948f9cf..52e72277c661b67a54bc5ce584efb041
  
          while (iterator.hasNext()) {
              Stat<?> statistic = (Stat) iterator.next();
-@@ -251,6 +251,7 @@ public class ServerStatsCounter extends StatsCounter {
+@@ -251,6 +253,7 @@ public class ServerStatsCounter extends StatsCounter {
              object2intmap.put(statistic, this.getValue(statistic));
          }
  
@@ -62,6 +218,45 @@ index f890738d3bb9fb5e70a9d323c6cec97f9948f9cf..52e72277c661b67a54bc5ce584efb041
          player.connection.send(new ClientboundAwardStatsPacket(object2intmap));
      }
  }
+diff --git a/src/main/java/net/minecraft/world/entity/ambient/Bat.java b/src/main/java/net/minecraft/world/entity/ambient/Bat.java
+index 47a7c7f9527e1c4ea457eeafe0e11145653a871f..ed5a98b7e9ef2879fdcb2d5a77aeb1d483682a14 100644
+--- a/src/main/java/net/minecraft/world/entity/ambient/Bat.java
++++ b/src/main/java/net/minecraft/world/entity/ambient/Bat.java
+@@ -306,7 +306,7 @@ public class Bat extends AmbientCreature {
+             int i = world.getMaxLocalRawBrightness(pos);
+             byte b0 = 4;
+ 
+-            if (Bat.isHalloweenSeason(world.getMinecraftWorld())) { // Purpur
++            if (isSpookySeason(world.getMinecraftWorld())) { // Purpur // Plazma - Port SparklyPaper patches; Optimize Spooky Season
+                 b0 = 7;
+             } else if (random.nextBoolean()) {
+                 return false;
+@@ -316,7 +316,24 @@ public class Bat extends AmbientCreature {
+         }
+     }
+ 
+-    public static boolean isHalloweenSeason(Level level) { return level.purpurConfig.forceHalloweenSeason || isHalloween(); } // Purpur
++    // Plazma start - Port SparklyPaper patches; Optimize Spooky Season
++    private static boolean isSpookySeason(Level level) {
++        if (level.purpurConfig.forceHalloweenSeason) return true;
++        if (org.plazmamc.plazma.configurations.GlobalConfiguration.get().entity.spookyOptimize.enabled)
++            return net.sparklypower.sparklypaper.HalloweenManager.isSpookySeason()
++                || net.sparklypower.sparklypaper.HalloweenManager.isHalloween();
++        return isHalloween();
++    }
++
++    public static boolean isHalloweenSeason(Level level) {
++        if (level.purpurConfig.forceHalloweenSeason) return true;
++        if (org.plazmamc.plazma.configurations.GlobalConfiguration.get().entity.spookyOptimize.enabled)
++            return net.sparklypower.sparklypaper.HalloweenManager.isHalloween();
++        return isHalloween();
++    }
++
++    @SuppressWarnings("RedundantExplicitChronoField")
++    // Plazma end - Port SparklyPaper patches; Optimize Spooky Season
+     private static boolean isHalloween() {
+         LocalDate localdate = LocalDate.now();
+         int i = localdate.get(ChronoField.DAY_OF_MONTH);
 diff --git a/src/main/java/net/minecraft/world/item/MapItem.java b/src/main/java/net/minecraft/world/item/MapItem.java
 index 608390ed36710a419de1542b80340dd3fcc7299c..043f068345ca3c50209c1c3cc1feb6277a3da61a 100644
 --- a/src/main/java/net/minecraft/world/item/MapItem.java
@@ -80,6 +275,395 @@ index 608390ed36710a419de1542b80340dd3fcc7299c..043f068345ca3c50209c1c3cc1feb627
                  if (entity instanceof Player player) {
                      mapItemSavedData.tickCarriedBy(player, stack);
                  }
+diff --git a/src/main/java/net/minecraft/world/level/block/CropBlock.java b/src/main/java/net/minecraft/world/level/block/CropBlock.java
+index 5a190834baef60c7b61074393f8856a933902d81..366ae05a060b5b12b85521a4b8aed1907f3f044a 100644
+--- a/src/main/java/net/minecraft/world/level/block/CropBlock.java
++++ b/src/main/java/net/minecraft/world/level/block/CropBlock.java
+@@ -77,35 +77,57 @@ public class CropBlock extends BushBlock implements BonemealableBlock {
+ 
+     @Override
+     protected void randomTick(BlockState state, ServerLevel world, BlockPos pos, RandomSource random) {
+-        if (world.getRawBrightness(pos, 0) >= 9) {
+-            int i = this.getAge(state);
+-
+-            if (i < this.getMaxAge()) {
+-                float f = CropBlock.getGrowthSpeed(this, world, pos);
+-
+-                // Spigot start
+-                int modifier;
+-                if (this == Blocks.BEETROOTS) {
+-                    modifier = world.spigotConfig.beetrootModifier;
+-                } else if (this == Blocks.CARROTS) {
+-                    modifier = world.spigotConfig.carrotModifier;
+-                } else if (this == Blocks.POTATOES) {
+-                    modifier = world.spigotConfig.potatoModifier;
+-                // Paper start - Fix Spigot growth modifiers
+-                } else if (this == Blocks.TORCHFLOWER_CROP) {
+-                    modifier = world.spigotConfig.torchFlowerModifier;
+-                // Paper end - Fix Spigot growth modifiers
+-                } else {
+-                    modifier = world.spigotConfig.wheatModifier;
+-                }
++        // Plazma start - Port SparklyPaper patches; Optimize Farm checks
++        if (world.getRawBrightness(pos, 0) < 9) return;
++
++        int age = this.getAge(state);
++        if (age >= this.getMaxAge()) return;
++
++        final int modifier;
++        if (this == Blocks.BEETROOTS) {
++            modifier = world.spigotConfig.beetrootModifier;
++        } else if (this == Blocks.CARROTS) {
++            modifier = world.spigotConfig.carrotModifier;
++        } else if (this == Blocks.POTATOES) {
++            modifier = world.spigotConfig.potatoModifier;
++        } else if (this == Blocks.TORCHFLOWER_CROP) {
++            modifier = world.spigotConfig.torchFlowerModifier;
++        } else {
++            modifier = world.spigotConfig.wheatModifier;
++        }
+ 
+-                if (random.nextFloat() < (modifier / (100.0f * (Math.floor((25.0F / f) + 1))))) { // Spigot - SPIGOT-7159: Better modifier resolution
+-                    // Spigot end
+-                    CraftEventFactory.handleBlockGrowEvent(world, pos, this.getStateForAge(i + 1), 2); // CraftBukkit
+-                }
++        if (world.plazmaConfig().block.optimizeFarmCheck.enabled) {
++            BlockPos current = pos.below();
++            BlockState currentState = world.getBlockState(current);
++
++            boolean moist;
++            float growthSpeed;
++            if (currentState.is(Blocks.FARMLAND) && currentState.getValue(FarmBlock.MOISTURE) > 0) {
++                moist = true;
++                growthSpeed = world.plazmaConfig().block.optimizeFarmCheck.growthSpeed.moist;
++            } else {
++                moist = false;
++                growthSpeed = world.plazmaConfig().block.optimizeFarmCheck.growthSpeed.normal;
+             }
++
++            if (world.plazmaConfig().block.optimizeFarmCheck.skipMiddleAgingStageForCrops) {
++                growthSpeed = growthSpeed / getMaxAge();
++                age = getMaxAge() - 1;
++            }
++
++            if (random.nextFloat() >= (modifier / (100.0f * Math.floor((25.0F / growthSpeed) + 1)))) return;
++            if (!CraftEventFactory.handleBlockGrowEvent(world, pos, this.getStateForAge(age + 1), 2)) return;
++            if (!moist || age + 1 != this.getMaxAge() || FarmBlock.isNearWater(world, current)) return;
++
++            org.bukkit.craftbukkit.event.CraftEventFactory.handleMoistureChangeEvent(world, current, currentState.setValue(FarmBlock.MOISTURE, 0), 2);
++            return;
+         }
+ 
++        float growthSpeed = CropBlock.getGrowthSpeed(this, world, pos);
++
++        if (random.nextFloat() < (modifier / (100.0f * Math.floor((25.0F / growthSpeed) + 1))))
++            CraftEventFactory.handleBlockGrowEvent(world, pos, this.getStateForAge(age + 1), 2);
++        // Plazma end - Port SparklyPaper patches; Optimize Farm checks
+     }
+ 
+     public void growCrops(Level world, BlockPos pos, BlockState state) {
+diff --git a/src/main/java/net/minecraft/world/level/block/FarmBlock.java b/src/main/java/net/minecraft/world/level/block/FarmBlock.java
+index d0ec0722496ed931b48c4e7076fddbb1ed36e111..b91afbc90c138ebb7f8722934f59f953642196c9 100644
+--- a/src/main/java/net/minecraft/world/level/block/FarmBlock.java
++++ b/src/main/java/net/minecraft/world/level/block/FarmBlock.java
+@@ -92,7 +92,19 @@ public class FarmBlock extends Block {
+ 
+     @Override
+     protected void randomTick(BlockState state, ServerLevel world, BlockPos pos, RandomSource random) {
+-        int i = (Integer) state.getValue(FarmBlock.MOISTURE);
++        // Plazma start - Port SparklyPaper patches; Optimize Farm checks
++        int i = state.getValue(FarmBlock.MOISTURE);
++        if (world.plazmaConfig().block.optimizeFarmCheck.enabled) {
++            if (i != 0) return;
++
++            if (isNearWater(world, pos))
++                org.bukkit.craftbukkit.event.CraftEventFactory.handleMoistureChangeEvent(world, pos, state.setValue(MOISTURE, 7), 2);
++            else
++                turnToDirt(null, state, world, pos);
++
++            return;
++        }
++        // Plazma end - Port SparklyPaper patches; Optimize Farm checks
+         if (i > 0 && world.paperConfig().tickRates.wetFarmland != 1 && (world.paperConfig().tickRates.wetFarmland < 1 || (net.minecraft.server.MinecraftServer.currentTick + pos.hashCode()) % world.paperConfig().tickRates.wetFarmland != 0)) { return; } // Paper - Configurable random tick rates for blocks
+         if (i == 0 && world.paperConfig().tickRates.dryFarmland != 1 && (world.paperConfig().tickRates.dryFarmland < 1 || (net.minecraft.server.MinecraftServer.currentTick + pos.hashCode()) % world.paperConfig().tickRates.dryFarmland != 0)) { return; } // Paper - Configurable random tick rates for blocks
+ 
+@@ -167,7 +179,7 @@ public class FarmBlock extends Block {
+         return world.getBlockState(pos.above()).is(BlockTags.MAINTAINS_FARMLAND);
+     }
+ 
+-    private static boolean isNearWater(LevelReader world, BlockPos pos) {
++    static boolean isNearWater(LevelReader world, BlockPos pos) { // Plazma - AT (private -> package)
+         // Paper start - Perf: remove abstract block iteration
+         int xOff = pos.getX();
+         int yOff = pos.getY();
+diff --git a/src/main/java/net/minecraft/world/level/block/StemBlock.java b/src/main/java/net/minecraft/world/level/block/StemBlock.java
+index 924d80eb41d9a71d1e521c40742557251cf51832..4a30e1e6eac4b0e3dc2147a74e73e05fa76f5db2 100644
+--- a/src/main/java/net/minecraft/world/level/block/StemBlock.java
++++ b/src/main/java/net/minecraft/world/level/block/StemBlock.java
+@@ -72,38 +72,82 @@ public class StemBlock extends BushBlock implements BonemealableBlock {
+ 
+     @Override
+     protected void randomTick(BlockState state, ServerLevel world, BlockPos pos, RandomSource random) {
+-        if (world.getRawBrightness(pos, 0) >= 9) {
+-            float f = CropBlock.getGrowthSpeed(this, world, pos);
+-
+-            if (random.nextFloat() < ((this == Blocks.PUMPKIN_STEM ? world.spigotConfig.pumpkinModifier : world.spigotConfig.melonModifier) / (100.0f * (Math.floor((25.0F / f) + 1))))) { // Spigot - SPIGOT-7159: Better modifier resolution
+-                int i = (Integer) state.getValue(StemBlock.AGE);
+-
+-                if (i < 7) {
+-                    state = (BlockState) state.setValue(StemBlock.AGE, i + 1);
+-                    CraftEventFactory.handleBlockGrowEvent(world, pos, state, 2); // CraftBukkit
+-                } else {
+-                    Direction enumdirection = Direction.Plane.HORIZONTAL.getRandomDirection(random);
+-                    BlockPos blockposition1 = pos.relative(enumdirection);
+-                    BlockState iblockdata1 = world.getBlockState(blockposition1.below());
+-
+-                    if (world.getBlockState(blockposition1).isAir() && (iblockdata1.is(Blocks.FARMLAND) || iblockdata1.is(BlockTags.DIRT))) {
+-                        Registry<Block> iregistry = world.registryAccess().registryOrThrow(Registries.BLOCK);
+-                        Optional<Block> optional = iregistry.getOptional(this.fruit);
+-                        Optional<Block> optional1 = iregistry.getOptional(this.attachedStem);
+-
+-                        if (optional.isPresent() && optional1.isPresent()) {
+-                            // CraftBukkit start
+-                            if (!CraftEventFactory.handleBlockGrowEvent(world, blockposition1, ((Block) optional.get()).defaultBlockState())) {
+-                                return;
+-                            }
+-                            // CraftBukkit end
+-                            world.setBlockAndUpdate(pos, (BlockState) ((Block) optional1.get()).defaultBlockState().setValue(HorizontalDirectionalBlock.FACING, enumdirection));
+-                        }
+-                    }
+-                }
++        // Plazma start - Port SparklyPaper patches; Optimize Farm checks
++        if (world.getRawBrightness(pos, 0) < 9) return;
++
++        int modifier = this == Blocks.PUMPKIN_STEM ? world.spigotConfig.pumpkinModifier : world.spigotConfig.melonModifier;
++
++        if (world.plazmaConfig().block.optimizeFarmCheck.enabled) {
++            final BlockPos current = pos.below();
++            final BlockState currentState = world.getBlockState(current);
++
++            final boolean moist;
++            final float growthSpeed;
++            if (currentState.is(Blocks.FARMLAND) && currentState.getValue(FarmBlock.MOISTURE) > 0) {
++                moist = true;
++                growthSpeed = world.plazmaConfig().block.optimizeFarmCheck.growthSpeed.moist;
++            } else {
++                moist = false;
++                growthSpeed = world.plazmaConfig().block.optimizeFarmCheck.growthSpeed.normal;
+             }
+ 
++            if (random.nextFloat() >= (modifier / (100.0f * Math.floor((25.0F / growthSpeed) + 1)))) return;
++
++            int age = state.getValue(AGE);
++
++            if (age < 7) {
++                CraftEventFactory.handleMoistureChangeEvent(world, pos, state.setValue(AGE, age + 1), 2);
++                return;
++            }
++
++            Direction direction = Direction.Plane.HORIZONTAL.getRandomDirection(random);
++            BlockPos pos1 = pos.relative(direction);
++            BlockState state1 = world.getBlockState(pos1.below());
++
++            if (!world.getBlockState(pos1).isAir() || (!state1.is(Blocks.FARMLAND) && !state1.is(BlockTags.DIRT)))
++                return;
++
++            Registry<Block> registry = world.registryAccess().registryOrThrow(Registries.BLOCK);
++            Optional<Block> fruit = registry.getOptional(this.fruit);
++            Optional<Block> stem = registry.getOptional(this.attachedStem);
++
++            if (fruit.isEmpty() || stem.isEmpty()) return;
++            if (!CraftEventFactory.handleBlockGrowEvent(world, pos1, fruit.get().defaultBlockState())) return;
++            if (moist && !FarmBlock.isNearWater(world, current))
++                org.bukkit.craftbukkit.event.CraftEventFactory.handleMoistureChangeEvent(world, current, currentState.setValue(FarmBlock.MOISTURE, 0), 2);
++
++            world.setBlockAndUpdate(pos, stem.get().defaultBlockState().setValue(HorizontalDirectionalBlock.FACING, direction));
++            return;
+         }
++
++        float f = CropBlock.getGrowthSpeed(this, world, pos);
++
++        if (random.nextFloat() >= (modifier / (100.0f * Math.floor((25.0F / f) + 1)))) return;
++
++        int age = state.getValue(StemBlock.AGE);
++
++        if (age < 7) {
++            CraftEventFactory.handleBlockGrowEvent(world, pos, state.setValue(StemBlock.AGE, age + 1), 2);
++            return;
++        }
++
++        Direction direction = Direction.Plane.HORIZONTAL.getRandomDirection(random);
++        BlockPos pos1 = pos.relative(direction);
++        BlockState state1 = world.getBlockState(pos1.below());
++
++        if (!world.getBlockState(pos1).isAir() || (!state1.is(Blocks.FARMLAND) && !state1.is(BlockTags.DIRT))) return;
++
++        Registry<Block> registry = world.registryAccess().registryOrThrow(Registries.BLOCK);
++        Optional<Block> fruit = registry.getOptional(this.fruit);
++        Optional<Block> stem = registry.getOptional(this.attachedStem);
++
++        if (fruit.isEmpty() || stem.isEmpty()) return;
++
++        if (!CraftEventFactory.handleBlockGrowEvent(world, pos1, fruit.get().defaultBlockState()))
++            return;
++
++        world.setBlockAndUpdate(pos, stem.get().defaultBlockState().setValue(HorizontalDirectionalBlock.FACING, direction));
++        // Plazma end - Port SparklyPaper patches; Optimize Farm checks
+     }
+ 
+     @Override
+diff --git a/src/main/java/net/minecraft/world/level/chunk/ChunkAccess.java b/src/main/java/net/minecraft/world/level/chunk/ChunkAccess.java
+index 1aac95b03a9e2e37c24f2a30bcb259c1424e1c78..e7c0c36fd3455c0536e98259b46dbcc952d90e01 100644
+--- a/src/main/java/net/minecraft/world/level/chunk/ChunkAccess.java
++++ b/src/main/java/net/minecraft/world/level/chunk/ChunkAccess.java
+@@ -66,6 +66,7 @@ public abstract class ChunkAccess implements BlockGetter, BiomeManager.NoiseBiom
+     protected volatile boolean unsaved;
+     private volatile boolean isLightCorrect;
+     protected final ChunkPos chunkPos; public final long coordinateKey; public final int locX; public final int locZ; // Paper - cache coordinate key
++    public final long nearbyPlayersCoordinateKey; // Plazma - Port SparklyPaper patches; Cache coordinate key used for nearby players when ticking chunks
+     private long inhabitedTime;
+     /** @deprecated */
+     @Nullable
+@@ -140,6 +141,7 @@ public abstract class ChunkAccess implements BlockGetter, BiomeManager.NoiseBiom
+         // Paper end - rewrite light engine
+         this.locX = pos.x; this.locZ = pos.z; // Paper - reduce need for field lookups
+         this.chunkPos = pos; this.coordinateKey = ChunkPos.asLong(locX, locZ); // Paper - cache long key
++        this.nearbyPlayersCoordinateKey = io.papermc.paper.util.CoordinateUtils.getChunkKey(locX, locZ); // Plazma - Port SparklyPaper patches; Cache coordinate key used for nearby players when ticking chunks
+         this.upgradeData = upgradeData;
+         this.levelHeightAccessor = heightLimitView;
+         this.sections = new LevelChunkSection[heightLimitView.getSectionsCount()];
+diff --git a/src/main/java/net/sparklypower/sparklypaper/HalloweenManager.java b/src/main/java/net/sparklypower/sparklypaper/HalloweenManager.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..0df2a464845193382bd559141955e31337c9e4e2
+--- /dev/null
++++ b/src/main/java/net/sparklypower/sparklypaper/HalloweenManager.java
+@@ -0,0 +1,100 @@
++package net.sparklypower.sparklypaper;
++
++import com.mojang.logging.LogUtils;
++import it.unimi.dsi.fastutil.Pair;
++import net.minecraft.world.level.Level;
++import org.slf4j.Logger;
++import java.time.LocalDateTime;
++import java.time.Month;
++import java.time.ZoneOffset;
++import java.util.concurrent.CountDownLatch;
++import java.util.concurrent.Executors;
++import java.util.concurrent.ScheduledExecutorService;
++import java.util.concurrent.ScheduledFuture;
++import java.util.concurrent.TimeUnit;
++import java.util.concurrent.atomic.AtomicBoolean;
++
++import static org.plazmamc.plazma.configurations.GlobalConfiguration.get;
++
++public class HalloweenManager {
++
++    private static final Logger LOGGER = LogUtils.getLogger();
++    private static final CountDownLatch LATCH = new CountDownLatch(1);
++    private static final ScheduledExecutorService EXECUTOR = Executors.newSingleThreadScheduledExecutor(factory -> {
++        Thread thread = new Thread(factory);
++        thread.setName("halloween-timer-updater");
++        thread.setPriority(1);
++        return thread;
++    });
++
++    private static ScheduledFuture<?> TASK;
++    private static Pair<Month, Integer> spookyStart;
++    private static Pair<Month, Integer> spookyEnd;
++    private static Pair<Month, Integer> halloweenStart;
++    private static Pair<Month, Integer> halloweenEnd;
++
++    private static Pair<Long, Long> spookyEpoch;
++    private static Pair<Long, Long> halloweenEpoch;
++
++    public static void syncConfiguration() {
++        if (!get().entity.spookyOptimize.enabled && TASK != null && !TASK.isCancelled()) {
++            TASK.cancel(true);
++            TASK = null;
++            return;
++        } else if (get().entity.spookyOptimize.enabled && TASK == null) {
++            startSyncEpochTask();
++        }
++        spookyStart = get().entity.spookyOptimize.spookySeason.start.toPair();
++        spookyEnd = get().entity.spookyOptimize.spookySeason.end.toPair();
++        halloweenStart = get().entity.spookyOptimize.halloween.start.toPair();
++        halloweenEnd = get().entity.spookyOptimize.halloween.end.toPair();
++        syncEpoch();
++    }
++
++    private static long getEpochMillisAtDate(Month month, int day, boolean start) {
++        LocalDateTime now = LocalDateTime.now();
++        LocalDateTime target = LocalDateTime.of(
++            now.getYear(), month, day, start ? 0 : 23, start ? 0 : 59, start ? 0 : 59, start ? 0 : 999_999_999
++        );
++
++        if (now.isAfter(target)) target = target.plusYears(1);
++        return target.atZone(ZoneOffset.systemDefault()).toInstant().toEpochMilli();
++    }
++
++    private static void syncEpoch() {
++        LOGGER.info("Updating Spooky Season and Halloween epoch...");
++        spookyEpoch = Pair.of(
++            getEpochMillisAtDate(spookyStart.first(), spookyStart.second(), true),
++            getEpochMillisAtDate(spookyEnd.first(), spookyEnd.second(), false)
++        );
++        halloweenEpoch = Pair.of(
++            getEpochMillisAtDate(halloweenStart.first(), halloweenStart.second(), true),
++            getEpochMillisAtDate(halloweenEnd.first(), halloweenEnd.second(), false)
++        );
++        LOGGER.info("Successfully updated Spooky Season and Halloween epoch");
++    }
++
++    private static void startSyncEpochTask() {
++        if (!get().entity.spookyOptimize.enabled) return;
++        final AtomicBoolean first = new AtomicBoolean(false);
++        TASK = EXECUTOR.scheduleAtFixedRate(() -> {
++            syncEpoch();
++            if (first.get()) LATCH.countDown();
++            first.set(false);
++        }, 0, 90, TimeUnit.DAYS);
++        try {
++            LATCH.await();
++        } catch (InterruptedException e) {
++            throw new RuntimeException(e);
++        }
++    }
++
++    public static boolean isSpookySeason() {
++        return spookyEpoch.first() <= System.currentTimeMillis() && System.currentTimeMillis() <= spookyEpoch.second();
++    }
++
++    public static boolean isHalloween() {
++        return halloweenEpoch.first() <= System.currentTimeMillis() && System.currentTimeMillis() <= halloweenEpoch.second();
++    }
++
++}
+diff --git a/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java b/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java
+index 1c1159867c78a54984219a9d56a3838c630c58d8..1ef3c086ea3a8d45d51575b77bf9863b4b4cc191 100644
+--- a/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java
++++ b/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java
+@@ -967,7 +967,7 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
+     public void sendMultiBlockChange(final Map<? extends io.papermc.paper.math.Position, BlockData> blockChanges) {
+         if (this.getHandle().connection == null) return;
+ 
+-        Map<SectionPos, it.unimi.dsi.fastutil.shorts.Short2ObjectMap<net.minecraft.world.level.block.state.BlockState>> sectionMap = new HashMap<>();
++        Map<SectionPos, it.unimi.dsi.fastutil.shorts.Short2ObjectMap<net.minecraft.world.level.block.state.BlockState>> sectionMap = new it.unimi.dsi.fastutil.objects.Object2ObjectOpenHashMap<>(); // Plazma - Port SparklyPaper patches; Optimize canSee checks
+ 
+         for (Map.Entry<? extends io.papermc.paper.math.Position, BlockData> entry : blockChanges.entrySet()) {
+             BlockData blockData = entry.getValue();
+@@ -2231,6 +2231,12 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
+         return this.equals(entity) || entity.isVisibleByDefault() ^ this.invertedVisibilityEntities.containsKey(entity.getUniqueId()); // SPIGOT-7312: Can always see self
+     }
+ 
++    // Plazma start - Port SparklyPaper patches; Optimize canSee check
++    public boolean canSeeChunkMapUpdatePlauer(org.bukkit.entity.Entity entity) {
++        return entity.isVisibleByDefault() ^ (!invertedVisibilityEntities.isEmpty() && this.invertedVisibilityEntities.containsKey(entity.getUniqueId()));
++    }
++    // Plazma end - Port SparklyPaper patches; Optimize canSee check
++
+     public boolean canSee(UUID uuid) {
+         org.bukkit.entity.Entity entity = this.getServer().getPlayer(uuid);
+         if (entity == null) {
 diff --git a/src/main/java/org/bukkit/craftbukkit/map/CraftMapColorCache.java b/src/main/java/org/bukkit/craftbukkit/map/CraftMapColorCache.java
 index 8149b9c51b78eb5c689b7218a2ca3aab60e73bcf..b9a303f6280a2f6ad3616da152922a4f4a504281 100644
 --- a/src/main/java/org/bukkit/craftbukkit/map/CraftMapColorCache.java
@@ -94,10 +678,10 @@ index 8149b9c51b78eb5c689b7218a2ca3aab60e73bcf..b9a303f6280a2f6ad3616da152922a4f
      }
  
 diff --git a/src/main/java/org/plazmamc/plazma/configurations/GlobalConfiguration.java b/src/main/java/org/plazmamc/plazma/configurations/GlobalConfiguration.java
-index 57d29f8f3bc89529db9ee8f6dc3fffdbd4a03ceb..9c830ec9129ac94aa08e914a82792210c13fc1a3 100644
+index 57d29f8f3bc89529db9ee8f6dc3fffdbd4a03ceb..306b503737394a51407a03f7f5cb8f7bd4b0eea2 100644
 --- a/src/main/java/org/plazmamc/plazma/configurations/GlobalConfiguration.java
 +++ b/src/main/java/org/plazmamc/plazma/configurations/GlobalConfiguration.java
-@@ -40,9 +40,11 @@ public class GlobalConfiguration extends ConfigurationPart {
+@@ -40,9 +40,53 @@ public class GlobalConfiguration extends ConfigurationPart {
      public Entity entity;
      public class Entity extends ConfigurationPart {
  
@@ -106,10 +690,52 @@ index 57d29f8f3bc89529db9ee8f6dc3fffdbd4a03ceb..9c830ec9129ac94aa08e914a82792210
          @PostProcess
          public void post() {
 +            net.minecraft.server.level.ServerEntity.skipSqrWhenNoDeltaChanges = this.skipSqrWhenNoDeltaChanges;
++        }
++
++        public SpookyOptimize spookyOptimize;
++        public class SpookyOptimize extends ConfigurationPart {
++
++            public boolean enabled = OPTIMIZE;
++            public Time spookySeason = new Time(10, 20, 11, 3);
++            public Time halloween = new Time(11, 31, 11, 31);
++
++            @PostProcess
++            public void post() {
++                net.sparklypower.sparklypaper.HalloweenManager.syncConfiguration();
++            }
++
++            public class Time extends ConfigurationPart {
++
++                public Date start;
++                public Date end;
++
++                public class Date extends ConfigurationPart {
++
++                    int month;
++                    int day;
++
++                    Date(int month, int day) {
++                        this.month = month;
++                        this.day = day;
++                    }
++
++                    public it.unimi.dsi.fastutil.Pair<java.time.Month, Integer> toPair() {
++                        return it.unimi.dsi.fastutil.Pair.of(java.time.Month.of(this.month), this.day);
++                    }
++
++                }
++
++                Time(int startMonth, int startDay, int endMonth, int endDay) {
++                    this.start = new Date(startMonth, startDay);
++                    this.end = new Date(endMonth, endDay);
++                }
++
++            }
++
          }
  
      }
-@@ -50,9 +52,11 @@ public class GlobalConfiguration extends ConfigurationPart {
+@@ -50,9 +94,11 @@ public class GlobalConfiguration extends ConfigurationPart {
      public World world;
      public class World extends ConfigurationPart {
  
@@ -121,3 +747,31 @@ index 57d29f8f3bc89529db9ee8f6dc3fffdbd4a03ceb..9c830ec9129ac94aa08e914a82792210
          }
  
      }
+diff --git a/src/main/java/org/plazmamc/plazma/configurations/WorldConfigurations.java b/src/main/java/org/plazmamc/plazma/configurations/WorldConfigurations.java
+index 8dce68cf7769fcd5ea03be32621ccb6bab174697..069a9f8504c74d939b1df569f082cc7bd33d9cfc 100644
+--- a/src/main/java/org/plazmamc/plazma/configurations/WorldConfigurations.java
++++ b/src/main/java/org/plazmamc/plazma/configurations/WorldConfigurations.java
+@@ -49,7 +49,22 @@ public class WorldConfigurations extends ConfigurationPart {
+ 
+     public Block block;
+     public class Block extends ConfigurationPart {
+-        
++
++        public OptimizeFarmCheck optimizeFarmCheck;
++        public class OptimizeFarmCheck extends ConfigurationPart {
++
++            public boolean enabled = OPTIMIZE;
++            public boolean skipMiddleAgingStageForCrops = true;
++
++            public GrowthSpeed growthSpeed;
++            public class GrowthSpeed extends ConfigurationPart {
++
++                public int normal = 1;
++                public int moist = 4;
++
++            }
++
++        }
+ 
+     }
+ 
