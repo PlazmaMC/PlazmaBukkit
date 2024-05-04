@@ -13,6 +13,6 @@ fun Git.clone(name: String, uri: String, branch: String, dir: Path): Path {
 }
 
 fun Git.addCommit(vararg args: String) {
-    this("add", ".").executeSilently(silenceErr = true)
-    this("commit", "-m", *args).executeSilently(silenceErr = true)
+    this("add", ".").executeOut()
+    this("commit", "-m", *args).executeOut()
 }

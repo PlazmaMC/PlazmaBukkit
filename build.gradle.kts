@@ -5,7 +5,7 @@ plugins {
     java
     `maven-publish`
     `kotlin-dsl`
-    // `always-up-to-date` // TODO: Temporary change
+    `always-up-to-date`
     alias(libs.plugins.shadow) apply false
     alias(libs.plugins.paperweight)
 }
@@ -122,7 +122,6 @@ paperweight {
     }
 }
 
-/* // TODO: Temporary change
 alwaysUpToDate {
 
     paperRepoName.set("org.plazmamc.alwaysuptodate.paper.repository")
@@ -138,7 +137,6 @@ alwaysUpToDate {
     pufferfishToggleName.set("usePufferfish")
 
 }
- */ // TODO: Temporary change
 
 tasks {
     applyPatches {

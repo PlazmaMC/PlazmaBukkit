@@ -116,8 +116,7 @@ abstract class PurpurUpdateTask : Task() {
 
             val paper = purpur.resolve(".gradle/caches/paperweight/upstreams/paper/Paper-Server")
             copySource(paper)
-            Git(paper)("add", ".").executeOut()
-            Git(paper)("commit", "-m", "Vanilla Sources", "--author=Vanilla <auto@mated.null>").executeOut()
+            Git(paper).addCommit("Vanilla Sources", "--author=Vanilla <auto@mated.null>")
             Thread.sleep(1_000)
             paper.resolve(".git").toFile().copyRecursively(dotGit, overwrite = true)
             Git(it).addCommit("Purpur Server Changes\n\n$purpurCommit", "--author=granny <contact@granny.dev>")
@@ -128,9 +127,6 @@ abstract class PurpurUpdateTask : Task() {
             dotGit.deleteRecursively()
 
             val paper = purpur.resolve(".gradle/caches/paperweight/upstreams/paper/Paper-API")
-            Git(paper)("add", ".").executeOut()
-            Git(paper)("commit", "-m", "Vanilla Sources", "--author=Vanilla <auto@mated.null>").executeOut()
-            Thread.sleep(1_000)
             paper.resolve(".git").toFile().copyRecursively(dotGit, overwrite = true)
             Git(it).addCommit("Purpur API Changes\n\n$purpurCommit", "--author=granny <contact@granny.dev>")
         }
@@ -215,8 +211,7 @@ abstract class PurpurUpdateTask : Task() {
 
             val paper = pufferfish.resolve(".gradle/caches/paperweight/upstreams/paper/Paper-Server")
             copySource(paper)
-            Git(paper)("add", ".").executeOut()
-            Git(paper)("commit", "-m", "Vanilla Sources", "--author=Vanilla <auto@mated.null>").executeOut()
+            Git(paper).addCommit("Vanilla Sources", "--author=Vanilla <auto@mated.null>")
             Thread.sleep(1_000)
             paper.resolve(".git").toFile().copyRecursively(dotGit, overwrite = true)
 
