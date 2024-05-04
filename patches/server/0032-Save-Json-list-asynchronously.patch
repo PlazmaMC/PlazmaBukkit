@@ -1,0 +1,152 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: AlphaKR93 <dev@alpha93.kr>
+Date: Thu, 11 Jan 2024 13:40:41 +0900
+Subject: [PATCH] Save Json list asynchronously
+
+
+diff --git a/src/main/java/net/minecraft/server/dedicated/DedicatedPlayerList.java b/src/main/java/net/minecraft/server/dedicated/DedicatedPlayerList.java
+index 22c4f8dea99f92a1eb3da2baf0a15bf9d2ca0462..20c531f11b310dab0a867e589c769393ed835df5 100644
+--- a/src/main/java/net/minecraft/server/dedicated/DedicatedPlayerList.java
++++ b/src/main/java/net/minecraft/server/dedicated/DedicatedPlayerList.java
+@@ -58,21 +58,23 @@ public class DedicatedPlayerList extends PlayerList {
+         this.loadWhiteList();
+     }
+ 
++    // Plazma start - Save JSON list asynchronously
+     private void saveIpBanList() {
+-        try {
+-            this.getIpBans().save();
+-        } catch (IOException var2) {
+-            LOGGER.warn("Failed to save ip banlist: ", (Throwable)var2);
+-        }
++        this.getIpBans().save();
+     }
+ 
+     private void saveUserBanList() {
+-        try {
+-            this.getBans().save();
+-        } catch (IOException var2) {
+-            LOGGER.warn("Failed to save user banlist: ", (Throwable)var2);
+-        }
++        this.getBans().save();
++    }
++
++    private void saveOps() {
++        this.getOps().save();
++    }
++
++    private void saveWhiteList() {
++        this.getWhiteList().save();
+     }
++    // Plazma end - Save JSON list asynchronously
+ 
+     private void loadIpBanList() {
+         try {
+@@ -98,14 +100,6 @@ public class DedicatedPlayerList extends PlayerList {
+         }
+     }
+ 
+-    private void saveOps() {
+-        try {
+-            this.getOps().save();
+-        } catch (Exception var2) {
+-            LOGGER.warn("Failed to save operators list: ", (Throwable)var2);
+-        }
+-    }
+-
+     private void loadWhiteList() {
+         try {
+             this.getWhiteList().load();
+@@ -114,14 +108,6 @@ public class DedicatedPlayerList extends PlayerList {
+         }
+     }
+ 
+-    private void saveWhiteList() {
+-        try {
+-            this.getWhiteList().save();
+-        } catch (Exception var2) {
+-            LOGGER.warn("Failed to save white-list: ", (Throwable)var2);
+-        }
+-    }
+-
+     @Override
+     public boolean isWhiteListed(GameProfile profile) {
+         return !this.isUsingWhitelist() || this.isOp(profile) || this.getWhiteList().isWhiteListed(profile);
+diff --git a/src/main/java/net/minecraft/server/players/StoredUserList.java b/src/main/java/net/minecraft/server/players/StoredUserList.java
+index c038da20b76c0b7b1c18471b20be01e849d29f3a..0735a0bd182635e1969d19336b46bc72b14e555f 100644
+--- a/src/main/java/net/minecraft/server/players/StoredUserList.java
++++ b/src/main/java/net/minecraft/server/players/StoredUserList.java
+@@ -42,13 +42,7 @@ public abstract class StoredUserList<K, V extends StoredUserEntry<K>> {
+ 
+     public void add(V entry) {
+         this.map.put(this.getKeyForUser(entry.getUser()), entry);
+-
+-        try {
+-            this.save();
+-        } catch (IOException ioexception) {
+-            StoredUserList.LOGGER.warn("Could not save the list after adding a user.", ioexception);
+-        }
+-
++        this.save(); // Plazma - Save Json list asynchronously
+     }
+ 
+     @Nullable
+@@ -62,13 +56,7 @@ public abstract class StoredUserList<K, V extends StoredUserEntry<K>> {
+ 
+     public void remove(K key) {
+         this.map.remove(this.getKeyForUser(key));
+-
+-        try {
+-            this.save();
+-        } catch (IOException ioexception) {
+-            StoredUserList.LOGGER.warn("Could not save the list after removing a user.", ioexception);
+-        }
+-
++        this.save(); // Plazma - Save Json list asynchronously
+     }
+ 
+     public void remove(StoredUserEntry<K> entry) {
+@@ -102,7 +90,9 @@ public abstract class StoredUserList<K, V extends StoredUserEntry<K>> {
+         return this.map.values();
+     }
+ 
+-    public void save() throws IOException {
++    // Plazma start - Save Json list asynchronously
++    public void save()/* throws IOException*/ {
++        io.papermc.paper.util.MCUtil.scheduleAsyncTask(() -> {
+         this.removeExpired(); // Paper - remove expired values before saving
+         JsonArray jsonarray = new JsonArray();
+         Stream<JsonObject> stream = this.map.values().stream().map((jsonlistentry) -> { // CraftBukkit - decompile error
+@@ -114,27 +104,16 @@ public abstract class StoredUserList<K, V extends StoredUserEntry<K>> {
+ 
+         Objects.requireNonNull(jsonarray);
+         stream.forEach(jsonarray::add);
+-        BufferedWriter bufferedwriter = Files.newWriter(this.file, StandardCharsets.UTF_8);
+ 
+-        try {
++        try (BufferedWriter bufferedwriter = Files.newWriter(this.file, StandardCharsets.UTF_8)) {
+             StoredUserList.GSON.toJson(jsonarray, StoredUserList.GSON.newJsonWriter(bufferedwriter));
+-        } catch (Throwable throwable) {
+-            if (bufferedwriter != null) {
+-                try {
+-                    bufferedwriter.close();
+-                } catch (Throwable throwable1) {
+-                    throwable.addSuppressed(throwable1);
+-                }
+-            }
+-
+-            throw throwable;
+-        }
+-
+-        if (bufferedwriter != null) {
+-            bufferedwriter.close();
++        } catch (IOException e) {
++            StoredUserList.LOGGER.warn("Failed to asynchronously save file " + this.file, e);
+         }
+ 
++        });
+     }
++    // Plazma end - Save Json list asynchronously
+ 
+     public void load() throws IOException {
+         if (this.file.exists()) {

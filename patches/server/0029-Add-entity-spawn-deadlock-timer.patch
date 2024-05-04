@@ -1,0 +1,81 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: AlphaKR93 <dev@alpha93.kr>
+Date: Tue, 5 Dec 2023 13:29:28 +0900
+Subject: [PATCH] Add entity spawn deadlock timer
+
+[REFERENCE]
+- AbsolemJackdaw/FixMySpawnR
+
+diff --git a/src/main/java/net/minecraft/world/level/BaseSpawner.java b/src/main/java/net/minecraft/world/level/BaseSpawner.java
+index 967af8771ff8564c715d89f4b4b69b16c25add59..2ac5fb585636523787e05edaa58a4fa34a39ef28 100644
+--- a/src/main/java/net/minecraft/world/level/BaseSpawner.java
++++ b/src/main/java/net/minecraft/world/level/BaseSpawner.java
+@@ -50,6 +50,8 @@ public abstract class BaseSpawner {
+     public int requiredPlayerRange = 16;
+     public int spawnRange = 4;
+     private int tickDelay = 0; // Paper - Configurable mob spawner tick rate
++    private int blockExistsTick = 0; // Plazma - Add entity spawn deadlock timer
++    private boolean blockLockedByTime = false; // Plazma - Add entity spawn deadlock timer
+ 
+     public BaseSpawner() {}
+ 
+@@ -85,6 +87,17 @@ public abstract class BaseSpawner {
+     }
+ 
+     public void serverTick(ServerLevel world, BlockPos pos) {
++        // Plazma start - Add entity spawn deadlock timer
++        if (world.plazmaConfig().entity.spawnDeadlockTimer.enabled) {
++            if (!this.blockLockedByTime) {
++                if (this.blockExistsTick > world.plazmaConfig().entity.spawnDeadlockTimer.timerTimeout)
++                    blockLockedByTime = true;
++                else blockExistsTick++;
++            }
++
++            if (blockLockedByTime && world.getBestNeighborSignal(pos) > 0) return;
++        }
++        // Plazma end - Add entity spawn deadlock timer
+         if (spawnCount <= 0 || maxNearbyEntities <= 0) return; // Paper - Ignore impossible spawn tick
+         // Paper start - Configurable mob spawner tick rate
+         if (spawnDelay > 0 && --tickDelay > 0) return;
+@@ -290,6 +303,13 @@ public abstract class BaseSpawner {
+             this.spawnRange = nbt.getShort("SpawnRange");
+         }
+ 
++        // Plazma start - Add entity spawn deadlock timer
++        if (nbt.contains("Plazma.SpawnerTicks", 99)) {
++            this.blockExistsTick = nbt.getInt("Plazma.SpawnerTicks");
++            this.blockLockedByTime = nbt.getBoolean("Plazma.SpawnerLocked");
++        }
++        // Plazma end - Add entity spawn deadlock timer
++
+         this.displayEntity = null;
+     }
+ 
+@@ -318,6 +338,8 @@ public abstract class BaseSpawner {
+             }));
+         }
+ 
++        nbt.putInt("Plazma.SpawnerTicks", this.blockExistsTick); // Plazma - Add entity spawn deadlock timer
++        nbt.putBoolean("Plazma.SpawnerLocked", this.blockLockedByTime); // Plazma - Add entity spawn deadlock timer
+         nbt.put("SpawnPotentials", (Tag) SpawnData.LIST_CODEC.encodeStart(NbtOps.INSTANCE, this.spawnPotentials).getOrThrow());
+         return nbt;
+     }
+diff --git a/src/main/java/org/plazmamc/plazma/configurations/WorldConfigurations.java b/src/main/java/org/plazmamc/plazma/configurations/WorldConfigurations.java
+index 29514dd01d46ba9f6b123bf3af56981541f670db..6a0cfec24618227d9a5ddc6c71e37d1986147799 100644
+--- a/src/main/java/org/plazmamc/plazma/configurations/WorldConfigurations.java
++++ b/src/main/java/org/plazmamc/plazma/configurations/WorldConfigurations.java
+@@ -54,6 +54,14 @@ public class WorldConfigurations extends ConfigurationPart {
+ 
+         }
+ 
++        public SpawnDeadlockTimer spawnDeadlockTimer;
++        public class SpawnDeadlockTimer extends ConfigurationPart {
++
++            public boolean enabled = OPTIMIZE;
++            public int timerTimeout = 0;
++
++        }
++
+     }
+ 
+     public Structure structure;
