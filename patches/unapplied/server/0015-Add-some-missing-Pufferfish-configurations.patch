@@ -1,0 +1,53 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: AlphaKR93 <dev@alpha93.kr>
+Date: Wed, 27 Sep 2023 18:29:51 +0900
+Subject: [PATCH] Add some missing Pufferfish configurations
+
+
+diff --git a/src/main/java/net/minecraft/world/entity/animal/camel/Camel.java b/src/main/java/net/minecraft/world/entity/animal/camel/Camel.java
+index 77c1bcde8cc5c2f51418a6f385ce84f202a13787..8ac2f6749f3bd85b73ac543bc9040aacb6032623 100644
+--- a/src/main/java/net/minecraft/world/entity/animal/camel/Camel.java
++++ b/src/main/java/net/minecraft/world/entity/animal/camel/Camel.java
+@@ -170,11 +170,12 @@ public class Camel extends AbstractHorse implements PlayerRideableJumping, Saddl
+         return dimensions.height - 0.1F * this.getScale();
+     }
+ 
++    private int behaviorTick = 0; // Plazma - Add missing pufferfish configurations
+     @Override
+     protected void customServerAiStep() {
+         //this.level().getProfiler().push("camelBrain"); // Purpur
+         Brain<Camel> behaviorcontroller = (Brain<Camel>) this.getBrain(); // CraftBukkit - decompile error
+-
++        if ((getRider() == null || !this.isControllable()) && this.behaviorTick++ % this.activatedPriority == 0) // Plazma - Add missing pufferfish configurations
+         behaviorcontroller.tick((ServerLevel) this.level(), this);
+         //this.level().getProfiler().pop(); // Purpur
+         //this.level().getProfiler().push("camelActivityUpdate"); // Purpur
+diff --git a/src/main/java/net/minecraft/world/entity/animal/sniffer/Sniffer.java b/src/main/java/net/minecraft/world/entity/animal/sniffer/Sniffer.java
+index 24e351b40745d15e065f4c3cd904596c6daf4cfb..aa60c4a251de2877a9b4ea72899f07194ce15ed7 100644
+--- a/src/main/java/net/minecraft/world/entity/animal/sniffer/Sniffer.java
++++ b/src/main/java/net/minecraft/world/entity/animal/sniffer/Sniffer.java
+@@ -527,9 +527,11 @@ public class Sniffer extends Animal {
+         return Brain.provider(SnifferAi.MEMORY_TYPES, SnifferAi.SENSOR_TYPES);
+     }
+ 
++    private int behaviorTick; // Plazma - Add missing pufferfish configurations
+     @Override
+     protected void customServerAiStep() {
+         //this.level().getProfiler().push("snifferBrain"); // Purpur
++        if ((getRider() == null || !this.isControllable()) && this.behaviorTick++ % this.activatedPriority == 0) // Plazma - Add missing pufferfish configurations
+         this.getBrain().tick((ServerLevel) this.level(), this);
+         //this.level().getProfiler().popPush("snifferActivityUpdate"); // Purpur
+         SnifferAi.updateActivity(this);
+diff --git a/src/main/java/net/minecraft/world/entity/monster/warden/Warden.java b/src/main/java/net/minecraft/world/entity/monster/warden/Warden.java
+index 1f476a4fd148ac9a4c9ad5d12de46a16e4116239..707fd662c7f17986fffcabe774de176741456227 100644
+--- a/src/main/java/net/minecraft/world/entity/monster/warden/Warden.java
++++ b/src/main/java/net/minecraft/world/entity/monster/warden/Warden.java
+@@ -320,7 +320,7 @@ public class Warden extends Monster implements VibrationSystem {
+         ServerLevel worldserver = (ServerLevel) this.level();
+ 
+         //worldserver.getProfiler().push("wardenBrain"); // Purpur
+-        if (this.behaviorTick++ % this.activatedPriority == 0) // Pufferfish
++        if ((getRider() == null || !this.isControllable()) && this.behaviorTick++ % this.activatedPriority == 0) // Pufferfish // Plazma - Add missing pufferfish configurations
+         this.getBrain().tick(worldserver, this);
+         //this.level().getProfiler().pop(); // Purpur
+         super.customServerAiStep();
