@@ -677,7 +677,7 @@ index 1aac95b03a9e2e37c24f2a30bcb259c1424e1c78..e7c0c36fd3455c0536e98259b46dbcc9
          this.levelHeightAccessor = heightLimitView;
          this.sections = new LevelChunkSection[heightLimitView.getSectionsCount()];
 diff --git a/src/main/java/net/minecraft/world/level/chunk/LevelChunk.java b/src/main/java/net/minecraft/world/level/chunk/LevelChunk.java
-index fd637415625fdabcac07e120e9168d09c06141d4..7efe0fc559463bf84fc9d7f66339d096993bcb43 100644
+index fd637415625fdabcac07e120e9168d09c06141d4..37120fcb31f4c9a90be37db252b17eb93db2cb0f 100644
 --- a/src/main/java/net/minecraft/world/level/chunk/LevelChunk.java
 +++ b/src/main/java/net/minecraft/world/level/chunk/LevelChunk.java
 @@ -75,6 +75,8 @@ public class LevelChunk extends ChunkAccess {
@@ -689,6 +689,15 @@ index fd637415625fdabcac07e120e9168d09c06141d4..7efe0fc559463bf84fc9d7f66339d096
      };
      private final Map<BlockPos, LevelChunk.RebindableTickingBlockEntityWrapper> tickersInLevel;
      public boolean loaded;
+@@ -1087,7 +1089,7 @@ public class LevelChunk extends ChunkAccess {
+     }
+ 
+     private <T extends BlockEntity> TickingBlockEntity createTicker(T blockEntity, BlockEntityTicker<T> blockEntityTicker) {
+-        return new LevelChunk.BoundTickingBlockEntity<>(blockEntity, blockEntityTicker);
++        return new LevelChunk.BoundTickingBlockEntity<>(blockEntity, blockEntityTicker, this.coordinateKey); // Plazma - Port SparklyPaper patches; Optimize TickingBlockEntity
+     }
+ 
+     @FunctionalInterface
 @@ -1138,17 +1140,21 @@ public class LevelChunk extends ChunkAccess {
          public String toString() {
              return String.valueOf(this.ticker) + " <wrapped>";
