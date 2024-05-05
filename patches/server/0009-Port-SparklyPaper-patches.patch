@@ -191,6 +191,18 @@ index 2903c9a2480ac505f0931d29ac3c5013037e65f1..39f7a4d3711a182b30d5b8eb77c23541
                  // Paper start
                  for (final io.papermc.paper.chunk.SingleThreadChunkRegionManager regionManager : worldserver.getChunkSource().chunkMap.regionManagers) {
                      regionManager.recalculateRegions();
+diff --git a/src/main/java/net/minecraft/server/dedicated/DedicatedServer.java b/src/main/java/net/minecraft/server/dedicated/DedicatedServer.java
+index 8289334e77999f72214c330a3306cbfeb17afbf1..f661418d27f5692a51b880f64180866f7d19d66a 100644
+--- a/src/main/java/net/minecraft/server/dedicated/DedicatedServer.java
++++ b/src/main/java/net/minecraft/server/dedicated/DedicatedServer.java
+@@ -224,6 +224,7 @@ public class DedicatedServer extends MinecraftServer implements ServerInterface
+         this.paperConfigurations.initializeWorldDefaultsConfiguration(this.registryAccess());
+         this.plazmaConfigurations.initializeGlobalConfiguration(this.registryAccess()); // Plazma - Configurable Plazma
+         this.plazmaConfigurations.initializeWorldDefaultsConfiguration(this.registryAccess()); // Plazma - Configurable Plazma
++        net.sparklypower.sparklypaper.HalloweenManager.startSyncEpochTask(); // Plazma - Port SparklyPaper patches; Optimize Spooky Season
+         // Paper end - initialize global and world-defaults configuration
+         // Paper start - fix converting txt to json file; convert old users earlier after PlayerList creation but before file load/save
+         if (this.convertOldUsers()) {
 diff --git a/src/main/java/net/minecraft/server/level/ChunkMap.java b/src/main/java/net/minecraft/server/level/ChunkMap.java
 index 4e6fccec4f5ca14562bf5bae495ac36c14982d85..9162c6338dbb516ce60f4853e57da6e49be79282 100644
 --- a/src/main/java/net/minecraft/server/level/ChunkMap.java
@@ -304,7 +316,7 @@ index f890738d3bb9fb5e70a9d323c6cec97f9948f9cf..eb3fc1af68768383d524cf0f50c4f4b3
      }
  }
 diff --git a/src/main/java/net/minecraft/world/entity/ambient/Bat.java b/src/main/java/net/minecraft/world/entity/ambient/Bat.java
-index 47a7c7f9527e1c4ea457eeafe0e11145653a871f..ed5a98b7e9ef2879fdcb2d5a77aeb1d483682a14 100644
+index 47a7c7f9527e1c4ea457eeafe0e11145653a871f..d2151a355e3ee8a6f8b4f28b2ce7ac382c939ad3 100644
 --- a/src/main/java/net/minecraft/world/entity/ambient/Bat.java
 +++ b/src/main/java/net/minecraft/world/entity/ambient/Bat.java
 @@ -306,7 +306,7 @@ public class Bat extends AmbientCreature {
@@ -324,7 +336,7 @@ index 47a7c7f9527e1c4ea457eeafe0e11145653a871f..ed5a98b7e9ef2879fdcb2d5a77aeb1d4
 +    // Plazma start - Port SparklyPaper patches; Optimize Spooky Season
 +    private static boolean isSpookySeason(Level level) {
 +        if (level.purpurConfig.forceHalloweenSeason) return true;
-+        if (org.plazmamc.plazma.configurations.GlobalConfiguration.get().entity.spookyOptimize.enabled)
++        if (org.plazmamc.plazma.configurations.GlobalConfiguration.get().entity.spookyOptimize)
 +            return net.sparklypower.sparklypaper.HalloweenManager.isSpookySeason()
 +                || net.sparklypower.sparklypaper.HalloweenManager.isHalloween();
 +        return isHalloween();
@@ -332,7 +344,7 @@ index 47a7c7f9527e1c4ea457eeafe0e11145653a871f..ed5a98b7e9ef2879fdcb2d5a77aeb1d4
 +
 +    public static boolean isHalloweenSeason(Level level) {
 +        if (level.purpurConfig.forceHalloweenSeason) return true;
-+        if (org.plazmamc.plazma.configurations.GlobalConfiguration.get().entity.spookyOptimize.enabled)
++        if (org.plazmamc.plazma.configurations.GlobalConfiguration.get().entity.spookyOptimize)
 +            return net.sparklypower.sparklypaper.HalloweenManager.isHalloween();
 +        return isHalloween();
 +    }
@@ -731,10 +743,10 @@ index fd637415625fdabcac07e120e9168d09c06141d4..37120fcb31f4c9a90be37db252b17eb9
  }
 diff --git a/src/main/java/net/sparklypower/sparklypaper/HalloweenManager.java b/src/main/java/net/sparklypower/sparklypaper/HalloweenManager.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..0df2a464845193382bd559141955e31337c9e4e2
+index 0000000000000000000000000000000000000000..f8c26e26025d7a7b5489ed5b3274ba734db27a1d
 --- /dev/null
 +++ b/src/main/java/net/sparklypower/sparklypaper/HalloweenManager.java
-@@ -0,0 +1,100 @@
+@@ -0,0 +1,78 @@
 +package net.sparklypower.sparklypaper;
 +
 +import com.mojang.logging.LogUtils;
@@ -755,8 +767,7 @@ index 0000000000000000000000000000000000000000..0df2a464845193382bd559141955e313
 +
 +public class HalloweenManager {
 +
-+    private static final Logger LOGGER = LogUtils.getLogger();
-+    private static final CountDownLatch LATCH = new CountDownLatch(1);
++    private static final Logger LOGGER = LogUtils.getClassLogger();
 +    private static final ScheduledExecutorService EXECUTOR = Executors.newSingleThreadScheduledExecutor(factory -> {
 +        Thread thread = new Thread(factory);
 +        thread.setName("halloween-timer-updater");
@@ -764,29 +775,9 @@ index 0000000000000000000000000000000000000000..0df2a464845193382bd559141955e313
 +        return thread;
 +    });
 +
-+    private static ScheduledFuture<?> TASK;
-+    private static Pair<Month, Integer> spookyStart;
-+    private static Pair<Month, Integer> spookyEnd;
-+    private static Pair<Month, Integer> halloweenStart;
-+    private static Pair<Month, Integer> halloweenEnd;
-+
++    private static ScheduledFuture<?> future;
 +    private static Pair<Long, Long> spookyEpoch;
 +    private static Pair<Long, Long> halloweenEpoch;
-+
-+    public static void syncConfiguration() {
-+        if (!get().entity.spookyOptimize.enabled && TASK != null && !TASK.isCancelled()) {
-+            TASK.cancel(true);
-+            TASK = null;
-+            return;
-+        } else if (get().entity.spookyOptimize.enabled && TASK == null) {
-+            startSyncEpochTask();
-+        }
-+        spookyStart = get().entity.spookyOptimize.spookySeason.start.toPair();
-+        spookyEnd = get().entity.spookyOptimize.spookySeason.end.toPair();
-+        halloweenStart = get().entity.spookyOptimize.halloween.start.toPair();
-+        halloweenEnd = get().entity.spookyOptimize.halloween.end.toPair();
-+        syncEpoch();
-+    }
 +
 +    private static long getEpochMillisAtDate(Month month, int day, boolean start) {
 +        LocalDateTime now = LocalDateTime.now();
@@ -801,29 +792,28 @@ index 0000000000000000000000000000000000000000..0df2a464845193382bd559141955e313
 +    private static void syncEpoch() {
 +        LOGGER.info("Updating Spooky Season and Halloween epoch...");
 +        spookyEpoch = Pair.of(
-+            getEpochMillisAtDate(spookyStart.first(), spookyStart.second(), true),
-+            getEpochMillisAtDate(spookyEnd.first(), spookyEnd.second(), false)
++            getEpochMillisAtDate(Month.OCTOBER, 20, true),
++            getEpochMillisAtDate(Month.NOVEMBER, 3, false)
 +        );
 +        halloweenEpoch = Pair.of(
-+            getEpochMillisAtDate(halloweenStart.first(), halloweenStart.second(), true),
-+            getEpochMillisAtDate(halloweenEnd.first(), halloweenEnd.second(), false)
++            getEpochMillisAtDate(Month.OCTOBER, 31, true),
++            getEpochMillisAtDate(Month.OCTOBER, 31, false)
 +        );
 +        LOGGER.info("Successfully updated Spooky Season and Halloween epoch");
 +    }
 +
-+    private static void startSyncEpochTask() {
-+        if (!get().entity.spookyOptimize.enabled) return;
-+        final AtomicBoolean first = new AtomicBoolean(false);
-+        TASK = EXECUTOR.scheduleAtFixedRate(() -> {
-+            syncEpoch();
-+            if (first.get()) LATCH.countDown();
-+            first.set(false);
-+        }, 0, 90, TimeUnit.DAYS);
-+        try {
-+            LATCH.await();
-+        } catch (InterruptedException e) {
-+            throw new RuntimeException(e);
++    public static void syncConfiguration() {
++        if (get().entity.spookyOptimize && future == null) {
++            startSyncEpochTask();
++        } else if (!get().entity.spookyOptimize && future != null) {
++            future.cancel(true);
++            future = null;
 +        }
++    }
++
++    public static void startSyncEpochTask() {
++        if (!get().entity.spookyOptimize) return;
++        future = EXECUTOR.scheduleAtFixedRate(HalloweenManager::syncEpoch, 0, 90, TimeUnit.DAYS);
 +    }
 +
 +    public static boolean isSpookySeason() {
@@ -875,56 +865,15 @@ index 8149b9c51b78eb5c689b7218a2ca3aab60e73bcf..b9a303f6280a2f6ad3616da152922a4f
      }
  
 diff --git a/src/main/java/org/plazmamc/plazma/configurations/GlobalConfiguration.java b/src/main/java/org/plazmamc/plazma/configurations/GlobalConfiguration.java
-index 57d29f8f3bc89529db9ee8f6dc3fffdbd4a03ceb..5b0d1ad2d3e8fb7ddb9f58288c175ffd0f4ccd57 100644
+index 57d29f8f3bc89529db9ee8f6dc3fffdbd4a03ceb..73dd69941a004b4a2ec244f28d8683e9bdb0a445 100644
 --- a/src/main/java/org/plazmamc/plazma/configurations/GlobalConfiguration.java
 +++ b/src/main/java/org/plazmamc/plazma/configurations/GlobalConfiguration.java
-@@ -40,9 +40,53 @@ public class GlobalConfiguration extends ConfigurationPart {
+@@ -40,9 +40,12 @@ public class GlobalConfiguration extends ConfigurationPart {
      public Entity entity;
      public class Entity extends ConfigurationPart {
  
 +        boolean skipSqrWhenNoDeltaChanges = OPTIMIZE;
-+
-+        public SpookyOptimize spookyOptimize;
-+        public class SpookyOptimize extends ConfigurationPart {
-+
-+            public boolean enabled = OPTIMIZE;
-+            public Time spookySeason = new Time(10, 20, 11, 3);
-+            public Time halloween = new Time(11, 31, 11, 31);
-+
-+            @PostProcess
-+            public void post() {
-+                net.sparklypower.sparklypaper.HalloweenManager.syncConfiguration();
-+            }
-+
-+            public class Time extends ConfigurationPart {
-+
-+                public Date start;
-+                public Date end;
-+
-+                public class Date extends ConfigurationPart {
-+
-+                    int month;
-+                    int day;
-+
-+                    Date(int month, int day) {
-+                        this.month = month;
-+                        this.day = day;
-+                    }
-+
-+                    public it.unimi.dsi.fastutil.Pair<java.time.Month, Integer> toPair() {
-+                        return it.unimi.dsi.fastutil.Pair.of(java.time.Month.of(this.month), this.day);
-+                    }
-+
-+                }
-+
-+                Time(int startMonth, int startDay, int endMonth, int endDay) {
-+                    this.start = new Date(startMonth, startDay);
-+                    this.end = new Date(endMonth, endDay);
-+                }
-+
-+            }
-+
-+        }
++        public boolean spookyOptimize = OPTIMIZE;
  
          @PostProcess
          public void post() {
@@ -932,7 +881,7 @@ index 57d29f8f3bc89529db9ee8f6dc3fffdbd4a03ceb..5b0d1ad2d3e8fb7ddb9f58288c175ffd
          }
  
      }
-@@ -50,9 +94,11 @@ public class GlobalConfiguration extends ConfigurationPart {
+@@ -50,9 +53,11 @@ public class GlobalConfiguration extends ConfigurationPart {
      public World world;
      public class World extends ConfigurationPart {
  
