@@ -360,6 +360,54 @@ index 608390ed36710a419de1542b80340dd3fcc7299c..043f068345ca3c50209c1c3cc1feb627
                  if (entity instanceof Player player) {
                      mapItemSavedData.tickCarriedBy(player, stack);
                  }
+diff --git a/src/main/java/net/minecraft/world/level/Level.java b/src/main/java/net/minecraft/world/level/Level.java
+index 79ebec0543f730af403240e9c1c011777464a698..64e489fa71c7f38797c8978de96840e0321e59a1 100644
+--- a/src/main/java/net/minecraft/world/level/Level.java
++++ b/src/main/java/net/minecraft/world/level/Level.java
+@@ -1327,6 +1327,8 @@ public abstract class Level implements LevelAccessor, AutoCloseable {
+         boolean flag = this.tickRateManager().runsNormally();
+ 
+         int tilesThisCycle = 0;
++        int shouldTickBlocksAtLastResult = -1; // Plazma - Port SparklyPaper patches; Optimize tickingBlockEntities
++        long shouldTickBlocksAtChunkPos = 0; // Plazma - Port SparklyPaper patches; Optimize tickingBlockEntities
+         var toRemove = new it.unimi.dsi.fastutil.objects.ReferenceOpenHashSet<TickingBlockEntity>(); // Paper - Fix MC-117075; use removeAll
+         toRemove.add(null); // Paper - Fix MC-117075
+         for (tileTickPosition = 0; tileTickPosition < this.blockEntityTickers.size(); tileTickPosition++) { // Paper - Disable tick limiters
+@@ -1339,14 +1341,28 @@ public abstract class Level implements LevelAccessor, AutoCloseable {
+                 tilesThisCycle--;
+                 toRemove.add(tickingblockentity); // Paper - Fix MC-117075; use removeAll
+                 // Spigot end
+-            } else if (flag && this.shouldTickBlocksAt(tickingblockentity.getPos())) {
+-                tickingblockentity.tick();
+-                // Paper start - execute chunk tasks during tick
+-                if ((this.tileTickPosition & 7) == 0) {
+-                    MinecraftServer.getServer().executeMidTickTasks();
++            // Plazma start - Port SparklyPaper patches; Optimize tickingBlockEntities
++            } else if (flag) {
++                long chunkPos = tickingblockentity.getChunkCoordinateKey();
++                boolean shouldTick;
++                if (shouldTickBlocksAtChunkPos == chunkPos && shouldTickBlocksAtLastResult != -1)
++                    shouldTick = shouldTickBlocksAtLastResult == 1;
++                else {
++                    shouldTick = this.shouldTickBlocksAt(chunkPos);
++                    shouldTickBlocksAtLastResult = shouldTick ? 1 : 0;
++                    shouldTickBlocksAtChunkPos = chunkPos;
++                }
++
++                if (shouldTick) {
++                    tickingblockentity.tick();
++                    // Paper start - execute chunk tasks during tick
++                    if ((this.tileTickPosition & 7) == 0) {
++                        MinecraftServer.getServer().executeMidTickTasks();
++                    }
++                    // Paper end - execute chunk tasks during tick
+                 }
+-                // Paper end - execute chunk tasks during tick
+             }
++            // Plazma end - Port SparklyPaper patches; Optimize tickingBlockEntities
+         }
+         this.blockEntityTickers.removeAll(toRemove); // Paper - Fix MC-117075
+ 
 diff --git a/src/main/java/net/minecraft/world/level/block/CropBlock.java b/src/main/java/net/minecraft/world/level/block/CropBlock.java
 index 5a190834baef60c7b61074393f8856a933902d81..366ae05a060b5b12b85521a4b8aed1907f3f044a 100644
 --- a/src/main/java/net/minecraft/world/level/block/CropBlock.java
@@ -597,6 +645,17 @@ index 924d80eb41d9a71d1e521c40742557251cf51832..4a30e1e6eac4b0e3dc2147a74e73e05f
      }
  
      @Override
+diff --git a/src/main/java/net/minecraft/world/level/block/entity/TickingBlockEntity.java b/src/main/java/net/minecraft/world/level/block/entity/TickingBlockEntity.java
+index 28e3b73507b988f7234cbf29c4024c88180d0aef..6239c171ca996f3f5c23060f728a62236bc8b6d5 100644
+--- a/src/main/java/net/minecraft/world/level/block/entity/TickingBlockEntity.java
++++ b/src/main/java/net/minecraft/world/level/block/entity/TickingBlockEntity.java
+@@ -10,4 +10,6 @@ public interface TickingBlockEntity {
+     BlockPos getPos();
+ 
+     String getType();
++
++    long getChunkCoordinateKey(); // Plazma - Port SparklyPaper patches; Optimize tickingBlockEntities
+ }
 diff --git a/src/main/java/net/minecraft/world/level/chunk/ChunkAccess.java b/src/main/java/net/minecraft/world/level/chunk/ChunkAccess.java
 index 1aac95b03a9e2e37c24f2a30bcb259c1424e1c78..e7c0c36fd3455c0536e98259b46dbcc952d90e01 100644
 --- a/src/main/java/net/minecraft/world/level/chunk/ChunkAccess.java
@@ -617,6 +676,50 @@ index 1aac95b03a9e2e37c24f2a30bcb259c1424e1c78..e7c0c36fd3455c0536e98259b46dbcc9
          this.upgradeData = upgradeData;
          this.levelHeightAccessor = heightLimitView;
          this.sections = new LevelChunkSection[heightLimitView.getSectionsCount()];
+diff --git a/src/main/java/net/minecraft/world/level/chunk/LevelChunk.java b/src/main/java/net/minecraft/world/level/chunk/LevelChunk.java
+index fd637415625fdabcac07e120e9168d09c06141d4..7efe0fc559463bf84fc9d7f66339d096993bcb43 100644
+--- a/src/main/java/net/minecraft/world/level/chunk/LevelChunk.java
++++ b/src/main/java/net/minecraft/world/level/chunk/LevelChunk.java
+@@ -75,6 +75,8 @@ public class LevelChunk extends ChunkAccess {
+         public String getType() {
+             return "<null>";
+         }
++
++        @Override public long getChunkCoordinateKey() { return 0; } // Plazma - Port SparklyPaper patches; Optimize tickingBlockEntities
+     };
+     private final Map<BlockPos, LevelChunk.RebindableTickingBlockEntityWrapper> tickersInLevel;
+     public boolean loaded;
+@@ -1138,17 +1140,21 @@ public class LevelChunk extends ChunkAccess {
+         public String toString() {
+             return String.valueOf(this.ticker) + " <wrapped>";
+         }
++
++        @Override public long getChunkCoordinateKey() { return this.ticker.getChunkCoordinateKey(); } // Plazma - Port SparklyPaper patches; Optimize TickingBlockEntity
+     }
+ 
+     private class BoundTickingBlockEntity<T extends BlockEntity> implements TickingBlockEntity {
+ 
++        private final long chunkCoordinateKey; // Plazma - Port SparklyPaper patches; Optimize TickingBlockEntity
+         private final T blockEntity;
+         private final BlockEntityTicker<T> ticker;
+         private boolean loggedInvalidBlockState;
+ 
+-        BoundTickingBlockEntity(final BlockEntity tileentity, final BlockEntityTicker blockentityticker) {
++        BoundTickingBlockEntity(final BlockEntity tileentity, final BlockEntityTicker blockentityticker, long chunkCoordinateKey) {
+             this.blockEntity = (T) tileentity; // CraftBukkit - decompile error
+             this.ticker = blockentityticker;
++            this.chunkCoordinateKey = chunkCoordinateKey;
+         }
+ 
+         @Override
+@@ -1216,5 +1222,7 @@ public class LevelChunk extends ChunkAccess {
+ 
+             return "Level ticker for " + s + "@" + String.valueOf(this.getPos());
+         }
++
++        @Override public long getChunkCoordinateKey() { return this.chunkCoordinateKey; } // Plazma - Port SparklyPaper patches; Optimize TickingBlockEntity
+     }
+ }
 diff --git a/src/main/java/net/sparklypower/sparklypaper/HalloweenManager.java b/src/main/java/net/sparklypower/sparklypaper/HalloweenManager.java
 new file mode 100644
 index 0000000000000000000000000000000000000000..0df2a464845193382bd559141955e31337c9e4e2
@@ -763,7 +866,7 @@ index 8149b9c51b78eb5c689b7218a2ca3aab60e73bcf..b9a303f6280a2f6ad3616da152922a4f
      }
  
 diff --git a/src/main/java/org/plazmamc/plazma/configurations/GlobalConfiguration.java b/src/main/java/org/plazmamc/plazma/configurations/GlobalConfiguration.java
-index 57d29f8f3bc89529db9ee8f6dc3fffdbd4a03ceb..306b503737394a51407a03f7f5cb8f7bd4b0eea2 100644
+index 57d29f8f3bc89529db9ee8f6dc3fffdbd4a03ceb..5b0d1ad2d3e8fb7ddb9f58288c175ffd0f4ccd57 100644
 --- a/src/main/java/org/plazmamc/plazma/configurations/GlobalConfiguration.java
 +++ b/src/main/java/org/plazmamc/plazma/configurations/GlobalConfiguration.java
 @@ -40,9 +40,53 @@ public class GlobalConfiguration extends ConfigurationPart {
@@ -771,11 +874,6 @@ index 57d29f8f3bc89529db9ee8f6dc3fffdbd4a03ceb..306b503737394a51407a03f7f5cb8f7b
      public class Entity extends ConfigurationPart {
  
 +        boolean skipSqrWhenNoDeltaChanges = OPTIMIZE;
- 
-         @PostProcess
-         public void post() {
-+            net.minecraft.server.level.ServerEntity.skipSqrWhenNoDeltaChanges = this.skipSqrWhenNoDeltaChanges;
-+        }
 +
 +        public SpookyOptimize spookyOptimize;
 +        public class SpookyOptimize extends ConfigurationPart {
@@ -817,6 +915,11 @@ index 57d29f8f3bc89529db9ee8f6dc3fffdbd4a03ceb..306b503737394a51407a03f7f5cb8f7b
 +
 +            }
 +
++        }
+ 
+         @PostProcess
+         public void post() {
++            net.minecraft.server.level.ServerEntity.skipSqrWhenNoDeltaChanges = this.skipSqrWhenNoDeltaChanges;
          }
  
      }
