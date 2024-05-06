@@ -19,8 +19,20 @@ GNU General Public License for more details.
 You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+diff --git a/src/main/java/net/minecraft/server/dedicated/DedicatedServer.java b/src/main/java/net/minecraft/server/dedicated/DedicatedServer.java
+index 6d39a0d5455fbb0af3916b751d02386af3aa3598..ba059d797251750ac866f8f2e077315597ae737f 100644
+--- a/src/main/java/net/minecraft/server/dedicated/DedicatedServer.java
++++ b/src/main/java/net/minecraft/server/dedicated/DedicatedServer.java
+@@ -705,6 +705,7 @@ public class DedicatedServer extends MinecraftServer implements ServerInterface
+         // Paper start - Add setting for proxy online mode status
+         return dedicatedserverproperties.enforceSecureProfile
+             && io.papermc.paper.configuration.GlobalConfiguration.get().proxies.isProxyOnlineMode()
++            && !org.plazmamc.plazma.configurations.GlobalConfiguration.get().player.freedomChat.enabled // Plazma - Implement FreedomChat
+             && this.services.canValidateProfileKeys();
+         // Paper end - Add setting for proxy online mode status
+     }
 diff --git a/src/main/java/net/minecraft/server/players/PlayerList.java b/src/main/java/net/minecraft/server/players/PlayerList.java
-index 2707a96f9e22469d008ec7d2fa8a8c497efaf8cf..9eedd395b3eac5e2511c8267781938a3fd994d90 100644
+index c36ebab552c480d34e7fd48a45f0a320a97b9677..361fcabfe5e6f54903fcbeddc96ad2311cfcfdb6 100644
 --- a/src/main/java/net/minecraft/server/players/PlayerList.java
 +++ b/src/main/java/net/minecraft/server/players/PlayerList.java
 @@ -135,6 +135,7 @@ public abstract class PlayerList {
@@ -40,10 +52,10 @@ index 2707a96f9e22469d008ec7d2fa8a8c497efaf8cf..9eedd395b3eac5e2511c8267781938a3
          player.loadGameTypes((CompoundTag) optional.orElse(null)); // CraftBukkit - decompile error
          ServerGamePacketListenerImpl playerconnection = new ServerGamePacketListenerImpl(this.server, connection, player, clientData);
 diff --git a/src/main/java/org/plazmamc/plazma/configurations/GlobalConfiguration.java b/src/main/java/org/plazmamc/plazma/configurations/GlobalConfiguration.java
-index 4f3ed01e12ccb8a6f1a5c4f605451bb36370a236..98f26e3de66a881163e84295e9156c7f362bf7cb 100644
+index b18dfe9223b75d8a36b4b3a934625914f9a6a553..19b198fb1d0ffee28a2cfd516cb31204fd1a310c 100644
 --- a/src/main/java/org/plazmamc/plazma/configurations/GlobalConfiguration.java
 +++ b/src/main/java/org/plazmamc/plazma/configurations/GlobalConfiguration.java
-@@ -29,6 +29,16 @@ public class GlobalConfiguration extends ConfigurationPart {
+@@ -29,6 +29,15 @@ public class GlobalConfiguration extends ConfigurationPart {
  
          public boolean checkSpectatorMovedToQuickly = !OPTIMIZE;
  
@@ -52,7 +64,6 @@ index 4f3ed01e12ccb8a6f1a5c4f605451bb36370a236..98f26e3de66a881163e84295e9156c7f
 +
 +            public boolean enabled = false;
 +            public boolean rewriteChat = true;
-+            public boolean claimSecureChatEnforced = true;
 +            public boolean noChatReports = true;
 +
 +        }
@@ -62,103 +73,110 @@ index 4f3ed01e12ccb8a6f1a5c4f605451bb36370a236..98f26e3de66a881163e84295e9156c7f
      @Setting("world-generation")
 diff --git a/src/main/java/ru/bk/oharass/freedomchat/FreedomChat.java b/src/main/java/ru/bk/oharass/freedomchat/FreedomChat.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..67f21c23e80881f52e7b92f22c6cbbe3a0bd55b5
+index 0000000000000000000000000000000000000000..24ba82e13f6eeedd3a3658ebc29c9c4744f5f1b0
 --- /dev/null
 +++ b/src/main/java/ru/bk/oharass/freedomchat/FreedomChat.java
-@@ -0,0 +1,96 @@
+@@ -0,0 +1,103 @@
 +package ru.bk.oharass.freedomchat;
 +
-+import com.google.gson.JsonObject;
-+import com.mojang.logging.LogUtils;
-+import com.mojang.serialization.JsonOps;
++import com.mojang.serialization.Codec;
++import com.mojang.serialization.codecs.RecordCodecBuilder;
 +import io.netty.buffer.ByteBuf;
 +import io.netty.channel.ChannelHandler;
 +import io.netty.channel.ChannelHandlerContext;
-+import io.netty.handler.codec.EncoderException;
 +import io.netty.handler.codec.MessageToByteEncoder;
-+import net.kyori.adventure.text.serializer.gson.GsonComponentSerializer;
-+import net.minecraft.network.Connection;
 +import net.minecraft.network.FriendlyByteBuf;
-+import net.minecraft.network.chat.ChatType;
++import net.minecraft.network.RegistryFriendlyByteBuf;
++import net.minecraft.network.chat.CommonComponents;
 +import net.minecraft.network.chat.Component;
++import net.minecraft.network.chat.ComponentSerialization;
++import net.minecraft.network.codec.StreamCodec;
 +import net.minecraft.network.protocol.Packet;
++import net.minecraft.network.protocol.game.ClientGamePacketListener;
 +import net.minecraft.network.protocol.game.ClientboundPlayerChatPacket;
-+import net.minecraft.network.protocol.game.ClientboundServerDataPacket;
 +import net.minecraft.network.protocol.game.ClientboundSystemChatPacket;
++import net.minecraft.network.protocol.game.GameProtocols;
 +import net.minecraft.network.protocol.status.ClientboundStatusResponsePacket;
 +import net.minecraft.network.protocol.status.ServerStatus;
-+import org.slf4j.Logger;
++import net.minecraft.server.MinecraftServer;
 +
++import java.util.Objects;
 +import java.util.Optional;
 +
 +import static org.plazmamc.plazma.configurations.GlobalConfiguration.get;
-+import static net.minecraft.server.MinecraftServer.getServer;
 +
 +@ChannelHandler.Sharable
 +public class FreedomChat extends MessageToByteEncoder<Packet<?>> {
 +
-+    private static final Logger LOGGER = LogUtils.getLogger();
++    private static final StreamCodec<ByteBuf, Packet<? super ClientGamePacketListener>> CODEC = GameProtocols.CLIENTBOUND
++        .bind(RegistryFriendlyByteBuf.decorator(MinecraftServer.getServer().registryAccess())).codec();
 +
 +    @Override
 +    public boolean acceptOutboundMessage(final Object msg) {
 +        return get().player.freedomChat.rewriteChat && msg instanceof ClientboundPlayerChatPacket
-+            || get().player.freedomChat.claimSecureChatEnforced && msg instanceof ClientboundServerDataPacket
 +            || get().player.freedomChat.noChatReports && msg instanceof ClientboundStatusResponsePacket;
 +    }
 +
 +    @Override
-+    protected void encode(final ChannelHandlerContext context, final Packet<?> packet, final ByteBuf byteBuf) throws Exception {
++    protected void encode(
++        final ChannelHandlerContext context, final Packet<?> packet, final ByteBuf byteBuf
++    ) throws Exception {
 +        final FriendlyByteBuf buf = new FriendlyByteBuf(byteBuf);
 +
-+        // TODO: JDK 21 - Change to pattern matching
-+        if (packet instanceof ClientboundPlayerChatPacket chat)
-+            encodeChat(context, chat, buf);
-+        else if (packet instanceof  ClientboundServerDataPacket data)
-+            encodeData(context, data, buf);
-+        else if (packet instanceof ClientboundStatusResponsePacket query)
-+            encodeQuery(context, query, buf);
++        switch (packet) {
++            case ClientboundPlayerChatPacket chat -> encodeChat(context, chat, buf);
++            case ClientboundStatusResponsePacket data -> encodeQuery(context, data, buf);
++            default -> {}
++        }
 +    }
 +
 +    private static void encodeChat(
-+        final ChannelHandlerContext context, final ClientboundPlayerChatPacket packet, final FriendlyByteBuf byteBuf
++        final ChannelHandlerContext ignored, final ClientboundPlayerChatPacket packet, final FriendlyByteBuf byteBuf
 +    ) {
-+        final Optional<ChatType.Bound> bound = packet.chatType().resolve(getServer().registryAccess());
-+        if (bound.isEmpty()) {
-+            LOGGER.warn("Failed to resolve chat type: {}", packet.chatType().chatType(), new Throwable());
-+            return;
-+        }
++        final Component content = Objects.requireNonNullElseGet(
++            packet.unsignedContent(),
++            () -> Component.literal(packet.body().content())
++        );
 +
-+        final ClientboundSystemChatPacket after = new ClientboundSystemChatPacket( bound.orElseThrow().decorate(
-+            Optional.ofNullable( packet.unsignedContent() ).orElse( Component.literal(packet.body().content()) )
-+        ), false );
-+        write(context, after, byteBuf);
-+        after.write(byteBuf);
-+    }
-+
-+    private static void encodeData(
-+        final ChannelHandlerContext context, final ClientboundServerDataPacket packet, final FriendlyByteBuf byteBuf
-+    ) {
-+        write(context, packet, byteBuf);
-+        byteBuf.writeComponent(packet.getMotd());
-+        byteBuf.writeOptional(packet.getIconBytes(), FriendlyByteBuf::writeByteArray);
-+        byteBuf.writeBoolean(true);
++        CODEC.encode(byteBuf, new ClientboundSystemChatPacket(packet.chatType().decorate(content), false));
 +    }
 +
 +    private static void encodeQuery(
-+        final ChannelHandlerContext context, final ClientboundStatusResponsePacket packet, final FriendlyByteBuf byteBuf
++        final ChannelHandlerContext ignored, final ClientboundStatusResponsePacket packet, final FriendlyByteBuf byteBuf
 +    ) {
-+        final JsonObject status = ServerStatus.CODEC.encodeStart(JsonOps.INSTANCE, packet.status()).get().left()
-+            .orElseThrow(() -> new EncoderException("Failed to encode server status query response")).getAsJsonObject();
-+
-+        status.addProperty("preventsChatReports", true);
-+        write(context, packet, byteBuf);
-+        byteBuf.writeUtf(GsonComponentSerializer.gson().serializer().toJson(status));
++        byteBuf.writeVarInt(0x00);
++        byteBuf.writeJsonWithCodec(NCRMetadata.CODEC, NCRMetadata.from(packet.status()));
 +    }
 +
-+    private static void write(
-+        final ChannelHandlerContext context, final Packet<?> packet, final FriendlyByteBuf byteBuf
++    private record NCRMetadata(
++        Component description,
++        Optional<ServerStatus.Players> players,
++        Optional<ServerStatus.Version> version,
++        Optional<ServerStatus.Favicon> favicon,
++        boolean enforcesSecureChat,
++        boolean preventsChatReports
 +    ) {
-+        byteBuf.writeVarInt(context.channel().attr(Connection.ATTRIBUTE_CLIENTBOUND_PROTOCOL).get().packetId(packet));
++
++        private static final Codec<NCRMetadata> CODEC = RecordCodecBuilder.create(instance -> instance.group(
++            ComponentSerialization.CODEC.lenientOptionalFieldOf("description", CommonComponents.EMPTY).forGetter(NCRMetadata::description),
++            ServerStatus.Players.CODEC.lenientOptionalFieldOf("players").forGetter(NCRMetadata::players),
++            ServerStatus.Version.CODEC.lenientOptionalFieldOf("version").forGetter(NCRMetadata::version),
++            ServerStatus.Favicon.CODEC.lenientOptionalFieldOf("favicon").forGetter(NCRMetadata::favicon),
++            Codec.BOOL.lenientOptionalFieldOf("enforcesSecureChat", true).forGetter(NCRMetadata::enforcesSecureChat),
++            Codec.BOOL.lenientOptionalFieldOf("preventsChatReports", false).forGetter(NCRMetadata::preventsChatReports)
++        ).apply(instance, NCRMetadata::new));
++
++        private static NCRMetadata from(final ServerStatus status) {
++            return new NCRMetadata(
++                status.description(),
++                status.players(),
++                status.version(),
++                status.favicon(),
++                status.enforcesSecureChat() && !get().player.freedomChat.enabled,
++                get().player.freedomChat.noChatReports
++            );
++        }
++
 +    }
 +
 +}

@@ -61,17 +61,17 @@ index f661418d27f5692a51b880f64180866f7d19d66a..ddfbc49a693d3100e915f5083f1f8e99
  
  
 diff --git a/src/main/java/net/minecraft/server/players/PlayerList.java b/src/main/java/net/minecraft/server/players/PlayerList.java
-index b863f6fe65c796a1d3102cc3eddb5d6c5becd3ac..2707a96f9e22469d008ec7d2fa8a8c497efaf8cf 100644
+index b863f6fe65c796a1d3102cc3eddb5d6c5becd3ac..c36ebab552c480d34e7fd48a45f0a320a97b9677 100644
 --- a/src/main/java/net/minecraft/server/players/PlayerList.java
 +++ b/src/main/java/net/minecraft/server/players/PlayerList.java
-@@ -1467,6 +1467,7 @@ public abstract class PlayerList {
-     public void broadcastChatMessage(PlayerChatMessage message, Predicate<ServerPlayer> shouldSendFiltered, @Nullable ServerPlayer sender, ChatType.Bound params, @Nullable Function<net.kyori.adventure.audience.Audience, Component> unsignedFunction) {
-         // Paper end
-         boolean flag = this.verifyChatTrusted(message);
-+        flag = flag || org.plazmamc.plazma.configurations.GlobalConfiguration.get().consoleLogs.notSecurePrefix; // Plazma - Tweak console logging
+@@ -1497,6 +1497,7 @@ public abstract class PlayerList {
+     }
  
-         this.server.logChatMessage((unsignedFunction == null ? message.decoratedContent() : unsignedFunction.apply(this.server.console)), params, flag ? null : "Not Secure"); // Paper
-         OutgoingChatMessage outgoingchatmessage = OutgoingChatMessage.create(message);
+     public boolean verifyChatTrusted(PlayerChatMessage message) { // Paper - private -> public
++        if (!org.plazmamc.plazma.configurations.GlobalConfiguration.get().consoleLogs.notSecurePrefix) return true; // Plazma - Tweak console logging
+         return message.hasSignature() && !message.hasExpiredServer(Instant.now());
+     }
+ 
 diff --git a/src/main/java/org/plazmamc/plazma/configurations/GlobalConfiguration.java b/src/main/java/org/plazmamc/plazma/configurations/GlobalConfiguration.java
 index 73dd69941a004b4a2ec244f28d8683e9bdb0a445..e725f6e8205976a7b137aefb98b874cf4ae14893 100644
 --- a/src/main/java/org/plazmamc/plazma/configurations/GlobalConfiguration.java

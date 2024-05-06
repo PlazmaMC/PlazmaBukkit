@@ -156,6 +156,20 @@ tasks {
                 "https://papermc.io/repo/repository/maven-public/"
         )
     }
+
+    clean {
+        doLast {
+            projectDir.resolve(".gradle/caches").deleteRecursively()
+            listOf("Plazma-API", "Plazma-MojangAPI", "Plazma-Server", "paper-api-generator", "run").forEach {
+                projectDir.resolve(it).deleteRecursively()
+            }
+
+            // remove dev environment files
+            listOf("0001-fixup.patch", "compare.txt").forEach {
+                projectDir.resolve(it).delete()
+            }
+        }
+    }
 }
 
 publishing {
