@@ -1,6 +1,6 @@
 From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
 From: granny <contact@granny.dev>
-Date: Sat, 4 May 2024 18:10:28 +0900
+Date: Mon, 6 May 2024 15:08:02 +0900
 Subject: [PATCH] Purpur Server Changes
 
 PurpurMC
@@ -982,10 +982,10 @@ index a024c697a65bbab27408da1d6a75e531d9719b47..e4fab82b369f2c2ea0d8c8acd814d061
                          // Paper end - Add drops to shear events
                          continue;
 diff --git a/src/main/java/net/minecraft/network/Connection.java b/src/main/java/net/minecraft/network/Connection.java
-index 58d28b6c1cc7da7d786f78308db971f7502ad844..9f274048be29ed54dd91983447beadf076cf7438 100644
+index 02833deaa2bb7e5abc655bc1bdbe15c4b3ac7119..71b021513f30376c7b09d83059deea89cc92385f 100644
 --- a/src/main/java/net/minecraft/network/Connection.java
 +++ b/src/main/java/net/minecraft/network/Connection.java
-@@ -607,11 +607,20 @@ public class Connection extends SimpleChannelInboundHandler<Packet<?>> {
+@@ -608,11 +608,20 @@ public class Connection extends SimpleChannelInboundHandler<Packet<?>> {
      private static final int MAX_PER_TICK = io.papermc.paper.configuration.GlobalConfiguration.get().misc.maxJoinsPerTick; // Paper - Buffer joins to world
      private static int joinAttemptsThisTick; // Paper - Buffer joins to world
      private static int currTick; // Paper - Buffer joins to world
@@ -3178,7 +3178,7 @@ index 8ac5d8ccf731100a1be690cb2ed1be82cadba8ed..8368c5ff929df9d32cdb95cc2da0e9f7
  
      private boolean checkIfClosed(long time) {
 diff --git a/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java b/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
-index 8e67853a7a93fa736c147e8b2df537746dc8e94f..6d9242bc79526ebe4fdfe1f5d0ded429da2a9f95 100644
+index 5e9202bc7fc649764568b55d66ba0d684118c00c..cd6fe5e2dd8217708e27a8f2eed9c055f2707031 100644
 --- a/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
 +++ b/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
 @@ -332,6 +332,20 @@ public class ServerGamePacketListenerImpl extends ServerCommonPacketListenerImpl
@@ -3339,7 +3339,7 @@ index 8e67853a7a93fa736c147e8b2df537746dc8e94f..6d9242bc79526ebe4fdfe1f5d0ded429
                  org.bukkit.event.player.PlayerInteractEvent event = CraftEventFactory.callPlayerInteractEvent(this.player, Action.RIGHT_CLICK_AIR, itemstack, enumhand);
                  cancelled = event.useItemInHand() == Event.Result.DENY;
              } else {
-@@ -2464,7 +2520,7 @@ public class ServerGamePacketListenerImpl extends ServerCommonPacketListenerImpl
+@@ -2466,7 +2522,7 @@ public class ServerGamePacketListenerImpl extends ServerCommonPacketListenerImpl
  
      public void handleCommand(String s) { // Paper - private -> public
          org.spigotmc.AsyncCatcher.catchOp("Command Dispatched Async: " + s); // Paper - Add async catcher
@@ -3348,7 +3348,7 @@ index 8e67853a7a93fa736c147e8b2df537746dc8e94f..6d9242bc79526ebe4fdfe1f5d0ded429
          if ( org.spigotmc.SpigotConfig.logCommands ) // Spigot
          this.LOGGER.info(this.player.getScoreboardName() + " issued server command: " + s);
  
-@@ -2474,7 +2530,7 @@ public class ServerGamePacketListenerImpl extends ServerCommonPacketListenerImpl
+@@ -2476,7 +2532,7 @@ public class ServerGamePacketListenerImpl extends ServerCommonPacketListenerImpl
          this.cserver.getPluginManager().callEvent(event);
  
          if (event.isCancelled()) {
@@ -3357,7 +3357,7 @@ index 8e67853a7a93fa736c147e8b2df537746dc8e94f..6d9242bc79526ebe4fdfe1f5d0ded429
              return;
          }
  
-@@ -2487,7 +2543,7 @@ public class ServerGamePacketListenerImpl extends ServerCommonPacketListenerImpl
+@@ -2489,7 +2545,7 @@ public class ServerGamePacketListenerImpl extends ServerCommonPacketListenerImpl
              java.util.logging.Logger.getLogger(ServerGamePacketListenerImpl.class.getName()).log(java.util.logging.Level.SEVERE, null, ex);
              return;
          } finally {
@@ -3366,7 +3366,7 @@ index 8e67853a7a93fa736c147e8b2df537746dc8e94f..6d9242bc79526ebe4fdfe1f5d0ded429
          }
      }
      // CraftBukkit end
-@@ -2774,6 +2830,7 @@ public class ServerGamePacketListenerImpl extends ServerCommonPacketListenerImpl
+@@ -2776,6 +2832,7 @@ public class ServerGamePacketListenerImpl extends ServerCommonPacketListenerImpl
              AABB axisalignedbb = entity.getBoundingBox();
  
              if (this.player.canInteractWithEntity(axisalignedbb, 1.0D)) {
@@ -3374,7 +3374,7 @@ index 8e67853a7a93fa736c147e8b2df537746dc8e94f..6d9242bc79526ebe4fdfe1f5d0ded429
                  packet.dispatch(new ServerboundInteractPacket.Handler() {
                      private void performInteraction(InteractionHand enumhand, ServerGamePacketListenerImpl.EntityInteraction playerconnection_a, PlayerInteractEntityEvent event) { // CraftBukkit
                          ItemStack itemstack = ServerGamePacketListenerImpl.this.player.getItemInHand(enumhand);
-@@ -2787,6 +2844,8 @@ public class ServerGamePacketListenerImpl extends ServerCommonPacketListenerImpl
+@@ -2789,6 +2846,8 @@ public class ServerGamePacketListenerImpl extends ServerCommonPacketListenerImpl
  
                              ServerGamePacketListenerImpl.this.cserver.getPluginManager().callEvent(event);
  
@@ -8647,7 +8647,7 @@ index 6f22705072fecbe91196e4966fca2eeec060f120..ed2ae44f7cef5aed17d10cc8a7df0a22
      }
  }
 diff --git a/src/main/java/net/minecraft/world/entity/animal/Wolf.java b/src/main/java/net/minecraft/world/entity/animal/Wolf.java
-index b5ee82e5abfecc59e2362628f288b76881855f36..b12544d1280f39b6c365317a0f4965c8d65b6497 100644
+index cebbb7341f86b13dcbfc3a41cbe264e9d4b68d60..e1f6202df983be2510436538904a45beedbdc9c2 100644
 --- a/src/main/java/net/minecraft/world/entity/animal/Wolf.java
 +++ b/src/main/java/net/minecraft/world/entity/animal/Wolf.java
 @@ -30,6 +30,8 @@ import net.minecraft.world.DifficultyInstance;
@@ -8842,7 +8842,7 @@ index b5ee82e5abfecc59e2362628f288b76881855f36..b12544d1280f39b6c365317a0f4965c8
              this.interestedAngleO = this.interestedAngle;
              if (this.isInterested()) {
                  this.interestedAngle += (1.0F - this.interestedAngle) * 0.4F;
-@@ -505,6 +629,19 @@ public class Wolf extends TamableAnimal implements NeutralMob, VariantHolder<Hol
+@@ -507,6 +631,19 @@ public class Wolf extends TamableAnimal implements NeutralMob, VariantHolder<Hol
              itemstack.consume(1, player);
              this.tryToTame(player);
              return InteractionResult.SUCCESS;
@@ -8862,7 +8862,7 @@ index b5ee82e5abfecc59e2362628f288b76881855f36..b12544d1280f39b6c365317a0f4965c8
          } else {
              return super.mobInteract(player, hand);
          }
-@@ -512,7 +649,7 @@ public class Wolf extends TamableAnimal implements NeutralMob, VariantHolder<Hol
+@@ -514,7 +651,7 @@ public class Wolf extends TamableAnimal implements NeutralMob, VariantHolder<Hol
  
      private void tryToTame(Player player) {
          // CraftBukkit - added event call and isCancelled check.
@@ -10972,10 +10972,10 @@ index aee2fa184bc5723dfd3d54f460a173982d874c8b..27db17e19dd95e99f7bd67747eba3c30
          if (this.nextHeightOffsetChangeTick <= 0) {
              this.nextHeightOffsetChangeTick = 100;
 diff --git a/src/main/java/net/minecraft/world/entity/monster/Bogged.java b/src/main/java/net/minecraft/world/entity/monster/Bogged.java
-index 754eb747179d9318bc5a3883e5622cc400c4e06c..4e929539cb093d58f3311d5f6a62bd1aeb71cfb0 100644
+index e9f9b041ae7195e9d23bd446454b1d8c47a1ace1..03b1023e182744a84d324bdad082cc1b9e574e30 100644
 --- a/src/main/java/net/minecraft/world/entity/monster/Bogged.java
 +++ b/src/main/java/net/minecraft/world/entity/monster/Bogged.java
-@@ -155,7 +155,7 @@ public class Bogged extends AbstractSkeleton implements Shearable {
+@@ -159,7 +159,7 @@ public class Bogged extends AbstractSkeleton implements Shearable {
  
      // Paper start - shear drops API
      @Override
@@ -16218,7 +16218,7 @@ index 49557d6f22c5725c663a231deab019d4f6fe95fa..046652e8f9c5dcdf7c90acb9391214ca
  
                  return true;
 diff --git a/src/main/java/net/minecraft/world/item/CrossbowItem.java b/src/main/java/net/minecraft/world/item/CrossbowItem.java
-index 0f6504a7160bc304b3af554f8740c65e2987cd37..9a8092602c96ddd77c8e6fcfe7a6f5ed733023a2 100644
+index 1f52feb5684ee1bab710e1557cf69b43b4d4dfd4..78f124f5204e4af9318ca3eeced6b1e3353b210f 100644
 --- a/src/main/java/net/minecraft/world/item/CrossbowItem.java
 +++ b/src/main/java/net/minecraft/world/item/CrossbowItem.java
 @@ -60,7 +60,7 @@ public class CrossbowItem extends ProjectileWeaponItem {
@@ -16382,7 +16382,7 @@ index 06497b5141e611cc7a1b6030a7b9c54b5c4eda06..28df1b3230762e52b5458ac93a85c9a5
                  return InteractionResult.PASS;
              }
 diff --git a/src/main/java/net/minecraft/world/item/ItemStack.java b/src/main/java/net/minecraft/world/item/ItemStack.java
-index a45389d64c04cd4c2a35fbc511595be0535a8665..fb614432722ea27cd044d6cfd3c6a72f797979f1 100644
+index 893efb2c4a07c33d41e934279dd914a9dbd4ef79..f93cb39c2664b74066bd9ac352137c11e612e5f9 100644
 --- a/src/main/java/net/minecraft/world/item/ItemStack.java
 +++ b/src/main/java/net/minecraft/world/item/ItemStack.java
 @@ -475,6 +475,7 @@ public final class ItemStack implements DataComponentHolder {
@@ -16542,7 +16542,7 @@ index 774c982f28b4f127fc3f036c19dfb47fb9ae3264..d49b60e7e643498b49c03593dc0da2f8
                  // Paper end - Add PlayerNameEntityEvent
                      mob.setPersistenceRequired();
 diff --git a/src/main/java/net/minecraft/world/item/ProjectileWeaponItem.java b/src/main/java/net/minecraft/world/item/ProjectileWeaponItem.java
-index f91ce87491b18f4f4ae6458192d1f320b308102a..aec96d297401b705ca2af97904739afdf1134574 100644
+index d27e83c08c45b8514207f26e48ceb1a91ded94be..8f01772a7b06b2acf96a3f922cb9b481f634680b 100644
 --- a/src/main/java/net/minecraft/world/item/ProjectileWeaponItem.java
 +++ b/src/main/java/net/minecraft/world/item/ProjectileWeaponItem.java
 @@ -131,6 +131,14 @@ public abstract class ProjectileWeaponItem extends Item {
@@ -17507,13 +17507,13 @@ index daae7fd6e0148cfba8e359d990748a0c83a3376e..0e06b1bcd906e92c083dc74d56d6d0a2
          return random.nextFloat() < f1 ? this.getNext(state) : Optional.empty();
      }
 diff --git a/src/main/java/net/minecraft/world/level/block/ChestBlock.java b/src/main/java/net/minecraft/world/level/block/ChestBlock.java
-index 491474b66856fccb038ee436968c9a5d3e4bf75c..a66499c9bd9af9da5d261a3c1aa23b1d436d4008 100644
+index 8fbfd18b3caeed769396b3ffb1b1778b2f38edc0..dbfe8f5d4df244cb694b73ea8763628c5f2507a3 100644
 --- a/src/main/java/net/minecraft/world/level/block/ChestBlock.java
 +++ b/src/main/java/net/minecraft/world/level/block/ChestBlock.java
 @@ -343,6 +343,7 @@ public class ChestBlock extends AbstractChestBlock<ChestBlockEntity> implements
      }
  
-     private static boolean isBlockedChestByBlock(BlockGetter world, BlockPos pos) {
+     public static boolean isBlockedChestByBlock(BlockGetter world, BlockPos pos) {
 +        if (world instanceof Level && ((Level) world).purpurConfig.chestOpenWithBlockOnTop) return false; // Purpur
          BlockPos blockposition1 = pos.above();
  
@@ -17716,7 +17716,7 @@ index 7272d70c672b54dcf595beafd7a2ed33c96e35cb..d7f33c676bba279661583d908d3a58c8
              ServerLevel worldserver = ((ServerLevel) world).getServer().getLevel(resourcekey);
  
 diff --git a/src/main/java/net/minecraft/world/level/block/EnderChestBlock.java b/src/main/java/net/minecraft/world/level/block/EnderChestBlock.java
-index 5f9858ef8d0ec1a74d469ab4426eb1db068873fd..d7ef772444b301d0a3f167679027195e4150b064 100644
+index ca92d49ef2010ba00c623491671dcde8ebe697c1..bd65df4588584b8bb001e9dc3656a14e381a0b6d 100644
 --- a/src/main/java/net/minecraft/world/level/block/EnderChestBlock.java
 +++ b/src/main/java/net/minecraft/world/level/block/EnderChestBlock.java
 @@ -91,7 +91,7 @@ public class EnderChestBlock extends AbstractChestBlock<EnderChestBlockEntity> i
@@ -18695,7 +18695,7 @@ index 7b263fab4f0014400b3b8e7e33db32f9a125f6ba..f7a6ab35c95ffda73f17843916ddb624
          private int ticksInHive;
  
 diff --git a/src/main/java/net/minecraft/world/level/block/entity/BlockEntity.java b/src/main/java/net/minecraft/world/level/block/entity/BlockEntity.java
-index 7963afff4b32a0e46be9bdeb413657718cfc14f5..5168e8e9ebb54b6c00acb7f2939262eb06a7426d 100644
+index 6349f2e0a5ba30d250f5ffe43771f325c0999a76..8dc1436fe78759cee5247cc28e8a18999e738a1b 100644
 --- a/src/main/java/net/minecraft/world/level/block/entity/BlockEntity.java
 +++ b/src/main/java/net/minecraft/world/level/block/entity/BlockEntity.java
 @@ -87,6 +87,12 @@ public abstract class BlockEntity {
@@ -18727,7 +18727,7 @@ index 7963afff4b32a0e46be9bdeb413657718cfc14f5..5168e8e9ebb54b6c00acb7f2939262eb
      protected void saveAdditional(CompoundTag nbt, HolderLookup.Provider registryLookup) {}
  
      public final CompoundTag saveWithFullMetadata(HolderLookup.Provider registryLookup) {
-@@ -397,4 +412,16 @@ public abstract class BlockEntity {
+@@ -407,4 +422,16 @@ public abstract class BlockEntity {
  
          <T> T getOrDefault(DataComponentType<? extends T> type, T fallback);
      }
@@ -19502,7 +19502,7 @@ index 9d93130f23addb18b97d7f5ec013faef17a74529..29d2fb87a65778926aea2cfc7a5b486c
 +    // Purpur end - OfflinePlayer API
  }
 diff --git a/src/main/java/org/bukkit/craftbukkit/CraftServer.java b/src/main/java/org/bukkit/craftbukkit/CraftServer.java
-index 05e304f9fc8d0291fa779da589bd060ef4165b49..8d754bf77cb88d8ddf964f3221183e4097f06d13 100644
+index 57db399bc1d3b6b015740b059987bc8d9bcc3101..19937ffa2c93cb75ea8dba58dd5a8214adc035fa 100644
 --- a/src/main/java/org/bukkit/craftbukkit/CraftServer.java
 +++ b/src/main/java/org/bukkit/craftbukkit/CraftServer.java
 @@ -268,7 +268,7 @@ import javax.annotation.Nullable; // Paper
@@ -20097,10 +20097,10 @@ index 0ad16ee7b33582d214dab41eeee378d52c8e38ed..16bd1294c219f15ada653ef810bc2d74
 +    // Purpur end
  }
 diff --git a/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java b/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java
-index 0ff9bb5f5d312503ec4b3cf3bf8c532b09a8f08b..1c1159867c78a54984219a9d56a3838c630c58d8 100644
+index 5f896948d158651cd9837364759dbfbcce6b7d21..88948526f9acf4bb2157484b80891902fd843b02 100644
 --- a/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java
 +++ b/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java
-@@ -565,10 +565,15 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
+@@ -574,10 +574,15 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
  
      @Override
      public void setPlayerListName(String name) {
@@ -20117,7 +20117,7 @@ index 0ff9bb5f5d312503ec4b3cf3bf8c532b09a8f08b..1c1159867c78a54984219a9d56a3838c
          if (this.getHandle().connection == null) return; // Paper - Updates are possible before the player has fully joined
          for (ServerPlayer player : (List<ServerPlayer>) this.server.getHandle().players) {
              if (player.getBukkitEntity().canSee(this)) {
-@@ -1429,6 +1434,10 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
+@@ -1438,6 +1443,10 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
          }
  
          if (entity.isVehicle() && !ignorePassengers) { // Paper - Teleport API
@@ -20128,7 +20128,7 @@ index 0ff9bb5f5d312503ec4b3cf3bf8c532b09a8f08b..1c1159867c78a54984219a9d56a3838c
              return false;
          }
  
-@@ -2727,6 +2736,28 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
+@@ -2736,6 +2745,28 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
          return this.getHandle().getAbilities().walkingSpeed * 2f;
      }
  
@@ -20157,7 +20157,7 @@ index 0ff9bb5f5d312503ec4b3cf3bf8c532b09a8f08b..1c1159867c78a54984219a9d56a3838c
      private void validateSpeed(float value) {
          Preconditions.checkArgument(value <= 1f && value >= -1f, "Speed value (%s) need to be between -1f and 1f", value);
      }
-@@ -3513,4 +3544,70 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
+@@ -3522,4 +3553,70 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
      public void setSendViewDistance(final int viewDistance) {
          this.getHandle().setSendViewDistance(viewDistance);
      }
