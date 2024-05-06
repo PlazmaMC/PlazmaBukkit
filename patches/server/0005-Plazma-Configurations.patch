@@ -17,7 +17,7 @@ index 902c2eeedeeced8135ec97f64f08420c0996731b..41c335bc9d80abb40e58dfbc4842b66d
  
      runtimeOnly(common.maven.provider)
 diff --git a/src/main/java/io/papermc/paper/configuration/Configurations.java b/src/main/java/io/papermc/paper/configuration/Configurations.java
-index 96142deb42700f888ea08689ab62c27ef2b881fd..e9b9a889d3bb7b2909fc46dc00013772c9dfecac 100644
+index 44dda308913d8d25e53d8d0fc7e50c0c678b76d0..5500196e8ca85f9e4542d2ffd02a6f8f12a09083 100644
 --- a/src/main/java/io/papermc/paper/configuration/Configurations.java
 +++ b/src/main/java/io/papermc/paper/configuration/Configurations.java
 @@ -39,28 +39,95 @@ public abstract class Configurations<G, W> {
@@ -178,7 +178,7 @@ index 96142deb42700f888ea08689ab62c27ef2b881fd..e9b9a889d3bb7b2909fc46dc00013772
      }
  
      private void trySaveFileNode(YamlConfigurationLoader loader, ConfigurationNode node, String filename) throws ConfigurateException {
-@@ -120,7 +191,7 @@ public abstract class Configurations<G, W> {
+@@ -124,7 +195,7 @@ public abstract class Configurations<G, W> {
      }
  
      protected G initializeGlobalConfiguration(final CheckedFunction<ConfigurationNode, G, SerializationException> creator) throws ConfigurateException {
@@ -187,7 +187,7 @@ index 96142deb42700f888ea08689ab62c27ef2b881fd..e9b9a889d3bb7b2909fc46dc00013772
          final YamlConfigurationLoader loader = this.createGlobalLoaderBuilder()
              .defaultOptions(this.applyObjectMapperFactory(this.createGlobalObjectMapperFactoryBuilder().build()))
              .path(configFile)
-@@ -151,6 +222,13 @@ public abstract class Configurations<G, W> {
+@@ -155,6 +226,13 @@ public abstract class Configurations<G, W> {
      }
  
      protected void applyGlobalConfigTransformations(final ConfigurationNode node) throws ConfigurateException {
@@ -201,7 +201,7 @@ index 96142deb42700f888ea08689ab62c27ef2b881fd..e9b9a889d3bb7b2909fc46dc00013772
      }
  
      @MustBeInvokedByOverriders
-@@ -158,6 +236,7 @@ public abstract class Configurations<G, W> {
+@@ -162,6 +240,7 @@ public abstract class Configurations<G, W> {
          return ContextMap.builder()
              .put(WORLD_NAME, WORLD_DEFAULTS)
              .put(WORLD_KEY, WORLD_DEFAULTS_KEY)
@@ -209,7 +209,7 @@ index 96142deb42700f888ea08689ab62c27ef2b881fd..e9b9a889d3bb7b2909fc46dc00013772
              .put(REGISTRY_ACCESS, registryAccess);
      }
  
-@@ -165,7 +244,7 @@ public abstract class Configurations<G, W> {
+@@ -169,7 +248,7 @@ public abstract class Configurations<G, W> {
          final ContextMap contextMap = this.createDefaultContextMap(registryAccess)
              .put(FIRST_DEFAULT)
              .build();
@@ -218,7 +218,7 @@ index 96142deb42700f888ea08689ab62c27ef2b881fd..e9b9a889d3bb7b2909fc46dc00013772
          final DefaultWorldLoader result = this.createDefaultWorldLoader(false, contextMap, configFile);
          final YamlConfigurationLoader loader = result.loader();
          final ConfigurationNode node = loader.load();
-@@ -175,8 +254,8 @@ public abstract class Configurations<G, W> {
+@@ -179,8 +258,8 @@ public abstract class Configurations<G, W> {
              this.verifyWorldConfigVersion(contextMap, node);
          }
          this.applyWorldConfigTransformations(contextMap, node, null);
@@ -229,7 +229,7 @@ index 96142deb42700f888ea08689ab62c27ef2b881fd..e9b9a889d3bb7b2909fc46dc00013772
          this.trySaveFileNode(loader, node, configFile.toString());
      }
  
-@@ -197,31 +276,42 @@ public abstract class Configurations<G, W> {
+@@ -201,31 +280,42 @@ public abstract class Configurations<G, W> {
      private record DefaultWorldLoader(YamlConfigurationLoader loader, boolean isNewFile) {
      }
  
@@ -279,7 +279,7 @@ index 96142deb42700f888ea08689ab62c27ef2b881fd..e9b9a889d3bb7b2909fc46dc00013772
              Files.createFile(worldConfigFile); // create empty file as template
              newFile = true;
          }
-@@ -265,6 +355,13 @@ public abstract class Configurations<G, W> {
+@@ -269,6 +359,13 @@ public abstract class Configurations<G, W> {
      }
  
      protected void applyWorldConfigTransformations(final ContextMap contextMap, final ConfigurationNode node, final @Nullable ConfigurationNode defaultsNode) throws ConfigurateException {
@@ -293,7 +293,7 @@ index 96142deb42700f888ea08689ab62c27ef2b881fd..e9b9a889d3bb7b2909fc46dc00013772
      }
  
      protected void applyDefaultsAwareWorldConfigTransformations(final ContextMap contextMap, final ConfigurationNode worldNode, final ConfigurationNode defaultsNode) throws ConfigurateException {
-@@ -277,7 +374,7 @@ public abstract class Configurations<G, W> {
+@@ -281,7 +378,7 @@ public abstract class Configurations<G, W> {
      }
  
      public Path getWorldConfigFile(ServerLevel level) {
@@ -517,7 +517,7 @@ index 83a726bcf8b7dce73a361b0d79dbd63a0afc7a12..3c893e5da90f7fcf519f190e34e2b15e
 +
  }
 diff --git a/src/main/java/net/minecraft/server/MinecraftServer.java b/src/main/java/net/minecraft/server/MinecraftServer.java
-index e121cc57ec5bf6f5b1d81e2fd4f551063ac60d64..2903c9a2480ac505f0931d29ac3c5013037e65f1 100644
+index c7f09b129920b95d2885dee469dc0bdacd49b8b7..68e1c2d944272689d97e521867a3944526e05b60 100644
 --- a/src/main/java/net/minecraft/server/MinecraftServer.java
 +++ b/src/main/java/net/minecraft/server/MinecraftServer.java
 @@ -314,6 +314,7 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
@@ -577,7 +577,7 @@ index 33e3815a0c979609d4c7ab83ad91e87ac07a556d..5b3d59cc5e4efd54bea967d2e37dc933
      }
  
 diff --git a/src/main/java/net/minecraft/server/dedicated/DedicatedServer.java b/src/main/java/net/minecraft/server/dedicated/DedicatedServer.java
-index 775c5de4f5094260096cef6723dd50dfe2cb0c81..8289334e77999f72214c330a3306cbfeb17afbf1 100644
+index ae0849f190f54afa0bae19877189ec2de7521ae9..5fb36396bf0391361d23007c95b05dbffa30c1b0 100644
 --- a/src/main/java/net/minecraft/server/dedicated/DedicatedServer.java
 +++ b/src/main/java/net/minecraft/server/dedicated/DedicatedServer.java
 @@ -222,6 +222,8 @@ public class DedicatedServer extends MinecraftServer implements ServerInterface
@@ -640,7 +640,7 @@ index eda2f8cc034cf46293be1be117a60cf8b663c303..79ebec0543f730af403240e9c1c01177
          this.playerBreedingCooldowns = this.getNewBreedingCooldownCache(); // Purpur
          this.generator = gen;
 diff --git a/src/main/java/org/bukkit/craftbukkit/CraftServer.java b/src/main/java/org/bukkit/craftbukkit/CraftServer.java
-index dca6cce8768c8c08e4abba249c30731dbdec7763..d06473349dff50a33b7843ae6dcde28f50fcd708 100644
+index c3805881b675b5c2171a6aadbd2c9057eff1ab9e..76d61c1f0a8e2fd0bed6be3052828a04aedb443d 100644
 --- a/src/main/java/org/bukkit/craftbukkit/CraftServer.java
 +++ b/src/main/java/org/bukkit/craftbukkit/CraftServer.java
 @@ -1068,6 +1068,7 @@ public final class CraftServer implements Server {
@@ -666,7 +666,7 @@ index dca6cce8768c8c08e4abba249c30731dbdec7763..d06473349dff50a33b7843ae6dcde28f
          public void restart() {
              org.spigotmc.RestartCommand.restart();
 diff --git a/src/main/java/org/bukkit/craftbukkit/Main.java b/src/main/java/org/bukkit/craftbukkit/Main.java
-index 333c8a313208652700c21fc2ac629296b5b02078..9b3371fee86b5e41d5564424c0b3a3805b2059f9 100644
+index 0d31b43cc7d319accaaf5548df8ea88dcd05a903..c8979f3ec7b5d98daa0ddf75dd1d28da5ca82026 100644
 --- a/src/main/java/org/bukkit/craftbukkit/Main.java
 +++ b/src/main/java/org/bukkit/craftbukkit/Main.java
 @@ -190,6 +190,14 @@ public class Main {

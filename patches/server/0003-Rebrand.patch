@@ -142,6 +142,23 @@ index 3cb56595822799926a8141e60a42f5d1edfc6de5..aa5f7dbaa62d83168055f2d389ba1ed5
                  .variable(LineReader.HISTORY_FILE, java.nio.file.Paths.get(".console_history"))
                  .completer(new ConsoleCommandCompleter(this.server))
                  .option(LineReader.Option.COMPLETE_IN_WORD, true);
+diff --git a/src/main/java/io/papermc/paper/configuration/Configurations.java b/src/main/java/io/papermc/paper/configuration/Configurations.java
+index 96142deb42700f888ea08689ab62c27ef2b881fd..44dda308913d8d25e53d8d0fc7e50c0c678b76d0 100644
+--- a/src/main/java/io/papermc/paper/configuration/Configurations.java
++++ b/src/main/java/io/papermc/paper/configuration/Configurations.java
+@@ -114,7 +114,11 @@ public abstract class Configurations<G, W> {
+             loader.save(node);
+         } catch (ConfigurateException ex) {
+             if (ex.getCause() instanceof AccessDeniedException) {
+-                LOGGER.warn("Could not save {}: Paper could not persist the full set of configuration settings in the configuration file. Any setting missing from the configuration file will be set with its default value in memory. Admins should make sure to review the configuration documentation at https://docs.papermc.io/paper/configuration for more details.", filename, ex);
++                // Plazma start - Rebrand
++                LOGGER.warn("Could not save {}: Plazma could not persist the full set of configuration settings in the configuration file."
++                    + "Any setting missing from the configuration file will be set with its default value in memory."
++                    + "Admins should make sure to review the configuration documentation at https://docs.papermc.io/paper/configuration for more details.", filename, ex); // TODO: Change to Plazma document link
++                // Plazma end - Rebrand
+             } else throw ex;
+         }
+     }
 diff --git a/src/main/java/net/minecraft/CrashReport.java b/src/main/java/net/minecraft/CrashReport.java
 index c366d84518979e842a6f10f969a5951539ecac93..570b379596cc3088745d3f42b3d917f94c2d9c29 100644
 --- a/src/main/java/net/minecraft/CrashReport.java
@@ -165,7 +182,7 @@ index c366d84518979e842a6f10f969a5951539ecac93..570b379596cc3088745d3f42b3d917f9
          stringbuilder.append("// ");
          stringbuilder.append(CrashReport.getErrorComment());
 diff --git a/src/main/java/net/minecraft/server/Main.java b/src/main/java/net/minecraft/server/Main.java
-index 411f1f8c6be072cfc5ba88cbec38dbc4300a41d1..2579b32009a5f5e288edf56ee8f1246cd70343fc 100644
+index 411f1f8c6be072cfc5ba88cbec38dbc4300a41d1..0fb3eeab083a0b1e9b495bd2c5c556fca2236c22 100644
 --- a/src/main/java/net/minecraft/server/Main.java
 +++ b/src/main/java/net/minecraft/server/Main.java
 @@ -107,6 +107,26 @@ public class Main {
@@ -195,10 +212,30 @@ index 411f1f8c6be072cfc5ba88cbec38dbc4300a41d1..2579b32009a5f5e288edf56ee8f1246c
  
              Path path = (Path) optionset.valueOf("pidFile"); // CraftBukkit
  
+@@ -178,7 +198,7 @@ public class Main {
+             if (awtException != null) {
+                 Main.LOGGER.error("You are using a headless JRE distribution.");
+                 Main.LOGGER.error("This distribution is missing certain graphic libraries that the Minecraft server needs to function.");
+-                Main.LOGGER.error("For instructions on how to install the non-headless JRE, see https://docs.papermc.io/misc/java-install");
++                Main.LOGGER.error("For instructions on how to install the non-headless JRE, see https://docs.papermc.io/misc/java-install"); // Plazma - Rebrand // TODO: Change to Plazma document url
+                 Main.LOGGER.error("");
+                 Main.LOGGER.error(awtException);
+                 return;
 diff --git a/src/main/java/net/minecraft/server/MinecraftServer.java b/src/main/java/net/minecraft/server/MinecraftServer.java
-index dfeae138e830e95ab823b6349a91160b02622208..e121cc57ec5bf6f5b1d81e2fd4f551063ac60d64 100644
+index dfeae138e830e95ab823b6349a91160b02622208..c7f09b129920b95d2885dee469dc0bdacd49b8b7 100644
 --- a/src/main/java/net/minecraft/server/MinecraftServer.java
 +++ b/src/main/java/net/minecraft/server/MinecraftServer.java
+@@ -496,8 +496,8 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
+ 
+                 if (!newWorld.isDirectory() && oldWorld.isDirectory() && oldLevelDat.isFile()) {
+                     MinecraftServer.LOGGER.info("---- Migration of old " + worldType + " folder required ----");
+-                    MinecraftServer.LOGGER.info("Unfortunately due to the way that Minecraft implemented multiworld support in 1.6, Bukkit requires that you move your " + worldType + " folder to a new location in order to operate correctly.");
+-                    MinecraftServer.LOGGER.info("We will move this folder for you, but it will mean that you need to move it back should you wish to stop using Bukkit in the future.");
++                    MinecraftServer.LOGGER.info("Unfortunately due to the way that Minecraft implemented multiworld support in 1.6, Plazma requires that you move your " + worldType + " folder to a new location in order to operate correctly."); // Plazma - Rebrand
++                    MinecraftServer.LOGGER.info("We will move this folder for you, but it will mean that you need to move it back should you wish to stop using Plazma in the future."); // Plazma - Rebrand
+                     MinecraftServer.LOGGER.info("Attempting to move " + oldWorld + " to " + newWorld + "...");
+ 
+                     if (newWorld.exists()) {
 @@ -963,7 +963,7 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
          shutdownThread = Thread.currentThread();
          org.spigotmc.WatchdogThread.doStop(); // Paper
@@ -208,6 +245,28 @@ index dfeae138e830e95ab823b6349a91160b02622208..e121cc57ec5bf6f5b1d81e2fd4f55106
              while (this.getRunningThread().isAlive()) {
                  this.getRunningThread().stop();
                  try {
+@@ -1183,7 +1183,7 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
+                 LOGGER.info("*************************************************************************************");
+                 LOGGER.info("This is the first time you're starting this server.");
+                 LOGGER.info("It's recommended you read our 'Getting Started' documentation for guidance.");
+-                LOGGER.info("View this and more helpful information here: https://docs.papermc.io/paper/next-steps");
++                LOGGER.info("View this and more helpful information here: https://docs.plazmamc.org/plazma/administration/getting-started"); // Plazma - Rebrand
+                 LOGGER.info("*************************************************************************************");
+             }
+             // Paper end - Add onboarding message for initial server start
+diff --git a/src/main/java/net/minecraft/server/dedicated/DedicatedServer.java b/src/main/java/net/minecraft/server/dedicated/DedicatedServer.java
+index 775c5de4f5094260096cef6723dd50dfe2cb0c81..ae0849f190f54afa0bae19877189ec2de7521ae9 100644
+--- a/src/main/java/net/minecraft/server/dedicated/DedicatedServer.java
++++ b/src/main/java/net/minecraft/server/dedicated/DedicatedServer.java
+@@ -793,7 +793,7 @@ public class DedicatedServer extends MinecraftServer implements ServerInterface
+         org.bukkit.plugin.Plugin[] plugins = this.server.getPluginManager().getPlugins();
+ 
+         result.append(this.server.getName());
+-        result.append(" on Bukkit ");
++        result.append(" on Plazma "); // Plazma - Rebrand
+         result.append(this.server.getBukkitVersion());
+ 
+         if (plugins.length > 0 && this.server.getQueryPlugins()) {
 diff --git a/src/main/java/net/minecraft/server/dedicated/DedicatedServerProperties.java b/src/main/java/net/minecraft/server/dedicated/DedicatedServerProperties.java
 index 842f382de43df5d5c321422372ec30ccdd7859d7..d43ebcf4448240f86eca1a4127b534851e7b9618 100644
 --- a/src/main/java/net/minecraft/server/dedicated/DedicatedServerProperties.java
@@ -272,7 +331,7 @@ index f6e3b745fc417354380d4a969f83aee430bad785..ce0686759f0c32e9ffcb26f99503215a
  
      private static CompoundTag readOversizedChunk(RegionFile regionfile, ChunkPos chunkCoordinate) throws IOException {
 diff --git a/src/main/java/org/bukkit/craftbukkit/CraftServer.java b/src/main/java/org/bukkit/craftbukkit/CraftServer.java
-index 8d754bf77cb88d8ddf964f3221183e4097f06d13..dca6cce8768c8c08e4abba249c30731dbdec7763 100644
+index 19937ffa2c93cb75ea8dba58dd5a8214adc035fa..c3805881b675b5c2171a6aadbd2c9057eff1ab9e 100644
 --- a/src/main/java/org/bukkit/craftbukkit/CraftServer.java
 +++ b/src/main/java/org/bukkit/craftbukkit/CraftServer.java
 @@ -268,7 +268,7 @@ import javax.annotation.Nullable; // Paper
@@ -285,7 +344,7 @@ index 8d754bf77cb88d8ddf964f3221183e4097f06d13..dca6cce8768c8c08e4abba249c30731d
      private final String bukkitVersion = Versioning.getBukkitVersion();
      private final Logger logger = Logger.getLogger("Minecraft");
 diff --git a/src/main/java/org/bukkit/craftbukkit/Main.java b/src/main/java/org/bukkit/craftbukkit/Main.java
-index a0a7bfe8f5a40b945b83096de1efd650adeb9ee3..0fb377655dca8c302afcdaab82b4321063c7655e 100644
+index a0a7bfe8f5a40b945b83096de1efd650adeb9ee3..0d31b43cc7d319accaaf5548df8ea88dcd05a903 100644
 --- a/src/main/java/org/bukkit/craftbukkit/Main.java
 +++ b/src/main/java/org/bukkit/craftbukkit/Main.java
 @@ -142,7 +142,7 @@ public class Main {
@@ -306,6 +365,23 @@ index a0a7bfe8f5a40b945b83096de1efd650adeb9ee3..0fb377655dca8c302afcdaab82b43210
                          .describedAs("Name");
                  // Paper end
              }
+@@ -252,14 +252,14 @@ public class Main {
+             float javaVersion = Float.parseFloat(System.getProperty("java.class.version"));
+             boolean isOldVersion = javaVersion < 61.0;
+             if (!skip && isOldVersion) {
+-                System.err.println("Unsupported Java detected (" + javaVersion + "). This version of Minecraft requires at least Java 21. Check your Java version with the command 'java -version'. For more info see https://docs.papermc.io/misc/java-install");
++                System.err.println("Unsupported Java detected (" + javaVersion + "). This version of Minecraft requires at least Java 21. Check your Java version with the command 'java -version'. For more info see https://docs.papermc.io/misc/java-install"); // Plazma - Rebrand // TODO: Change to Plazma document link
+                 return;
+             }
+             String javaVersionName = System.getProperty("java.version");
+             // J2SE SDK/JRE Version String Naming Convention
+             boolean isPreRelease = javaVersionName.contains("-");
+             if (!skip && isPreRelease) {
+-                System.err.println("Unsupported Java detected (" + javaVersionName + "). You are running an unsupported, non official, version. Only general availability versions of Java are supported. Please update your Java version. See https://docs.papermc.io/paper/faq#unsupported-java-detected-what-do-i-do for more information.");
++                System.err.println("Unsupported Java detected (" + javaVersionName + "). You are running an unsupported, non official, version. Only general availability versions of Java are supported. Please update your Java version. See https://docs.papermc.io/paper/faq#unsupported-java-detected-what-do-i-do for more information."); // Plazma - Rebrand // TODO: Change to Plazma document link
+                 return;
+             }
+ 
 diff --git a/src/main/java/org/bukkit/craftbukkit/scheduler/CraftScheduler.java b/src/main/java/org/bukkit/craftbukkit/scheduler/CraftScheduler.java
 index ca8ae8e1c51b937dac916e0b0dc94b5e2e61efeb..2058af0975e510b3f86d7dbb1811062b9b0dc342 100644
 --- a/src/main/java/org/bukkit/craftbukkit/scheduler/CraftScheduler.java
