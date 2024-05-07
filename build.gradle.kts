@@ -11,6 +11,8 @@ plugins {
 }
 
 val jdkVersion = property("jdkVersion").toString().toInt()
+val projectName = property("projectName").toString()
+val projectRepo = property("projectRepo").toString()
 
 kotlin.jvmToolchain {
     languageVersion = JavaLanguageVersion.of(jdkVersion)
@@ -41,7 +43,7 @@ allprojects {
         repositories {
             maven {
                 name = "githubPackage"
-                url = uri("https://maven.pkg.github.com/${property("projectRepo")}")
+                url = uri("https://maven.pkg.github.com/$projectRepo")
 
                 credentials {
                     username = System.getenv("GITHUB_USERNAME")
@@ -90,7 +92,7 @@ subprojects {
 }
 
 paperweight {
-    serverProject = project(":${property("projectName").toString().lowercase()}-server")
+    serverProject = project(":${projectName.lowercase()}-server")
 
     remapRepo = "https://repo.papermc.io/repository/maven-public/"
     decompileRepo = "https://repo.papermc.io/repository/maven-public/"
@@ -98,10 +100,10 @@ paperweight {
     usePaperUpstream(providers.gradleProperty("paperCommit")) {
         withPaperPatcher {
             apiPatchDir.set(layout.projectDirectory.dir("patches/api"))
-            apiOutputDir.set(layout.projectDirectory.dir("${property("projectName")}-API"))
+            apiOutputDir.set(layout.projectDirectory.dir("$projectName-API"))
 
             serverPatchDir.set(layout.projectDirectory.dir("patches/server"))
-            serverOutputDir.set(layout.projectDirectory.dir("${property("projectName")}-Server"))
+            serverOutputDir.set(layout.projectDirectory.dir("$projectName-Server"))
         }
 
         patchTasks.register("generatedApi") {
@@ -115,7 +117,7 @@ paperweight {
             isBareDirectory = true
             upstreamDirPath = "Paper-MojangAPI"
             patchDir = layout.projectDirectory.dir("patches/mojang-api")
-            outputDir = layout.projectDirectory.dir("${property("projectName")}-MojangAPI")
+            outputDir = layout.projectDirectory.dir("$projectName-MojangAPI")
         }
     }
 }
@@ -146,11 +148,11 @@ tasks {
     }
 
     generateDevelopmentBundle {
-        apiCoordinates.set("${group}:${property("projectName").toString().lowercase()}-api")
-        mojangApiCoordinates.set("${group}:${property("projectName").toString().lowercase()}-mojangapi")
+        apiCoordinates.set("${group}:${projectName.lowercase()}-api")
+        mojangApiCoordinates.set("${group}:${projectName.lowercase()}-mojangapi")
         libraryRepositories.addAll(
                 "https://repo.maven.apache.org/maven2/",
-                "https://maven.pkg.github.com/${property("projectRepo")}",
+                "https://maven.pkg.github.com/$projectRepo",
                 "https://papermc.io/repo/repository/maven-public/"
         )
     }
@@ -158,7 +160,7 @@ tasks {
     clean {
         doLast {
             projectDir.resolve(".gradle/caches").deleteRecursively()
-            listOf("${property("projectName")}-API", "${property("projectName")}-MojangAPI", "${property("projectName")}-Server", "paper-api-generator", "run").forEach {
+            listOf("$projectName-API", "$projectName-MojangAPI", "$projectName-Server", "paper-api-generator", "run").forEach {
                 projectDir.resolve(it).deleteRecursively()
             }
 
