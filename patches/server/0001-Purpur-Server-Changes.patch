@@ -1,6 +1,6 @@
 From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
 From: granny <contact@granny.dev>
-Date: Tue, 7 May 2024 11:28:43 +0000
+Date: Tue, 7 May 2024 12:19:04 +0000
 Subject: [PATCH] Purpur Server Changes
 
 PurpurMC
@@ -12811,10 +12811,10 @@ index ac411202c0029052a962b51b015da191b124de5f..ae3eb87af8d3853be82c2002507141e4
          this.targetSelector.addGoal(2, new NearestAttackableTargetGoal<>(this, Player.class, true));
          this.targetSelector.addGoal(3, new NearestAttackableTargetGoal<>(this, AbstractVillager.class, false));
 diff --git a/src/main/java/net/minecraft/world/entity/monster/Ravager.java b/src/main/java/net/minecraft/world/entity/monster/Ravager.java
-index 2d7b7c949faaaaae94c0043132a4a822f55df104..9551bd7c9bed37cf17910e7f71b82ed20fb2d759 100644
+index 2d7b7c949faaaaae94c0043132a4a822f55df104..dbfcca8adb7afa7a3101f22c2bc48aff6abae4a2 100644
 --- a/src/main/java/net/minecraft/world/entity/monster/Ravager.java
 +++ b/src/main/java/net/minecraft/world/entity/monster/Ravager.java
-@@ -68,14 +68,54 @@ public class Ravager extends Raider {
+@@ -68,14 +68,55 @@ public class Ravager extends Raider {
          this.setPathfindingMalus(PathType.LEAVES, 0.0F);
      }
  
@@ -12861,6 +12861,7 @@ index 2d7b7c949faaaaae94c0043132a4a822f55df104..9551bd7c9bed37cf17910e7f71b82ed2
          super.registerGoals();
          this.goalSelector.addGoal(0, new FloatGoal(this));
 +        this.goalSelector.addGoal(0, new org.purpurmc.purpur.entity.ai.HasRider(this)); // Purpur
++        if (level().purpurConfig.ravagerAvoidRabbits) this.goalSelector.addGoal(3, new net.minecraft.world.entity.ai.goal.AvoidEntityGoal<>(this, net.minecraft.world.entity.animal.Rabbit.class, 6.0F, 1.0D, 1.2D)); // Purpur
          this.goalSelector.addGoal(4, new MeleeAttackGoal(this, 1.0D, true));
          this.goalSelector.addGoal(5, new WaterAvoidingRandomStrollGoal(this, 0.4D));
          this.goalSelector.addGoal(6, new LookAtPlayerGoal(this, Player.class, 6.0F));
@@ -12869,7 +12870,7 @@ index 2d7b7c949faaaaae94c0043132a4a822f55df104..9551bd7c9bed37cf17910e7f71b82ed2
          this.targetSelector.addGoal(2, (new HurtByTargetGoal(this, new Class[]{Raider.class})).setAlertOthers());
          this.targetSelector.addGoal(3, new NearestAttackableTargetGoal<>(this, Player.class, true));
          this.targetSelector.addGoal(4, new NearestAttackableTargetGoal<>(this, AbstractVillager.class, true, (entityliving) -> {
-@@ -128,7 +168,7 @@ public class Ravager extends Raider {
+@@ -128,7 +169,7 @@ public class Ravager extends Raider {
      @Override
      public void aiStep() {
          super.aiStep();
@@ -12878,7 +12879,7 @@ index 2d7b7c949faaaaae94c0043132a4a822f55df104..9551bd7c9bed37cf17910e7f71b82ed2
              if (this.isImmobile()) {
                  this.getAttribute(Attributes.MOVEMENT_SPEED).setBaseValue(0.0D);
              } else {
-@@ -138,7 +178,7 @@ public class Ravager extends Raider {
+@@ -138,7 +179,7 @@ public class Ravager extends Raider {
                  this.getAttribute(Attributes.MOVEMENT_SPEED).setBaseValue(Mth.lerp(0.1D, d1, d0));
              }
  
@@ -12887,7 +12888,7 @@ index 2d7b7c949faaaaae94c0043132a4a822f55df104..9551bd7c9bed37cf17910e7f71b82ed2
                  boolean flag = false;
                  AABB axisalignedbb = this.getBoundingBox().inflate(0.2D);
                  Iterator iterator = BlockPos.betweenClosed(Mth.floor(axisalignedbb.minX), Mth.floor(axisalignedbb.minY), Mth.floor(axisalignedbb.minZ), Mth.floor(axisalignedbb.maxX), Mth.floor(axisalignedbb.maxY), Mth.floor(axisalignedbb.maxZ)).iterator();
-@@ -148,7 +188,7 @@ public class Ravager extends Raider {
+@@ -148,7 +189,7 @@ public class Ravager extends Raider {
                      BlockState iblockdata = this.level().getBlockState(blockposition);
                      Block block = iblockdata.getBlock();
  
@@ -21347,10 +21348,10 @@ index 0000000000000000000000000000000000000000..f49108ed94f7787347c5e0a721646083
 +}
 diff --git a/src/main/java/org/purpurmc/purpur/PurpurWorldConfig.java b/src/main/java/org/purpurmc/purpur/PurpurWorldConfig.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..710511db0e882d9795c2a1ff31570fbb05fbb0f1
+index 0000000000000000000000000000000000000000..d8de8710d9b8cf2ae5c434b2b0b27e76ffbbe4bf
 --- /dev/null
 +++ b/src/main/java/org/purpurmc/purpur/PurpurWorldConfig.java
-@@ -0,0 +1,3304 @@
+@@ -0,0 +1,3306 @@
 +package org.purpurmc.purpur;
 +
 +import net.minecraft.core.registries.BuiltInRegistries;
@@ -23765,6 +23766,7 @@ index 0000000000000000000000000000000000000000..710511db0e882d9795c2a1ff31570fbb
 +    public boolean ravagerTakeDamageFromWater = false;
 +    public List<Block> ravagerGriefableBlocks = new ArrayList<>();
 +    public boolean ravagerAlwaysDropExp = false;
++    public boolean ravagerAvoidRabbits = false;
 +    private void ravagerSettings() {
 +        ravagerRidable = getBoolean("mobs.ravager.ridable", ravagerRidable);
 +        ravagerRidableInWater = getBoolean("mobs.ravager.ridable-in-water", ravagerRidableInWater);
@@ -23795,6 +23797,7 @@ index 0000000000000000000000000000000000000000..710511db0e882d9795c2a1ff31570fbb
 +            }
 +        });
 +        ravagerAlwaysDropExp = getBoolean("mobs.ravager.always-drop-exp", ravagerAlwaysDropExp);
++        ravagerAvoidRabbits = getBoolean("mobs.ravager.avoid-rabbits", ravagerAvoidRabbits);
 +    }
 +
 +    public boolean salmonRidable = false;
