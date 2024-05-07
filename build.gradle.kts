@@ -41,7 +41,7 @@ allprojects {
         repositories {
             maven {
                 name = "githubPackage"
-                url = uri("https://maven.pkg.github.com/PlazmaMC/PlazmaBukkit")
+                url = uri("https://maven.pkg.github.com/${property("projectRepo")}")
 
                 credentials {
                     username = System.getenv("GITHUB_USERNAME")
@@ -85,14 +85,12 @@ subprojects {
         mavenCentral()
         maven("https://jitpack.io")
         maven("https://papermc.io/repo/repository/maven-public/")
-        maven(url = "https://s01.oss.sonatype.org/content/repositories/snapshots/") {
-            name = "sonatype-oss-snapshots"
-        }
+        maven("https://s01.oss.sonatype.org/content/repositories/snapshots/")
     }
 }
 
 paperweight {
-    serverProject = project(":plazma-server")
+    serverProject = project(":${property("projectName").toString().lowercase()}-server")
 
     remapRepo = "https://repo.papermc.io/repository/maven-public/"
     decompileRepo = "https://repo.papermc.io/repository/maven-public/"
@@ -100,10 +98,10 @@ paperweight {
     usePaperUpstream(providers.gradleProperty("paperCommit")) {
         withPaperPatcher {
             apiPatchDir.set(layout.projectDirectory.dir("patches/api"))
-            apiOutputDir.set(layout.projectDirectory.dir("Plazma-API"))
+            apiOutputDir.set(layout.projectDirectory.dir("${property("projectName")}-API"))
 
             serverPatchDir.set(layout.projectDirectory.dir("patches/server"))
-            serverOutputDir.set(layout.projectDirectory.dir("Plazma-Server"))
+            serverOutputDir.set(layout.projectDirectory.dir("${property("projectName")}-Server"))
         }
 
         patchTasks.register("generatedApi") {
@@ -117,7 +115,7 @@ paperweight {
             isBareDirectory = true
             upstreamDirPath = "Paper-MojangAPI"
             patchDir = layout.projectDirectory.dir("patches/mojang-api")
-            outputDir = layout.projectDirectory.dir("Plazma-MojangAPI")
+            outputDir = layout.projectDirectory.dir("${property("projectName")}-MojangAPI")
         }
     }
 }
@@ -148,11 +146,11 @@ tasks {
     }
 
     generateDevelopmentBundle {
-        apiCoordinates.set("org.plazmamc.plazma:plazma-api")
-        mojangApiCoordinates.set("io.papermc.paper:paper-mojangapi")
+        apiCoordinates.set("${group}:${property("projectName").toString().lowercase()}-api")
+        mojangApiCoordinates.set("${group}:${property("projectName").toString().lowercase()}-mojangapi")
         libraryRepositories.addAll(
                 "https://repo.maven.apache.org/maven2/",
-                "https://maven.pkg.github.com/PlazmaMC/Plazma",
+                "https://maven.pkg.github.com/${property("projectRepo")}",
                 "https://papermc.io/repo/repository/maven-public/"
         )
     }
@@ -160,7 +158,7 @@ tasks {
     clean {
         doLast {
             projectDir.resolve(".gradle/caches").deleteRecursively()
-            listOf("Plazma-API", "Plazma-MojangAPI", "Plazma-Server", "paper-api-generator", "run").forEach {
+            listOf("${property("projectName")}-API", "${property("projectName")}-MojangAPI", "${property("projectName")}-Server", "paper-api-generator", "run").forEach {
                 projectDir.resolve(it).deleteRecursively()
             }
 
