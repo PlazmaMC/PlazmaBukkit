@@ -1,6 +1,6 @@
 From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
 From: granny <contact@granny.dev>
-Date: Wed, 8 May 2024 03:47:13 +0000
+Date: Wed, 8 May 2024 08:14:50 +0000
 Subject: [PATCH] Purpur Server Changes
 
 PurpurMC
@@ -16276,15 +16276,12 @@ index eb74d45ad458b80cf8455297c3bc550186adaea3..ef01856c487e4ab982996e0153761823
                      return InteractionResultHolder.fail(itemstack);
                  } else {
 diff --git a/src/main/java/net/minecraft/world/item/BowItem.java b/src/main/java/net/minecraft/world/item/BowItem.java
-index 5ca843df5b4caa668953e5e36a9b20fabeb35046..ff39d3614f360918d74b54b817bc227f89d34c9c 100644
+index 5ca843df5b4caa668953e5e36a9b20fabeb35046..8bca38ec152f9612298bf6b3e10e7e0566ec3b78 100644
 --- a/src/main/java/net/minecraft/world/item/BowItem.java
 +++ b/src/main/java/net/minecraft/world/item/BowItem.java
-@@ -29,9 +29,9 @@ public class BowItem extends ProjectileWeaponItem {
-                 int i = this.getUseDuration(stack) - remainingUseTicks;
-                 float f = getPowerForTime(i);
+@@ -31,7 +31,7 @@ public class BowItem extends ProjectileWeaponItem {
                  if (!((double)f < 0.1)) {
--                    List<ItemStack> list = draw(stack, itemStack, player);
-+                    List<ItemStack> list = draw(stack, itemStack, player, !((itemStack.is(Items.ARROW) && world.purpurConfig.infinityWorksWithNormalArrows) || (itemStack.is(Items.TIPPED_ARROW) && world.purpurConfig.infinityWorksWithTippedArrows) || (itemStack.is(Items.SPECTRAL_ARROW) && world.purpurConfig.infinityWorksWithSpectralArrows)));
+                     List<ItemStack> list = draw(stack, itemStack, player);
                      if (!world.isClientSide() && !list.isEmpty()) {
 -                        this.shoot(world, player, player.getUsedItemHand(), stack, list, f * 3.0F, 1.0F, f == 1.0F, null);
 +                        this.shoot(world, player, player.getUsedItemHand(), stack, list, f * 3.0F, (float) world.purpurConfig.bowProjectileOffset, f == 1.0F, null); // Purpur
@@ -16296,7 +16293,7 @@ index 5ca843df5b4caa668953e5e36a9b20fabeb35046..ff39d3614f360918d74b54b817bc227f
          ItemStack itemStack = user.getItemInHand(hand);
          boolean bl = !user.getProjectile(itemStack).isEmpty();
 -        if (!user.hasInfiniteMaterials() && !bl) {
-+        if (!(world.purpurConfig.infinityWorksWithoutArrows && net.minecraft.world.item.enchantment.EnchantmentHelper.getItemEnchantmentLevel(net.minecraft.world.item.enchantment.Enchantments.INFINITY, itemStack) > 0) && !user.hasInfiniteMaterials() && !bl) {
++        if (!(world.purpurConfig.infinityWorksWithoutArrows && net.minecraft.world.item.enchantment.EnchantmentHelper.getItemEnchantmentLevel(net.minecraft.world.item.enchantment.Enchantments.INFINITY, itemStack) > 0) && !user.hasInfiniteMaterials() && !bl) { // Purpur
              return InteractionResultHolder.fail(itemStack);
          } else {
              user.startUsingItem(hand);
@@ -16647,10 +16644,10 @@ index 774c982f28b4f127fc3f036c19dfb47fb9ae3264..d49b60e7e643498b49c03593dc0da2f8
                  // Paper end - Add PlayerNameEntityEvent
                      mob.setPersistenceRequired();
 diff --git a/src/main/java/net/minecraft/world/item/ProjectileWeaponItem.java b/src/main/java/net/minecraft/world/item/ProjectileWeaponItem.java
-index d27e83c08c45b8514207f26e48ceb1a91ded94be..8f01772a7b06b2acf96a3f922cb9b481f634680b 100644
+index d27e83c08c45b8514207f26e48ceb1a91ded94be..d04caa35bbec2ac1e333a4ff97a4caf42456168d 100644
 --- a/src/main/java/net/minecraft/world/item/ProjectileWeaponItem.java
 +++ b/src/main/java/net/minecraft/world/item/ProjectileWeaponItem.java
-@@ -131,6 +131,14 @@ public abstract class ProjectileWeaponItem extends Item {
+@@ -131,11 +131,25 @@ public abstract class ProjectileWeaponItem extends Item {
              entityarrow.setPierceLevel((byte) k);
          }
  
@@ -16665,6 +16662,27 @@ index d27e83c08c45b8514207f26e48ceb1a91ded94be..8f01772a7b06b2acf96a3f922cb9b481
          return entityarrow;
      }
  
+     protected static boolean hasInfiniteArrows(ItemStack weaponStack, ItemStack projectileStack, boolean creative) {
+-        return creative || projectileStack.is(Items.ARROW) && EnchantmentHelper.getItemEnchantmentLevel(Enchantments.INFINITY, weaponStack) > 0;
++    // Purpur start
++        return hasInfiniteArrows(weaponStack, projectileStack, creative, null);
++    }
++    protected static boolean hasInfiniteArrows(ItemStack weaponStack, ItemStack projectileStack, boolean creative, @javax.annotation.Nullable Level level) {
++        boolean canBeInfinity = level == null ? projectileStack.is(Items.ARROW) : ((projectileStack.is(Items.ARROW) && level.purpurConfig.infinityWorksWithNormalArrows) || (projectileStack.is(Items.TIPPED_ARROW) && level.purpurConfig.infinityWorksWithTippedArrows) || (projectileStack.is(Items.SPECTRAL_ARROW) && level.purpurConfig.infinityWorksWithSpectralArrows));
++        return creative || canBeInfinity && EnchantmentHelper.getItemEnchantmentLevel(Enchantments.INFINITY, weaponStack) > 0;
++    // Purpur end
+     }
+ 
+     protected static List<ItemStack> draw(ItemStack weaponStack, ItemStack projectileStack, LivingEntity shooter) {
+@@ -161,7 +175,7 @@ public abstract class ProjectileWeaponItem extends Item {
+     }
+ 
+     protected static ItemStack useAmmo(ItemStack weaponStack, ItemStack projectileStack, LivingEntity shooter, boolean multishot) {
+-        boolean flag1 = !multishot && !ProjectileWeaponItem.hasInfiniteArrows(weaponStack, projectileStack, shooter.hasInfiniteMaterials());
++        boolean flag1 = !multishot && !ProjectileWeaponItem.hasInfiniteArrows(weaponStack, projectileStack, shooter.hasInfiniteMaterials(), shooter.level()); // Purpur
+         ItemStack itemstack2;
+ 
+         if (!flag1) {
 diff --git a/src/main/java/net/minecraft/world/item/ShovelItem.java b/src/main/java/net/minecraft/world/item/ShovelItem.java
 index 24f6a158e4759aac3be8da4cf5e0d40bd295355b..6b7dbb570f8a698c87c6bce992d84d87b55176e6 100644
 --- a/src/main/java/net/minecraft/world/item/ShovelItem.java
