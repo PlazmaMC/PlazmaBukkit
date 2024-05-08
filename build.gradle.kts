@@ -148,8 +148,8 @@ tasks {
     }
 
     generateDevelopmentBundle {
-        apiCoordinates.set("${group}:${projectName.lowercase()}-api")
-        mojangApiCoordinates.set("${group}:${projectName.lowercase()}-mojangapi")
+        apiCoordinates.set("${project.group}:${projectName.lowercase()}-api")
+        mojangApiCoordinates.set("${project.group}:${projectName.lowercase()}-mojangapi")
         libraryRepositories.addAll(
                 "https://repo.maven.apache.org/maven2/",
                 "https://maven.pkg.github.com/$projectRepo",
