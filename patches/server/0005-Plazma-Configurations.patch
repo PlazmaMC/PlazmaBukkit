@@ -537,10 +537,10 @@ index 6d549448e67a110a42dde6f8eeaab1f0033f3462..065308f8cca471dee8360857bd627402
  
      private void readScoreboard(DimensionDataStorage persistentStateManager) {
 diff --git a/src/main/java/net/minecraft/server/Services.java b/src/main/java/net/minecraft/server/Services.java
-index 33e3815a0c979609d4c7ab83ad91e87ac07a556d..fbe39a996773c0a6ac2f74b3c7342724f8d2d842 100644
+index 33e3815a0c979609d4c7ab83ad91e87ac07a556d..ea45f4be9620590155b8168fcf1d0109ca8d5632 100644
 --- a/src/main/java/net/minecraft/server/Services.java
 +++ b/src/main/java/net/minecraft/server/Services.java
-@@ -12,13 +12,34 @@ import net.minecraft.util.SignatureValidator;
+@@ -12,13 +12,44 @@ import net.minecraft.util.SignatureValidator;
  
  
  public record Services(
@@ -555,19 +555,28 @@ index 33e3815a0c979609d4c7ab83ad91e87ac07a556d..fbe39a996773c0a6ac2f74b3c7342724
 +    // Plazma end - Configurable Plazma
  ) {
      // Paper start - add paper configuration files
-+    // Plazma start - Configurable Plazma
      public Services(MinecraftSessionService sessionService, ServicesKeySet servicesKeySet, GameProfileRepository profileRepository, GameProfileCache profileCache) {
--        this(sessionService, servicesKeySet, profileRepository, profileCache, null);
+         this(sessionService, servicesKeySet, profileRepository, profileCache, null);
+     }
+ 
++    // Plazma start - Configurable Plazma
++    public Services(
++        MinecraftSessionService sessionService,
++        ServicesKeySet servicesKeySet,
++        GameProfileRepository profileRepository,
++        GameProfileCache profileCache,
++        @org.jetbrains.annotations.Nullable io.papermc.paper.configuration.PaperConfigurations paperConfigurations
++    ) {
 +        this(
 +            sessionService,
 +            servicesKeySet,
 +            profileRepository,
 +            profileCache,
-+            null,
++            paperConfigurations,
 +            null
 +        );
-     }
- 
++    }
++
 +    @Override
 +    public org.plazmamc.plazma.configurations.PlazmaConfigurations plazmaConfigurations() {
 +        return java.util.Objects.requireNonNull(this.plazmaConfigurations);
@@ -577,7 +586,7 @@ index 33e3815a0c979609d4c7ab83ad91e87ac07a556d..fbe39a996773c0a6ac2f74b3c7342724
      @Override
      public io.papermc.paper.configuration.PaperConfigurations paperConfigurations() {
          return java.util.Objects.requireNonNull(this.paperConfigurations);
-@@ -34,7 +55,11 @@ public record Services(
+@@ -34,7 +65,11 @@ public record Services(
          final java.nio.file.Path legacyConfigPath = ((File) optionSet.valueOf("paper-settings")).toPath();
          final java.nio.file.Path configDirPath = ((File) optionSet.valueOf("paper-settings-directory")).toPath();
          io.papermc.paper.configuration.PaperConfigurations paperConfigurations = io.papermc.paper.configuration.PaperConfigurations.setup(legacyConfigPath, configDirPath, rootDirectory.toPath(), (File) optionSet.valueOf("spigot-settings"));
