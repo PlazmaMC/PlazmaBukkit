@@ -405,7 +405,7 @@ index 53c0b48966558f43bb9bd7d29d9588f9d83e0de7..7ff845a0ddb308e8b69881f05086105f
  import net.minecraft.world.entity.Entity;
  import net.minecraft.world.entity.ai.village.poi.PoiManager;
 diff --git a/src/main/java/net/minecraft/server/level/ServerLevel.java b/src/main/java/net/minecraft/server/level/ServerLevel.java
-index 94c61a1ace5b736e770a801990414f49ef8831e9..49307871db084a7f22a0f8570a27c9aa8f7f2f30 100644
+index dc8cb0e9c8abdbefb0420599a243b1a4fe66bb05..134b9bc1ad77b295e25bd36fcc47e4eed3273c43 100644
 --- a/src/main/java/net/minecraft/server/level/ServerLevel.java
 +++ b/src/main/java/net/minecraft/server/level/ServerLevel.java
 @@ -79,7 +79,7 @@ import net.minecraft.util.ProgressListener;
@@ -417,25 +417,15 @@ index 94c61a1ace5b736e770a801990414f49ef8831e9..49307871db084a7f22a0f8570a27c9aa
  import net.minecraft.util.valueproviders.IntProvider;
  import net.minecraft.util.valueproviders.UniformInt;
  import net.minecraft.world.DifficultyInstance;
-@@ -706,15 +706,15 @@ public class ServerLevel extends Level implements WorldGenLevel {
-         // Holder holder = worlddimension.type(); // CraftBukkit - decompile error
- 
-         // Objects.requireNonNull(minecraftserver); // CraftBukkit - decompile error
--        super(iworlddataserver, resourcekey, minecraftserver.registryAccess(), worlddimension.type(), minecraftserver::getProfiler, false, flag, i, minecraftserver.getMaxChainedNeighborUpdates(), gen, biomeProvider, env, spigotConfig -> minecraftserver.paperConfigurations.createWorldConfig(io.papermc.paper.configuration.PaperConfigurations.createWorldContextMap(convertable_conversionsession.levelDirectory.path(), iworlddataserver.getLevelName(), resourcekey.location(), spigotConfig, minecraftserver.registryAccess(), iworlddataserver.getGameRules())), spigotConfig -> minecraftserver.plazmaConfigurations.createWorldConfig(org.plazmamc.plazma.configurations.PlazmaConfigurations.createWorldContextMap(convertable_conversionsession.levelDirectory.path(), iworlddataserver.getLevelName(), resourcekey.location(), spigotConfig, minecraftserver.registryAccess(), iworlddataserver.getGameRules())), executor); // Paper - create paper world configs; Async-Anti-Xray: Pass executor // Plazma - Configurable Plazma
-+        super(iworlddataserver, resourcekey, minecraftserver.registryAccess(), worlddimension.type(), /*minecraftserver::getProfiler,*/ false, flag, i, minecraftserver.getMaxChainedNeighborUpdates(), gen, biomeProvider, env, spigotConfig -> minecraftserver.paperConfigurations.createWorldConfig(io.papermc.paper.configuration.PaperConfigurations.createWorldContextMap(convertable_conversionsession.levelDirectory.path(), iworlddataserver.getLevelName(), resourcekey.location(), spigotConfig, minecraftserver.registryAccess(), iworlddataserver.getGameRules())), spigotConfig -> minecraftserver.plazmaConfigurations.createWorldConfig(org.plazmamc.plazma.configurations.PlazmaConfigurations.createWorldContextMap(convertable_conversionsession.levelDirectory.path(), iworlddataserver.getLevelName(), resourcekey.location(), spigotConfig, minecraftserver.registryAccess(), iworlddataserver.getGameRules())), executor); // Paper - create paper world configs; Async-Anti-Xray: Pass executor // Plazma - Configurable Plazma // Plazma - Completely remove Mojang's Profiler
-         this.pvpMode = minecraftserver.isPvpAllowed();
-         this.convertable = convertable_conversionsession;
-         this.uuid = WorldUUID.getUUID(convertable_conversionsession.levelDirectory.path().toFile());
-         // CraftBukkit end
-         this.players = Lists.newArrayList();
-         this.entityTickList = new EntityTickList();
--        this.blockTicks = new LevelTicks<>(this::isPositionTickingWithEntitiesLoaded, this.getProfilerSupplier());
--        this.fluidTicks = new LevelTicks<>(this::isPositionTickingWithEntitiesLoaded, this.getProfilerSupplier());
-+        this.blockTicks = new LevelTicks<>(this::isPositionTickingWithEntitiesLoaded/*, this.getProfilerSupplier()*/); // Plazma - Completely remove Mojang's Profiler
-+        this.fluidTicks = new LevelTicks<>(this::isPositionTickingWithEntitiesLoaded/*, this.getProfilerSupplier()*/); // Plazma - Completely remove Mojang's Profiler
-         this.pathTypesByPosCache = new PathTypeCache();
-         this.navigatingMobs = new ObjectOpenHashSet();
-         this.blockEvents = new ObjectLinkedOpenHashSet();
+@@ -712,7 +712,7 @@ public class ServerLevel extends Level implements WorldGenLevel {
+             resourcekey,
+             minecraftserver.registryAccess(),
+             worlddimension.type(),
+-            minecraftserver::getProfiler,
++            // minecraftserver::getProfiler, // Plazma - Completely remove Mojang's Profiler
+             false,
+             flag,
+             i,
 diff --git a/src/main/java/net/minecraft/server/packs/resources/PreparableReloadListener.java b/src/main/java/net/minecraft/server/packs/resources/PreparableReloadListener.java
 index 60d33ac7ab7b610e9d5104ac9c7029ba4fc26cdf..097d7101c802070f554345057bf34dcb6f504cf3 100644
 --- a/src/main/java/net/minecraft/server/packs/resources/PreparableReloadListener.java
@@ -1298,7 +1288,7 @@ index a31326e24cb68472c81cd781c5e3041772712862..03323be2a120c53ac5a3607f6154c99d
          Builder<RecipeType<?>, RecipeHolder<?>> builder = ImmutableMultimap.builder();
          com.google.common.collect.ImmutableMap.Builder<ResourceLocation, RecipeHolder<?>> com_google_common_collect_immutablemap_builder = ImmutableMap.builder();
 diff --git a/src/main/java/net/minecraft/world/level/Level.java b/src/main/java/net/minecraft/world/level/Level.java
-index 64e489fa71c7f38797c8978de96840e0321e59a1..11a92adbcc97233f10cbe2547352213e92d0a09c 100644
+index cc402c84734dc1841ce09f7bfd07936c745e6662..2a6bbd570ba885c4666ea4be3dd044ddfe3d9eb9 100644
 --- a/src/main/java/net/minecraft/world/level/Level.java
 +++ b/src/main/java/net/minecraft/world/level/Level.java
 @@ -35,7 +35,7 @@ import net.minecraft.sounds.SoundSource;
@@ -1319,16 +1309,16 @@ index 64e489fa71c7f38797c8978de96840e0321e59a1..11a92adbcc97233f10cbe2547352213e
      public final boolean isClientSide;
      private final WorldBorder worldBorder;
      private final BiomeManager biomeManager;
-@@ -263,7 +263,7 @@ public abstract class Level implements LevelAccessor, AutoCloseable {
- 
-     public abstract ResourceKey<LevelStem> getTypeKey();
- 
--    protected Level(WritableLevelData worlddatamutable, ResourceKey<Level> resourcekey, RegistryAccess iregistrycustom, Holder<DimensionType> holder, Supplier<ProfilerFiller> supplier, boolean flag, boolean flag1, long i, int j, org.bukkit.generator.ChunkGenerator gen, org.bukkit.generator.BiomeProvider biomeProvider, org.bukkit.World.Environment env, java.util.function.Function<org.spigotmc.SpigotWorldConfig, io.papermc.paper.configuration.WorldConfiguration> paperWorldConfigCreator, java.util.function.Function<org.spigotmc.SpigotWorldConfig, org.plazmamc.plazma.configurations.WorldConfigurations> plazmaWorldConfigurationCreator, java.util.concurrent.Executor executor) { // Paper - create paper world config; Async-Anti-Xray: Pass executor // Plazma - Configurable Plazma
-+    protected Level(WritableLevelData worlddatamutable, ResourceKey<Level> resourcekey, RegistryAccess iregistrycustom, Holder<DimensionType> holder, /*Supplier<ProfilerFiller> supplier,*/ boolean flag, boolean flag1, long i, int j, org.bukkit.generator.ChunkGenerator gen, org.bukkit.generator.BiomeProvider biomeProvider, org.bukkit.World.Environment env, java.util.function.Function<org.spigotmc.SpigotWorldConfig, io.papermc.paper.configuration.WorldConfiguration> paperWorldConfigCreator, java.util.function.Function<org.spigotmc.SpigotWorldConfig, org.plazmamc.plazma.configurations.WorldConfigurations> plazmaWorldConfigurationCreator, java.util.concurrent.Executor executor) { // Paper - create paper world config; Async-Anti-Xray: Pass executor // Plazma - Configurable Plazma // Plazma - Completely remove Mojang's Profiler
-         this.spigotConfig = new org.spigotmc.SpigotWorldConfig(((net.minecraft.world.level.storage.PrimaryLevelData) worlddatamutable).getLevelName()); // Spigot
-         this.paperConfig = paperWorldConfigCreator.apply(this.spigotConfig); // Paper - create paper world config
-         this.plazmaConfig = plazmaWorldConfigurationCreator.apply(this.spigotConfig); // Plazma - Configurable Plazma
-@@ -280,7 +280,7 @@ public abstract class Level implements LevelAccessor, AutoCloseable {
+@@ -269,7 +269,7 @@ public abstract class Level implements LevelAccessor, AutoCloseable {
+         ResourceKey<Level> resourcekey,
+         RegistryAccess iregistrycustom,
+         Holder<DimensionType> holder,
+-        Supplier<ProfilerFiller> supplier,
++        // Supplier<ProfilerFiller> supplier, // Plazma - Completely remove Mojang's Profiler
+         boolean flag,
+         boolean flag1,
+         long i,
+@@ -298,7 +298,7 @@ public abstract class Level implements LevelAccessor, AutoCloseable {
          }
  
          // CraftBukkit end
@@ -1337,7 +1327,7 @@ index 64e489fa71c7f38797c8978de96840e0321e59a1..11a92adbcc97233f10cbe2547352213e
          this.levelData = worlddatamutable;
          this.dimensionTypeRegistration = holder;
          final DimensionType dimensionmanager = (DimensionType) holder.value();
-@@ -1857,6 +1857,7 @@ public abstract class Level implements LevelAccessor, AutoCloseable {
+@@ -1875,6 +1875,7 @@ public abstract class Level implements LevelAccessor, AutoCloseable {
          return false;
      }
  
@@ -1345,7 +1335,7 @@ index 64e489fa71c7f38797c8978de96840e0321e59a1..11a92adbcc97233f10cbe2547352213e
      public ProfilerFiller getProfiler() {
          //if (true || gg.pufferfish.pufferfish.PufferfishConfig.disableMethodProfiler) return net.minecraft.util.profiling.InactiveProfiler.INSTANCE; // Pufferfish // Purpur // Purpur - TODO: Pufferfish
          return (ProfilerFiller) this.profiler.get();
-@@ -1865,6 +1866,7 @@ public abstract class Level implements LevelAccessor, AutoCloseable {
+@@ -1883,6 +1884,7 @@ public abstract class Level implements LevelAccessor, AutoCloseable {
      public Supplier<ProfilerFiller> getProfilerSupplier() {
          return this.profiler;
      }
