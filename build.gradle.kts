@@ -14,9 +14,7 @@ val jdkVersion = property("jdkVersion").toString().toInt()
 val projectName = property("projectName").toString()
 val projectRepo = property("projectRepo").toString()
 
-kotlin.jvmToolchain {
-    languageVersion = JavaLanguageVersion.of(jdkVersion)
-}
+kotlin.jvmToolchain(jdkVersion)
 
 repositories {
     mavenCentral()
