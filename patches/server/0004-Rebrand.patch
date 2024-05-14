@@ -32,19 +32,20 @@ index 0000000000000000000000000000000000000000..67d405764ed68083d0164b1af0eabc0a
 +AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF
 +OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 diff --git a/build.gradle.kts b/build.gradle.kts
-index ec151f06541d7c3b4ffb1cac75e94bf3914dacaf..3cf30564db4e5cb2eeb09258940d0b2b5f9b0edc 100644
+index 055c64f6dbe6598e88fa2a01e80062fedcce4e20..d6482fd7d3ca31208cacd420317a30f4597ef83a 100644
 --- a/build.gradle.kts
 +++ b/build.gradle.kts
-@@ -12,7 +12,7 @@ configurations.named(log4jPlugins.compileClasspathConfigurationName) {
+@@ -12,8 +12,8 @@ configurations.named(log4jPlugins.compileClasspathConfigurationName) {
  val alsoShade: Configuration by configurations.creating
  
  dependencies {
 -    implementation(project(":purpur-api")) // Purpur
+ 
 +    implementation(project(":${parent!!.property("projectName").toString().lowercase()}-api")) // Plazma - Rebrand
      // Plazma start - Use Gradle Version Catalogs
      implementation(server.bundles.implementation)
      implementation(common.asm.commons)
-@@ -51,7 +51,7 @@ tasks.jar {
+@@ -59,7 +59,7 @@ tasks.jar {
          attributes(
              "Main-Class" to "org.bukkit.craftbukkit.Main",
              "Implementation-Title" to "CraftBukkit",
@@ -244,10 +245,10 @@ index 411f1f8c6be072cfc5ba88cbec38dbc4300a41d1..0fb3eeab083a0b1e9b495bd2c5c556fc
                  Main.LOGGER.error(awtException);
                  return;
 diff --git a/src/main/java/net/minecraft/server/MinecraftServer.java b/src/main/java/net/minecraft/server/MinecraftServer.java
-index dfe3d28bd97d1335457d1005ecf69afe75d5ff80..dc571ad9882a6c35e25b20086da1f2c51d3b4b57 100644
+index 4e989dd5919e29d04dcd9f6af0f3922f94d41742..2b015360df398ad8118f7b108cb9474edf373121 100644
 --- a/src/main/java/net/minecraft/server/MinecraftServer.java
 +++ b/src/main/java/net/minecraft/server/MinecraftServer.java
-@@ -495,8 +495,8 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
+@@ -496,8 +496,8 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
  
                  if (!newWorld.isDirectory() && oldWorld.isDirectory() && oldLevelDat.isFile()) {
                      MinecraftServer.LOGGER.info("---- Migration of old " + worldType + " folder required ----");
@@ -258,7 +259,7 @@ index dfe3d28bd97d1335457d1005ecf69afe75d5ff80..dc571ad9882a6c35e25b20086da1f2c5
                      MinecraftServer.LOGGER.info("Attempting to move " + oldWorld + " to " + newWorld + "...");
  
                      if (newWorld.exists()) {
-@@ -965,7 +965,7 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
+@@ -966,7 +966,7 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
          shutdownThread = Thread.currentThread();
          org.spigotmc.WatchdogThread.doStop(); // Paper
          if (!isSameThread()) {
@@ -267,7 +268,7 @@ index dfe3d28bd97d1335457d1005ecf69afe75d5ff80..dc571ad9882a6c35e25b20086da1f2c5
              while (this.getRunningThread().isAlive()) {
                  this.getRunningThread().stop();
                  try {
-@@ -1185,7 +1185,7 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
+@@ -1187,7 +1187,7 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
                  LOGGER.info("*************************************************************************************");
                  LOGGER.info("This is the first time you're starting this server.");
                  LOGGER.info("It's recommended you read our 'Getting Started' documentation for guidance.");
@@ -277,10 +278,10 @@ index dfe3d28bd97d1335457d1005ecf69afe75d5ff80..dc571ad9882a6c35e25b20086da1f2c5
              }
              // Paper end - Add onboarding message for initial server start
 diff --git a/src/main/java/net/minecraft/server/dedicated/DedicatedServer.java b/src/main/java/net/minecraft/server/dedicated/DedicatedServer.java
-index 957da64ddd0a56f457122a3f590b45e348f22382..a8cef5417273a48e1f76e4116e848b6ba15928f2 100644
+index 894efda0d643f054fa42f5f6ba87682bf3850778..5b42536e5a9e5aec5be8e3630cfae17bb20357e9 100644
 --- a/src/main/java/net/minecraft/server/dedicated/DedicatedServer.java
 +++ b/src/main/java/net/minecraft/server/dedicated/DedicatedServer.java
-@@ -792,7 +792,7 @@ public class DedicatedServer extends MinecraftServer implements ServerInterface
+@@ -797,7 +797,7 @@ public class DedicatedServer extends MinecraftServer implements ServerInterface
          org.bukkit.plugin.Plugin[] plugins = this.server.getPluginManager().getPlugins();
  
          result.append(this.server.getName());
@@ -375,7 +376,7 @@ index f6e3b745fc417354380d4a969f83aee430bad785..d2795cacee1b3dd2d73ec91553bb8aa3
  
      private static CompoundTag readOversizedChunk(RegionFile regionfile, ChunkPos chunkCoordinate) throws IOException {
 diff --git a/src/main/java/org/bukkit/craftbukkit/CraftServer.java b/src/main/java/org/bukkit/craftbukkit/CraftServer.java
-index b82c66c402823874e3a5fc9bb7b1df73c708aec5..ebc75eb4ae38dd2f24eb81e5797ae48e25ae93c7 100644
+index ba939f147edcedf0e8311e73a1ab85048354ac96..fe78cb60fe6000004c9e567e9046c45dd0e22d59 100644
 --- a/src/main/java/org/bukkit/craftbukkit/CraftServer.java
 +++ b/src/main/java/org/bukkit/craftbukkit/CraftServer.java
 @@ -269,7 +269,7 @@ import javax.annotation.Nullable; // Paper
@@ -388,7 +389,7 @@ index b82c66c402823874e3a5fc9bb7b1df73c708aec5..ebc75eb4ae38dd2f24eb81e5797ae48e
      private final String bukkitVersion = Versioning.getBukkitVersion();
      private final Logger logger = Logger.getLogger("Minecraft");
 diff --git a/src/main/java/org/bukkit/craftbukkit/Main.java b/src/main/java/org/bukkit/craftbukkit/Main.java
-index a0a7bfe8f5a40b945b83096de1efd650adeb9ee3..369543328531b0bd12c76aa8552e565bc40b51f7 100644
+index 43df9d815e86e8fb009b47cf16a419ddc6dbe6a7..7d7134820ce73de1eef242d14d57a520d3db2a25 100644
 --- a/src/main/java/org/bukkit/craftbukkit/Main.java
 +++ b/src/main/java/org/bukkit/craftbukkit/Main.java
 @@ -142,7 +142,7 @@ public class Main {
@@ -400,7 +401,7 @@ index a0a7bfe8f5a40b945b83096de1efd650adeb9ee3..369543328531b0bd12c76aa8552e565b
  
                  this.acceptsAll(Main.asList("demo"), "Demo mode");
  
-@@ -187,7 +187,7 @@ public class Main {
+@@ -193,7 +193,7 @@ public class Main {
                  acceptsAll(asList("server-name"), "Name of the server")
                          .withRequiredArg()
                          .ofType(String.class)
@@ -409,7 +410,7 @@ index a0a7bfe8f5a40b945b83096de1efd650adeb9ee3..369543328531b0bd12c76aa8552e565b
                          .describedAs("Name");
                  // Paper end
              }
-@@ -252,14 +252,14 @@ public class Main {
+@@ -258,14 +258,14 @@ public class Main {
              float javaVersion = Float.parseFloat(System.getProperty("java.class.version"));
              boolean isOldVersion = javaVersion < 61.0;
              if (!skip && isOldVersion) {
@@ -492,7 +493,7 @@ index 99597258e8e88cd9e2c901c4ac3ff7faeeabee2b..317ac7c5f1c2d542be260f7e86f9a728
 +    // Plazma end - Rebranding; Branding utils
  }
 diff --git a/src/main/java/org/purpurmc/purpur/PurpurConfig.java b/src/main/java/org/purpurmc/purpur/PurpurConfig.java
-index de70bfdbdd7740fdf20dd063a7a623a9e96cef98..85f4a9300aebfd4ee64d179dfa1f7ffd314cb3b8 100644
+index 1b1981e80bb0ca5f5edceef96b88168bd9cc839b..2494f0e1c4a1838f6d217d8727d25384180218f5 100644
 --- a/src/main/java/org/purpurmc/purpur/PurpurConfig.java
 +++ b/src/main/java/org/purpurmc/purpur/PurpurConfig.java
 @@ -231,7 +231,7 @@ public class PurpurConfig {

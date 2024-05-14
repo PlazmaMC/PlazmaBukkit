@@ -46,7 +46,7 @@ fun Project.getLatest(repository: String, branch: String) : String {
     val regex = "[a-z0-9]{40}\trefs/heads/$branch".toRegex()
     val temp = Git(project.pathIO)("ls-remote", repository).readText()
 
-    return temp?.lines()?.first { regex.matches(it) }?.split("\t")?.first()
+    return temp?.lines()?.first(regex::matches)?.split("\t")?.first()
         ?: throw AlwaysUpToDateException("Failed to get latest commit of $repository")
 }
 

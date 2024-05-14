@@ -9,10 +9,10 @@ Subject: [PATCH] Optimize default configurations
 - YouHaveTrouble/minecraft-exploits-and-how-to-fix-them
 
 diff --git a/src/main/java/io/papermc/paper/configuration/GlobalConfiguration.java b/src/main/java/io/papermc/paper/configuration/GlobalConfiguration.java
-index 2874bc3001c4e7d9191e47ba512c5a68369c21f1..750dd556123f3f912f8463ca3018256aaca5a2cb 100644
+index 32035e37b39ba42232fea948166e7c1d4d06190c..8445a0b25d647b2c1f9a44f849084cdec0842e18 100644
 --- a/src/main/java/io/papermc/paper/configuration/GlobalConfiguration.java
 +++ b/src/main/java/io/papermc/paper/configuration/GlobalConfiguration.java
-@@ -156,7 +156,7 @@ public class GlobalConfiguration extends ConfigurationPart {
+@@ -167,7 +167,7 @@ public class GlobalConfiguration extends ConfigurationPart {
  
      public class Watchdog extends ConfigurationPart {
          public int earlyWarningEvery = 5000;
@@ -21,7 +21,7 @@ index 2874bc3001c4e7d9191e47ba512c5a68369c21f1..750dd556123f3f912f8463ca3018256a
      }
  
      public SpamLimiter spamLimiter;
-@@ -196,7 +196,7 @@ public class GlobalConfiguration extends ConfigurationPart {
+@@ -207,7 +207,7 @@ public class GlobalConfiguration extends ConfigurationPart {
      public Commands commands;
  
      public class Commands extends ConfigurationPart {
@@ -30,7 +30,7 @@ index 2874bc3001c4e7d9191e47ba512c5a68369c21f1..750dd556123f3f912f8463ca3018256a
          public boolean fixTargetSelectorTagCompletion = true;
          public boolean timeCommandAffectsAllWorlds = false;
      }
-@@ -245,7 +245,7 @@ public class GlobalConfiguration extends ConfigurationPart {
+@@ -256,7 +256,7 @@ public class GlobalConfiguration extends ConfigurationPart {
          public BookSize bookSize;
  
          public class BookSize extends ConfigurationPart {
@@ -39,7 +39,7 @@ index 2874bc3001c4e7d9191e47ba512c5a68369c21f1..750dd556123f3f912f8463ca3018256a
              public double totalMultiplier = 0.98D; // TODO this should probably be merged into the above inner class
          }
          public boolean resolveSelectorsInBooks = false;
-@@ -256,7 +256,15 @@ public class GlobalConfiguration extends ConfigurationPart {
+@@ -267,7 +267,15 @@ public class GlobalConfiguration extends ConfigurationPart {
      public class PacketLimiter extends ConfigurationPart {
          public Component kickMessage = Component.translatable("disconnect.exceeded_packet_rate", NamedTextColor.RED);
          public PacketLimit allPackets = new PacketLimit(7.0, 500.0, PacketLimit.ViolateAction.KICK);
@@ -56,7 +56,7 @@ index 2874bc3001c4e7d9191e47ba512c5a68369c21f1..750dd556123f3f912f8463ca3018256a
  
          @ConfigSerializable
          public record PacketLimit(@Required double interval, @Required double maxPacketRate, ViolateAction action) {
-@@ -324,7 +332,7 @@ public class GlobalConfiguration extends ConfigurationPart {
+@@ -335,7 +343,7 @@ public class GlobalConfiguration extends ConfigurationPart {
                  executor.setMaximumPoolSize(_chatExecutorMaxSize);
              }
          }
@@ -324,7 +324,7 @@ index 55e16ed1151c5d53f492581f66a3406ac418b653..9af7df196ed74a48a6b6426df36353f9
          this.enableJmxMonitoring = this.get("enable-jmx-monitoring", false);
          this.enableStatus = this.get("enable-status", true);
 diff --git a/src/main/java/org/bukkit/craftbukkit/CraftServer.java b/src/main/java/org/bukkit/craftbukkit/CraftServer.java
-index 841ce275ff3f49783a61af71d83020b8cda35473..509c7536b84019c854163471cb9d42b969747366 100644
+index 1afae84afd5a6fcc11227daf75123e8b65642b01..6de746c3e0f30bcf3dc24b2a4d369c86db445738 100644
 --- a/src/main/java/org/bukkit/craftbukkit/CraftServer.java
 +++ b/src/main/java/org/bukkit/craftbukkit/CraftServer.java
 @@ -433,7 +433,7 @@ public final class CraftServer implements Server {
@@ -368,7 +368,7 @@ index 09053b4ccf268fd204c81dbb8d4f10fa9edcad5f..93f67f125b3674e645cfdae27e579e12
              #### ENGLISH ####
              This is the %s configuration file for Plazma.
 diff --git a/src/main/java/org/purpurmc/purpur/PurpurConfig.java b/src/main/java/org/purpurmc/purpur/PurpurConfig.java
-index 85f4a9300aebfd4ee64d179dfa1f7ffd314cb3b8..fa209964eec7dae8e2a0fa7bb44e0e8791e75248 100644
+index 2494f0e1c4a1838f6d217d8727d25384180218f5..69066fd1e82cefff44c7dbd565b19373768e2a62 100644
 --- a/src/main/java/org/purpurmc/purpur/PurpurConfig.java
 +++ b/src/main/java/org/purpurmc/purpur/PurpurConfig.java
 @@ -49,6 +49,7 @@ public class PurpurConfig {
@@ -388,7 +388,7 @@ index 85f4a9300aebfd4ee64d179dfa1f7ffd314cb3b8..fa209964eec7dae8e2a0fa7bb44e0e87
      private static void useAlternateKeepAlive() {
          useAlternateKeepAlive = getBoolean("settings.use-alternate-keepalive", useAlternateKeepAlive);
      }
-@@ -486,7 +487,7 @@ public class PurpurConfig {
+@@ -481,7 +482,7 @@ public class PurpurConfig {
      }
  
      public static boolean useUPnP = false;

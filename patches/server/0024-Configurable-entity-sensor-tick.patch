@@ -5,10 +5,10 @@ Subject: [PATCH] Configurable entity sensor tick
 
 
 diff --git a/src/main/java/net/minecraft/world/entity/Mob.java b/src/main/java/net/minecraft/world/entity/Mob.java
-index 274ca06fbda0f54805fc82614d43b6e1a4a5d4a8..688f3c01cb939a6c959efbb3b59ac8ee60db3633 100644
+index 9e9199b83fce2c9c8f03f4116c14a331279a234a..e691c4dc89bbf841730813fbd8dc21208482a59c 100644
 --- a/src/main/java/net/minecraft/world/entity/Mob.java
 +++ b/src/main/java/net/minecraft/world/entity/Mob.java
-@@ -995,10 +995,11 @@ public abstract class Mob extends LivingEntity implements EquipmentUser, Targeti
+@@ -997,10 +997,11 @@ public abstract class Mob extends LivingEntity implements EquipmentUser, Targeti
          //ProfilerFiller gameprofilerfiller = this.level().getProfiler(); // Purpur
  
          //gameprofilerfiller.push("sensing"); // Purpur
@@ -20,9 +20,9 @@ index 274ca06fbda0f54805fc82614d43b6e1a4a5d4a8..688f3c01cb939a6c959efbb3b59ac8ee
 +        if (i % this.level().plazmaConfig().entity.sensorTick == 0) this.sensing.tick(); // Plazma - Configurable entity sensor tick
          if (i % 2 != 0 && this.tickCount > 1) {
              //gameprofilerfiller.push("targetSelector"); // Purpur
-             this.targetSelector.tickRunningGoals(false);
+             if (this.targetSelector.inactiveTick(this.activatedPriority, false)) // Pufferfish - use this to alternate ticking
 diff --git a/src/main/java/org/plazmamc/plazma/configurations/WorldConfigurations.java b/src/main/java/org/plazmamc/plazma/configurations/WorldConfigurations.java
-index c8a3e91d0d6510b519e927027f5a534cddf7d0a3..bc283729cab4df2c596febf1df54241571227564 100644
+index 9debf554deb5b7aa021502ff7d600905f56fa25c..dceb5b2cec5f0c20be74d892e8cab98823d2f59a 100644
 --- a/src/main/java/org/plazmamc/plazma/configurations/WorldConfigurations.java
 +++ b/src/main/java/org/plazmamc/plazma/configurations/WorldConfigurations.java
 @@ -30,6 +30,7 @@ public class WorldConfigurations extends ConfigurationPart {
