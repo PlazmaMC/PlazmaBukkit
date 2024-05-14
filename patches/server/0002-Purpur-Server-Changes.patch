@@ -1,6 +1,6 @@
 From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
 From: granny <contact@granny.dev>
-Date: Tue, 14 May 2024 22:59:42 +0900
+Date: Tue, 14 May 2024 23:44:27 +0900
 Subject: [PATCH] Purpur Server Changes
 
 PurpurMC
@@ -1789,7 +1789,7 @@ index 47355158e5e762540a10dc67b23092a0fc53bce3..9f1c8a62bda242781a0966fa2fc01534
                          entityitem = entityplayer.drop(itemstack, false, false, false); // CraftBukkit - SPIGOT-2942: Add boolean to call event
                          if (entityitem != null) {
 diff --git a/src/main/java/net/minecraft/server/dedicated/DedicatedServer.java b/src/main/java/net/minecraft/server/dedicated/DedicatedServer.java
-index 3923c551735057665760c885af4c556e807be108..894efda0d643f054fa42f5f6ba87682bf3850778 100644
+index 55f14f6d56fdff07c49b1c223f5c6df34833b825..fd88dfafcec517a29e3320ce147516ce2ccb2dc9 100644
 --- a/src/main/java/net/minecraft/server/dedicated/DedicatedServer.java
 +++ b/src/main/java/net/minecraft/server/dedicated/DedicatedServer.java
 @@ -110,6 +110,7 @@ public class DedicatedServer extends MinecraftServer implements ServerInterface
@@ -1800,7 +1800,7 @@ index 3923c551735057665760c885af4c556e807be108..894efda0d643f054fa42f5f6ba87682b
                  new com.destroystokyo.paper.console.PaperConsole(DedicatedServer.this).start();
                  /*
                  jline.console.ConsoleReader bufferedreader = DedicatedServer.this.reader;
-@@ -232,8 +233,18 @@ public class DedicatedServer extends MinecraftServer implements ServerInterface
+@@ -232,7 +233,17 @@ public class DedicatedServer extends MinecraftServer implements ServerInterface
          thread.start(); // Paper - Enhance console tab completions for brigadier commands; start console thread after MinecraftServer.console & PaperConfig are initialized
          io.papermc.paper.command.PaperCommands.registerCommands(this); // Paper - setup /paper command
          com.destroystokyo.paper.Metrics.PaperMetrics.startMetrics(); // Paper - start metrics
@@ -1814,12 +1814,11 @@ index 3923c551735057665760c885af4c556e807be108..894efda0d643f054fa42f5f6ba87682b
 +        org.purpurmc.purpur.PurpurConfig.registerCommands();
 +        // Purpur end
          com.destroystokyo.paper.VersionHistoryManager.INSTANCE.getClass(); // Paper - load version history now
-         io.papermc.paper.brigadier.PaperBrigadierProviderImpl.INSTANCE.getClass(); // Paper - init PaperBrigadierProvider
 +        gg.pufferfish.pufferfish.PufferfishConfig.pufferfishFile = (java.io.File) options.valueOf("pufferfish-settings"); // Purpur
          gg.pufferfish.pufferfish.PufferfishConfig.load(); // Pufferfish
          gg.pufferfish.pufferfish.PufferfishCommand.init(); // Pufferfish
  
-@@ -283,6 +294,30 @@ public class DedicatedServer extends MinecraftServer implements ServerInterface
+@@ -282,6 +293,30 @@ public class DedicatedServer extends MinecraftServer implements ServerInterface
              if (true) throw new IllegalStateException("Failed to bind to port", ioexception); // Paper - Propagate failed to bind to port error
              return false;
          }
@@ -1850,7 +1849,7 @@ index 3923c551735057665760c885af4c556e807be108..894efda0d643f054fa42f5f6ba87682b
  
          // CraftBukkit start
          // this.setPlayerList(new DedicatedPlayerList(this, this.registries(), this.playerDataStorage)); // Spigot - moved up
-@@ -357,6 +392,8 @@ public class DedicatedServer extends MinecraftServer implements ServerInterface
+@@ -356,6 +391,8 @@ public class DedicatedServer extends MinecraftServer implements ServerInterface
              }
  
              if (gg.pufferfish.pufferfish.PufferfishConfig.enableAsyncMobSpawning) mobSpawnExecutor.start(); // Pufferfish
@@ -1859,7 +1858,7 @@ index 3923c551735057665760c885af4c556e807be108..894efda0d643f054fa42f5f6ba87682b
              return true;
          }
      }
-@@ -509,7 +546,7 @@ public class DedicatedServer extends MinecraftServer implements ServerInterface
+@@ -508,7 +545,7 @@ public class DedicatedServer extends MinecraftServer implements ServerInterface
      }
  
      public void handleConsoleInputs() {
@@ -1868,7 +1867,7 @@ index 3923c551735057665760c885af4c556e807be108..894efda0d643f054fa42f5f6ba87682b
          // Paper start - Perf: use proper queue
          ConsoleInput servercommand;
          while ((servercommand = this.serverCommandQueue.poll()) != null) {
-@@ -526,7 +563,7 @@ public class DedicatedServer extends MinecraftServer implements ServerInterface
+@@ -525,7 +562,7 @@ public class DedicatedServer extends MinecraftServer implements ServerInterface
              // CraftBukkit end
          }
  
