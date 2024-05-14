@@ -25,7 +25,8 @@ dependencyResolutionManagement {
 }
 
 rootProject.name = projectName.lowercase()
-for (name in listOf("$projectName-API", "$projectName-Server", "$projectName-MojangAPI")) {
+for (name in listOf("$projectName-API", "$projectName-Server")) {
+    if (!rootDir.resolve("$name/MIT.txt").isFile) continue
     val projName = name.lowercase(Locale.ENGLISH)
     include(projName)
     findProject(":$projName")!!.projectDir = file(name)

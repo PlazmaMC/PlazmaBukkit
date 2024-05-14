@@ -4,33 +4,52 @@ Date: Wed, 21 Dec 2022 19:31:24 +0900
 Subject: [PATCH] Rebrand
 
 
+diff --git a/MIT.txt b/MIT.txt
+new file mode 100644
+index 0000000000000000000000000000000000000000..67d405764ed68083d0164b1af0eabc0af7f6efea
+--- /dev/null
++++ b/MIT.txt
+@@ -0,0 +1,21 @@
++The MIT License (MIT)
++
++Copyright (c) 2024 Paper Contributors
++
++Permission is hereby granted, free of charge, to any person obtaining
++a copy of this software and associated documentation files (the "Software"),
++to deal in the Software without restriction, including without limitation
++the rights to use, copy, modify, merge, publish, distribute, sublicense,
++and/or sell copies of the Software, and to permit persons to whom
++the Software is furnished to do so, subject to the following conditions:
++
++The above copyright notice and this permission notice shall be included
++in all copies or substantial portions of the Software.
++
++THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
++EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE
++WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE
++AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS
++BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN
++AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF
++OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 diff --git a/build.gradle.kts b/build.gradle.kts
-index feaff0406fa47ffb265ce316b057fb52aa367870..279e1cfd24f29d3ac55e74759d8b542a7520de3d 100644
+index ec151f06541d7c3b4ffb1cac75e94bf3914dacaf..3cf30564db4e5cb2eeb09258940d0b2b5f9b0edc 100644
 --- a/build.gradle.kts
 +++ b/build.gradle.kts
-@@ -12,12 +12,10 @@ configurations.named(log4jPlugins.compileClasspathConfigurationName) {
+@@ -12,7 +12,7 @@ configurations.named(log4jPlugins.compileClasspathConfigurationName) {
  val alsoShade: Configuration by configurations.creating
  
  dependencies {
--    // Purpur start
--    implementation(project(":purpur-api"))
--    implementation("io.papermc.paper:paper-mojangapi:${project.version}") {
--        exclude("io.papermc.paper", "paper-api")
--    }
--    // Purpur end
-+    // Plazma start - Rebrand
-+    implementation(project(":${parent!!.property("projectName").toString().lowercase()}-api"))
-+    implementation(project(":${parent!!.property("projectName").toString().lowercase()}-mojangapi"))
-+    // Plazma end
- 
+-    implementation(project(":purpur-api")) // Purpur
++    implementation(project(":${parent!!.property("projectName").toString().lowercase()}-api")) // Plazma - Rebrand
      // Plazma start - Use Gradle Version Catalogs
      implementation(server.bundles.implementation)
-@@ -57,7 +55,7 @@ tasks.jar {
+     implementation(common.asm.commons)
+@@ -51,7 +51,7 @@ tasks.jar {
          attributes(
              "Main-Class" to "org.bukkit.craftbukkit.Main",
              "Implementation-Title" to "CraftBukkit",
 -            "Implementation-Version" to "git-Purpur-$implementationVersion", // Pufferfish // Purpur
-+            "Implementation-Version" to "git-${parent!!.property("projectName")}-$implementationVersion", // Pufferfish // Purpur // Plazma - Setup Gradle Project
++            "Implementation-Version" to "git-${parent!!.property("projectName")}-$implementationVersion", // Pufferfish // Purpur // Plazma - Rebrand
              "Implementation-Vendor" to date, // Paper
              "Specification-Title" to "Bukkit",
              "Specification-Version" to project.version,
@@ -225,10 +244,10 @@ index 411f1f8c6be072cfc5ba88cbec38dbc4300a41d1..0fb3eeab083a0b1e9b495bd2c5c556fc
                  Main.LOGGER.error(awtException);
                  return;
 diff --git a/src/main/java/net/minecraft/server/MinecraftServer.java b/src/main/java/net/minecraft/server/MinecraftServer.java
-index 21327a92b75a460c7beb3aa408502f37a7db31fa..6d549448e67a110a42dde6f8eeaab1f0033f3462 100644
+index dfe3d28bd97d1335457d1005ecf69afe75d5ff80..dc571ad9882a6c35e25b20086da1f2c51d3b4b57 100644
 --- a/src/main/java/net/minecraft/server/MinecraftServer.java
 +++ b/src/main/java/net/minecraft/server/MinecraftServer.java
-@@ -496,8 +496,8 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
+@@ -495,8 +495,8 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
  
                  if (!newWorld.isDirectory() && oldWorld.isDirectory() && oldLevelDat.isFile()) {
                      MinecraftServer.LOGGER.info("---- Migration of old " + worldType + " folder required ----");
@@ -239,7 +258,7 @@ index 21327a92b75a460c7beb3aa408502f37a7db31fa..6d549448e67a110a42dde6f8eeaab1f0
                      MinecraftServer.LOGGER.info("Attempting to move " + oldWorld + " to " + newWorld + "...");
  
                      if (newWorld.exists()) {
-@@ -963,7 +963,7 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
+@@ -965,7 +965,7 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
          shutdownThread = Thread.currentThread();
          org.spigotmc.WatchdogThread.doStop(); // Paper
          if (!isSameThread()) {
@@ -248,7 +267,7 @@ index 21327a92b75a460c7beb3aa408502f37a7db31fa..6d549448e67a110a42dde6f8eeaab1f0
              while (this.getRunningThread().isAlive()) {
                  this.getRunningThread().stop();
                  try {
-@@ -1183,7 +1183,7 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
+@@ -1185,7 +1185,7 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
                  LOGGER.info("*************************************************************************************");
                  LOGGER.info("This is the first time you're starting this server.");
                  LOGGER.info("It's recommended you read our 'Getting Started' documentation for guidance.");
@@ -258,10 +277,10 @@ index 21327a92b75a460c7beb3aa408502f37a7db31fa..6d549448e67a110a42dde6f8eeaab1f0
              }
              // Paper end - Add onboarding message for initial server start
 diff --git a/src/main/java/net/minecraft/server/dedicated/DedicatedServer.java b/src/main/java/net/minecraft/server/dedicated/DedicatedServer.java
-index 775c5de4f5094260096cef6723dd50dfe2cb0c81..d606da8627219b5ecf4f1500086905fb4f572ca9 100644
+index 957da64ddd0a56f457122a3f590b45e348f22382..a8cef5417273a48e1f76e4116e848b6ba15928f2 100644
 --- a/src/main/java/net/minecraft/server/dedicated/DedicatedServer.java
 +++ b/src/main/java/net/minecraft/server/dedicated/DedicatedServer.java
-@@ -793,7 +793,7 @@ public class DedicatedServer extends MinecraftServer implements ServerInterface
+@@ -792,7 +792,7 @@ public class DedicatedServer extends MinecraftServer implements ServerInterface
          org.bukkit.plugin.Plugin[] plugins = this.server.getPluginManager().getPlugins();
  
          result.append(this.server.getName());
@@ -356,15 +375,15 @@ index f6e3b745fc417354380d4a969f83aee430bad785..d2795cacee1b3dd2d73ec91553bb8aa3
  
      private static CompoundTag readOversizedChunk(RegionFile regionfile, ChunkPos chunkCoordinate) throws IOException {
 diff --git a/src/main/java/org/bukkit/craftbukkit/CraftServer.java b/src/main/java/org/bukkit/craftbukkit/CraftServer.java
-index 19937ffa2c93cb75ea8dba58dd5a8214adc035fa..4f9638d360497ceef72fb193a4bb6423fd9175d6 100644
+index b82c66c402823874e3a5fc9bb7b1df73c708aec5..ebc75eb4ae38dd2f24eb81e5797ae48e25ae93c7 100644
 --- a/src/main/java/org/bukkit/craftbukkit/CraftServer.java
 +++ b/src/main/java/org/bukkit/craftbukkit/CraftServer.java
-@@ -268,7 +268,7 @@ import javax.annotation.Nullable; // Paper
+@@ -269,7 +269,7 @@ import javax.annotation.Nullable; // Paper
  import javax.annotation.Nonnull; // Paper
  
  public final class CraftServer implements Server {
 -    private final String serverName = "Purpur"; // Paper // Pufferfish // Purpur
-+    private final String serverName = Versioning.BRANDING; // Paper // Pufferfish // Purpur // Plazma - Rebrand
++    private final String serverName = Versioning.BRANDING; // Paper // Pufferfish // Purpur
      private final String serverVersion;
      private final String bukkitVersion = Versioning.getBukkitVersion();
      private final Logger logger = Logger.getLogger("Minecraft");

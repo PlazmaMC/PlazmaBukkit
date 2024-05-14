@@ -1,0 +1,52 @@
+# To initialize your development environment,
+# run below command in your terminal:
+# source ./initDev
+
+export PROJECT_DIR=$(pwd)
+
+alias api="cd $PROJECT_DIR/*-API"
+alias srv="cd $PROJECT_DIR/*-Server"
+
+alias ap="./gradlew --no-rebuild applyPatches"
+alias aap="./gradlew --no-rebuild applyAPIPatches"
+alias agp="./gradlew --no-rebuild applyGeneratedAPIPatches"
+alias asp="./gradlew --no-rebuild applyServerPatches"
+
+alias rp="./gradlew --no-rebuild rebuildPatches"
+alias rap="./gradlew --no-rebuild rebuildAPIPatches"
+alias rgp="./gradlew --no-rebuild rebuildGeneratedAPIPatches"
+alias rsp="./gradlew --no-rebuild rebuildServerPatches"
+
+alias lg="git log --oneline base..HEAD"
+alias rc="git rebase --autosquash -i base"
+alias rcc="git rebase --continue"
+
+# generate Fixup patches for Server
+function fs() {
+    cd *-Server
+
+    git add .
+    git commit -m "fixup"
+    git format-patch -1
+    mv 0001-fixup.patch ../
+
+    cd ../
+}
+
+# generate Fixup patches for API
+function fa() {
+    cd *-API
+
+    git add .
+    git commit -m "fixup"
+    git format-patch -1
+    mv 0001-fixup.patch ../
+
+    cd ../
+}
+
+# ReApply Server Patches
+function rasp() {
+    rm -rf *-Server
+    ./gradlew applyServerPatches
+}

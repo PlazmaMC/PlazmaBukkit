@@ -5,10 +5,10 @@ Subject: [PATCH] Completely remove Mojang Profiler
 
 
 diff --git a/src/main/java/net/minecraft/commands/Commands.java b/src/main/java/net/minecraft/commands/Commands.java
-index f9d0e8ee9414b3897f268ba78a1469ddf868f51a..58d89000af36f72d629d8e0873d6efbbbb720fe1 100644
+index 55b29e9a540cfc00dc32c7ae14d603c150e8863d..4f1976333662662bc6aa844bde9667b8c9a0b159 100644
 --- a/src/main/java/net/minecraft/commands/Commands.java
 +++ b/src/main/java/net/minecraft/commands/Commands.java
-@@ -429,7 +429,7 @@ public class Commands {
+@@ -442,7 +442,7 @@ public class Commands {
              int j = minecraftserver.getGameRules().getInt(GameRules.RULE_MAX_COMMAND_FORK_COUNT);
  
              try {
@@ -65,7 +65,7 @@ index f626a2f28f2aebb3237cebb6afef3c4fa1a6cb37..467e17bfce31d0919d603698c9d88a04
      public int forkLimit() {
          return this.forkLimit;
 diff --git a/src/main/java/net/minecraft/server/MinecraftServer.java b/src/main/java/net/minecraft/server/MinecraftServer.java
-index eb4c8b516be77423c7decb247f261a264b1cfc89..da5275e9137023b39f7a0a20255e483b61a5237f 100644
+index 9d5257f810f9f88504b913fa0c7c214acc1da2cb..e0f50dcfe30abf439cea3ecd7837569802bd16c8 100644
 --- a/src/main/java/net/minecraft/server/MinecraftServer.java
 +++ b/src/main/java/net/minecraft/server/MinecraftServer.java
 @@ -104,18 +104,18 @@ import net.minecraft.util.datafix.DataFixers;
@@ -120,7 +120,7 @@ index eb4c8b516be77423c7decb247f261a264b1cfc89..da5275e9137023b39f7a0a20255e483b
      private ServerConnectionListener connection;
      public final ChunkProgressListenerFactory progressListenerFactory;
      @Nullable
-@@ -2594,10 +2594,12 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
+@@ -2605,10 +2605,12 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
          }
      }
  
@@ -133,7 +133,7 @@ index eb4c8b516be77423c7decb247f261a264b1cfc89..da5275e9137023b39f7a0a20255e483b
  
      public abstract boolean isSingleplayerOwner(GameProfile profile);
  
-@@ -2841,6 +2843,7 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
+@@ -2852,6 +2854,7 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
      }
      // CraftBukkit end
  
@@ -141,7 +141,7 @@ index eb4c8b516be77423c7decb247f261a264b1cfc89..da5275e9137023b39f7a0a20255e483b
      private void startMetricsRecordingTick() {
          if (false && this.willStartRecordingMetrics) { // Purpur
              this.metricsRecorder = ActiveMetricsRecorder.createStarted(new ServerMetricsSamplersProvider(Util.timeSource, this.isDedicatedServer()), Util.timeSource, Util.ioPool(), new MetricsPersister("server"), this.onMetricsRecordingStopped, (path) -> {
-@@ -2867,12 +2870,12 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
+@@ -2878,12 +2881,12 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
      }
  
      public void startRecordingMetrics(Consumer<ProfileResults> resultConsumer, Consumer<Path> dumpConsumer) {
@@ -156,7 +156,7 @@ index eb4c8b516be77423c7decb247f261a264b1cfc89..da5275e9137023b39f7a0a20255e483b
      }
  
      public void stopRecordingMetrics() {
-@@ -2887,6 +2890,7 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
+@@ -2898,6 +2901,7 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
          //this.metricsRecorder.cancel(); // Purpur
          //this.profiler = this.metricsRecorder.getProfiler(); // Purpur
      }
@@ -164,7 +164,7 @@ index eb4c8b516be77423c7decb247f261a264b1cfc89..da5275e9137023b39f7a0a20255e483b
  
      public Path getWorldPath(LevelResource worldSavePath) {
          return this.storageSource.getLevelPath(worldSavePath);
-@@ -2937,6 +2941,7 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
+@@ -2948,6 +2952,7 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
          return this.isSaving;
      }
  
@@ -172,7 +172,7 @@ index eb4c8b516be77423c7decb247f261a264b1cfc89..da5275e9137023b39f7a0a20255e483b
      public boolean isTimeProfilerRunning() {
          return false; //this.debugCommandProfilerDelayStart || this.debugCommandProfiler != null; // Purpur
      }
-@@ -2955,6 +2960,7 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
+@@ -2966,6 +2971,7 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
              return methodprofilerresults;
          }
      }
@@ -180,7 +180,7 @@ index eb4c8b516be77423c7decb247f261a264b1cfc89..da5275e9137023b39f7a0a20255e483b
  
      public int getMaxChainedNeighborUpdates() {
          return 1000000;
-@@ -3006,6 +3012,7 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
+@@ -3017,6 +3023,7 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
          }
      }
  
@@ -188,7 +188,7 @@ index eb4c8b516be77423c7decb247f261a264b1cfc89..da5275e9137023b39f7a0a20255e483b
      private static class TimeProfiler {
  
          final long startNanos;
-@@ -3055,6 +3062,7 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
+@@ -3066,6 +3073,7 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
              };
          }
      }
@@ -243,7 +243,7 @@ index bae0d208b31aa0a6977c30f2f8484ab3c316bc71..05d8ca83abf69226aae43ec6f7505572
          Executor applyExecutor
      ) {
 diff --git a/src/main/java/net/minecraft/server/ServerFunctionManager.java b/src/main/java/net/minecraft/server/ServerFunctionManager.java
-index 775b24a9e55528944b629fd85e1f6ebef9a9892f..579e0b0040ea3315fc7c0e209574b7fef799d2d1 100644
+index 7aa1b3705ff548023f8b040678e4008cca3b8514..771a4ad40114961f3340a9100d136d4b3a567c4e 100644
 --- a/src/main/java/net/minecraft/server/ServerFunctionManager.java
 +++ b/src/main/java/net/minecraft/server/ServerFunctionManager.java
 @@ -16,7 +16,7 @@ import net.minecraft.commands.functions.CommandFunction;
@@ -361,10 +361,10 @@ index 8c587f829c5e8c6b6df3150024c4ae704988c47b..319f484b535143a94ee2da11114acacc
  }
 +// Plazma end - Completely remove Mojang's Profiler
 diff --git a/src/main/java/net/minecraft/server/dedicated/DedicatedServer.java b/src/main/java/net/minecraft/server/dedicated/DedicatedServer.java
-index 0559c251107ebbcf49940a5c7647dce2310eae92..b8fcb2841abf0b00f278d21cb344866ed987b4ce 100644
+index 9af4efcf9a2c8dee2208ddf37b1bb963a2894666..cbc884db2cacdcba264033dd06988150ba4ee0ba 100644
 --- a/src/main/java/net/minecraft/server/dedicated/DedicatedServer.java
 +++ b/src/main/java/net/minecraft/server/dedicated/DedicatedServer.java
-@@ -923,11 +923,13 @@ public class DedicatedServer extends MinecraftServer implements ServerInterface
+@@ -922,11 +922,13 @@ public class DedicatedServer extends MinecraftServer implements ServerInterface
          return this.settings.getProperties().serverResourcePackInfo;
      }
  
@@ -379,7 +379,7 @@ index 0559c251107ebbcf49940a5c7647dce2310eae92..b8fcb2841abf0b00f278d21cb344866e
      @Override
      public SampleLogger getTickTimeLogger() {
 diff --git a/src/main/java/net/minecraft/server/level/ChunkMap.java b/src/main/java/net/minecraft/server/level/ChunkMap.java
-index 9162c6338dbb516ce60f4853e57da6e49be79282..809d74ce3a0b02538b1543346485731828a9f139 100644
+index 4f112e2550fae57ccd41f6525bffe6d6974a8dd1..88d52e26fa543cacf0801b4e42c1e1fe0d8dd774 100644
 --- a/src/main/java/net/minecraft/server/level/ChunkMap.java
 +++ b/src/main/java/net/minecraft/server/level/ChunkMap.java
 @@ -68,7 +68,7 @@ import net.minecraft.server.level.progress.ChunkProgressListener;
@@ -405,7 +405,7 @@ index 53c0b48966558f43bb9bd7d29d9588f9d83e0de7..7ff845a0ddb308e8b69881f05086105f
  import net.minecraft.world.entity.Entity;
  import net.minecraft.world.entity.ai.village.poi.PoiManager;
 diff --git a/src/main/java/net/minecraft/server/level/ServerLevel.java b/src/main/java/net/minecraft/server/level/ServerLevel.java
-index dc8cb0e9c8abdbefb0420599a243b1a4fe66bb05..134b9bc1ad77b295e25bd36fcc47e4eed3273c43 100644
+index d1b2e68a702ce01c33cfe0e1297a8809e3acf088..f88955fac16576e0eb4d8f6782aa2c8a298f4474 100644
 --- a/src/main/java/net/minecraft/server/level/ServerLevel.java
 +++ b/src/main/java/net/minecraft/server/level/ServerLevel.java
 @@ -79,7 +79,7 @@ import net.minecraft.util.ProgressListener;

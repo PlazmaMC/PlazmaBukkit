@@ -1,5 +1,6 @@
 import org.gradle.api.tasks.testing.logging.TestExceptionFormat
 import org.gradle.api.tasks.testing.logging.TestLogEvent
+import kotlin.io.path.createSymbolicLinkPointingTo
 
 plugins {
     java
@@ -19,9 +20,7 @@ kotlin.jvmToolchain(jdkVersion)
 repositories {
     mavenCentral()
     maven("https://papermc.io/repo/repository/maven-public/") {
-        content {
-            onlyForConfigurations(configurations.paperclip.name)
-        }
+        content { onlyForConfigurations(configurations.paperclip.name) }
     }
 }
 
@@ -59,19 +58,22 @@ allprojects {
 subprojects {
     tasks {
         withType<JavaCompile>().configureEach {
-            options.compilerArgs.addAll(listOf("--add-modules=jdk.incubator.vector", "-Xmaxwarns", "1"))
             options.encoding = Charsets.UTF_8.name()
             options.release = jdkVersion
+            options.compilerArgs.addAll(listOf(
+                "--add-modules=jdk.incubator.vector",
+                "-Xmaxwarns", "1"
+            ))
         }
-    
+
         withType<Javadoc> {
             options.encoding = Charsets.UTF_8.name()
         }
-    
+
         withType<ProcessResources> {
             filteringCharset = Charsets.UTF_8.name()
         }
-    
+
         withType<Test> {
             testLogging {
                 showStackTraces = true
@@ -85,7 +87,6 @@ subprojects {
         mavenCentral()
         maven("https://jitpack.io")
         maven("https://papermc.io/repo/repository/maven-public/")
-        maven("https://s01.oss.sonatype.org/content/repositories/snapshots/")
     }
 }
 
@@ -110,23 +111,16 @@ paperweight {
             patchDir = layout.projectDirectory.dir("patches/generated-api")
             outputDir = layout.projectDirectory.dir("paper-api-generator/generated")
         }
-
-        patchTasks.register("mojangApi") {
-            isBareDirectory = true
-            upstreamDirPath = "Paper-MojangAPI"
-            patchDir = layout.projectDirectory.dir("patches/mojang-api")
-            outputDir = layout.projectDirectory.dir("$projectName-MojangAPI")
-        }
     }
 }
 
 alwaysUpToDate {
 
-    paperRepoName.set("org.plazmamc.alwaysuptodate.paper.repository")
+    paperRepoName.set("paperRepo")
     paperBranchName.set("paperBranch")
     paperCommitName.set("paperCommit")
 
-    purpurRepoName.set("org.plazmamc.alwaysuptodate.purpur.repository")
+    purpurRepoName.set("purpurRepo")
     purpurBranchName.set("purpurBranch")
     purpurCommitName.set("purpurCommit")
 
@@ -147,7 +141,6 @@ tasks {
 
     generateDevelopmentBundle {
         apiCoordinates.set("${project.group}:${projectName.lowercase()}-api")
-        mojangApiCoordinates.set("${project.group}:${projectName.lowercase()}-mojangapi")
         libraryRepositories.addAll(
                 "https://repo.maven.apache.org/maven2/",
                 "https://maven.pkg.github.com/$projectRepo",
@@ -155,16 +148,28 @@ tasks {
         )
     }
 
+    register("reApplyServerPatches") {
+        doFirst {
+            projectDir.resolve("$projectName-Server").deleteRecursively()
+        }
+
+        finalizedBy("applyServerPatches")
+    }
+
     clean {
         doLast {
-            projectDir.resolve(".gradle/caches").deleteRecursively()
-            listOf("$projectName-API", "$projectName-MojangAPI", "$projectName-Server", "paper-api-generator", "run").forEach {
-                projectDir.resolve(it).deleteRecursively()
-            }
+            listOf(
+                ".gradle/caches",
+                "$projectName-API",
+                "$projectName-Server",
+                "paper-api-generator",
+                "run",
 
-            // remove dev environment files
-            listOf("0001-fixup.patch", "compare.txt").forEach {
-                projectDir.resolve(it).delete()
+                // remove dev environment files
+                "0001-fixup.patch",
+                "compare.txt"
+            ).forEach {
+                projectDir.resolve(it).deleteRecursively()
             }
         }
     }
@@ -172,8 +177,6 @@ tasks {
 
 publishing {
     publications.create<MavenPublication>("devBundle") {
-        artifact(tasks.generateDevelopmentBundle) {
-            artifactId = "dev-bundle"
-        }
+        artifact(tasks.generateDevelopmentBundle) {  artifactId = "dev-bundle" }
     }
 }

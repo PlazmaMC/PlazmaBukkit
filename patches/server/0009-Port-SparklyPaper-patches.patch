@@ -137,7 +137,7 @@ index f164256d59b761264876ca0c85f812d101bfd5de..deaeb134c47da8710afa747bf980bd00
          final TrackedChunk chunk = this.byChunk.get(CoordinateUtils.getChunkKey(chunkX, chunkZ));
  
 diff --git a/src/main/java/net/minecraft/server/MinecraftServer.java b/src/main/java/net/minecraft/server/MinecraftServer.java
-index 065308f8cca471dee8360857bd627402849976dc..eb4c8b516be77423c7decb247f261a264b1cfc89 100644
+index 7d20729d18187d2f576a1fe2f9b633429ee96923..9d5257f810f9f88504b913fa0c7c214acc1da2cb 100644
 --- a/src/main/java/net/minecraft/server/MinecraftServer.java
 +++ b/src/main/java/net/minecraft/server/MinecraftServer.java
 @@ -323,6 +323,7 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
@@ -148,7 +148,7 @@ index 065308f8cca471dee8360857bd627402849976dc..eb4c8b516be77423c7decb247f261a26
  
      public static <S extends MinecraftServer> S spin(Function<Thread, S> serverFactory) {
          AtomicReference<S> atomicreference = new AtomicReference();
-@@ -1741,17 +1742,15 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
+@@ -1743,17 +1744,15 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
          //MinecraftTimings.bukkitSchedulerTimer.stopTiming(); // Spigot // Paper // Purpur
          // Paper start - Folia scheduler API
          ((io.papermc.paper.threadedregions.scheduler.FoliaGlobalRegionScheduler) Bukkit.getGlobalRegionScheduler()).tick();
@@ -175,7 +175,7 @@ index 065308f8cca471dee8360857bd627402849976dc..eb4c8b516be77423c7decb247f261a26
          // Paper end - Folia scheduler API
          io.papermc.paper.adventure.providers.ClickCallbackProviderImpl.CALLBACK_MANAGER.handleQueue(this.tickCount); // Paper
          //this.profiler.push("commandFunctions"); // Purpur
-@@ -1818,7 +1817,15 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
+@@ -1820,7 +1819,15 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
  
              try {
                  //worldserver.timings.doTick.startTiming(); // Spigot // Purpur
@@ -192,7 +192,7 @@ index 065308f8cca471dee8360857bd627402849976dc..eb4c8b516be77423c7decb247f261a26
                  for (final io.papermc.paper.chunk.SingleThreadChunkRegionManager regionManager : worldserver.getChunkSource().chunkMap.regionManagers) {
                      regionManager.recalculateRegions();
 diff --git a/src/main/java/net/minecraft/server/dedicated/DedicatedServer.java b/src/main/java/net/minecraft/server/dedicated/DedicatedServer.java
-index 28e8967a87715fb2db25feb84e8736c446f355b5..32332070cc62c0842333b05c53005feb30051914 100644
+index 6b2aabb9ab3b8e30a8c3b333b7cb6fa9ebb01879..ca1e8da7540457ecba5684acd42129509c8204f5 100644
 --- a/src/main/java/net/minecraft/server/dedicated/DedicatedServer.java
 +++ b/src/main/java/net/minecraft/server/dedicated/DedicatedServer.java
 @@ -224,6 +224,7 @@ public class DedicatedServer extends MinecraftServer implements ServerInterface
@@ -204,7 +204,7 @@ index 28e8967a87715fb2db25feb84e8736c446f355b5..32332070cc62c0842333b05c53005feb
          // Paper start - fix converting txt to json file; convert old users earlier after PlayerList creation but before file load/save
          if (this.convertOldUsers()) {
 diff --git a/src/main/java/net/minecraft/server/level/ChunkMap.java b/src/main/java/net/minecraft/server/level/ChunkMap.java
-index 4e6fccec4f5ca14562bf5bae495ac36c14982d85..9162c6338dbb516ce60f4853e57da6e49be79282 100644
+index 345f143b0eeb77acb96e4bc716f3b23782ac782f..4f112e2550fae57ccd41f6525bffe6d6974a8dd1 100644
 --- a/src/main/java/net/minecraft/server/level/ChunkMap.java
 +++ b/src/main/java/net/minecraft/server/level/ChunkMap.java
 @@ -1439,7 +1439,7 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
@@ -212,7 +212,7 @@ index 4e6fccec4f5ca14562bf5bae495ac36c14982d85..9162c6338dbb516ce60f4853e57da6e4
  
                  // CraftBukkit start - respect vanish API
 -                if (flag && !player.getBukkitEntity().canSee(this.entity.getBukkitEntity())) { // Paper - only consider hits
-+                if (flag && !player.getBukkitEntity().canSeeChunkMapUpdatePlauer(this.entity.getBukkitEntity())) { // Paper - only consider hits
++                if (flag && !player.getBukkitEntity().chunkMapCanSee(this.entity.getBukkitEntity())) { // Paper - only consider hits // Plazma - Port SparklyPaper patches; Optimize canSee check
                      flag = false;
                  }
                  // CraftBukkit end
@@ -230,7 +230,7 @@ index 476a04d87a61b021816d2970e86042bde32d95a2..53c0b48966558f43bb9bd7d29d9588f9
                          continue;
                      }
 diff --git a/src/main/java/net/minecraft/server/level/ServerEntity.java b/src/main/java/net/minecraft/server/level/ServerEntity.java
-index 39e7dcf3c92c9203c190782be401c00c010b8aeb..b86ae3929ec5d3c4eb69d92774dc445aa5b3093e 100644
+index dd6278fe99e2ee4daa95249c71ea935dd08b0025..a528685040bf5596fe20fc055d691fd7e663762c 100644
 --- a/src/main/java/net/minecraft/server/level/ServerEntity.java
 +++ b/src/main/java/net/minecraft/server/level/ServerEntity.java
 @@ -78,6 +78,7 @@ public class ServerEntity {
@@ -241,18 +241,18 @@ index 39e7dcf3c92c9203c190782be401c00c010b8aeb..b86ae3929ec5d3c4eb69d92774dc445a
  
      public ServerEntity(ServerLevel worldserver, Entity entity, int i, boolean flag, Consumer<Packet<?>> consumer, Set<ServerPlayerConnection> trackedPlayers) {
          this.trackedPlayers = trackedPlayers;
-@@ -208,12 +209,16 @@ public class ServerEntity {
+@@ -215,12 +216,15 @@ public class ServerEntity {
  
                  if ((this.trackDelta || this.entity.hasImpulse || this.entity instanceof LivingEntity && ((LivingEntity) this.entity).isFallFlying()) && this.tickCount > 0) {
                      Vec3 vec3d1 = this.entity.getDeltaMovement();
 -                    double d0 = vec3d1.distanceToSqr(this.ap);
-+                    // Plazma start - SparklyPaper port; Skip distanceToSqr if the delta movement hasn't changed
-+                    if (!skipSqrWhenNoDeltaChanges && vec3d1 != this.ap) {
-+                        double d0 = vec3d1.distanceToSqr(this.ap);
- 
+-
 -                    if (d0 > 1.0E-7D || d0 > 0.0D && vec3d1.lengthSqr() == 0.0D) {
 -                        this.ap = vec3d1;
 -                        this.broadcast.accept(new ClientboundSetEntityMotionPacket(this.entity.getId(), this.ap));
++                    // Plazma start - SparklyPaper port; Skip distanceToSqr if the delta movement hasn't changed
++                    if (!skipSqrWhenNoDeltaChanges && vec3d1 != this.ap) {
++                        double d0 = vec3d1.distanceToSqr(this.ap);
 +                        if (d0 > 1.0E-7D || d0 > 0.0D && vec3d1.lengthSqr() == 0.0D) {
 +                            this.ap = vec3d1;
 +                            this.broadcast.accept(new ClientboundSetEntityMotionPacket(this.entity.getId(), this.ap));
@@ -263,7 +263,7 @@ index 39e7dcf3c92c9203c190782be401c00c010b8aeb..b86ae3929ec5d3c4eb69d92774dc445a
  
                  if (packet1 != null) {
 diff --git a/src/main/java/net/minecraft/server/level/ServerLevel.java b/src/main/java/net/minecraft/server/level/ServerLevel.java
-index aef5d7562e1636e85382ed60b694a9a0d5dccd9d..dc8cb0e9c8abdbefb0420599a243b1a4fe66bb05 100644
+index 5df20b97f3c88248ab70e7686b5fa0ca8e5a58c2..d1b2e68a702ce01c33cfe0e1297a8809e3acf088 100644
 --- a/src/main/java/net/minecraft/server/level/ServerLevel.java
 +++ b/src/main/java/net/minecraft/server/level/ServerLevel.java
 @@ -233,6 +233,12 @@ public class ServerLevel extends Level implements WorldGenLevel {
@@ -826,7 +826,7 @@ index 0000000000000000000000000000000000000000..f8c26e26025d7a7b5489ed5b3274ba73
 +
 +}
 diff --git a/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java b/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java
-index 88948526f9acf4bb2157484b80891902fd843b02..20acef32cabdb8f860088341248fe9960f04fbfd 100644
+index 2c9726d0f2dec1136a2f45768e8f8169ce165a1d..4f199eea0c8a05f94e8443917c5a6f2c42f0b25e 100644
 --- a/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java
 +++ b/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java
 @@ -976,7 +976,7 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
@@ -838,19 +838,23 @@ index 88948526f9acf4bb2157484b80891902fd843b02..20acef32cabdb8f860088341248fe996
  
          for (Map.Entry<? extends io.papermc.paper.math.Position, BlockData> entry : blockChanges.entrySet()) {
              BlockData blockData = entry.getValue();
-@@ -2240,6 +2240,12 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
-         return this.equals(entity) || entity.isVisibleByDefault() ^ this.invertedVisibilityEntities.containsKey(entity.getUniqueId()); // SPIGOT-7312: Can always see self
+@@ -2237,9 +2237,15 @@ public class CraftPlayer extends CraftHumanEntity implements Player {
+ 
+     @Override
+     public boolean canSee(org.bukkit.entity.Entity entity) {
+-        return this.equals(entity) || entity.isVisibleByDefault() ^ this.invertedVisibilityEntities.containsKey(entity.getUniqueId()); // SPIGOT-7312: Can always see self
++        return this.equals(entity) || this.chunkMapCanSee(entity); // SPIGOT-7312: Can always see self // Plazma - Port SparklyPaper patches; Optimize canSee check
      }
  
-+    // Plazma start - Port SparklyPaper patches; Optimize canSee check
-+    public boolean canSeeChunkMapUpdatePlauer(org.bukkit.entity.Entity entity) {
++    // Plazma start - Port SparklyPaper patches; Optimize canSee check (The check in ChunkMap#updatePlayer already rejects if it is the same entity, so we don't need to check it twice, especially because CraftPlayer's equals check is a bit expensive)
++    public boolean chunkMapCanSee(org.bukkit.entity.Entity entity) {
 +        return entity.isVisibleByDefault() ^ (!invertedVisibilityEntities.isEmpty() && this.invertedVisibilityEntities.containsKey(entity.getUniqueId()));
 +    }
 +    // Plazma end - Port SparklyPaper patches; Optimize canSee check
 +
-     public boolean canSee(UUID uuid) {
+     public boolean canSeePlayer(UUID uuid) {
          org.bukkit.entity.Entity entity = this.getServer().getPlayer(uuid);
-         if (entity == null) {
+ 
 diff --git a/src/main/java/org/bukkit/craftbukkit/map/CraftMapColorCache.java b/src/main/java/org/bukkit/craftbukkit/map/CraftMapColorCache.java
 index 8149b9c51b78eb5c689b7218a2ca3aab60e73bcf..b9a303f6280a2f6ad3616da152922a4f4a504281 100644
 --- a/src/main/java/org/bukkit/craftbukkit/map/CraftMapColorCache.java
