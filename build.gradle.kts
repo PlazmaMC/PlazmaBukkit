@@ -148,14 +148,6 @@ tasks {
         )
     }
 
-    register("reApplyServerPatches") {
-        doFirst {
-            projectDir.resolve("$projectName-Server").deleteRecursively()
-        }
-
-        finalizedBy("applyServerPatches")
-    }
-
     clean {
         doLast {
             listOf(
