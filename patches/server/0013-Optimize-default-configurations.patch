@@ -8,6 +8,64 @@ Subject: [PATCH] Optimize default configurations
 - AkiraDevelopment/SimplyMC
 - YouHaveTrouble/minecraft-exploits-and-how-to-fix-them
 
+diff --git a/src/main/java/gg/pufferfish/pufferfish/PufferfishConfig.java b/src/main/java/gg/pufferfish/pufferfish/PufferfishConfig.java
+index cba3d725245223c5d9e8e59dcceec61f0acc1b85..63af4c9e2bc662e08ebf858d84933b3e4e3b92cb 100644
+--- a/src/main/java/gg/pufferfish/pufferfish/PufferfishConfig.java
++++ b/src/main/java/gg/pufferfish/pufferfish/PufferfishConfig.java
+@@ -72,7 +72,7 @@ public class PufferfishConfig {
+ 		getString("info.version", "1.0");
+ 		setComment("info",
+ 				"Pufferfish Configuration",
+-				"Check out Pufferfish Host for maximum performance server hosting: https://pufferfish.host",
++				// "Check out Pufferfish Host for maximum performance server hosting: https://pufferfish.host", // Plazma - Sponsorblock
+ 				"Join our Discord for support: https://discord.gg/reZw4vQV9H",
+ 				"Download new builds at https://ci.pufferfish.host/job/Pufferfish");
+ 		
+@@ -227,7 +227,7 @@ public class PufferfishConfig {
+     public static int maxProjectileLoadsPerTick;
+     public static int maxProjectileLoadsPerProjectile;
+     private static void projectileLoading() {
+-        maxProjectileLoadsPerTick = getInt("projectile.max-loads-per-tick", 10, "Controls how many chunks are allowed", "to be sync loaded by projectiles in a tick.");
++        maxProjectileLoadsPerTick = getInt("projectile.max-loads-per-tick", org.plazmamc.plazma.configurations.PlazmaConfigurations.optimize() ? 8 : 10, "Controls how many chunks are allowed", "to be sync loaded by projectiles in a tick.");
+         maxProjectileLoadsPerProjectile = getInt("projectile.max-loads-per-projectile", 10, "Controls how many chunks a projectile", "can load in its lifetime before it gets", "automatically removed.");
+ 
+         setComment("projectile", "Optimizes projectile settings");
+@@ -241,12 +241,12 @@ public class PufferfishConfig {
+     public static int activationDistanceMod;
+ 
+     private static void dynamicActivationOfBrains() throws IOException {
+-        dearEnabled = getBoolean("dab.enabled", "activation-range.enabled", false); // Purpur
++        dearEnabled = getBoolean("dab.enabled", "activation-range.enabled", org.plazmamc.plazma.configurations.PlazmaConfigurations.optimize()); // Purpur
+         startDistance = getInt("dab.start-distance", "activation-range.start-distance", 12,
+                 "This value determines how far away an entity has to be",
+                 "from the player to start being effected by DEAR.");
+         startDistanceSquared = startDistance * startDistance;
+-        maximumActivationPrio = getInt("dab.max-tick-freq", "activation-range.max-tick-freq", 20,
++        maximumActivationPrio = getInt("dab.max-tick-freq", "activation-range.max-tick-freq", org.plazmamc.plazma.configurations.PlazmaConfigurations.optimize() ? 7 : 8,
+                 "This value defines how often in ticks, the furthest entity",
+                 "will get their pathfinders and behaviors ticked. 20 = 1s");
+         activationDistanceMod = getInt("dab.activation-dist-mod", "activation-range.activation-dist-mod", 8,
+@@ -269,8 +269,18 @@ public class PufferfishConfig {
+ 	public static Map<String, Integer> projectileTimeouts;
+ 	private static void projectileTimeouts() {
+ 		// Set some defaults
+-		getInt("entity_timeouts.SNOWBALL", -1);
+-		getInt("entity_timeouts.LLAMA_SPIT", -1);
++        // Plazma start - Optimize default configurations
++        if (org.plazmamc.plazma.configurations.PlazmaConfigurations.optimize()) {
++            getInt("entity_timeouts.ARROW", 200);
++            getInt("entity_timeouts.EGG", 200);
++            getInt("entity_timeouts.ENDER_PEARL", 200);
++            getInt("entity_timeouts.SNOWBALL", 200);
++            getInt("entity_timeouts.LLAMA_SPIT", 200);
++        } else {
++            getInt("entity_timeouts.SNOWBALL", -1);
++            getInt("entity_timeouts.LLAMA_SPIT", -1);
++        }
++        // Plazma end - Optimize default configurations
+ 		setComment("entity_timeouts",
+ 				"These values define a entity's maximum lifespan. If an",
+ 				"entity is in this list and it has survived for longer than",
 diff --git a/src/main/java/io/papermc/paper/configuration/GlobalConfiguration.java b/src/main/java/io/papermc/paper/configuration/GlobalConfiguration.java
 index 32035e37b39ba42232fea948166e7c1d4d06190c..8445a0b25d647b2c1f9a44f849084cdec0842e18 100644
 --- a/src/main/java/io/papermc/paper/configuration/GlobalConfiguration.java
@@ -419,6 +477,34 @@ index 6717941d18dbd6871b4613106b9787063e11722f..b6a6a74dfd00a4536258c8693048c9d1
      public boolean zombieBypassMobGriefing = false;
      public boolean zombieTakeDamageFromWater = false;
      public boolean zombieAlwaysDropExp = false;
+diff --git a/src/main/java/org/spigotmc/SpigotConfig.java b/src/main/java/org/spigotmc/SpigotConfig.java
+index 6c2a3813e7d63d57f07a8fa2edbb9d231221d818..cda84c869881a4d63bcf81b1e8b0145d198db490 100644
+--- a/src/main/java/org/spigotmc/SpigotConfig.java
++++ b/src/main/java/org/spigotmc/SpigotConfig.java
+@@ -197,8 +197,8 @@ public class SpigotConfig
+     public static String whitelistMessage;
+     public static String unknownCommandMessage;
+     public static String serverFullMessage;
+-    public static String outdatedClientMessage = "Outdated client! Please use {0}";
+-    public static String outdatedServerMessage = "Outdated server! I\'m still on {0}";
++    public static String outdatedClientMessage = org.plazmamc.plazma.configurations.PlazmaConfigurations.optimize() ? "<lang:multiplayer.disconnect.outdated_client>" : "Outdated client! Please use {0}"; // Plazma - Optimize default configurations
++    public static String outdatedServerMessage = org.plazmamc.plazma.configurations.PlazmaConfigurations.optimize() ? "<lang:multiplayer.disconnect.outdated_server>" : "Outdated server! I\'m still on {0}"; // Plazma - Optimize default configurations
+     private static String transform(String s)
+     {
+         return ChatColor.translateAlternateColorCodes( '&', s ).replaceAll( "\\\\n", "\n" );
+@@ -211,9 +211,9 @@ public class SpigotConfig
+             SpigotConfig.set( "messages.outdated-server", SpigotConfig.outdatedServerMessage );
+         }
+ 
+-        SpigotConfig.whitelistMessage = SpigotConfig.transform( SpigotConfig.getString( "messages.whitelist", "You are not whitelisted on this server!" ) );
+-        SpigotConfig.unknownCommandMessage = SpigotConfig.transform( SpigotConfig.getString( "messages.unknown-command", "Unknown command. Type \"/help\" for help." ) );
+-        SpigotConfig.serverFullMessage = SpigotConfig.transform( SpigotConfig.getString( "messages.server-full", "The server is full!" ) );
++        SpigotConfig.whitelistMessage = SpigotConfig.transform( SpigotConfig.getString( "messages.whitelist", org.plazmamc.plazma.configurations.PlazmaConfigurations.optimize() ? "<lang:multiplayer.disconnect.not_whitelisted>" : "You are not whitelisted on this server!" ) ); // Plazma - Optimize default configurations
++        SpigotConfig.unknownCommandMessage = SpigotConfig.transform( SpigotConfig.getString( "messages.unknown-command", org.plazmamc.plazma.configurations.PlazmaConfigurations.optimize() ? "" : "Unknown command. Type \"/help\" for help." ) ); // Plazma - Optimize default configurations
++        SpigotConfig.serverFullMessage = SpigotConfig.transform( SpigotConfig.getString( "messages.server-full", org.plazmamc.plazma.configurations.PlazmaConfigurations.optimize() ? "<lang:multiplayer.disconnect.server_full>" : "The server is full!" ) ); // Plazma - Optimize default configurations
+         SpigotConfig.outdatedClientMessage = SpigotConfig.transform( SpigotConfig.getString( "messages.outdated-client", SpigotConfig.outdatedClientMessage ) );
+         SpigotConfig.outdatedServerMessage = SpigotConfig.transform( SpigotConfig.getString( "messages.outdated-server", SpigotConfig.outdatedServerMessage ) );
+     }
 diff --git a/src/main/java/org/spigotmc/SpigotWorldConfig.java b/src/main/java/org/spigotmc/SpigotWorldConfig.java
 index 1cf6d4f854d89c515e48e1fb365eb95ff9340765..7d1ae99e83dc6511838092c3ab6e0fd5f39faabc 100644
 --- a/src/main/java/org/spigotmc/SpigotWorldConfig.java
