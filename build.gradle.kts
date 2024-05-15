@@ -98,18 +98,18 @@ paperweight {
 
     usePaperUpstream(providers.gradleProperty("paperCommit")) {
         withPaperPatcher {
-            apiPatchDir.set(layout.projectDirectory.dir("patches/api"))
-            apiOutputDir.set(layout.projectDirectory.dir("$projectName-API"))
+            apiPatchDir.set(projectDir.resolve("patches/api"))
+            apiOutputDir.set(projectDir.resolve("$projectName-API"))
 
-            serverPatchDir.set(layout.projectDirectory.dir("patches/server"))
-            serverOutputDir.set(layout.projectDirectory.dir("$projectName-Server"))
+            serverPatchDir.set(projectDir.resolve("patches/server"))
+            serverOutputDir.set(projectDir.resolve("$projectName-Server"))
         }
 
         patchTasks.register("generatedApi") {
             isBareDirectory = true
             upstreamDirPath = "paper-api-generator/generated"
-            patchDir = layout.projectDirectory.dir("patches/generated-api")
-            outputDir = layout.projectDirectory.dir("paper-api-generator/generated")
+            patchDir = projectDir.resolve("patches/generated-api")
+            outputDir = projectDir.resolve("paper-api-generator/generated")
         }
     }
 }
