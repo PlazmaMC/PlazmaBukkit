@@ -5,7 +5,7 @@
 ### A Server Platform for Minecraft: Java Edition based on [Paper](https://github.com/PaperMC/Paper)
 
 [![Discord](https://img.shields.io/discord/1083716853928558652?style=for-the-badge&logo=discord&logoColor=ffffff&label=DISCORD&color=5865F2&link=https%3A%2F%2Fdiscord.gg%2FMmfC52K8A8)](https://discord.gg/MmfC52K8A8)
-[![Build Status](https://img.shields.io/github/actions/workflow/status/PlazmaMC/Plazma/build.yml?branch=ver/1.20.1&logo=GoogleAnalytics&style=for-the-badge&logoColor=ffffff)](https://github.com/PlazmaMC/Plazma/actions/workflows/build.yml?query=branch:ver/1.20.1)
+[![Build Status](https://img.shields.io/github/actions/workflow/status/PlazmaMC/Plazma/build.yml?branch=old/1.20.1&logo=GoogleAnalytics&style=for-the-badge&logoColor=ffffff)](https://github.com/PlazmaMC/Plazma/actions/workflows/build.yml?query=branch:old/1.20.1)
 [![MC Version](https://img.shields.io/badge/MC-1.20.1-6047ff?&logo=Webpack&style=for-the-badge&logoColor=ffffff)](https://github.com/PlazmaMC/Plazma/releases/build/1.20.1/latest)
 
 [![License](https://img.shields.io/github/license/PlazmaMC/Plazma?logo=github&style=flat-square&logoColor=ffffff)](LICENSE)
