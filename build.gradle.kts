@@ -11,8 +11,8 @@ plugins {
 }
 
 val jdkVersion = property("jdkVersion").toString().toInt()
-val projectName = property("projectName").toString()
-val projectRepo = property("projectRepo").toString()
+val providerRepo = property("providerRepo").toString()
+val brandName = property("brandName").toString()
 
 kotlin.jvmToolchain(jdkVersion)
 
@@ -35,21 +35,13 @@ allprojects {
 
     java.toolchain.languageVersion.set(JavaLanguageVersion.of(jdkVersion))
 
-    publishing {
-        repositories {
-            maven {
-                name = "githubPackage"
-                url = uri("https://maven.pkg.github.com/$projectRepo")
+    publishing.repositories.maven("https://maven.pkg.github.com/$providerRepo") {
+        name = "githubPackage"
+        url = uri("https://maven.pkg.github.com/$providerRepo")
 
-                credentials {
-                    username = System.getenv("GITHUB_USERNAME")
-                    password = System.getenv("GITHUB_TOKEN")
-                }
-            }
-
-            publications.register<MavenPublication>("gpr") {
-                from(components["java"])
-            }
+        credentials {
+            username = System.getenv("GITHUB_USERNAME")
+            password = System.getenv("GITHUB_TOKEN")
         }
     }
 }
@@ -90,7 +82,7 @@ subprojects {
 }
 
 paperweight {
-    serverProject = project(":${projectName.lowercase()}-server")
+    serverProject = project(":${brandName.lowercase()}-server")
 
     remapRepo = "https://repo.papermc.io/repository/maven-public/"
     decompileRepo = "https://repo.papermc.io/repository/maven-public/"
@@ -98,10 +90,10 @@ paperweight {
     usePaperUpstream(providers.gradleProperty("paperCommit")) {
         withPaperPatcher {
             apiPatchDir.set(projectDir.resolve("patches/api"))
-            apiOutputDir.set(projectDir.resolve("$projectName-API"))
+            apiOutputDir.set(projectDir.resolve("$brandName-API"))
 
             serverPatchDir.set(projectDir.resolve("patches/server"))
-            serverOutputDir.set(projectDir.resolve("$projectName-Server"))
+            serverOutputDir.set(projectDir.resolve("$brandName-Server"))
         }
 
         patchTasks.register("generatedApi") {
@@ -139,10 +131,10 @@ tasks {
     }
 
     generateDevelopmentBundle {
-        apiCoordinates.set("${project.group}:${projectName.lowercase()}-api")
+        apiCoordinates.set("${project.group}:${brandName.lowercase()}-api")
         libraryRepositories.addAll(
                 "https://repo.maven.apache.org/maven2/",
-                "https://maven.pkg.github.com/$projectRepo",
+                "https://maven.pkg.github.com/$providerRepo",
                 "https://papermc.io/repo/repository/maven-public/"
         )
     }
@@ -151,8 +143,8 @@ tasks {
         doLast {
             listOf(
                 ".gradle/caches",
-                "$projectName-API",
-                "$projectName-Server",
+                "$brandName-API",
+                "$brandName-Server",
                 "paper-api-generator",
                 "run",
 

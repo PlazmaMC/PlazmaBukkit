@@ -5,7 +5,7 @@ Subject: [PATCH] Completely remove Mojang Profiler
 
 
 diff --git a/src/main/java/net/minecraft/commands/Commands.java b/src/main/java/net/minecraft/commands/Commands.java
-index 55b29e9a540cfc00dc32c7ae14d603c150e8863d..4f1976333662662bc6aa844bde9667b8c9a0b159 100644
+index 36f65fd7b3b291daf2d0138278b47a9d74560a89..dd81cea56d00f576e0b611b212fd17c18d4f9659 100644
 --- a/src/main/java/net/minecraft/commands/Commands.java
 +++ b/src/main/java/net/minecraft/commands/Commands.java
 @@ -442,7 +442,7 @@ public class Commands {
@@ -65,10 +65,10 @@ index f626a2f28f2aebb3237cebb6afef3c4fa1a6cb37..467e17bfce31d0919d603698c9d88a04
      public int forkLimit() {
          return this.forkLimit;
 diff --git a/src/main/java/net/minecraft/server/MinecraftServer.java b/src/main/java/net/minecraft/server/MinecraftServer.java
-index c9a5c3b915f09a316f0f2725c51b696da111ccd3..983caa80431f5672cca341e91d9ccc40749a56e4 100644
+index 2452dae1e55165bd8c49c4670e3f2adb523de5da..703e3720cf28c669000b663cba56b070ac4ed96a 100644
 --- a/src/main/java/net/minecraft/server/MinecraftServer.java
 +++ b/src/main/java/net/minecraft/server/MinecraftServer.java
-@@ -104,18 +104,18 @@ import net.minecraft.util.datafix.DataFixers;
+@@ -103,18 +103,18 @@ import net.minecraft.util.datafix.DataFixers;
  import net.minecraft.util.debugchart.RemoteDebugSampleType;
  import net.minecraft.util.debugchart.SampleLogger;
  import net.minecraft.util.debugchart.TpsDebugDimensions;
@@ -97,7 +97,7 @@ index c9a5c3b915f09a316f0f2725c51b696da111ccd3..983caa80431f5672cca341e91d9ccc40
  import net.minecraft.util.thread.ReentrantBlockableEventLoop;
  import net.minecraft.world.Difficulty;
  import net.minecraft.world.RandomSequences;
-@@ -220,14 +220,14 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
+@@ -217,14 +217,14 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
      public LevelStorageSource.LevelStorageAccess storageSource;
      public final PlayerDataStorage playerDataStorage;
      private final List<Runnable> tickables = Lists.newArrayList();
@@ -120,7 +120,7 @@ index c9a5c3b915f09a316f0f2725c51b696da111ccd3..983caa80431f5672cca341e91d9ccc40
      private ServerConnectionListener connection;
      public final ChunkProgressListenerFactory progressListenerFactory;
      @Nullable
-@@ -2607,10 +2607,12 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
+@@ -2601,10 +2601,12 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
          }
      }
  
@@ -133,7 +133,7 @@ index c9a5c3b915f09a316f0f2725c51b696da111ccd3..983caa80431f5672cca341e91d9ccc40
  
      public abstract boolean isSingleplayerOwner(GameProfile profile);
  
-@@ -2854,6 +2856,7 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
+@@ -2848,6 +2850,7 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
      }
      // CraftBukkit end
  
@@ -141,22 +141,22 @@ index c9a5c3b915f09a316f0f2725c51b696da111ccd3..983caa80431f5672cca341e91d9ccc40
      private void startMetricsRecordingTick() {
          if (false && this.willStartRecordingMetrics) { // Purpur
              this.metricsRecorder = ActiveMetricsRecorder.createStarted(new ServerMetricsSamplersProvider(Util.timeSource, this.isDedicatedServer()), Util.timeSource, Util.ioPool(), new MetricsPersister("server"), this.onMetricsRecordingStopped, (path) -> {
-@@ -2880,12 +2883,12 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
+@@ -2874,12 +2877,12 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
      }
  
      public void startRecordingMetrics(Consumer<ProfileResults> resultConsumer, Consumer<Path> dumpConsumer) {
 -        /*this.onMetricsRecordingStopped = (methodprofilerresults) -> { // Purpur
-+        this.onMetricsRecordingStopped = (methodprofilerresults) -> { // Purpur // Plazma - IDE problem
++        this.onMetricsRecordingStopped = (methodprofilerresults) -> { // Purpur // Plazma - Parsing problem
              this.stopRecordingMetrics();
              resultConsumer.accept(methodprofilerresults);
          };
          this.onMetricsRecordingFinished = dumpConsumer;
 -        this.willStartRecordingMetrics = true;*/ // Purpur
-+        this.willStartRecordingMetrics = true; // Purpur // Plazma - IDE problem
++        this.willStartRecordingMetrics = true; // Purpur // Plazma - Parsing problem
      }
  
      public void stopRecordingMetrics() {
-@@ -2900,6 +2903,7 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
+@@ -2894,6 +2897,7 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
          //this.metricsRecorder.cancel(); // Purpur
          //this.profiler = this.metricsRecorder.getProfiler(); // Purpur
      }
@@ -164,7 +164,7 @@ index c9a5c3b915f09a316f0f2725c51b696da111ccd3..983caa80431f5672cca341e91d9ccc40
  
      public Path getWorldPath(LevelResource worldSavePath) {
          return this.storageSource.getLevelPath(worldSavePath);
-@@ -2950,6 +2954,7 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
+@@ -2944,6 +2948,7 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
          return this.isSaving;
      }
  
@@ -172,7 +172,7 @@ index c9a5c3b915f09a316f0f2725c51b696da111ccd3..983caa80431f5672cca341e91d9ccc40
      public boolean isTimeProfilerRunning() {
          return false; //this.debugCommandProfilerDelayStart || this.debugCommandProfiler != null; // Purpur
      }
-@@ -2968,6 +2973,7 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
+@@ -2962,6 +2967,7 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
              return methodprofilerresults;
          }
      }
@@ -180,7 +180,7 @@ index c9a5c3b915f09a316f0f2725c51b696da111ccd3..983caa80431f5672cca341e91d9ccc40
  
      public int getMaxChainedNeighborUpdates() {
          return 1000000;
-@@ -3019,6 +3025,7 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
+@@ -3013,6 +3019,7 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
          }
      }
  
@@ -188,7 +188,7 @@ index c9a5c3b915f09a316f0f2725c51b696da111ccd3..983caa80431f5672cca341e91d9ccc40
      private static class TimeProfiler {
  
          final long startNanos;
-@@ -3068,6 +3075,7 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
+@@ -3062,6 +3069,7 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
              };
          }
      }
@@ -361,7 +361,7 @@ index 8c587f829c5e8c6b6df3150024c4ae704988c47b..319f484b535143a94ee2da11114acacc
  }
 +// Plazma end - Completely remove Mojang's Profiler
 diff --git a/src/main/java/net/minecraft/server/dedicated/DedicatedServer.java b/src/main/java/net/minecraft/server/dedicated/DedicatedServer.java
-index 6fd3cb6daac76d41ea9c2aaabf171f958b8cf922..0a30e9873e5f218589dfd90f04edc863e645989a 100644
+index c48f42815314e2fb106b0dff5f38a9e5c3498632..95105a7ffaa71f8eaa00c617fc112872aa2e2e78 100644
 --- a/src/main/java/net/minecraft/server/dedicated/DedicatedServer.java
 +++ b/src/main/java/net/minecraft/server/dedicated/DedicatedServer.java
 @@ -926,11 +926,13 @@ public class DedicatedServer extends MinecraftServer implements ServerInterface
@@ -1211,7 +1211,7 @@ index 97c129f5949ca7cb7430e1cf56e881c00f129530..5c4d902a6febe8ffadecbbc64b50ecdc
 +     */ // Plazma - Completely remove Mojang's Profiler
  }
 diff --git a/src/main/java/net/minecraft/world/entity/Mob.java b/src/main/java/net/minecraft/world/entity/Mob.java
-index 0d138d36b86e4d31b28455640a82b6097e0a2b36..9e9199b83fce2c9c8f03f4116c14a331279a234a 100644
+index a2bae50c126208621909ada50cdddd625c8b1912..123378148773b6818e67f2d0d330f1ffd3b883b8 100644
 --- a/src/main/java/net/minecraft/world/entity/Mob.java
 +++ b/src/main/java/net/minecraft/world/entity/Mob.java
 @@ -37,7 +37,7 @@ import net.minecraft.sounds.SoundEvent;
@@ -1288,7 +1288,7 @@ index a31326e24cb68472c81cd781c5e3041772712862..03323be2a120c53ac5a3607f6154c99d
          Builder<RecipeType<?>, RecipeHolder<?>> builder = ImmutableMultimap.builder();
          com.google.common.collect.ImmutableMap.Builder<ResourceLocation, RecipeHolder<?>> com_google_common_collect_immutablemap_builder = ImmutableMap.builder();
 diff --git a/src/main/java/net/minecraft/world/level/Level.java b/src/main/java/net/minecraft/world/level/Level.java
-index 23f10ed05e2c4aabfa3a565a9117dabe52f175f7..2ad60c53890567742f0eff85987a41b0f6f50673 100644
+index e3a43b352b2be5dbeae1b9ba85fad711d2a3153d..f9bca29920af57029325153a17db184309b31a86 100644
 --- a/src/main/java/net/minecraft/world/level/Level.java
 +++ b/src/main/java/net/minecraft/world/level/Level.java
 @@ -35,7 +35,7 @@ import net.minecraft.sounds.SoundSource;
@@ -1309,7 +1309,7 @@ index 23f10ed05e2c4aabfa3a565a9117dabe52f175f7..2ad60c53890567742f0eff85987a41b0
      public final boolean isClientSide;
      private final WorldBorder worldBorder;
      private final BiomeManager biomeManager;
-@@ -271,7 +271,7 @@ public abstract class Level implements LevelAccessor, AutoCloseable {
+@@ -262,7 +262,7 @@ public abstract class Level implements LevelAccessor, AutoCloseable {
          ResourceKey<Level> resourcekey,
          RegistryAccess iregistrycustom,
          Holder<DimensionType> holder,
@@ -1318,7 +1318,7 @@ index 23f10ed05e2c4aabfa3a565a9117dabe52f175f7..2ad60c53890567742f0eff85987a41b0
          boolean flag,
          boolean flag1,
          long i,
-@@ -300,7 +300,7 @@ public abstract class Level implements LevelAccessor, AutoCloseable {
+@@ -291,7 +291,7 @@ public abstract class Level implements LevelAccessor, AutoCloseable {
          }
  
          // CraftBukkit end
@@ -1327,18 +1327,20 @@ index 23f10ed05e2c4aabfa3a565a9117dabe52f175f7..2ad60c53890567742f0eff85987a41b0
          this.levelData = worlddatamutable;
          this.dimensionTypeRegistration = holder;
          final DimensionType dimensionmanager = (DimensionType) holder.value();
-@@ -1877,6 +1877,7 @@ public abstract class Level implements LevelAccessor, AutoCloseable {
+@@ -1868,14 +1868,15 @@ public abstract class Level implements LevelAccessor, AutoCloseable {
          return false;
      }
  
-+    /* // Plazma - Completely remove Mojang's Profi
++    /* // Plazma - Completely remove Mojang's Profiler
      public ProfilerFiller getProfiler() {
-         //if (true || gg.pufferfish.pufferfish.PufferfishConfig.disableMethodProfiler) return net.minecraft.util.profiling.InactiveProfiler.INSTANCE; // Pufferfish // Purpur // Purpur - TODO: Pufferfish
+         if (true || gg.pufferfish.pufferfish.PufferfishConfig.disableMethodProfiler) return net.minecraft.util.profiling.InactiveProfiler.INSTANCE; // Pufferfish // Purpur
          return (ProfilerFiller) this.profiler.get();
-@@ -1885,6 +1886,7 @@ public abstract class Level implements LevelAccessor, AutoCloseable {
+-    }
+ 
      public Supplier<ProfilerFiller> getProfilerSupplier() {
          return this.profiler;
-     }
+-    }
++    }}
 +     */ // Plazma - Completely remove Mojang's Profiler
  
      @Override

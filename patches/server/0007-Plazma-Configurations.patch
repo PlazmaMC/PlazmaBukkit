@@ -4,20 +4,8 @@ Date: Fri, 3 Nov 2023 00:11:50 +0900
 Subject: [PATCH] Plazma Configurations
 
 
-diff --git a/build.gradle.kts b/build.gradle.kts
-index 533418d3514fce41bab403c3ba2db21e96ac134e..3995afe1bf7f9b710e40cebce0d5d7b85ce9e258 100644
---- a/build.gradle.kts
-+++ b/build.gradle.kts
-@@ -20,6 +20,7 @@ dependencies {
-     implementation(common.asm.commons)
-     implementation(common.log4j.iostreams)
-     implementation(common.commons.lang2)
-+    implementation(common.adventure.serializer.ansi)
-     implementation(server.velocity) { isTransitive = false }
-     implementation(server.simpleyaml) {
-         exclude(group="org.yaml", module="snakeyaml")
 diff --git a/src/main/java/io/papermc/paper/configuration/Configurations.java b/src/main/java/io/papermc/paper/configuration/Configurations.java
-index f5d725feb6d32f947eed82073c5594e205f31afe..71be8c8e5bb887a68e9ae5ab822313d7766ad6ca 100644
+index 62b602450a53cfebf08f839b505d0e965aff6e20..cda3636a1ff914c7177e95a8f813e9f4dd27a2c5 100644
 --- a/src/main/java/io/papermc/paper/configuration/Configurations.java
 +++ b/src/main/java/io/papermc/paper/configuration/Configurations.java
 @@ -39,28 +39,95 @@ public abstract class Configurations<G, W> {
@@ -178,7 +166,7 @@ index f5d725feb6d32f947eed82073c5594e205f31afe..71be8c8e5bb887a68e9ae5ab822313d7
      }
  
      private void trySaveFileNode(YamlConfigurationLoader loader, ConfigurationNode node, String filename) throws ConfigurateException {
-@@ -124,7 +195,7 @@ public abstract class Configurations<G, W> {
+@@ -125,7 +196,7 @@ public abstract class Configurations<G, W> {
      }
  
      protected G initializeGlobalConfiguration(final CheckedFunction<ConfigurationNode, G, SerializationException> creator) throws ConfigurateException {
@@ -187,7 +175,7 @@ index f5d725feb6d32f947eed82073c5594e205f31afe..71be8c8e5bb887a68e9ae5ab822313d7
          final YamlConfigurationLoader loader = this.createGlobalLoaderBuilder()
              .defaultOptions(this.applyObjectMapperFactory(this.createGlobalObjectMapperFactoryBuilder().build()))
              .path(configFile)
-@@ -155,6 +226,13 @@ public abstract class Configurations<G, W> {
+@@ -156,6 +227,13 @@ public abstract class Configurations<G, W> {
      }
  
      protected void applyGlobalConfigTransformations(final ConfigurationNode node) throws ConfigurateException {
@@ -201,7 +189,7 @@ index f5d725feb6d32f947eed82073c5594e205f31afe..71be8c8e5bb887a68e9ae5ab822313d7
      }
  
      @MustBeInvokedByOverriders
-@@ -162,6 +240,7 @@ public abstract class Configurations<G, W> {
+@@ -163,6 +241,7 @@ public abstract class Configurations<G, W> {
          return ContextMap.builder()
              .put(WORLD_NAME, WORLD_DEFAULTS)
              .put(WORLD_KEY, WORLD_DEFAULTS_KEY)
@@ -209,7 +197,7 @@ index f5d725feb6d32f947eed82073c5594e205f31afe..71be8c8e5bb887a68e9ae5ab822313d7
              .put(REGISTRY_ACCESS, registryAccess);
      }
  
-@@ -169,7 +248,7 @@ public abstract class Configurations<G, W> {
+@@ -170,7 +249,7 @@ public abstract class Configurations<G, W> {
          final ContextMap contextMap = this.createDefaultContextMap(registryAccess)
              .put(FIRST_DEFAULT)
              .build();
@@ -218,7 +206,7 @@ index f5d725feb6d32f947eed82073c5594e205f31afe..71be8c8e5bb887a68e9ae5ab822313d7
          final DefaultWorldLoader result = this.createDefaultWorldLoader(false, contextMap, configFile);
          final YamlConfigurationLoader loader = result.loader();
          final ConfigurationNode node = loader.load();
-@@ -179,8 +258,8 @@ public abstract class Configurations<G, W> {
+@@ -180,8 +259,8 @@ public abstract class Configurations<G, W> {
              this.verifyWorldConfigVersion(contextMap, node);
          }
          this.applyWorldConfigTransformations(contextMap, node, null);
@@ -229,7 +217,7 @@ index f5d725feb6d32f947eed82073c5594e205f31afe..71be8c8e5bb887a68e9ae5ab822313d7
          this.trySaveFileNode(loader, node, configFile.toString());
      }
  
-@@ -201,31 +280,42 @@ public abstract class Configurations<G, W> {
+@@ -202,31 +281,42 @@ public abstract class Configurations<G, W> {
      private record DefaultWorldLoader(YamlConfigurationLoader loader, boolean isNewFile) {
      }
  
@@ -279,7 +267,7 @@ index f5d725feb6d32f947eed82073c5594e205f31afe..71be8c8e5bb887a68e9ae5ab822313d7
              Files.createFile(worldConfigFile); // create empty file as template
              newFile = true;
          }
-@@ -269,6 +359,13 @@ public abstract class Configurations<G, W> {
+@@ -270,6 +360,13 @@ public abstract class Configurations<G, W> {
      }
  
      protected void applyWorldConfigTransformations(final ContextMap contextMap, final ConfigurationNode node, final @Nullable ConfigurationNode defaultsNode) throws ConfigurateException {
@@ -293,7 +281,7 @@ index f5d725feb6d32f947eed82073c5594e205f31afe..71be8c8e5bb887a68e9ae5ab822313d7
      }
  
      protected void applyDefaultsAwareWorldConfigTransformations(final ContextMap contextMap, final ConfigurationNode worldNode, final ConfigurationNode defaultsNode) throws ConfigurateException {
-@@ -281,7 +378,7 @@ public abstract class Configurations<G, W> {
+@@ -282,7 +379,7 @@ public abstract class Configurations<G, W> {
      }
  
      public Path getWorldConfigFile(ServerLevel level) {
@@ -517,10 +505,10 @@ index 83a726bcf8b7dce73a361b0d79dbd63a0afc7a12..3c893e5da90f7fcf519f190e34e2b15e
 +
  }
 diff --git a/src/main/java/net/minecraft/server/MinecraftServer.java b/src/main/java/net/minecraft/server/MinecraftServer.java
-index 2b015360df398ad8118f7b108cb9474edf373121..690423f4159ddff2d90d7ccf931db72903cb822c 100644
+index 468cb5034f7648e6ef39b1961298f592535aad88..79ee153cd3c7bd3b2f34e7d30f70be5080cfa3c6 100644
 --- a/src/main/java/net/minecraft/server/MinecraftServer.java
 +++ b/src/main/java/net/minecraft/server/MinecraftServer.java
-@@ -314,6 +314,7 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
+@@ -311,6 +311,7 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
      public final double[] recentTps = new double[ 4 ]; // Purpur
      // Spigot end
      public final io.papermc.paper.configuration.PaperConfigurations paperConfigurations; // Paper - add paper configuration files
@@ -528,7 +516,7 @@ index 2b015360df398ad8118f7b108cb9474edf373121..690423f4159ddff2d90d7ccf931db729
      public static long currentTickLong = 0L; // Paper - track current tick as a long
      public boolean isIteratingOverLevels = false; // Paper - Throw exception on world create while being ticked
      public boolean lagging = false; // Purpur
-@@ -425,6 +426,7 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
+@@ -422,6 +423,7 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
          Runtime.getRuntime().addShutdownHook(new org.bukkit.craftbukkit.util.ServerShutdownThread(this));
          // CraftBukkit end
          this.paperConfigurations = services.paperConfigurations(); // Paper - add paper configuration files
@@ -596,7 +584,7 @@ index 33e3815a0c979609d4c7ab83ad91e87ac07a556d..4f1071c48fec78036d6759cdff179df3
      }
  
 diff --git a/src/main/java/net/minecraft/server/dedicated/DedicatedServer.java b/src/main/java/net/minecraft/server/dedicated/DedicatedServer.java
-index 78775413d27a5927b8409c4ce92111a482dad1f1..0fc87744c880da4bc98428137959fb274aeb2c4b 100644
+index 6d3f61a05c4d4ad20e62175eb0331bc31b5d6807..6cbbe9c692068edee7e66f85081ec95b8dd12101 100644
 --- a/src/main/java/net/minecraft/server/dedicated/DedicatedServer.java
 +++ b/src/main/java/net/minecraft/server/dedicated/DedicatedServer.java
 @@ -222,6 +222,8 @@ public class DedicatedServer extends MinecraftServer implements ServerInterface
@@ -658,7 +646,7 @@ index b3d47d16fb9733ca5cc4f90051ee8694ff3545c5..5456d2ded6f6e75c48868147e5a2dde5
          this.navigatingMobs = new ObjectOpenHashSet();
          this.blockEvents = new ObjectLinkedOpenHashSet();
 diff --git a/src/main/java/net/minecraft/world/level/Level.java b/src/main/java/net/minecraft/world/level/Level.java
-index 16eb159ab4533f5101461bc4f417b9420a321d82..59d6d25ce3d37a7d408b168aec3c2a90a6d1dfab 100644
+index 4f056ad78325187efddc0b7ca3b02eef372d20b6..6814e816f1d7e2e7eb7dcb469e94999194ae65be 100644
 --- a/src/main/java/net/minecraft/world/level/Level.java
 +++ b/src/main/java/net/minecraft/world/level/Level.java
 @@ -168,6 +168,12 @@ public abstract class Level implements LevelAccessor, AutoCloseable {
@@ -674,7 +662,7 @@ index 16eb159ab4533f5101461bc4f417b9420a321d82..59d6d25ce3d37a7d408b168aec3c2a90
  
      public final com.destroystokyo.paper.antixray.ChunkPacketBlockController chunkPacketBlockController; // Paper - Anti-Xray
      public final org.purpurmc.purpur.PurpurWorldConfig purpurConfig; // Purpur
-@@ -259,9 +265,28 @@ public abstract class Level implements LevelAccessor, AutoCloseable {
+@@ -250,9 +256,28 @@ public abstract class Level implements LevelAccessor, AutoCloseable {
  
      //protected final io.papermc.paper.util.math.ThreadUnsafeRandom randomTickRandom = new io.papermc.paper.util.math.ThreadUnsafeRandom(java.util.concurrent.ThreadLocalRandom.current().nextLong()); public net.minecraft.util.RandomSource getThreadUnsafeRandom() { return this.randomTickRandom; } // Pufferfish - move thread unsafe random initialization // Pufferfish - getter // Purpur - dont break ABI
  
@@ -704,36 +692,11 @@ index 16eb159ab4533f5101461bc4f417b9420a321d82..59d6d25ce3d37a7d408b168aec3c2a90
          this.purpurConfig = new org.purpurmc.purpur.PurpurWorldConfig(((net.minecraft.world.level.storage.PrimaryLevelData) worlddatamutable).getLevelName(), env); // Purpur
          this.playerBreedingCooldowns = this.getNewBreedingCooldownCache(); // Purpur
          this.generator = gen;
-@@ -1356,13 +1381,13 @@ public abstract class Level implements LevelAccessor, AutoCloseable {
-         try {
-             tickConsumer.accept(entity);
-             MinecraftServer.getServer().executeMidTickTasks(); // Paper - execute chunk tasks mid tick
--        } catch (Throwable throwable) { // Pufferfish - diff on change ServerLevel.tick
-+        } catch (Throwable throwable) {
-             if (throwable instanceof ThreadDeath) throw throwable; // Paper
-             // Paper start - Prevent block entity and entity crashes
-             final String msg = String.format("Entity threw exception at %s:%s,%s,%s", entity.level().getWorld().getName(), entity.getX(), entity.getY(), entity.getZ());
-             MinecraftServer.LOGGER.error(msg, throwable);
-             getCraftServer().getPluginManager().callEvent(new com.destroystokyo.paper.event.server.ServerExceptionEvent(new com.destroystokyo.paper.exception.ServerInternalException(msg, throwable))); // Paper - ServerExceptionEvent
--            entity.discard(org.bukkit.event.entity.EntityRemoveEvent.Cause.DISCARD); // Pufferfish - diff on change ServerLevel.tick
-+            entity.discard(org.bukkit.event.entity.EntityRemoveEvent.Cause.DISCARD);
-             // Paper end - Prevent block entity and entity crashes
-         }
-     }
-@@ -1837,7 +1862,7 @@ public abstract class Level implements LevelAccessor, AutoCloseable {
-     }
- 
-     public ProfilerFiller getProfiler() {
--        if (true || gg.pufferfish.pufferfish.PufferfishConfig.disableMethodProfiler) return net.minecraft.util.profiling.InactiveProfiler.INSTANCE; // Pufferfish // Purpur
-+        //if (true || gg.pufferfish.pufferfish.PufferfishConfig.disableMethodProfiler) return net.minecraft.util.profiling.InactiveProfiler.INSTANCE; // Pufferfish // Purpur // Purpur - TODO: Pufferfish
-         return (ProfilerFiller) this.profiler.get();
-     }
- 
 diff --git a/src/main/java/org/bukkit/craftbukkit/CraftServer.java b/src/main/java/org/bukkit/craftbukkit/CraftServer.java
-index fe78cb60fe6000004c9e567e9046c45dd0e22d59..1afae84afd5a6fcc11227daf75123e8b65642b01 100644
+index 54c42f43981aee3da869343b078775fd39994b9e..58878900a1985d4dd23104ac594d52368db580d5 100644
 --- a/src/main/java/org/bukkit/craftbukkit/CraftServer.java
 +++ b/src/main/java/org/bukkit/craftbukkit/CraftServer.java
-@@ -1052,6 +1052,7 @@ public final class CraftServer implements Server {
+@@ -1047,6 +1047,7 @@ public final class CraftServer implements Server {
  
          org.spigotmc.SpigotConfig.init((File) this.console.options.valueOf("spigot-settings")); // Spigot
          this.console.paperConfigurations.reloadConfigs(this.console);
@@ -741,7 +704,7 @@ index fe78cb60fe6000004c9e567e9046c45dd0e22d59..1afae84afd5a6fcc11227daf75123e8b
          org.purpurmc.purpur.PurpurConfig.init((File) console.options.valueOf("purpur-settings")); // Purpur
          for (ServerLevel world : this.console.getAllLevels()) {
              // world.serverLevelData.setDifficulty(config.difficulty); // Paper - per level difficulty
-@@ -3122,6 +3123,13 @@ public final class CraftServer implements Server {
+@@ -3112,6 +3113,13 @@ public final class CraftServer implements Server {
          }
          // Purpur end
  
@@ -756,11 +719,11 @@ index fe78cb60fe6000004c9e567e9046c45dd0e22d59..1afae84afd5a6fcc11227daf75123e8b
          public void restart() {
              org.spigotmc.RestartCommand.restart();
 diff --git a/src/main/java/org/bukkit/craftbukkit/Main.java b/src/main/java/org/bukkit/craftbukkit/Main.java
-index 7d7134820ce73de1eef242d14d57a520d3db2a25..3187d9fdfe32aa38a979406e798f6a6bcc1158a0 100644
+index 234f1bf8be8838e1b10672c3209b9dde68114f2b..f84266bca823be3fe7d26ac59b181424e1e307ef 100644
 --- a/src/main/java/org/bukkit/craftbukkit/Main.java
 +++ b/src/main/java/org/bukkit/craftbukkit/Main.java
-@@ -196,6 +196,14 @@ public class Main {
-                         .defaultsTo("A " + org.bukkit.craftbukkit.util.Versioning.BRANDING + " Server") // Plazma - Rebrand
+@@ -197,6 +197,14 @@ public class Main {
+                         .defaultsTo("A " + io.papermc.paper.ServerBuildInfo.buildInfo().brandName() + " Server") // Plazma - Fork-friendly Rebranding
                          .describedAs("Name");
                  // Paper end
 +

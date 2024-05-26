@@ -5,14 +5,13 @@ Subject: [PATCH] Use Gradle Version Catalogs
 
 
 diff --git a/build.gradle.kts b/build.gradle.kts
-index 3bece6335887414d1388505febf6b8796e32bf9a..8d1a11c1a1fedb7ae73789abc6f4a9a689fb78c3 100644
+index 4c4d242475c5229e9cdae69fcc328d52af6df4b8..c2a0dd63fe700484ac9473733b10615375d7c2b4 100644
 --- a/build.gradle.kts
 +++ b/build.gradle.kts
-@@ -12,66 +12,32 @@ configurations.named(log4jPlugins.compileClasspathConfigurationName) {
- val alsoShade: Configuration by configurations.creating
+@@ -14,65 +14,29 @@ val alsoShade: Configuration by configurations.creating
  
  dependencies {
--    implementation(project(":purpur-api")) // Pufferfish // Paper // Purpur
+     implementation(project(":purpur-api")) // Pufferfish // Purpur
 -    // Paper start
 -    implementation("org.jline:jline-terminal-jansi:3.21.0")
 -    implementation("net.minecrell:terminalconsoleappender:1.3.0")
@@ -39,35 +38,12 @@ index 3bece6335887414d1388505febf6b8796e32bf9a..8d1a11c1a1fedb7ae73789abc6f4a9a6
 -    // Paper start - Use Velocity cipher
 -    implementation("com.velocitypowered:velocity-native:3.1.2-SNAPSHOT") {
 -        isTransitive = false
-+    implementation(project(":purpur-api")) // Purpur
-+
-+    // Plazma start - Use Gradle Version Catalogs
-+    implementation(server.bundles.implementation)
-+    implementation(common.snakeyaml)
-+    implementation(common.asm.commons)
-+    implementation(common.log4j.iostreams)
-+    implementation(common.commons.lang2)
-+    implementation(server.velocity) { isTransitive = false }
-+    implementation(server.simpleyaml) {
-+        exclude(group="org.yaml", module="snakeyaml")
-     }
+-    }
 -    // Paper end - Use Velocity cipher
- 
+-
 -    runtimeOnly("org.apache.maven:maven-resolver-provider:3.9.6")
 -    runtimeOnly("org.apache.maven.resolver:maven-resolver-connector-basic:1.9.18")
 -    runtimeOnly("org.apache.maven.resolver:maven-resolver-transport-http:1.9.18")
-+    runtimeOnly(common.maven.provider)
-+    runtimeOnly(common.bundles.maven)
-+    runtimeOnly(server.bundles.runtime)
-+
-+    implementation(common.log4j.core) // Paper - implementation
-+    log4jPlugins.annotationProcessorConfigurationName(common.log4j.core) // Paper - Needed to generate meta for our Log4j plugins
-+    runtimeOnly(log4jPlugins.output) // Plazma - diff on patch
-+    alsoShade(log4jPlugins.output) // Plazma - diff on patch
-+
-+    testImplementation(server.bundles.test)
-+    testImplementation(common.bundles.test)
-+    // Plazma end - Use Gradle Version Catalogs
  
 -    // Pufferfish start
 -    implementation("org.yaml:snakeyaml:1.32")
@@ -95,6 +71,28 @@ index 3bece6335887414d1388505febf6b8796e32bf9a..8d1a11c1a1fedb7ae73789abc6f4a9a6
 -    implementation("io.papermc:reflection-rewriter-runtime:$reflectionRewriterVersion")
 -    implementation("io.papermc:reflection-rewriter-proxy-generator:$reflectionRewriterVersion")
 -    // Paper end - Remap reflection
++    // Plazma start - Use Gradle Version Catalogs
++    implementation(common.snakeyaml)
++    implementation(common.asm.commons)
++    implementation(common.log4j.core)
++    implementation(common.log4j.iostreams)
++    implementation(common.commons.lang2)
++    implementation(common.adventure.serializer.ansi)
++    implementation(server.velocity) { isTransitive = false }
++    implementation(server.simpleyaml) { exclude(group="org.yaml", module="snakeyaml") }
++    implementation(server.bundles.implementation)
++
++    log4jPlugins.annotationProcessorConfigurationName(common.log4j.core)
++    alsoShade(log4jPlugins.output) // Plazma - Diff on patch
++    runtimeOnly(log4jPlugins.output) // Plazma - Diff on patch
++
++    runtimeOnly(common.maven.provider)
++    runtimeOnly(common.bundles.maven)
++    runtimeOnly(server.bundles.runtime)
++
++    testImplementation(common.bundles.test)
++    testImplementation(server.bundles.test)
++    // Plazma end - Use Gradle Version Catalogs
  }
  
  paperweight {

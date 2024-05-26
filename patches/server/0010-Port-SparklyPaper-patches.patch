@@ -137,10 +137,10 @@ index f164256d59b761264876ca0c85f812d101bfd5de..deaeb134c47da8710afa747bf980bd00
          final TrackedChunk chunk = this.byChunk.get(CoordinateUtils.getChunkKey(chunkX, chunkZ));
  
 diff --git a/src/main/java/net/minecraft/server/MinecraftServer.java b/src/main/java/net/minecraft/server/MinecraftServer.java
-index 690423f4159ddff2d90d7ccf931db72903cb822c..c9a5c3b915f09a316f0f2725c51b696da111ccd3 100644
+index 79ee153cd3c7bd3b2f34e7d30f70be5080cfa3c6..2452dae1e55165bd8c49c4670e3f2adb523de5da 100644
 --- a/src/main/java/net/minecraft/server/MinecraftServer.java
 +++ b/src/main/java/net/minecraft/server/MinecraftServer.java
-@@ -324,6 +324,7 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
+@@ -321,6 +321,7 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
      public volatile boolean abnormalExit = false; // Paper
      public static final long SERVER_INIT = System.nanoTime(); // Paper - Lag compensation
      public gg.pufferfish.pufferfish.util.AsyncExecutor mobSpawnExecutor = new gg.pufferfish.pufferfish.util.AsyncExecutor("MobSpawning"); // Pufferfish - optimize mob spawning
@@ -148,7 +148,7 @@ index 690423f4159ddff2d90d7ccf931db72903cb822c..c9a5c3b915f09a316f0f2725c51b696d
  
      public static <S extends MinecraftServer> S spin(Function<Thread, S> serverFactory) {
          AtomicReference<S> atomicreference = new AtomicReference();
-@@ -1745,17 +1746,15 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
+@@ -1739,17 +1740,15 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
          //MinecraftTimings.bukkitSchedulerTimer.stopTiming(); // Spigot // Paper // Purpur
          // Paper start - Folia scheduler API
          ((io.papermc.paper.threadedregions.scheduler.FoliaGlobalRegionScheduler) Bukkit.getGlobalRegionScheduler()).tick();
@@ -175,7 +175,7 @@ index 690423f4159ddff2d90d7ccf931db72903cb822c..c9a5c3b915f09a316f0f2725c51b696d
          // Paper end - Folia scheduler API
          io.papermc.paper.adventure.providers.ClickCallbackProviderImpl.CALLBACK_MANAGER.handleQueue(this.tickCount); // Paper
          //this.profiler.push("commandFunctions"); // Purpur
-@@ -1822,7 +1821,15 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
+@@ -1816,7 +1815,15 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
  
              try {
                  //worldserver.timings.doTick.startTiming(); // Spigot // Purpur
@@ -191,7 +191,7 @@ index 690423f4159ddff2d90d7ccf931db72903cb822c..c9a5c3b915f09a316f0f2725c51b696d
                  // Paper start
                  for (final io.papermc.paper.chunk.SingleThreadChunkRegionManager regionManager : worldserver.getChunkSource().chunkMap.regionManagers) {
                      regionManager.recalculateRegions();
-@@ -2601,7 +2608,7 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
+@@ -2595,7 +2602,7 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
      }
  
      public ProfilerFiller getProfiler() {
@@ -201,7 +201,7 @@ index 690423f4159ddff2d90d7ccf931db72903cb822c..c9a5c3b915f09a316f0f2725c51b696d
      }
  
 diff --git a/src/main/java/net/minecraft/server/dedicated/DedicatedServer.java b/src/main/java/net/minecraft/server/dedicated/DedicatedServer.java
-index f093b0de1808a7c2c568aeb476180518f84e3839..53134751868d37a2659aef74e37c0466b9238197 100644
+index 6cbbe9c692068edee7e66f85081ec95b8dd12101..3a2acbdcfb64dff5ecb686ba7ea405b488e6eca9 100644
 --- a/src/main/java/net/minecraft/server/dedicated/DedicatedServer.java
 +++ b/src/main/java/net/minecraft/server/dedicated/DedicatedServer.java
 @@ -224,6 +224,7 @@ public class DedicatedServer extends MinecraftServer implements ServerInterface
@@ -383,10 +383,10 @@ index 608390ed36710a419de1542b80340dd3fcc7299c..043f068345ca3c50209c1c3cc1feb627
                      mapItemSavedData.tickCarriedBy(player, stack);
                  }
 diff --git a/src/main/java/net/minecraft/world/level/Level.java b/src/main/java/net/minecraft/world/level/Level.java
-index 59d6d25ce3d37a7d408b168aec3c2a90a6d1dfab..23f10ed05e2c4aabfa3a565a9117dabe52f175f7 100644
+index 6814e816f1d7e2e7eb7dcb469e94999194ae65be..e3a43b352b2be5dbeae1b9ba85fad711d2a3153d 100644
 --- a/src/main/java/net/minecraft/world/level/Level.java
 +++ b/src/main/java/net/minecraft/world/level/Level.java
-@@ -1347,6 +1347,8 @@ public abstract class Level implements LevelAccessor, AutoCloseable {
+@@ -1338,6 +1338,8 @@ public abstract class Level implements LevelAccessor, AutoCloseable {
          boolean flag = this.tickRateManager().runsNormally();
  
          int tilesThisCycle = 0;
@@ -395,7 +395,7 @@ index 59d6d25ce3d37a7d408b168aec3c2a90a6d1dfab..23f10ed05e2c4aabfa3a565a9117dabe
          var toRemove = new it.unimi.dsi.fastutil.objects.ReferenceOpenHashSet<TickingBlockEntity>(); // Paper - Fix MC-117075; use removeAll
          toRemove.add(null); // Paper - Fix MC-117075
          for (tileTickPosition = 0; tileTickPosition < this.blockEntityTickers.size(); tileTickPosition++) { // Paper - Disable tick limiters
-@@ -1359,14 +1361,28 @@ public abstract class Level implements LevelAccessor, AutoCloseable {
+@@ -1350,14 +1352,28 @@ public abstract class Level implements LevelAccessor, AutoCloseable {
                  tilesThisCycle--;
                  toRemove.add(tickingblockentity); // Paper - Fix MC-117075; use removeAll
                  // Spigot end
@@ -836,7 +836,7 @@ index 0000000000000000000000000000000000000000..f8c26e26025d7a7b5489ed5b3274ba73
 +
 +}
 diff --git a/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java b/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java
-index 2c9726d0f2dec1136a2f45768e8f8169ce165a1d..4f199eea0c8a05f94e8443917c5a6f2c42f0b25e 100644
+index 241340a6d66f17f2a31fb03ff0dfab121b856368..a6cf73d104e66971a61ac979d4a6d58a97478613 100644
 --- a/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java
 +++ b/src/main/java/org/bukkit/craftbukkit/entity/CraftPlayer.java
 @@ -976,7 +976,7 @@ public class CraftPlayer extends CraftHumanEntity implements Player {

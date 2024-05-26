@@ -31,3 +31,90 @@ index 0000000000000000000000000000000000000000..67d405764ed68083d0164b1af0eabc0a
 +BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN
 +AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF
 +OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+diff --git a/src/main/java/co/aikar/timings/TimingHandler.java b/src/main/java/co/aikar/timings/TimingHandler.java
+index 199789d56d22fcb1b77ebd56805cc28aa5a5ab0a..3b3bcfa6fa2dbcc7fef899cc7570da097437ab3a 100644
+--- a/src/main/java/co/aikar/timings/TimingHandler.java
++++ b/src/main/java/co/aikar/timings/TimingHandler.java
+@@ -127,7 +127,7 @@ class TimingHandler implements Timing {
+         while ((last = TIMING_STACK.removeLast()) != this) {
+             last.timingDepth = 0;
+             if ("Minecraft".equalsIgnoreCase(last.identifier.group)) {
+-                Logger.getGlobal().log(Level.SEVERE, "TIMING_STACK_CORRUPTION - Look above this for any errors and report this to Paper unless it has a plugin in the stack trace (" + last.identifier + " did not stopTiming)");
++                Logger.getGlobal().log(Level.SEVERE, "TIMING_STACK_CORRUPTION - Look above this for any errors and report this to " + io.papermc.paper.ServerBuildInfo.buildInfo().brandName() + " unless it has a plugin in the stack trace (" + last.identifier + " did not stopTiming)");
+             } else {
+                 Logger.getGlobal().log(Level.SEVERE, "TIMING_STACK_CORRUPTION - Report this to the plugin " + last.identifier.group + " (Look for errors above this in the logs) (" + last.identifier + " did not stopTiming)", new Throwable());
+             }
+diff --git a/src/main/java/io/papermc/paper/ServerBuildInfo.java b/src/main/java/io/papermc/paper/ServerBuildInfo.java
+index 7107eabf02d9d9b69d97c978ba421ad52031ec3f..098125a57409b480f045c3a8c3b58db74a6605f3 100644
+--- a/src/main/java/io/papermc/paper/ServerBuildInfo.java
++++ b/src/main/java/io/papermc/paper/ServerBuildInfo.java
+@@ -25,6 +25,29 @@ public interface ServerBuildInfo {
+     Key BRAND_PURPUR_ID = Key.key("purpurmc", "purpur");
+     // Purpur end
+ 
++    // Plazma start - Rebranding
++    /**
++     * The brand id for Plazma.
++     */
++    Key BRAND_PLAZMA_ID = Key.key("plazmamc", "plazma");
++
++    // For those who fork Plazma - please add the new branding key here
++
++    /**
++     * The brand id of the server.
++     */
++    Key BRAND_ID = BRAND_PLAZMA_ID;
++
++    /**
++     * Supported brands of the server.
++     */
++    java.util.List<Key> SUPPORTED_BRANDS = java.util.Arrays.asList(
++        BRAND_PAPER_ID,
++        BRAND_PURPUR_ID,
++        BRAND_PLAZMA_ID
++    );
++    // Plazma end - Rebranding
++
+     /**
+      * Gets the {@code ServerBuildInfo}.
+      *
+diff --git a/src/main/java/org/bukkit/command/defaults/VersionCommand.java b/src/main/java/org/bukkit/command/defaults/VersionCommand.java
+index 3d29c47ac0620af82d990faf5dfc266c6f0235f1..0dd22efb7f318867d0f099e336505d2830883745 100644
+--- a/src/main/java/org/bukkit/command/defaults/VersionCommand.java
++++ b/src/main/java/org/bukkit/command/defaults/VersionCommand.java
+@@ -258,7 +258,7 @@ public class VersionCommand extends BukkitCommand {
+         // Purpur start
+         int distance = getVersionFetcher().distance();
+         final Component message = Component.join(net.kyori.adventure.text.JoinConfiguration.separator(Component.newline()),
+-            ChatColor.parseMM("<grey>Current Purpur Version: %s%s*", distance == 0 ? "<green>" : distance > 0 ? "<yellow>" : "<red>", Bukkit.getVersion()),
++            ChatColor.parseMM("<grey>Current " + io.papermc.paper.ServerBuildInfo.buildInfo().brandName() + " Version: %s%s*", distance == 0 ? "<green>" : distance > 0 ? "<yellow>" : "<red>", Bukkit.getVersion()),
+             // Purpur end
+             msg
+         );
+@@ -281,6 +281,7 @@ public class VersionCommand extends BukkitCommand {
+         }
+     }
+ 
++    /* // Plazma - Fork-friendly Rebranding
+     private static int getDistance(@NotNull String repo, @NotNull String hash) {
+         try {
+             BufferedReader reader = Resources.asCharSource(
+@@ -301,4 +302,5 @@ public class VersionCommand extends BukkitCommand {
+             return -1;
+         }
+     }
++     */ // Plazma - Fork-friendly Rebranding
+ }
+diff --git a/src/main/java/org/bukkit/plugin/EventExecutor.java b/src/main/java/org/bukkit/plugin/EventExecutor.java
+index 60e086be70529e0804280b24a2a3e7ae72d8d363..dcf1d53af919e94a6947bc3f81121bd4fad1a163 100644
+--- a/src/main/java/org/bukkit/plugin/EventExecutor.java
++++ b/src/main/java/org/bukkit/plugin/EventExecutor.java
+@@ -54,7 +54,7 @@ public interface EventExecutor {
+         if (m.getReturnType() != Void.TYPE) {
+             final org.bukkit.plugin.java.JavaPlugin plugin = org.bukkit.plugin.java.JavaPlugin.getProvidingPlugin(m.getDeclaringClass());
+             org.bukkit.Bukkit.getLogger().warning("@EventHandler method " + m.getDeclaringClass().getName() + (Modifier.isStatic(m.getModifiers()) ? '.' : '#') + m.getName()
+-                + " returns non-void type " + m.getReturnType().getName() + ". This is unsupported behavior and will no longer work in a future version of Paper."
++                + " returns non-void type " + m.getReturnType().getName() + ". This is unsupported behavior and will no longer work in a future version of " + io.papermc.paper.ServerBuildInfo.buildInfo().brandName() + "." // Plazma - Fork-friendly Rebranding
+                 + " This should be reported to the developers of " + plugin.getPluginMeta().getDisplayName() + " (" + String.join(",", plugin.getPluginMeta().getAuthors()) + ')');
+         }
+         if (Modifier.isStatic(m.getModifiers())) {
