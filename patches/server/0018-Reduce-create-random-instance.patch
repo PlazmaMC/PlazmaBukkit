@@ -30,10 +30,10 @@ index b47a8a082170bcb630c4354be7c77a4cac71d105..7fe6b99e146e7374cd29534f1e89046e
              double d1 = (double) (center.y - maxRange);
              double d2 = (double) (center.x + maxRange);
 diff --git a/src/main/java/net/minecraft/server/level/ServerPlayer.java b/src/main/java/net/minecraft/server/level/ServerPlayer.java
-index a7ba658a4dc6eeb9d5bc854289c21b3bd21646b1..acd0e6fb55d7a4684ddd8bf2c940a789f0a105af 100644
+index 4a29e90ff2a0fe9c5be094400d79ab89e61c437d..582cdbb7e2f25cdc533721e45a89ae15a8b05b8a 100644
 --- a/src/main/java/net/minecraft/server/level/ServerPlayer.java
 +++ b/src/main/java/net/minecraft/server/level/ServerPlayer.java
-@@ -482,7 +482,7 @@ public class ServerPlayer extends Player {
+@@ -483,7 +483,7 @@ public class ServerPlayer extends Player {
              long l = k * k;
              int i1 = l > 2147483647L ? Integer.MAX_VALUE : (int) l;
              int j1 = this.getCoprime(i1);
@@ -42,7 +42,7 @@ index a7ba658a4dc6eeb9d5bc854289c21b3bd21646b1..acd0e6fb55d7a4684ddd8bf2c940a789
  
              for (int l1 = 0; l1 < i1; ++l1) {
                  int i2 = (k1 + j1 * l1) % i1;
-@@ -519,7 +519,7 @@ public class ServerPlayer extends Player {
+@@ -520,7 +520,7 @@ public class ServerPlayer extends Player {
              long l = k * k;
              int i1 = l > 2147483647L ? Integer.MAX_VALUE : (int) l;
              int j1 = this.getCoprime(i1);
@@ -130,7 +130,7 @@ index 96e9fce5f9084737d2fcf4deb83305733b480179..43da8ea227b2b01d6975a3f4f209099d
      private int tickDelay;
      private int spawnDelay;
 diff --git a/src/main/java/net/minecraft/world/entity/projectile/FishingHook.java b/src/main/java/net/minecraft/world/entity/projectile/FishingHook.java
-index 35299affb699d745804a3b60cb78b9323f3e068e..75890635b357bc54a03ed00bcfb3e287f1eb2cff 100644
+index 882de08963c72614a3d26cd917916e42b7136042..9aa17706e442d2ea7ba898c867a1f8ba817084f1 100644
 --- a/src/main/java/net/minecraft/world/entity/projectile/FishingHook.java
 +++ b/src/main/java/net/minecraft/world/entity/projectile/FishingHook.java
 @@ -87,7 +87,7 @@ public class FishingHook extends Projectile {
@@ -191,7 +191,7 @@ index 133d994d9ac9d4f9527135ac0c77e5749917f8c3..9771279c913a5be86e516db74792fd04
          this.hitPlayers = Maps.newHashMap();
          this.level = world;
 diff --git a/src/main/java/net/minecraft/world/level/Level.java b/src/main/java/net/minecraft/world/level/Level.java
-index f9bca29920af57029325153a17db184309b31a86..16531bcbdfe80c7e3d553aa6fce576588e2e3b0e 100644
+index 0a0ab76144aa7d0970638924878f1eb130b2e3e3..03acb687a978f89384a2a1936b61e0d699ee719c 100644
 --- a/src/main/java/net/minecraft/world/level/Level.java
 +++ b/src/main/java/net/minecraft/world/level/Level.java
 @@ -121,16 +121,16 @@ public abstract class Level implements LevelAccessor, AutoCloseable {
@@ -209,7 +209,7 @@ index f9bca29920af57029325153a17db184309b31a86..16531bcbdfe80c7e3d553aa6fce57658
      /** @deprecated */
      @Deprecated
 -    private final RandomSource threadSafeRandom = RandomSource.createThreadSafe();
-+    private final RandomSource threadSafeRandom = org.plazmamc.plazma.configurations.GlobalConfiguration.get().misc.ignoreThreadSafeRandom ? random : RandomSource.createThreadSafe(); // Plazma - Reduce create random instace
++    private final RandomSource private final RandomSource threadSafeRandom = org.plazmamc.plazma.configurations.GlobalConfiguration.get().misc.ignoreThreadSafeRandom ? random : RandomSource.createThreadSafe(); // Plazma - Reduce create random instace
      private final Holder<DimensionType> dimensionTypeRegistration;
      public final WritableLevelData levelData;
      // private final Supplier<ProfilerFiller> profiler; // Plazma - Completely remove Mojang's Profiler
@@ -275,7 +275,7 @@ index 18a1b4325cac81b040596071dab99ef9bf6f3142..ab492b184a4ecdefc423823fc72abd80
  
              this.level.getChunkSource().chunkMap.waitForLightBeforeSending(new ChunkPos(this.portalLocation), i);
 diff --git a/src/main/java/org/bukkit/craftbukkit/entity/CraftFirework.java b/src/main/java/org/bukkit/craftbukkit/entity/CraftFirework.java
-index 1309fabd357eb9b8f90f882ec7ff3de9e60f187d..d300668899c3382a42e6a25dd084fb814b56f6bc 100644
+index 95e35c223f2ad9b6de6749544abd68de71e4f1ab..492e0c1d00e8098d9a974f46c087a404ec67764e 100644
 --- a/src/main/java/org/bukkit/craftbukkit/entity/CraftFirework.java
 +++ b/src/main/java/org/bukkit/craftbukkit/entity/CraftFirework.java
 @@ -14,11 +14,12 @@ import org.bukkit.inventory.meta.FireworkMeta;
@@ -290,7 +290,7 @@ index 1309fabd357eb9b8f90f882ec7ff3de9e60f187d..d300668899c3382a42e6a25dd084fb81
          super(server, entity);
 +        this.random = this.getHandle().level().plazmaConfig().misc.reduceRandom ? this.getHandle().level().getRandom() : net.minecraft.util.RandomSource.create(); // Plazma - Reduce create random instance
  
- //        Paper start - Expose firework item directly
+         // Paper start - Expose firework item directly
  //        ItemStack item = this.getHandle().getEntityData().get(FireworkRocketEntity.DATA_ID_FIREWORKS_ITEM);
 diff --git a/src/main/java/org/plazmamc/plazma/configurations/GlobalConfiguration.java b/src/main/java/org/plazmamc/plazma/configurations/GlobalConfiguration.java
 index e725f6e8205976a7b137aefb98b874cf4ae14893..dad5379066140b1eadab0a283cc7d8c019d8f4b6 100644
