@@ -9,13 +9,16 @@ import org.plazmamc.alwaysuptodate.tasks.PurpurUpdateTask
 
 class AlwaysUpToDate : Plugin<Project> {
 
-    override fun apply(target: Project) {
+    override fun apply(target: Project) = with(target) {
 
-        target.extensions.create("alwaysUpToDate", AlwaysUpToDateExtension::class.java)
-        target.tasks.register("updatePaper", PaperUpdateTask::class.java)
-        target.tasks.register("updatePurpur", PurpurUpdateTask::class.java)
-        target.tasks.register("checkPaperCommit", CheckPaperCommitTask::class.java)
-        target.tasks.register("checkPurpurCommit", CheckPurpurCommitTask::class.java)
+        extensions.create("alwaysUpToDate", AlwaysUpToDateExtension::class.java)
+
+        arrayOf(
+            "updatePaper" to PaperUpdateTask::class.java,
+            "updatePurpur" to PurpurUpdateTask::class.java,
+            "checkPaperCommit" to CheckPaperCommitTask::class.java,
+            "checkPurpurCommit" to CheckPurpurCommitTask::class.java,
+        ).forEach { tasks.register(it.first, it.second) }
 
     }
 
