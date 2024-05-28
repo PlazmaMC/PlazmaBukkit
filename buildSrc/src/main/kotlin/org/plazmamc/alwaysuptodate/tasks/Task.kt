@@ -4,7 +4,7 @@ import org.gradle.api.DefaultTask
 
 abstract class Task : DefaultTask() {
 
-    protected abstract fun init()
+    protected open fun init() {}
 
     init { this.init() }
 
