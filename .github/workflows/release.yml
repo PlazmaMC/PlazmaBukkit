@@ -4,13 +4,13 @@ on:
   push:
     branches: [ "ver/*", "dev/*", "feat/**/*" ]
     paths:
+      - "release.yml"
       - "*.patch"
       - "gradle.properties"
   workflow_dispatch:
 
 env:
   ORG_NAME: PlazmaMC
-  MC_VERSION: 1.20.6
 
 jobs:
   release:
@@ -27,8 +27,8 @@ jobs:
         id: setup
         env:
           BRANCH: ${{ github.ref_name }}
-        run: echo "branch=${BRANCH##*/}" >> $GITHUB_OUTPUT
-    
+        run: echo "VERSION=${BRANCH##*/}" >> $GITHUB_ENV
+
       - name: Checkout repository
         uses: actions/checkout@v4
 
@@ -38,17 +38,17 @@ jobs:
         if: startsWith(github.ref_name, 'ver/') || startsWith(github.ref_name, 'dev/')
         with:
           repository: PlazmaMC/Javadocs
-          path: javadoc
-          ref: ${{ steps.setup.outputs.branch }}
+          ref: ${{ env.VERSION }}
           token: ${{ secrets.GH_PAT }}
+          path: javadoc
 
       - name: Checkout javadocs
         uses: actions/checkout@v4
         if: startsWith(github.ref_name, 'ver/') || startsWith(github.ref_name, 'dev/')
         with:
           repository: PlazmaMC/Javadocs
-          path: jdmain
           token: ${{ secrets.GH_PAT }}
+          path: jdmain
 
       - name: Validate Gradle Wrapper
         uses: gradle/wrapper-validation-action@v1
@@ -63,6 +63,10 @@ jobs:
 
       - name: Configure Git
         run: git config --global user.email "41898282+github-actions[bot]@users.noreply.github.com" && git config --global user.name "github-actions[bot]"
+
+      - name: Get Release Number
+        if: startsWith(github.ref_name, 'ver/')
+        run: echo "BUILD_NUMBER=$(git ls-remote --tags origin | grep "build/${{ env.VERSION }}" | wc -l)" >> $GITHUB_ENV
 
       - name: Apply Patches
         run: ./gradlew applyPatches --stacktrace
@@ -81,16 +85,18 @@ jobs:
         continue-on-error: true
         run: |
           if [ ! -d "javadoc" ]; then
-            mkdir javadoc
-            cd javadoc
-            git init && git branch -m ${{ steps.setup.outputs.branch }}
+            mkdir javadoc && cd javadoc
+            git init && git branch -m ${{ env.VERSION }}
             git remote add origin https://github.com/PlazmaMC/Javadocs
+
+            cd ../jdmain
+            git submodule add https://github.com/PlazmaMC/Javadocs -b ${{ env.VERSION }}
           fi
           
           (cd Plazma-API/build/docs/javadoc && tar c .) | (cd javadoc && tar xf -)
           cd javadoc
           git add . && git commit -m "Update Javadocs"
-          git push -f
+          git push -f origin ${{ env.VERSION }}
 
           cd ../jdmain
           git submodule update
@@ -103,28 +109,24 @@ jobs:
           export GITHUB_USERNAME=${{ env.ORG_NAME }}
           export GITHUB_TOKEN=${{ secrets.GITHUB_TOKEN }}
           ./gradlew publish --stacktrace
-      
-      - name: Get Release Number
-        if: startsWith(github.ref_name, 'ver/')
-        run: echo "RELEASE=$(git ls-remote --tags origin | grep "build/${{ env.MC_VERSION }}" | wc -l)" >> $GITHUB_ENV
 
       - name: Release Artifacts
         if: startsWith(github.ref_name, 'ver/')
         uses: softprops/action-gh-release@v0.1.15
         with:
-          name: "Build #${{ env.RELEASE }} for ${{ env.MC_VERSION }}"
-          tag_name: build/${{ env.MC_VERSION }}/${{ env.RELEASE }}
+          name: "Build #${{ env.BUILD_NUMBER }} for ${{ env.VERSION }}"
+          tag_name: "build/${{ env.VERSION }}/${{ env.BUILD_NUMBER }}"
           target_commitish: ${{ github.ref_name }}
           generate_release_notes: true
           fail_on_unmatched_files: true
           files: build/libs/*.jar
-          
+
       - name: Release Artifacts (Latest/Stable)
         if: startsWith(github.ref_name, 'ver/')
         uses: softprops/action-gh-release@v0.1.15
         with:
-          name: "Build #${{ env.RELEASE }} for ${{ env.MC_VERSION }}"
-          tag_name: build/${{ env.MC_VERSION }}/latest
+          name: "Build #${{ env.BUILD_NUMBER }} for ${{ env.VERSION }}"
+          tag_name: "build/${{ github.ref_name }}/latest"
           target_commitish: ${{ github.ref_name }}
           generate_release_notes: true
           fail_on_unmatched_files: true
@@ -134,8 +136,8 @@ jobs:
         if: startsWith(github.ref_name, 'dev/')
         uses: softprops/action-gh-release@v0.1.15
         with:
-          name: "Development Build for ${{ env.MC_VERSION }}"
-          tag_name: build/${{ env.MC_VERSION }}/latest
+          name: "Development Build for ${{ env.VERSION }}"
+          tag_name: build/${{ env.VERSION }}/latest
           target_commitish: ${{ github.ref_name }}
           generate_release_notes: true
           fail_on_unmatched_files: true
