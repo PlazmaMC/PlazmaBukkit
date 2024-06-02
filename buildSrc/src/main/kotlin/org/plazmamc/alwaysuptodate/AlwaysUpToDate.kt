@@ -13,6 +13,7 @@ import org.plazmamc.alwaysuptodate.utils.registerTask
 
 class AlwaysUpToDate : Plugin<Project> {
 
+    @Suppress("UNUSED_VARIABLE")
     override fun apply(target: Project): Unit = with(target) {
 
         Git.checkForGit()
