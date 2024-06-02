@@ -1,7 +1,10 @@
 package org.plazmamc.alwaysuptodate.tasks
 
 import io.papermc.paperweight.patcher.tasks.CheckoutRepo
-import io.papermc.paperweight.util.*
+import io.papermc.paperweight.util.Git
+import io.papermc.paperweight.util.cache
+import io.papermc.paperweight.util.path
+import io.papermc.paperweight.util.set
 import org.gradle.api.file.Directory
 import org.gradle.api.file.DirectoryProperty
 import org.gradle.api.provider.Provider
@@ -12,8 +15,10 @@ import org.gradle.api.tasks.TaskProvider
 import org.plazmamc.alwaysuptodate.utils.*
 import java.io.File
 import java.nio.file.Path
-import java.util.Calendar
-import kotlin.io.path.*
+import java.util.*
+import kotlin.io.path.ExperimentalPathApi
+import kotlin.io.path.name
+import kotlin.io.path.walk
 
 @Deprecated("It will soon be changed to be available for other upstreams.")
 abstract class PurpurUpdateTask : Task() {
@@ -35,7 +40,7 @@ abstract class PurpurUpdateTask : Task() {
         You should have received a copy of the GNU General Public License
         along with this program.  If not, see <http://www.gnu.org/licenses/>.
     """.trimIndent()
-    private val pufferfishAuthor = "--author=Kevin Raneri <kevin.raneri@gmail.com>"
+    private val pufferfishAuthor = "Kevin Raneri <kevin.raneri@gmail.com>"
     private val purpurHeader = """
         PurpurMC
         Copyright (C) ${Calendar.getInstance().get(Calendar.YEAR)} PurpurMC
@@ -58,7 +63,7 @@ abstract class PurpurUpdateTask : Task() {
         OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
         SOFTWARE.
     """.trimIndent()
-    private val purpurAuthor = "--author=granny <contact@granny.dev>"
+    private val purpurAuthor = "granny <contact@granny.dev>"
 
     @get:Internal
     abstract val workDir: DirectoryProperty
@@ -70,28 +75,29 @@ abstract class PurpurUpdateTask : Task() {
     abstract val pufferfishDir: DirectoryProperty
 
     override fun init(): Unit = with(project) {
-        outputs.upToDateWhen { checkCommitFor { purpurRepo to purpurRef to purpurCommitName } }
-
         val wd = layout.cache.resolve("alwaysUpToDate/update/purpur").also { it.toFile().deleteRecursively() }
         workDir.set(wd)
 
-        val compare = configureTask<CreateCompareComment>("createPurpurCompareComment", "Create Purpur Compare Comment") {
-            clear.convention(true)
-            repo.convention(extension.purpurRepo)
-            ref.convention(extension.purpurRef)
-            commitPropertyName.convention(extension.purpurCommitName)
-        }
+        val compare =
+            configureTask<CreateCompareComment>("createPurpurCompareComment", "Create Purpur Compare Comment") {
+                clear.convention(true)
+                repo.convention(extension.purpurRepo)
+                ref.convention(extension.purpurRef)
+                commitPropertyName.convention(extension.purpurCommitName)
+            }
 
         val paper = dependsOn<SimpleUpstreamUpdateTask>("updatePaper", "Update Paper") {
+            outputs.upToDateWhen { checkCommitFor { repo to ref to paperCommitName } }
             dependsOn(compare)
             repo.convention(extension.paperRepo)
             ref.convention(extension.paperRef)
             regex.convention("paperCommit = ")
-            commitPropertyName.convention(extension.paperCommitName)
             workDir.set(layout.projectDirectory)
         }
 
-        fun checkout(name: String, repo: Provider<String>, ref: Provider<String>, regex: String, block: CheckoutRepo.() -> Unit): Pair<TaskProvider<out Task>, Directory> {
+        fun checkout(
+            name: String, repo: Provider<String>, ref: Provider<String>, regex: String, block: CheckoutRepo.() -> Unit
+        ): Pair<TaskProvider<out Task>, Directory> {
             val updatePaper = configureTask<SimpleUpstreamUpdateTask>("update${name}Paper", "Update $name's Paper") {
                 this.repo.convention(extension.paperRepo)
                 this.ref.convention(extension.paperRef)
@@ -113,8 +119,14 @@ abstract class PurpurUpdateTask : Task() {
             return updatePaper to checkout.flatMap { it.outputDir }.get()
         }
 
-        val (checkoutPufferfish, pufferfish) = checkout("Pufferfish", extension.pufferfishRepo, extension.pufferfishRef, "paperRef=") { onlyIf { extension { usePufferfish } } }
-        val (checkoutPurpur, purpur) = checkout("Purpur", extension.purpurRepo, extension.purpurRef, "paperCommit = ") { dependsOn(checkoutPufferfish) }
+        val (checkoutPufferfish, pufferfish) =
+            checkout("Pufferfish", extension.pufferfishRepo, extension.pufferfishRef, "paperRef=") {
+                onlyIf { extension { usePufferfish } }
+            }
+        val (checkoutPurpur, purpur) =
+            checkout("Purpur", extension.purpurRepo, extension.purpurRef, "paperCommit = ") {
+                dependsOn(checkoutPufferfish)
+            }
 
         pufferfishDir.set(pufferfish)
         purpurDir.set(purpur)
@@ -139,36 +151,40 @@ abstract class PurpurUpdateTask : Task() {
 
         dependsOn(preparePurpur, preparePufferfish)
 
-        val serverPatch = configureTask<GenerateMergedServerPatch>("generateMergedServerPatches", "Generate Merged Server Patch") {
-            dependsOn(preparePurpur)
-            if (!extension { usePufferfish }) {
-                workDir.convention(purpur.dir("Purpur-Server"))
-                commitTitle.convention("Purpur Server Changes")
-                license.convention(purpurHeader)
-                author.convention(purpurAuthor)
-                return@configureTask
-            }
+        val serverPatch =
+            configureTask<GenerateMergedServerPatch>("generateMergedServerPatches", "Generate Merged Server Patch") {
+                dependsOn(preparePurpur)
+                if (!extension { usePufferfish }) {
+                    workDir.convention(purpur.dir("Purpur-Server"))
+                    commitTitle.convention("Purpur Server Changes")
+                    license.convention(purpurHeader)
+                    author.convention(purpurAuthor)
+                    return@configureTask
+                }
 
-            dependsOn(preparePufferfish)
-            workDir.convention(pufferfish.dir("pufferfish-server"))
-            commitTitle.convention("Pufferfish Server Changes")
-            license.convention(pufferfishHeader)
-            author.convention(pufferfishAuthor)
+                dependsOn(preparePufferfish)
+                workDir.convention(pufferfish.dir("pufferfish-server"))
+                commitTitle.convention("Pufferfish Server Changes")
+                license.convention(pufferfishHeader)
+                author.convention(pufferfishAuthor)
 
-            doLast {
-                val dotGit = pufferfish.dir("pufferfish-server/.git").path.toFile()
+                doLast {
+                    val dotGit = pufferfish.dir("pufferfish-server/.git").path.toFile()
 
-                purpur.path.resolve("Purpur-Server").let {
-                    val purpurDotGit = it.resolve(".git").toFile().also(File::deleteRecursively)
+                    purpur.path.resolve("Purpur-Server").let {
+                        val purpurDotGit = it.resolve(".git").toFile().also(File::deleteRecursively)
 
-                    copySource(it)
-                    dotGit.copyRecursively(purpurDotGit, overwrite = true)
-                    Git(it).addCommit("Purpur Server Changes\n\n$purpurHeader", purpurAuthor)
+                        copySource(it)
+                        dotGit.copyRecursively(purpurDotGit, overwrite = true)
+                        Git(it).addCommit("Purpur Server Changes\n\n$purpurHeader", "--author=$purpurAuthor")
+                    }
                 }
             }
-        }
 
-        val pufferfishAPIChanges = configureTask<GenerateMergedAPIPatch>("generateMergedPufferfishAPIPatch", "Generate Merged Pufferfish API Patch") {
+        val pufferfishAPIChanges = configureTask<GenerateMergedAPIPatch>(
+            "generateMergedPufferfishAPIPatch",
+            "Generate Merged Pufferfish API Patch"
+        ) {
             dependsOn(preparePufferfish)
             inputDir.convention(pufferfish.dir(".gradle/caches/paperweight/upstreams/paper/Paper-API/.git"))
             workDir.convention(pufferfish.dir("pufferfish-api"))
@@ -177,7 +193,10 @@ abstract class PurpurUpdateTask : Task() {
             author.convention(pufferfishAuthor)
         }
 
-        val apiPatch = configureTask<GenerateMergedAPIPatch>("generateMergedAPIPatches", "Generate Merged API Patches") {
+        val apiPatch = configureTask<GenerateMergedAPIPatch>(
+            "generateMergedAPIPatches",
+            "Generate Merged API Patches"
+        ) {
             dependsOn(preparePurpur)
             if (extension { usePufferfish }) dependsOn(pufferfishAPIChanges)
 
@@ -204,19 +223,21 @@ abstract class PurpurUpdateTask : Task() {
 
         val patches = purpur.resolve("patches")
         with(layout.projectDirectory.path.resolve("patches")) {
-            patches.resolve("server").copyPatch(resolve("server"),
+            patches.resolve("server").copyPatch( resolve("server"),
                 if (pufferfish == null) "" else "Pufferfish-Server-Changes",
                 "Purpur-Server-Changes"
             )
 
-            patches.resolve("api").copyPatch(resolve("api"),
+            patches.resolve("api").copyPatch( resolve("api"),
                 if (pufferfish == null) "" else "Pufferfish-API-Changes",
                 "Purpur-API-Changes"
             )
         }
 
         file("gradle.properties").let {
-            it.writeText(it.readText().replace("purpurCommit = .*".toRegex(), "purpurCommit = ${Git(purpur).revParse()}"))
+            it.writeText(
+                it.readText().replace("purpurCommit = .*".toRegex(), "purpurCommit = ${Git(purpur).revParse()}")
+            )
         }
     }
 

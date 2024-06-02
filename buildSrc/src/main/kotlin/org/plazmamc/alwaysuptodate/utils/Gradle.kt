@@ -14,8 +14,17 @@ class Gradle(private val repo: Path) {
     }
 
     operator fun invoke(vararg args: String): Command {
-        val builder = ProcessBuilder("java", "-cp", "gradle/wrapper/gradle-wrapper.jar", "org.gradle.wrapper.GradleWrapperMain", *args, "--no-daemon", "--stacktrace").directory(repo)
-        val command = builder.command().joinToString(" ") {  if (it.codePoints().anyMatch(Character::isWhitespace)) "\"$it\"" else it }
+        val builder = ProcessBuilder(
+            "java",
+            "-cp",
+            "gradle/wrapper/gradle-wrapper.jar",
+            "org.gradle.wrapper.GradleWrapperMain",
+            *args,
+            "--no-daemon",
+            "--stacktrace"
+        ).directory(repo)
+        val command = builder.command()
+            .joinToString(" ") { if (it.codePoints().anyMatch(Character::isWhitespace)) "\"$it\"" else it }
 
         return try {
             Command(builder, command)

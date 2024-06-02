@@ -2,13 +2,9 @@ package org.plazmamc.alwaysuptodate.utils
 
 import io.papermc.paperweight.util.Git
 import org.gradle.api.tasks.TaskAction
-import org.plazmamc.alwaysuptodate.AlwaysUpToDateException
 import org.plazmamc.alwaysuptodate.tasks.Task
 import java.nio.file.Path
-import kotlin.io.path.ExperimentalPathApi
 import kotlin.io.path.exists
-import kotlin.io.path.notExists
-import kotlin.io.path.walk
 
 val Git.path: Path
     get() = Git::class.java.getDeclaredField("repo").apply { isAccessible = true }.get(this) as Path

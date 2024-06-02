@@ -3,10 +3,12 @@ package org.plazmamc.alwaysuptodate.tasks
 import org.gradle.api.Project
 import org.gradle.api.provider.Property
 import org.gradle.api.tasks.Input
-import org.gradle.api.tasks.TaskAction
 import org.plazmamc.alwaysuptodate.AlwaysUpToDateException
 import org.plazmamc.alwaysuptodate.AlwaysUpToDateExtension
-import org.plazmamc.alwaysuptodate.utils.*
+import org.plazmamc.alwaysuptodate.utils.extension
+import org.plazmamc.alwaysuptodate.utils.flatten
+import org.plazmamc.alwaysuptodate.utils.git
+import org.plazmamc.alwaysuptodate.utils.property
 
 abstract class CheckUpstreamCommit : Task() {
 
@@ -19,8 +21,13 @@ abstract class CheckUpstreamCommit : Task() {
     @get:Input
     abstract val commitPropertyName: Property<String>
 
-    @TaskAction
-    fun check() = with(project) { println(checkCommitFor { repo to ref to commitPropertyName }) }
+    override fun init(): Unit = with(project) {
+        outputs.upToDateWhen { checkCommitFor { repo to ref to commitPropertyName } }
+
+        doLast {
+            println(checkCommitFor { repo to ref to commitPropertyName })
+        }
+    }
 
 }
 

@@ -36,9 +36,11 @@ abstract class CreateCompareComment : Task() {
         builder.append("\n\n[${rawRepo.split("/").last()} Changes]\n")
 
         gson.fromJson<JsonObject>(
-            URI.create("https://api.github.com/repos/$rawRepo/compare/${property { commitPropertyName }}...${ref.get()}")
-                .toURL().readText())["commits"].asJsonArray.forEach { obj ->
-            obj.asJsonObject.let { builder.append("$rawRepo@${it["sha"].asString.subSequence(0, 7)}: ${it["commit"].asJsonObject["message"].asString.split("\n")[0]}\n") }
+            URI.create("https://api.github.com/repos/$rawRepo/compare/${property { commitPropertyName }}...${ref.get()}").toURL().readText()
+        )["commits"].asJsonArray.forEach { obj ->
+            obj.asJsonObject.let {
+                builder.append("$rawRepo@${it["sha"].asString.subSequence(0, 7)}: ${it["commit"].asJsonObject["message"].asString.split("\n")[0]}\n")
+            }
         }
         file("compare.txt").writeText(builder.toString())
     }

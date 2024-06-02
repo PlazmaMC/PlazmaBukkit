@@ -6,6 +6,8 @@ abstract class Task : DefaultTask() {
 
     protected open fun init() {}
 
-    init { this.init() }
+    init {
+        this.init()
+    }
 
 }

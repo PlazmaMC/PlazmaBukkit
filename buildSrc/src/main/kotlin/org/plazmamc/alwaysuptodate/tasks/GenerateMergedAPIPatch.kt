@@ -9,7 +9,6 @@ import org.gradle.api.tasks.InputDirectory
 import org.gradle.api.tasks.Internal
 import org.gradle.api.tasks.TaskAction
 import org.plazmamc.alwaysuptodate.utils.addCommit
-import java.io.File
 
 abstract class GenerateMergedAPIPatch : Task() {
 

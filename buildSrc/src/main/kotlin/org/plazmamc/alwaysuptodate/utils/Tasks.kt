@@ -19,7 +19,8 @@ private var extensionAccessor: AlwaysUpToDateExtension? = null
 
 val Project.extension: AlwaysUpToDateExtension
     get() {
-        if (extensionAccessor == null) extensionAccessor = project.extensions["alwaysUpToDate"] as AlwaysUpToDateExtension
+        if (extensionAccessor == null) extensionAccessor =
+            project.extensions["alwaysUpToDate"] as AlwaysUpToDateExtension
         return extensionAccessor!!
     }
 
@@ -31,28 +32,56 @@ fun <T> Project.extension(block: AlwaysUpToDateExtension.() -> Property<T>): T =
 fun Project.property(block: AlwaysUpToDateExtension.() -> Property<String>) =
     this.property(extension(block)) as String
 
-inline fun <reified T : Task> Task.dependsOn(name: String, description: String, noinline block: T.() -> Unit = {}): TaskProvider<T> =
+inline fun <reified T : Task> Task.dependsOn(
+    name: String,
+    description: String,
+    noinline block: T.() -> Unit = {}
+): TaskProvider<T> =
     project.configureTask<T>(name, description, block).also { this.dependsOn(it) }
 
 @JvmName("dependsOnDefaultTask")
-fun Task.dependsOn(name: String, description: String, block: DefaultTask.() -> Unit = {}): TaskProvider<DefaultTask> =
-    project.configureTask(name, description, block).also { this.dependsOn(it) }
+fun Task.dependsOn(
+    name: String,
+    description: String,
+    block: DefaultTask.() -> Unit = {}
+): TaskProvider<DefaultTask> =
+    this.dependsOn<DefaultTask>(name, description, block)
 
-inline fun <reified T : Task> Task.finalizedBy(name: String, description: String, noinline block: T.() -> Unit = {}): TaskProvider<T> =
+inline fun <reified T : Task> Task.finalizedBy(
+    name: String,
+    description: String,
+    noinline block: T.() -> Unit = {}
+): TaskProvider<T> =
     project.configureTask<T>(name, description, block).also { this.finalizedBy(it) }
 
 @JvmName("finalizedByDefaultTask")
-fun Task.finalizedBy(name: String, description: String, block: DefaultTask.() -> Unit = {}): TaskProvider<DefaultTask> =
-    project.configureTask(name, description, block).also { this.finalizedBy(it) }
+fun Task.finalizedBy(
+    name: String,
+    description: String,
+    block: DefaultTask.() -> Unit = {}
+): TaskProvider<DefaultTask> =
+    this.finalizedBy<DefaultTask>(name, description, block)
 
-inline fun <reified T : Task> Task.mustRunAfter(name: String, description: String, noinline block: T.() -> Unit = {}): TaskProvider<T> =
+inline fun <reified T : Task> Task.mustRunAfter(
+    name: String,
+    description: String,
+    noinline block: T.() -> Unit = {}
+): TaskProvider<T> =
     project.configureTask<T>(name, description, block).also { this.mustRunAfter(it) }
 
 @JvmName("mustRunAfterDefaultTask")
-fun Task.mustRunAfter(name: String, description: String, block: DefaultTask.() -> Unit = {}): TaskProvider<DefaultTask> =
-    project.configureTask(name, description, block).also { this.mustRunAfter(it) }
+fun Task.mustRunAfter(
+    name: String,
+    description: String,
+    block: DefaultTask.() -> Unit = {}
+): TaskProvider<DefaultTask> =
+    this.mustRunAfter<DefaultTask>(name, description, block)
 
-inline fun <reified T: Task> Project.configureTask(name: String, description: String, noinline block: T.() -> Unit = {}): TaskProvider<T> =
+inline fun <reified T : Task> Project.configureTask(
+    name: String,
+    description: String,
+    noinline block: T.() -> Unit = {}
+): TaskProvider<T> =
     tasks.configureTask<T>(name) {
         this.group = "always up to date"
         this.description = description
@@ -60,16 +89,28 @@ inline fun <reified T: Task> Project.configureTask(name: String, description: St
     }
 
 @JvmName("configureDefaultTask")
-fun Project.configureTask(name: String, description: String, block: DefaultTask.() -> Unit = {}): TaskProvider<DefaultTask> =
-    tasks.configureTask<DefaultTask>(name) {
-        this.group = "always up to date"
-        this.description = description
-        this.block()
-    }
+fun Project.configureTask(
+    name: String,
+    description: String,
+    block: DefaultTask.() -> Unit = {}
+): TaskProvider<DefaultTask> =
+    this.configureTask<DefaultTask>(name, description, block)
 
-inline fun <reified T: Task> Project.registerTask(name: String, description: String, crossinline block: T.() -> Unit = {}): TaskProvider<T> =
+inline fun <reified T : Task> Project.registerTask(
+    name: String,
+    description: String,
+    crossinline block: T.() -> Unit = {}
+): TaskProvider<T> =
     tasks.register(name, T::class.java) {
         this.group = "always up to date"
         this.description = description
         this.block()
     }
+
+@JvmName("registerDefaultTask")
+fun Project.registerTask(
+    name: String,
+    description: String,
+    block: DefaultTask.() -> Unit = {}
+): TaskProvider<DefaultTask> =
+    this.registerTask<DefaultTask>(name, description, block)

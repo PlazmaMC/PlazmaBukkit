@@ -9,7 +9,8 @@ import org.gradle.api.tasks.InputDirectory
 import org.gradle.api.tasks.Optional
 import org.gradle.api.tasks.TaskAction
 import org.plazmamc.alwaysuptodate.AlwaysUpToDateException
-import org.plazmamc.alwaysuptodate.utils.*
+import org.plazmamc.alwaysuptodate.utils.dependsOn
+import org.plazmamc.alwaysuptodate.utils.extension
 
 abstract class SimpleUpstreamUpdateTask : Task() {
 
@@ -19,10 +20,6 @@ abstract class SimpleUpstreamUpdateTask : Task() {
     @get:Input
     abstract val ref: Property<String>
 
-    @get:Input
-    @get:Optional
-    abstract val commitPropertyName: Property<String>
-
     @get:InputDirectory
     abstract val workDir: DirectoryProperty
 
@@ -30,14 +27,8 @@ abstract class SimpleUpstreamUpdateTask : Task() {
     abstract val regex: Property<String>
 
     override fun init(): Unit = with(project) {
-        outputs.upToDateWhen {
-            if (commitPropertyName.orNull != null)
-                checkCommitFor { repo to ref to (commitPropertyName) }
-            else
-                false
-        }
-
         dependsOn<CreateCompareComment>("createCompareComment", "Create Paper Compare Comment") {
+            onlyIf { !this@SimpleUpstreamUpdateTask.state.upToDate }
             clear.convention(false)
             repo.convention(extension.paperRepo)
             ref.convention(extension.paperRef)
@@ -49,9 +40,9 @@ abstract class SimpleUpstreamUpdateTask : Task() {
     fun update() = (Git(workDir.path)("ls-remote", repo.get()).readText()?.lines()
         ?.filterNot("[a-z0-9]{40}\trefs/heads/${ref.get()}".toRegex()::matches)?.first()?.split("\t")?.first()
         ?: throw AlwaysUpToDateException("Failed to get latest commit")).let { commit ->
-            workDir.file("gradle.properties").path.toFile().let {
-                it.writeText(it.readText().replace("${regex.get()}.*".toRegex(), "${regex.get()}$commit"))
-            }
+        workDir.file("gradle.properties").path.toFile().let {
+            it.writeText(it.readText().replace("${regex.get()}.*".toRegex(), "${regex.get()}$commit"))
         }
+    }
 
 }
