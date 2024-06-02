@@ -1,18 +1,37 @@
 package org.plazmamc.alwaysuptodate.utils
 
 import io.papermc.paperweight.util.Git
+import org.gradle.api.tasks.TaskAction
 import org.plazmamc.alwaysuptodate.AlwaysUpToDateException
+import org.plazmamc.alwaysuptodate.tasks.Task
 import java.nio.file.Path
+import kotlin.io.path.ExperimentalPathApi
+import kotlin.io.path.exists
 import kotlin.io.path.notExists
+import kotlin.io.path.walk
 
-fun Git.clone(name: String, uri: String, branch: String, dir: Path): Path {
-    val target = dir.resolve(name)
-    this("clone", "--depth", "1", "--branch", branch, uri, target.toString()).executeSilently(silenceErr = true)
-    if (target.notExists()) throw AlwaysUpToDateException("Failed to clone repository")
-    return target
+val Git.path: Path
+    get() = Git::class.java.getDeclaredField("repo").apply { isAccessible = true }.get(this) as Path
+
+abstract class CheckGitTask : Task() {
+
+    @TaskAction
+    fun checkGit() = Git.checkForGit()
+
 }
 
+fun Git.revParse(): String = this("rev-parse", "HEAD").captureOut(true).out.trim()
+
 fun Git.addCommit(vararg args: String) {
-    this("add", ".").executeOut()
-    this("commit", "-m", *args).executeOut()
+    this("add", ".").executeSilently()
+    this("commit", "-m", *args).executeSilently()
+    this.wait()
+}
+
+fun Git.wait() {
+    val lockFile = path.resolve(".git/gc.pid")
+    while (lockFile.exists()) {
+        println("detected lockfile, waiting for it to be removed")
+        Thread.sleep(1000)
+    }
 }

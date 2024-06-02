@@ -1,6 +1,6 @@
 From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
-From: Kevin Raneri <kevin.raneri@gmail.com>
-Date: Mon, 27 May 2024 13:23:13 +0900
+From: --author=Kevin Raneri <kevin.raneri@gmail.com>
+Date: Sun, 2 Jun 2024 20:02:21 +0900
 Subject: [PATCH] Pufferfish Server Changes
 
 Pufferfish
@@ -20,7 +20,7 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 diff --git a/build.gradle.kts b/build.gradle.kts
-index 4998aff0b7cb084dcda15c6a18bbe45e99b6000a..d877dbae82b775250739b5b8d84e163d37a39e35 100644
+index 4998aff0b7cb084dcda15c6a18bbe45e99b6000a..74425cec45d784566cb53eeb5391a5cc00d777e5 100644
 --- a/build.gradle.kts
 +++ b/build.gradle.kts
 @@ -13,7 +13,7 @@ configurations.named(log4jPlugins.compileClasspathConfigurationName) {
@@ -61,15 +61,26 @@ index 4998aff0b7cb084dcda15c6a18bbe45e99b6000a..d877dbae82b775250739b5b8d84e163d
  tasks.jar {
      archiveClassifier.set("dev")
  
-@@ -75,7 +90,7 @@ tasks.jar {
-         val mcVersion = rootProject.providers.gradleProperty("mcVersion").get()
-         val build = System.getenv("BUILD_NUMBER") ?: null
-         val gitHash = git("rev-parse", "--short=7", "HEAD").getText().trim()
--        val implementationVersion = "$mcVersion-${build ?: "DEV"}-$gitHash"
-+        val implementationVersion = "git-Pufferfish-$gitHash" // Pufferfish
-         val date = git("show", "-s", "--format=%ci", gitHash).getText().trim() // Paper
+@@ -80,14 +95,14 @@ tasks.jar {
          val gitBranch = git("rev-parse", "--abbrev-ref", "HEAD").getText().trim() // Paper
          attributes(
+             "Main-Class" to "org.bukkit.craftbukkit.Main",
+-            "Implementation-Title" to "Paper",
++            "Implementation-Title" to "Pufferfish", // Pufferfish
+             "Implementation-Version" to implementationVersion,
+             "Implementation-Vendor" to date, // Paper
+-            "Specification-Title" to "Paper",
++            "Specification-Title" to "Pufferfish", // Pufferfish
+             "Specification-Version" to project.version,
+-            "Specification-Vendor" to "Paper Team",
+-            "Brand-Id" to "papermc:paper",
+-            "Brand-Name" to "Paper",
++            "Specification-Vendor" to "Pufferfish Team", // Pufferfish
++            "Brand-Id" to "pufferfishgg:pufferfish", // Pufferfish
++            "Brand-Name" to "Pufferfish", // Pufferfish
+             "Build-Number" to (build ?: ""),
+             "Build-Time" to Instant.now().toString(),
+             "Git-Branch" to gitBranch, // Paper
 diff --git a/src/main/java/co/aikar/timings/TimingsExport.java b/src/main/java/co/aikar/timings/TimingsExport.java
 index 7620c72a4c243cbeea245203ce03a97cbfa7d922..b35a9f4c5f8960864c402ede8a51fb5ab9c4fcc0 100644
 --- a/src/main/java/co/aikar/timings/TimingsExport.java
@@ -2181,6 +2192,30 @@ index 0000000000000000000000000000000000000000..facd55463d44cb7e3d2ca6892982f549
 +		return backingMap.size();
 +	}
 +}
+diff --git a/src/main/java/io/papermc/paper/ServerBuildInfoImpl.java b/src/main/java/io/papermc/paper/ServerBuildInfoImpl.java
+index 790bad0494454ca12ee152e3de6da3da634d9b20..12d52f6677a1c19084a8d5c7d56850efbe203877 100644
+--- a/src/main/java/io/papermc/paper/ServerBuildInfoImpl.java
++++ b/src/main/java/io/papermc/paper/ServerBuildInfoImpl.java
+@@ -31,6 +31,7 @@ public record ServerBuildInfoImpl(
+     private static final String ATTRIBUTE_GIT_COMMIT = "Git-Commit";
+ 
+     private static final String BRAND_PAPER_NAME = "Paper";
++    private static final String BRAND_PUFFERFISH_NAME = "Pufferfish"; // Pufferfish
+ 
+     private static final String BUILD_DEV = "DEV";
+ 
+@@ -42,9 +43,9 @@ public record ServerBuildInfoImpl(
+         this(
+             getManifestAttribute(manifest, ATTRIBUTE_BRAND_ID)
+                 .map(Key::key)
+-                .orElse(BRAND_PAPER_ID),
++                .orElse(BRAND_PUFFERFISH_ID), // Pufferfish
+             getManifestAttribute(manifest, ATTRIBUTE_BRAND_NAME)
+-                .orElse(BRAND_PAPER_NAME),
++                .orElse(BRAND_PUFFERFISH_NAME), // Pufferfish
+             SharedConstants.getCurrentVersion().getId(),
+             SharedConstants.getCurrentVersion().getName(),
+             getManifestAttribute(manifest, ATTRIBUTE_BUILD_NUMBER)
 diff --git a/src/main/java/io/papermc/paper/configuration/GlobalConfiguration.java b/src/main/java/io/papermc/paper/configuration/GlobalConfiguration.java
 index 2874bc3001c4e7d9191e47ba512c5a68369c21f1..32035e37b39ba42232fea948166e7c1d4d06190c 100644
 --- a/src/main/java/io/papermc/paper/configuration/GlobalConfiguration.java
@@ -2251,7 +2286,7 @@ index 300929a406905f5ff1ede664d5b99fb0938d4d2e..01a6b1135420ea659d092ddca499f281
                          throw new SignedMessageChain.DecodeException(SignedMessageChain.DecodeException.OUT_OF_ORDER_CHAT, org.bukkit.event.player.PlayerKickEvent.Cause.OUT_OF_ORDER_CHAT); // Paper - kick event causes
                      } else {
 diff --git a/src/main/java/net/minecraft/server/MinecraftServer.java b/src/main/java/net/minecraft/server/MinecraftServer.java
-index 0ed42fa899721f83b598db05be1b5f321af3614a..d3ac9185d16099daac9144d7adf6dc38827ab0dc 100644
+index 0ed42fa899721f83b598db05be1b5f321af3614a..c110559de69f61c56445f12e733021b6acbcfb4a 100644
 --- a/src/main/java/net/minecraft/server/MinecraftServer.java
 +++ b/src/main/java/net/minecraft/server/MinecraftServer.java
 @@ -316,6 +316,7 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
@@ -2275,15 +2310,6 @@ index 0ed42fa899721f83b598db05be1b5f321af3614a..d3ac9185d16099daac9144d7adf6dc38
                  this.startMeasuringTaskExecutionTime();
                  this.waitUntilNextTick();
                  this.finishMeasuringTaskExecutionTime();
-@@ -1920,7 +1927,7 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
- 
-     @DontObfuscate
-     public String getServerModName() {
--        return io.papermc.paper.ServerBuildInfo.buildInfo().brandName(); // Paper
-+        return "Pufferfish"; // Paper // Pufferfish - Use dedicated VersionFetcher
-     }
- 
-     public SystemReport fillSystemReport(SystemReport details) {
 @@ -2555,6 +2562,7 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
      }
  
@@ -2546,7 +2572,7 @@ index ca56a0b596976448da6bb2a0e82b3d5cd4133e12..377ca8c01864d6817eff30d33403bc15
  
              if (this.isRainingAt(blockposition)) {
 diff --git a/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java b/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
-index c450447585af4c8cdc87abe871c229ff895c3e53..81a20529f66883166ebfbebd001d2330bb0070d2 100644
+index 4ae88bfcead40cd05f9514a48a922a37767cb3cf..24257e653672a7632bca4f9eb55f127588604498 100644
 --- a/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
 +++ b/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
 @@ -1154,6 +1154,7 @@ public class ServerGamePacketListenerImpl extends ServerCommonPacketListenerImpl
@@ -2669,7 +2695,7 @@ index f402dbbfe3a443e6bc51f88b85abe937852b52f0..c960ddfe628051257cca0d25da385c1d
      float DEFAULT_DISTANCE_BUFFER = 4.0F;
  
 diff --git a/src/main/java/net/minecraft/world/entity/Entity.java b/src/main/java/net/minecraft/world/entity/Entity.java
-index 4ee843dfd826772c9157ca421d8fe1f36f814b51..645a2b045af1bcd3d25d799a08e5e024fd131370 100644
+index 7ef9f67d27cc240191dd5d07e8dcf5fbdebe1049..8ae15962f4f52e436041731094f62550fdae2b73 100644
 --- a/src/main/java/net/minecraft/world/entity/Entity.java
 +++ b/src/main/java/net/minecraft/world/entity/Entity.java
 @@ -311,7 +311,7 @@ public abstract class Entity implements SyncedDataHolder, Nameable, EntityAccess
@@ -2825,7 +2851,7 @@ index a46bf73c608641bf1f00fd55242de71a0f2ee06e..e6edbe6177b168d85759bd9c414dc87e
      private String descriptionId;
      @Nullable
 diff --git a/src/main/java/net/minecraft/world/entity/LivingEntity.java b/src/main/java/net/minecraft/world/entity/LivingEntity.java
-index 0ddf2e1a6d2ea836f8a140a435721e0ce96bd8d2..1405bfc9cf22265a975cca1d8abfae6020a5dd49 100644
+index ce01fe82dc1eaaf06ca317ddbc62b7d1b87a48b2..60d8fddfecdcd0fe3609a3851230aa06ce5297a0 100644
 --- a/src/main/java/net/minecraft/world/entity/LivingEntity.java
 +++ b/src/main/java/net/minecraft/world/entity/LivingEntity.java
 @@ -150,7 +150,6 @@ import org.bukkit.event.entity.EntityTeleportEvent;
@@ -2865,7 +2891,7 @@ index 0ddf2e1a6d2ea836f8a140a435721e0ce96bd8d2..1405bfc9cf22265a975cca1d8abfae60
      @Override
      public boolean hurt(DamageSource source, float amount) {
          if (this.isInvulnerableTo(source)) {
-@@ -2050,6 +2062,20 @@ public abstract class LivingEntity extends Entity implements Attackable {
+@@ -2040,6 +2052,20 @@ public abstract class LivingEntity extends Entity implements Attackable {
          return this.lastClimbablePos;
      }
  
@@ -2887,7 +2913,7 @@ index 0ddf2e1a6d2ea836f8a140a435721e0ce96bd8d2..1405bfc9cf22265a975cca1d8abfae60
          if (this.isSpectator()) {
              return false;
 diff --git a/src/main/java/net/minecraft/world/entity/Mob.java b/src/main/java/net/minecraft/world/entity/Mob.java
-index 9f42563699508fcb3d8a96cfdfc25a7bffd99759..706555cb6b56372411d1ec607d25300d57789b7d 100644
+index 8b612b772ca87c852d0b108c2afd6785c261c9b9..5e42bfa9e98215ecb8aca4da2486a4b3d94b38aa 100644
 --- a/src/main/java/net/minecraft/world/entity/Mob.java
 +++ b/src/main/java/net/minecraft/world/entity/Mob.java
 @@ -237,14 +237,16 @@ public abstract class Mob extends LivingEntity implements EquipmentUser, Targeti
@@ -4058,18 +4084,9 @@ index 88a4a72bb390947dc17e5da09a99b2d1b3ac4621..284c76ddb9724b44bb2e93f590685c72
  
      @Nullable
 diff --git a/src/main/java/org/bukkit/craftbukkit/CraftServer.java b/src/main/java/org/bukkit/craftbukkit/CraftServer.java
-index af015237214cebc4d1c4bb9e9c5f939d433e365c..49794050997ee1f0511ce4fa6c191906e4f4ca47 100644
+index 94a31c8f903eb61eb6d203e8e6fe8fb0beca28b1..5562e2a34d6baf5949435d6c9e233d86a51d8da3 100644
 --- a/src/main/java/org/bukkit/craftbukkit/CraftServer.java
 +++ b/src/main/java/org/bukkit/craftbukkit/CraftServer.java
-@@ -264,7 +264,7 @@ import javax.annotation.Nullable; // Paper
- import javax.annotation.Nonnull; // Paper
- 
- public final class CraftServer implements Server {
--    private final String serverName = io.papermc.paper.ServerBuildInfo.buildInfo().brandName(); // Paper
-+    private final String serverName = "Pufferfish"; // Paper // Pufferfish - Use dedicated VersionFetcher
-     private final String serverVersion;
-     private final String bukkitVersion = Versioning.getBukkitVersion();
-     private final Logger logger = Logger.getLogger("Minecraft");
 @@ -1124,6 +1124,11 @@ public final class CraftServer implements Server {
                  plugin.getPluginMeta().getDisplayName(),
                  "This plugin is not properly shutting down its async tasks when it is being shut down. This task may throw errors during the final shutdown logs and might not complete before process dies."
@@ -4079,9 +4096,9 @@ index af015237214cebc4d1c4bb9e9c5f939d433e365c..49794050997ee1f0511ce4fa6c191906
 +            for (StackTraceElement element : stackTrace) {
 +                getLogger().log(Level.SEVERE, "  " + element.toString());
 +            }
+             if (console.isDebugging()) io.papermc.paper.util.TraceUtil.dumpTraceForThread(worker.getThread(), "still running"); // Paper - Debugging
          }
      }
-     // Paper end - Wait for Async Tasks during shutdown
 diff --git a/src/main/java/org/bukkit/craftbukkit/inventory/CraftShapelessRecipe.java b/src/main/java/org/bukkit/craftbukkit/inventory/CraftShapelessRecipe.java
 index 96d772eb02f79f8c478f5e6f065e387aa7665b18..c5ce412f321b8b4f31cc042893659e213b081f29 100644
 --- a/src/main/java/org/bukkit/craftbukkit/inventory/CraftShapelessRecipe.java
@@ -4132,10 +4149,10 @@ index 66bdac50130f523f9dc4379b103b7a469f9ca36b..ef780e0566dbac07da88ba26dc595b49
  
      @Override
 diff --git a/src/main/java/org/bukkit/craftbukkit/util/CraftMagicNumbers.java b/src/main/java/org/bukkit/craftbukkit/util/CraftMagicNumbers.java
-index e46714f38df931350d81c30907560c381c8d2725..d9f1164ab63017124a9601f980ee6a6ddb3626eb 100644
+index 4788a591f40f506d81b10fd9f6ab68f308a68e23..aa9e901b243a0296966254f802437cb7c1a3a846 100644
 --- a/src/main/java/org/bukkit/craftbukkit/util/CraftMagicNumbers.java
 +++ b/src/main/java/org/bukkit/craftbukkit/util/CraftMagicNumbers.java
-@@ -502,7 +502,7 @@ public final class CraftMagicNumbers implements UnsafeValues {
+@@ -503,7 +503,7 @@ public final class CraftMagicNumbers implements UnsafeValues {
  
      @Override
      public com.destroystokyo.paper.util.VersionFetcher getVersionFetcher() {

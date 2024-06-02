@@ -1,3 +1,4 @@
+#!/bin/bash
 # To initialize your development environment,
 # run below command in your terminal:
 # source ./initDev
@@ -23,7 +24,7 @@ alias rcc="git rebase --continue"
 
 # generate Fixup patches for Server
 function fs() {
-    cd *-Server
+    cd ./*-Server || exit 1
 
     git add .
     git commit -m "fixup"
@@ -35,7 +36,7 @@ function fs() {
 
 # generate Fixup patches for API
 function fa() {
-    cd *-API
+    cd ./*-API || exit 1
 
     git add .
     git commit -m "fixup"
@@ -47,6 +48,12 @@ function fa() {
 
 # ReApply Server Patches
 function rasp() {
-    rm -rf *-Server
+    rm -rf ./*-Server
     ./gradlew applyServerPatches
+}
+
+# Commit Updated Upstream
+function cuu() {
+    # shellcheck disable=SC2059
+    printf "Updated Upstream ($1)$(/bin/cat compare.txt)" | git commit -F -
 }

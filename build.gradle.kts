@@ -107,17 +107,17 @@ paperweight {
 
 alwaysUpToDate {
 
-    paperRepoName.set("paperRepo")
-    paperBranchName.set("paperBranch")
+    paperRepo.set("https://github.com/PaperMC/Paper")
+    paperRef.set("master")
     paperCommitName.set("paperCommit")
 
-    purpurRepoName.set("purpurRepo")
-    purpurBranchName.set("purpurBranch")
+    purpurRepo.set("https://github.com/PlazmaMC/Purpur")
+    purpurRef.set("ver/1.20.6")
     purpurCommitName.set("purpurCommit")
 
-    pufferfishRepoName.set("pufferfishRepo")
-    pufferfishBranchName.set("pufferfishBranch")
-    pufferfishToggleName.set("usePufferfish")
+    pufferfishRepo.set("https://github.com/PlazmaMC/Pufferfish")
+    pufferfishRef.set("ver/1.20")
+    usePufferfish.set(true)
 
 }
 
