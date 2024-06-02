@@ -86,20 +86,21 @@ jobs:
         continue-on-error: true
         run: |
           if [ ! -d "javadoc" ]; then
+            SUBMODULE_ADD=true
             mkdir javadoc && cd javadoc
             git init && git branch -m ${{ env.VERSION }}
             git remote add origin https://github.com/PlazmaMC/Javadocs
-
-            cd ../jdmain
-            git submodule add https://github.com/PlazmaMC/Javadocs -b ${{ env.VERSION }}
           fi
           
-          (cd Plazma-API/build/docs/javadoc && tar c .) | (cd javadoc && tar xf -)
+          cp -rf Plazma-API/build/docs/javadoc/* javadoc/
           cd javadoc
           git add . && git commit -m "Update Javadocs"
           git push -f origin ${{ env.VERSION }}
 
           cd ../jdmain
+          if [ $SUBMODULE_ADD = true ]; then
+            git submodule add -b ${{ env.VERSION }} https://github.com/PlazmaMC/Javadocs ${{ env.VERSION }}
+          fi
           git submodule update
           git add . && git commit -m "Update Javadocs"
           git push
