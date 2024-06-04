@@ -4,6 +4,17 @@
 
 ### A Server Platform for Minecraft: Java Edition based on [Paper](https://github.com/PaperMC/Paper), which provides the fastest performance
 
+<!---
+[![Discord](https://cdn.plazmamc.org/discord)](https://plazmamc.org/discord)
+[![License](https://cdn.plazmamc.org/license)](LICENSE.md)
+[![Downloads](https://cdn.plazmamc.org/downloads)](https://plazmamc.org/downloads)
+[![Stargazers](https://cdn.plazmamc.org/stars)](https://github.com/PlazmaMC/Plazma/stargazers)
+
+[![Upstream Status](https://cdn.plazmamc.org/upstreams)](https://github.com/PlazmaMC/AlwaysUpToDate/actions)
+[![Forks](https://cdn.plazmamc.org/forks)](https://github.com/PlazmaMC/Plazma/forks)
+[![Watchers](https://cdn.plazmamc.org/watches)](https://github.com/PlazmaMC/Plazma/watchers)
+--->
+
 [![Discord](https://api.plazmamc.org/internal/cdn/discord)](https://plazmamc.org/discord)
 [![License](https://api.plazmamc.org/internal/cdn/license)](LICENSE.md)
 [![Downloads](https://api.plazmamc.org/internal/cdn/downloads)](https://plazmamc.org/downloads)
