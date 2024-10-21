@@ -1,6 +1,6 @@
 From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
 From: Kevin Raneri <kevin.raneri@gmail.com>
-Date: Sun, 2 Jun 2024 23:06:13 +0000
+Date: Tue, 22 Oct 2024 07:33:50 +0900
 Subject: [PATCH] Pufferfish Server Changes
 
 Pufferfish
@@ -20,7 +20,7 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 diff --git a/build.gradle.kts b/build.gradle.kts
-index 4998aff0b7cb084dcda15c6a18bbe45e99b6000a..74425cec45d784566cb53eeb5391a5cc00d777e5 100644
+index de0474b8dce58cb419c00b7614d7dd66be832a02..6cfa3f9994de36e135658841aa3c091b90a14424 100644
 --- a/build.gradle.kts
 +++ b/build.gradle.kts
 @@ -13,7 +13,7 @@ configurations.named(log4jPlugins.compileClasspathConfigurationName) {
@@ -28,11 +28,11 @@ index 4998aff0b7cb084dcda15c6a18bbe45e99b6000a..74425cec45d784566cb53eeb5391a5cc
  
  dependencies {
 -    implementation(project(":paper-api"))
-+    implementation(project(":pufferfish-api")) // Pufferfish
++    implementation(project(":pufferfish-api")) // Pufferfish // Paper
      // Paper start
      implementation("org.jline:jline-terminal-jansi:3.21.0")
      implementation("net.minecrell:terminalconsoleappender:1.3.0")
-@@ -47,6 +47,14 @@ dependencies {
+@@ -47,6 +47,13 @@ dependencies {
      runtimeOnly("org.apache.maven.resolver:maven-resolver-connector-basic:1.9.18")
      runtimeOnly("org.apache.maven.resolver:maven-resolver-transport-http:1.9.18")
  
@@ -42,15 +42,15 @@ index 4998aff0b7cb084dcda15c6a18bbe45e99b6000a..74425cec45d784566cb53eeb5391a5cc
 +        exclude(group="org.yaml", module="snakeyaml")
 +    }
 +    // Pufferfish end
-+    implementation("com.github.technove:Flare:34637f3f87") // Pufferfish - flare
 +
      testImplementation("io.github.classgraph:classgraph:4.8.47") // Paper - mob goal test
      testImplementation("org.junit.jupiter:junit-jupiter:5.10.2")
-     testImplementation("org.hamcrest:hamcrest:2.2")
-@@ -67,6 +75,13 @@ paperweight {
-     craftBukkitPackageVersion.set("v1_20_R4") // also needs to be updated in MappingEnvironment
+     testImplementation("org.junit.platform:junit-platform-suite-engine:1.10.0")
+@@ -72,6 +79,14 @@ paperweight {
+     craftBukkitPackageVersion.set("v1_21_R1") // also needs to be updated in MappingEnvironment
  }
  
++
 +// Pufferfish Start
 +tasks.withType<JavaCompile> {
 +    val compilerArgs = options.compilerArgs
@@ -61,7 +61,7 @@ index 4998aff0b7cb084dcda15c6a18bbe45e99b6000a..74425cec45d784566cb53eeb5391a5cc
  tasks.jar {
      archiveClassifier.set("dev")
  
-@@ -80,14 +95,14 @@ tasks.jar {
+@@ -85,14 +100,14 @@ tasks.jar {
          val gitBranch = git("rev-parse", "--abbrev-ref", "HEAD").getText().trim() // Paper
          attributes(
              "Main-Class" to "org.bukkit.craftbukkit.Main",
@@ -75,8 +75,8 @@ index 4998aff0b7cb084dcda15c6a18bbe45e99b6000a..74425cec45d784566cb53eeb5391a5cc
 -            "Specification-Vendor" to "Paper Team",
 -            "Brand-Id" to "papermc:paper",
 -            "Brand-Name" to "Paper",
-+            "Specification-Vendor" to "Pufferfish Team", // Pufferfish
-+            "Brand-Id" to "pufferfishgg:pufferfish", // Pufferfish
++            "Specification-Vendor" to "Pufferfish Studios LLC", // Pufferfish
++            "Brand-Id" to "pufferfish:pufferfish", // Pufferfish
 +            "Brand-Name" to "Pufferfish", // Pufferfish
              "Build-Number" to (build ?: ""),
              "Build-Time" to Instant.now().toString(),
@@ -122,42 +122,6 @@ index 4b002e8b75d117b726b0de274a76d3596fce015b..692c962193cf9fcc6801fc93f3220bdc
  
                  metrics.addCustomChart(new Metrics.DrilldownPie("java_version", () -> {
                      Map<String, Map<String, Integer>> map = new HashMap<>();
-diff --git a/src/main/java/com/destroystokyo/paper/util/misc/AreaMap.java b/src/main/java/com/destroystokyo/paper/util/misc/AreaMap.java
-index 41b9405d6759d865e0d14dd4f95163e9690e967d..091b1ae822e1c0517e59572e7a9bda11e998c0ee 100644
---- a/src/main/java/com/destroystokyo/paper/util/misc/AreaMap.java
-+++ b/src/main/java/com/destroystokyo/paper/util/misc/AreaMap.java
-@@ -26,7 +26,7 @@ public abstract class AreaMap<E> {
- 
-     // we use linked for better iteration.
-     // map of: coordinate to set of objects in coordinate
--    protected final Long2ObjectOpenHashMap<PooledLinkedHashSets.PooledObjectLinkedOpenHashSet<E>> areaMap = new Long2ObjectOpenHashMap<>(1024, 0.7f);
-+    protected Long2ObjectOpenHashMap<PooledLinkedHashSets.PooledObjectLinkedOpenHashSet<E>> areaMap = new Long2ObjectOpenHashMap<>(1024, 0.7f); // Pufferfish - not actually final
-     protected final PooledLinkedHashSets<E> pooledHashSets;
- 
-     protected final ChangeCallback<E> addCallback;
-@@ -160,7 +160,8 @@ public abstract class AreaMap<E> {
-     protected abstract PooledLinkedHashSets.PooledObjectLinkedOpenHashSet<E> getEmptySetFor(final E object);
- 
-     // expensive op, only for debug
--    protected void validate(final E object, final int viewDistance) {
-+    protected void validate0(final E object, final int viewDistance) { // Pufferfish - rename this thing just in case it gets used I'd rather a compile time error.
-+        if (true) throw new UnsupportedOperationException(); // Pufferfish - not going to put in the effort to fix this if it doesn't ever get used.
-         int entiesGot = 0;
-         int expectedEntries = (2 * viewDistance + 1);
-         expectedEntries *= expectedEntries;
-diff --git a/src/main/java/com/destroystokyo/paper/util/misc/PlayerAreaMap.java b/src/main/java/com/destroystokyo/paper/util/misc/PlayerAreaMap.java
-index 46954db7ecd35ac4018fdf476df7c8020d7ce6c8..1ad890a244bdf6df48a8db68cb43450e08c788a6 100644
---- a/src/main/java/com/destroystokyo/paper/util/misc/PlayerAreaMap.java
-+++ b/src/main/java/com/destroystokyo/paper/util/misc/PlayerAreaMap.java
-@@ -5,7 +5,7 @@ import net.minecraft.server.level.ServerPlayer;
- /**
-  * @author Spottedleaf
-  */
--public final class PlayerAreaMap extends AreaMap<ServerPlayer> {
-+public class PlayerAreaMap extends AreaMap<ServerPlayer> { // Pufferfish - not actually final
- 
-     public PlayerAreaMap() {
-         super();
 diff --git a/src/main/java/gg/airplane/structs/FluidDirectionCache.java b/src/main/java/gg/airplane/structs/FluidDirectionCache.java
 new file mode 100644
 index 0000000000000000000000000000000000000000..aa8467b9dda1f7707e41f50ac7b3e9d7343723ec
@@ -300,251 +264,6 @@ index 0000000000000000000000000000000000000000..aa8467b9dda1f7707e41f50ac7b3e9d7
 +        this.entries[toRemovePos] = new FluidDirectionEntry(data, flag);
 +    }
 +}
-diff --git a/src/main/java/gg/airplane/structs/ItemListWithBitset.java b/src/main/java/gg/airplane/structs/ItemListWithBitset.java
-new file mode 100644
-index 0000000000000000000000000000000000000000..1b7a4ee47f4445d7f2ac91d3a73ae113edbdddb2
---- /dev/null
-+++ b/src/main/java/gg/airplane/structs/ItemListWithBitset.java
-@@ -0,0 +1,114 @@
-+package gg.airplane.structs;
-+
-+import net.minecraft.core.NonNullList;
-+import net.minecraft.world.item.ItemStack;
-+import org.apache.commons.lang.Validate;
-+import org.jetbrains.annotations.NotNull;
-+import org.jetbrains.annotations.Nullable;
-+
-+import java.util.AbstractList;
-+import java.util.Arrays;
-+import java.util.List;
-+
-+public class ItemListWithBitset extends AbstractList<ItemStack> {
-+    public static ItemListWithBitset fromList(List<ItemStack> list) {
-+        if (list instanceof ItemListWithBitset ours) {
-+            return ours;
-+        }
-+        return new ItemListWithBitset(list);
-+    }
-+
-+    private static ItemStack[] createArray(int size) {
-+        ItemStack[] array = new ItemStack[size];
-+        Arrays.fill(array, ItemStack.EMPTY);
-+        return array;
-+    }
-+
-+    private final ItemStack[] items;
-+
-+    private long bitSet = 0;
-+    private final long allBits;
-+
-+    private static class OurNonNullList extends NonNullList<ItemStack> {
-+        protected OurNonNullList(List<ItemStack> delegate) {
-+            super(delegate, ItemStack.EMPTY);
-+        }
-+    }
-+
-+    public final NonNullList<ItemStack> nonNullList = new OurNonNullList(this);
-+
-+    private ItemListWithBitset(List<ItemStack> list) {
-+        this(list.size());
-+
-+        for (int i = 0; i < list.size(); i++) {
-+            this.set(i, list.get(i));
-+        }
-+    }
-+
-+    public ItemListWithBitset(int size) {
-+        Validate.isTrue(size < Long.BYTES * 8, "size is too large");
-+
-+        this.items = createArray(size);
-+        this.allBits = ((1L << size) - 1);
-+    }
-+
-+    public boolean isCompletelyEmpty() {
-+        return this.bitSet == 0;
-+    }
-+
-+    public boolean hasFullStacks() {
-+        return (this.bitSet & this.allBits) == allBits;
-+    }
-+
-+    @Override
-+    public ItemStack set(int index, @NotNull ItemStack itemStack) {
-+        ItemStack existing = this.items[index];
-+
-+        this.items[index] = itemStack;
-+
-+        if (itemStack == ItemStack.EMPTY) {
-+            this.bitSet &= ~(1L << index);
-+        } else {
-+            this.bitSet |= 1L << index;
-+        }
-+
-+        return existing;
-+    }
-+
-+    @NotNull
-+    @Override
-+    public ItemStack get(int var0) {
-+        return this.items[var0];
-+    }
-+
-+    @Override
-+    public int size() {
-+        return this.items.length;
-+    }
-+
-+    @Override
-+    public void clear() {
-+        Arrays.fill(this.items, ItemStack.EMPTY);
-+    }
-+
-+    // these are unsupported for block inventories which have a static size
-+    @Override
-+    public void add(int var0, ItemStack var1) {
-+        throw new UnsupportedOperationException();
-+    }
-+
-+    @Override
-+    public ItemStack remove(int var0) {
-+        throw new UnsupportedOperationException();
-+    }
-+
-+    @Override
-+    public String toString() {
-+        return "ItemListWithBitset{" +
-+          "items=" + Arrays.toString(items) +
-+          ", bitSet=" + Long.toString(bitSet, 2) +
-+          ", allBits=" + Long.toString(allBits, 2) +
-+          ", size=" + this.items.length +
-+          '}';
-+    }
-+}
-diff --git a/src/main/java/gg/airplane/structs/Long2FloatAgingCache.java b/src/main/java/gg/airplane/structs/Long2FloatAgingCache.java
-new file mode 100644
-index 0000000000000000000000000000000000000000..a7f297ebb569f7c1f205e967ca485be70013a714
---- /dev/null
-+++ b/src/main/java/gg/airplane/structs/Long2FloatAgingCache.java
-@@ -0,0 +1,119 @@
-+package gg.airplane.structs;
-+
-+import it.unimi.dsi.fastutil.HashCommon;
-+
-+/**
-+ * A replacement for the cache used in Biome.
-+ */
-+public class Long2FloatAgingCache {
-+
-+    private static class AgingEntry {
-+        private long data;
-+        private float value;
-+        private int uses = 0;
-+        private int age = 0;
-+
-+        private AgingEntry(long data, float value) {
-+            this.data = data;
-+            this.value = value;
-+        }
-+
-+        public void replace(long data, float flag) {
-+            this.data = data;
-+            this.value = flag;
-+        }
-+
-+        public int getValue() {
-+            return this.uses - (this.age >> 1); // age isn't as important as uses
-+        }
-+
-+        public void incrementUses() {
-+            this.uses = this.uses + 1 & Integer.MAX_VALUE;
-+        }
-+
-+        public void incrementAge() {
-+            this.age = this.age + 1 & Integer.MAX_VALUE;
-+        }
-+    }
-+
-+    private final AgingEntry[] entries;
-+    private final int mask;
-+    private final int maxDistance; // the most amount of entries to check for a value
-+
-+    public Long2FloatAgingCache(int size) {
-+        int arraySize = HashCommon.nextPowerOfTwo(size);
-+        this.entries = new AgingEntry[arraySize];
-+        this.mask = arraySize - 1;
-+        this.maxDistance = Math.min(arraySize, 4);
-+    }
-+
-+    public float getValue(long data) {
-+        AgingEntry curr;
-+        int pos;
-+
-+        if ((curr = this.entries[pos = HashCommon.mix(HashCommon.long2int(data)) & this.mask]) == null) {
-+            return Float.NaN;
-+        } else if (data == curr.data) {
-+            curr.incrementUses();
-+            return curr.value;
-+        }
-+
-+        int checked = 1; // start at 1 because we already checked the first spot above
-+
-+        while ((curr = this.entries[pos = (pos + 1) & this.mask]) != null) {
-+            if (data == curr.data) {
-+                curr.incrementUses();
-+                return curr.value;
-+            } else if (++checked >= this.maxDistance) {
-+                break;
-+            }
-+        }
-+
-+        return Float.NaN;
-+    }
-+
-+    public void putValue(long data, float value) {
-+        AgingEntry curr;
-+        int pos;
-+
-+        if ((curr = this.entries[pos = HashCommon.mix(HashCommon.long2int(data)) & this.mask]) == null) {
-+            this.entries[pos] = new AgingEntry(data, value); // add
-+            return;
-+        } else if (data == curr.data) {
-+            curr.incrementUses();
-+            return;
-+        }
-+
-+        int checked = 1; // start at 1 because we already checked the first spot above
-+
-+        while ((curr = this.entries[pos = (pos + 1) & this.mask]) != null) {
-+            if (data == curr.data) {
-+                curr.incrementUses();
-+                return;
-+            } else if (++checked >= this.maxDistance) {
-+                this.forceAdd(data, value);
-+                return;
-+            }
-+        }
-+
-+        this.entries[pos] = new AgingEntry(data, value); // add
-+    }
-+
-+    private void forceAdd(long data, float value) {
-+        int expectedPos = HashCommon.mix(HashCommon.long2int(data)) & this.mask;
-+        AgingEntry entryToRemove = this.entries[expectedPos];
-+
-+        for (int i = expectedPos + 1; i < expectedPos + this.maxDistance; i++) {
-+            int pos = i & this.mask;
-+            AgingEntry entry = this.entries[pos];
-+            if (entry.getValue() < entryToRemove.getValue()) {
-+                entryToRemove = entry;
-+            }
-+
-+            entry.incrementAge(); // use this as a mechanism to age the other entries
-+        }
-+
-+        // remove the least used/oldest entry
-+        entryToRemove.replace(data, value);
-+    }
-+}
 diff --git a/src/main/java/gg/pufferfish/pufferfish/PufferfishCommand.java b/src/main/java/gg/pufferfish/pufferfish/PufferfishCommand.java
 new file mode 100644
 index 0000000000000000000000000000000000000000..020368da69b9a492155f6de6297f74732f4ab6ea
@@ -621,10 +340,10 @@ index 0000000000000000000000000000000000000000..020368da69b9a492155f6de6297f7473
 +}
 diff --git a/src/main/java/gg/pufferfish/pufferfish/PufferfishConfig.java b/src/main/java/gg/pufferfish/pufferfish/PufferfishConfig.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..1ca25529245ed369b8705075a8c2e32fa4d9b1d1
+index 0000000000000000000000000000000000000000..11075b0b4d4c5591850704999868c678348170ff
 --- /dev/null
 +++ b/src/main/java/gg/pufferfish/pufferfish/PufferfishConfig.java
-@@ -0,0 +1,334 @@
+@@ -0,0 +1,299 @@
 +package gg.pufferfish.pufferfish;
 +
 +import gg.pufferfish.pufferfish.simd.SIMDDetection;
@@ -642,7 +361,6 @@ index 0000000000000000000000000000000000000000..1ca25529245ed369b8705075a8c2e32f
 +import java.lang.reflect.Method;
 +import java.lang.reflect.Modifier;
 +import java.util.List;
-+import gg.pufferfish.pufferfish.flare.FlareCommand;
 +import net.minecraft.server.MinecraftServer;
 +import org.apache.logging.log4j.Level;
 +import org.bukkit.configuration.ConfigurationSection;
@@ -651,13 +369,6 @@ index 0000000000000000000000000000000000000000..1ca25529245ed369b8705075a8c2e32f
 +import org.simpleyaml.configuration.comments.CommentType;
 +import org.simpleyaml.configuration.file.YamlFile;
 +import org.simpleyaml.exceptions.InvalidConfigurationException;
-+import org.bukkit.command.SimpleCommandMap;
-+
-+import java.lang.reflect.Method;
-+import java.lang.reflect.Modifier;
-+import java.util.List;
-+import java.net.URI;
-+import java.util.Collections;
 +
 +public class PufferfishConfig {
 +	
@@ -721,7 +432,7 @@ index 0000000000000000000000000000000000000000..1ca25529245ed369b8705075a8c2e32f
 +		// Attempt to detect vectorization
 +		try {
 +			SIMDDetection.isEnabled = SIMDDetection.canEnable(PufferfishLogger.LOGGER);
-+			SIMDDetection.versionLimited = SIMDDetection.getJavaVersion() != 17 && SIMDDetection.getJavaVersion() != 18 && SIMDDetection.getJavaVersion() != 19;
++			SIMDDetection.versionLimited = SIMDDetection.getJavaVersion() < 17 || SIMDDetection.getJavaVersion() > 21;
 +		} catch (NoClassDefFoundError | Exception ignored) {
 +			ignored.printStackTrace();
 +		}
@@ -729,7 +440,7 @@ index 0000000000000000000000000000000000000000..1ca25529245ed369b8705075a8c2e32f
 +		if (SIMDDetection.isEnabled) {
 +			PufferfishLogger.LOGGER.info("SIMD operations detected as functional. Will replace some operations with faster versions.");
 +		} else if (SIMDDetection.versionLimited) {
-+			PufferfishLogger.LOGGER.warning("Will not enable SIMD! These optimizations are only safely supported on Java 17, Java 18, and Java 19.");
++			PufferfishLogger.LOGGER.warning("Will not enable SIMD! These optimizations are only safely supported on Java 17-21.");
 +		} else {
 +			PufferfishLogger.LOGGER.warning("SIMD operations are available for your server, but are not configured!");
 +			PufferfishLogger.LOGGER.warning("To enable additional optimizations, add \"--add-modules=jdk.incubator.vector\" to your startup flags, BEFORE the \"-jar\".");
@@ -925,36 +636,9 @@ index 0000000000000000000000000000000000000000..1ca25529245ed369b8705075a8c2e32f
 +				"the ender dragon whenever a player places an end crystal.");
 +	}
 +
-+    public static URI profileWebUrl;
-+    private static void profilerOptions() {
-+        profileWebUrl = URI.create(getString("flare.url", "https://flare.airplane.gg", "Sets the server to use for profiles."));
-+
-+        setComment("flare", "Configures Flare, the built-in profiler");
-+    }
-+
-+
-+    public static String accessToken;
-+    private static void airplaneWebServices() {
-+        accessToken = getString("web-services.token", "");
-+        // todo lookup token (off-thread) and let users know if their token is valid
-+        if (accessToken.length() > 0) {
-+            gg.pufferfish.pufferfish.flare.FlareSetup.init(); // Pufferfish
-+            SimpleCommandMap commandMap = MinecraftServer.getServer().server.getCommandMap();
-+            if (commandMap.getCommand("flare") == null) {
-+                commandMap.register("flare", "Pufferfish", new FlareCommand());
-+            }
-+        }
-+
-+        setComment("web-services", "Options for connecting to Pufferfish/Airplane's online utilities");
-+
-+    }
-+
-+
 +    public static boolean disableMethodProfiler;
-+	public static boolean disableOutOfOrderChat;
 +    private static void miscSettings() {
-+		disableMethodProfiler = getBoolean("misc.disable-method-profiler", true);
-+		disableOutOfOrderChat = getBoolean("misc.disable-out-of-order-chat", false);
++        disableMethodProfiler = getBoolean("misc.disable-method-profiler", true);
 +        setComment("misc", "Settings for things that don't belong elsewhere");
 +    }
 +
@@ -983,20 +667,24 @@ index 0000000000000000000000000000000000000000..53f2df00c6809618a9ee3d2ea72e85e8
 +}
 diff --git a/src/main/java/gg/pufferfish/pufferfish/PufferfishVersionFetcher.java b/src/main/java/gg/pufferfish/pufferfish/PufferfishVersionFetcher.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..893d8c0946ef71a0561221dd76bffff0dc940d56
+index 0000000000000000000000000000000000000000..06323dcc745aed16123980fc559d7b65c42f1e1c
 --- /dev/null
 +++ b/src/main/java/gg/pufferfish/pufferfish/PufferfishVersionFetcher.java
-@@ -0,0 +1,136 @@
+@@ -0,0 +1,132 @@
 +package gg.pufferfish.pufferfish;
-+
-+import static net.kyori.adventure.text.Component.text;
-+import static net.kyori.adventure.text.format.NamedTextColor.GREEN;
-+import static net.kyori.adventure.text.format.NamedTextColor.RED;
 +
 +import com.destroystokyo.paper.VersionHistoryManager;
 +import com.destroystokyo.paper.util.VersionFetcher;
 +import com.google.gson.Gson;
 +import com.google.gson.JsonObject;
++import io.papermc.paper.ServerBuildInfo;
++import net.kyori.adventure.text.Component;
++import net.kyori.adventure.text.JoinConfiguration;
++import net.kyori.adventure.text.format.NamedTextColor;
++import net.kyori.adventure.text.format.TextDecoration;
++import org.jetbrains.annotations.NotNull;
++import org.jetbrains.annotations.Nullable;
++
 +import java.io.IOException;
 +import java.net.URI;
 +import java.net.http.HttpClient;
@@ -1006,21 +694,18 @@ index 0000000000000000000000000000000000000000..893d8c0946ef71a0561221dd76bffff0
 +import java.util.concurrent.TimeUnit;
 +import java.util.logging.Level;
 +import java.util.logging.Logger;
-+import net.kyori.adventure.text.Component;
-+import net.kyori.adventure.text.JoinConfiguration;
-+import net.kyori.adventure.text.format.NamedTextColor;
-+import net.kyori.adventure.text.format.TextDecoration;
-+import org.bukkit.craftbukkit.CraftServer;
-+import org.jetbrains.annotations.NotNull;
-+import org.jetbrains.annotations.Nullable;
++
++import static net.kyori.adventure.text.Component.text;
++import static net.kyori.adventure.text.format.NamedTextColor.GREEN;
++import static net.kyori.adventure.text.format.NamedTextColor.RED;
 +
 +public class PufferfishVersionFetcher implements VersionFetcher {
 +	
 +	private static final Logger LOGGER = Logger.getLogger("PufferfishVersionFetcher");
 +	private static final HttpClient client = HttpClient.newHttpClient();
 +	
-+	private static final URI JENKINS_URI = URI.create("https://ci.pufferfish.host/job/Pufferfish-1.20/lastSuccessfulBuild/buildNumber");
-+	private static final String GITHUB_FORMAT = "https://api.github.com/repos/pufferfish-gg/Pufferfish/compare/ver/1.20...%s";
++	private static final URI JENKINS_URI = URI.create("https://ci.pufferfish.host/job/Pufferfish-1.21/lastSuccessfulBuild/buildNumber");
++	private static final String GITHUB_FORMAT = "https://api.github.com/repos/pufferfish-gg/Pufferfish/compare/ver/1.21...%s";
 +	
 +	private static final HttpResponse.BodyHandler<JsonObject> JSON_OBJECT_BODY_HANDLER = responseInfo -> HttpResponse.BodySubscribers
 +			.mapping(
@@ -1035,21 +720,16 @@ index 0000000000000000000000000000000000000000..893d8c0946ef71a0561221dd76bffff0
 +	
 +	@Override
 +	public @NotNull Component getVersionMessage(final @NotNull String serverVersion) {
-+		final String[] parts = CraftServer.class.getPackage().getImplementationVersion().split("-");
 +		@NotNull Component component;
-+		
-+		if (parts.length != 3) {
-+			component = text("Unknown server version.", RED);
++
++		if (ServerBuildInfo.buildInfo().buildNumber().isPresent()) {
++			component = this.fetchJenkinsVersion(ServerBuildInfo.buildInfo().buildNumber().getAsInt());
++		} else if (ServerBuildInfo.buildInfo().gitCommit().isPresent()) {
++			component = this.fetchGithubVersion(ServerBuildInfo.buildInfo().gitCommit().get());
 +		} else {
-+			final String versionString = parts[2];
-+			
-+			try {
-+				component = this.fetchJenkinsVersion(Integer.parseInt(versionString));
-+			} catch (NumberFormatException e) {
-+				component = this.fetchGithubVersion(versionString.substring(1, versionString.length() - 1));
-+			}
++			component = text("Unknown server version.", RED);
 +		}
-+		
++
 +		final @Nullable Component history = this.getHistory();
 +		return history != null ? Component
 +				.join(JoinConfiguration.noSeparators(), component, Component.newline(), this.getHistory()) : component;
@@ -1103,8 +783,8 @@ index 0000000000000000000000000000000000000000..893d8c0946ef71a0561221dd76bffff0
 +		return switch (Math.max(-1, Math.min(1, versionDiff))) {
 +			case -1 -> text("You are running an unsupported version of Pufferfish.", RED);
 +			case 0 -> text("You are on the latest version!", GREEN);
-+			default -> text("You are running " + versionDiff + " version" + (versionDiff == 1 ? "" : "s") + " beyond. " +
-+							"Please update your server when possible to maintain stability, security, and receive the latest optimizations.",
++			default -> text("You are running " + versionDiff + " version" + (versionDiff == 1 ? "" : "s") + " behind. " +
++							"Please update your server when possible to maintain stability and security, and to receive the latest optimizations.",
 +					RED);
 +		};
 +	}
@@ -1124,699 +804,6 @@ index 0000000000000000000000000000000000000000..893d8c0946ef71a0561221dd76bffff0
 +	}
 +}
 \ No newline at end of file
-diff --git a/src/main/java/gg/pufferfish/pufferfish/compat/ServerConfigurations.java b/src/main/java/gg/pufferfish/pufferfish/compat/ServerConfigurations.java
-new file mode 100644
-index 0000000000000000000000000000000000000000..4ad189d52b27560424ddb311d0817a334637dc95
---- /dev/null
-+++ b/src/main/java/gg/pufferfish/pufferfish/compat/ServerConfigurations.java
-@@ -0,0 +1,78 @@
-+package gg.pufferfish.pufferfish.compat;
-+
-+import co.aikar.timings.TimingsManager;
-+import com.google.common.io.Files;
-+import org.bukkit.configuration.InvalidConfigurationException;
-+import org.bukkit.configuration.file.YamlConfiguration;
-+
-+import java.io.ByteArrayOutputStream;
-+import java.io.File;
-+import java.io.FileInputStream;
-+import java.io.IOException;
-+import java.nio.charset.StandardCharsets;
-+import java.util.Arrays;
-+import java.util.HashMap;
-+import java.util.List;
-+import java.util.Map;
-+import java.util.Properties;
-+import java.util.stream.Collectors;
-+
-+public class ServerConfigurations {
-+
-+    public static final String[] configurationFiles = new String[]{
-+      "server.properties",
-+      "bukkit.yml",
-+      "spigot.yml",
-+      // "paper.yml", // TODO: Figure out what to do with this.
-+      "pufferfish.yml"
-+    };
-+
-+    public static Map<String, String> getCleanCopies() throws IOException {
-+        Map<String, String> files = new HashMap<>(configurationFiles.length);
-+        for (String file : configurationFiles) {
-+            files.put(file, getCleanCopy(file));
-+        }
-+        return files;
-+    }
-+
-+    public static String getCleanCopy(String configName) throws IOException {
-+        File file = new File(configName);
-+        List<String> hiddenConfigs = TimingsManager.hiddenConfigs;
-+
-+        switch (Files.getFileExtension(configName)) {
-+            case "properties": {
-+                Properties properties = new Properties();
-+                try (FileInputStream inputStream = new FileInputStream(file)) {
-+                    properties.load(inputStream);
-+                }
-+                for (String hiddenConfig : hiddenConfigs) {
-+                    properties.remove(hiddenConfig);
-+                }
-+                ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
-+                properties.store(outputStream, "");
-+                return Arrays.stream(outputStream.toString()
-+                  .split("\n"))
-+                  .filter(line -> !line.startsWith("#"))
-+                  .collect(Collectors.joining("\n"));
-+            }
-+            case "yml": {
-+                YamlConfiguration configuration = new YamlConfiguration();
-+                try {
-+                    configuration.load(file);
-+                } catch (InvalidConfigurationException e) {
-+                    throw new IOException(e);
-+                }
-+                configuration.options().header(null);
-+                for (String key : configuration.getKeys(true)) {
-+                    if (hiddenConfigs.contains(key)) {
-+                        configuration.set(key, null);
-+                    }
-+                }
-+                return configuration.saveToString();
-+            }
-+            default:
-+                throw new IllegalArgumentException("Bad file type " + configName);
-+        }
-+    }
-+
-+}
-diff --git a/src/main/java/gg/pufferfish/pufferfish/flare/CustomCategories.java b/src/main/java/gg/pufferfish/pufferfish/flare/CustomCategories.java
-new file mode 100644
-index 0000000000000000000000000000000000000000..401b42e29bccb5251684062f10b2e0f8b091bc95
---- /dev/null
-+++ b/src/main/java/gg/pufferfish/pufferfish/flare/CustomCategories.java
-@@ -0,0 +1,8 @@
-+package gg.pufferfish.pufferfish.flare;
-+
-+import co.technove.flare.live.category.GraphCategory;
-+
-+public class CustomCategories {
-+    public static final GraphCategory MC_PERF = new GraphCategory("MC Performance");
-+    public static final GraphCategory ENTITIES_AND_CHUNKS = new GraphCategory("Entities & Chunks");
-+}
-diff --git a/src/main/java/gg/pufferfish/pufferfish/flare/FlareCommand.java b/src/main/java/gg/pufferfish/pufferfish/flare/FlareCommand.java
-new file mode 100644
-index 0000000000000000000000000000000000000000..3785d1512eb650f91d58903672c059e7449598fc
---- /dev/null
-+++ b/src/main/java/gg/pufferfish/pufferfish/flare/FlareCommand.java
-@@ -0,0 +1,136 @@
-+package gg.pufferfish.pufferfish.flare;
-+
-+import co.technove.flare.exceptions.UserReportableException;
-+import co.technove.flare.internal.profiling.ProfileType;
-+import gg.pufferfish.pufferfish.PufferfishConfig;
-+import net.kyori.adventure.text.Component;
-+import net.kyori.adventure.text.event.ClickEvent;
-+import net.kyori.adventure.text.format.NamedTextColor;
-+import net.kyori.adventure.text.format.TextColor;
-+import net.kyori.adventure.text.format.TextDecoration;
-+import net.minecraft.server.MinecraftServer;
-+import org.apache.logging.log4j.Level;
-+import org.bukkit.Bukkit;
-+import org.bukkit.command.Command;
-+import org.bukkit.command.CommandSender;
-+import org.bukkit.command.ConsoleCommandSender;
-+import org.bukkit.craftbukkit.scheduler.MinecraftInternalPlugin;
-+import org.bukkit.util.StringUtil;
-+import org.jetbrains.annotations.NotNull;
-+
-+import java.time.Duration;
-+import java.util.ArrayList;
-+import java.util.Collections;
-+import java.util.List;
-+
-+public class FlareCommand extends Command {
-+
-+    private static final String BASE_URL = "https://blog.airplane.gg/flare-tutorial/#setting-the-access-token";
-+    private static final TextColor HEX = TextColor.fromHexString("#e3eaea");
-+    private static final Component PREFIX = Component.text()
-+      .append(Component.text("Flare ✈")
-+        .color(TextColor.fromHexString("#6a7eda"))
-+        .decoration(TextDecoration.BOLD, true)
-+        .append(Component.text(" ", HEX)
-+          .decoration(TextDecoration.BOLD, false)))
-+      .asComponent();
-+
-+    public FlareCommand() {
-+        super("flare", "Profile your server with Flare", "/flare", Collections.singletonList("profile"));
-+        this.setPermission("airplane.flare");
-+    }
-+
-+    @Override
-+    public boolean execute(@NotNull CommandSender sender, @NotNull String commandLabel, String @NotNull [] args) {
-+        if (!testPermission(sender)) return true;
-+        if (PufferfishConfig.accessToken.length() == 0) {
-+            Component clickable = Component.text(BASE_URL, HEX, TextDecoration.UNDERLINED).clickEvent(ClickEvent.clickEvent(ClickEvent.Action.OPEN_URL, BASE_URL));
-+
-+            sender.sendMessage(PREFIX.append(Component.text("Flare currently requires an access token to use. To learn more, visit ").color(HEX).append(clickable)));
-+            return true;
-+        }
-+
-+        if (!FlareSetup.isSupported()) {
-+            sender.sendMessage(PREFIX.append(
-+              Component.text("Profiling is not supported in this environment, check your startup logs for the error.", NamedTextColor.RED)));
-+            return true;
-+        }
-+        if (ProfilingManager.isProfiling()) {
-+            if (args.length == 1 && args[0].equalsIgnoreCase("status")) {
-+                sender.sendMessage(PREFIX.append(Component.text("Current profile has been ran for " + ProfilingManager.getTimeRan().toString(), HEX)));
-+                return true;
-+            }
-+            if (ProfilingManager.stop()) {
-+                if (!(sender instanceof ConsoleCommandSender)) {
-+                    sender.sendMessage(PREFIX.append(Component.text("Profiling has been stopped.", HEX)));
-+                }
-+            } else {
-+                sender.sendMessage(PREFIX.append(Component.text("Profiling has already been stopped.", HEX)));
-+            }
-+        } else {
-+            ProfileType profileType = ProfileType.ITIMER;
-+            if (args.length > 0) {
-+                try {
-+                    profileType = ProfileType.valueOf(args[0].toUpperCase());
-+                } catch (Exception e) {
-+                    sender.sendMessage(PREFIX.append(Component
-+                      .text("Invalid profile type ", HEX)
-+                      .append(Component.text(args[0], HEX, TextDecoration.BOLD)
-+                        .append(Component.text("!", HEX)))
-+                    ));
-+                }
-+            }
-+            ProfileType finalProfileType = profileType;
-+            Bukkit.getScheduler().runTaskAsynchronously(new MinecraftInternalPlugin(), () -> {
-+                try {
-+                    if (ProfilingManager.start(finalProfileType)) {
-+                        if (!(sender instanceof ConsoleCommandSender)) {
-+                            sender.sendMessage(PREFIX.append(Component
-+                              .text("Flare has been started: " + ProfilingManager.getProfilingUri(), HEX)
-+                              .clickEvent(ClickEvent.openUrl(ProfilingManager.getProfilingUri()))
-+                            ));
-+                            sender.sendMessage(PREFIX.append(Component.text("  Run /" + commandLabel + " to stop the Flare.", HEX)));
-+                        }
-+                    } else {
-+                        sender.sendMessage(PREFIX.append(Component
-+                          .text("Flare has already been started: " + ProfilingManager.getProfilingUri(), HEX)
-+                          .clickEvent(ClickEvent.openUrl(ProfilingManager.getProfilingUri()))
-+                        ));
-+                    }
-+                } catch (UserReportableException e) {
-+                    sender.sendMessage(Component.text("Flare failed to start: " + e.getUserError(), NamedTextColor.RED));
-+                    if (e.getCause() != null) {
-+                        MinecraftServer.LOGGER.warn("Flare failed to start", e);
-+                    }
-+                }
-+            });
-+        }
-+        return true;
-+    }
-+
-+    @Override
-+    public @NotNull List<String> tabComplete(@NotNull CommandSender sender, @NotNull String alias, String @NotNull [] args) throws IllegalArgumentException {
-+        List<String> list = new ArrayList<>();
-+        if (ProfilingManager.isProfiling()) {
-+            if (args.length == 1) {
-+                String lastWord = args[0];
-+                if (StringUtil.startsWithIgnoreCase("status", lastWord)) {
-+                    list.add("status");
-+                }
-+                if (StringUtil.startsWithIgnoreCase("stop", lastWord)) {
-+                    list.add("stop");
-+                }
-+            }
-+        } else {
-+            if (args.length <= 1) {
-+                String lastWord = args.length == 0 ? "" : args[0];
-+                for (ProfileType value : ProfileType.values()) {
-+                    if (StringUtil.startsWithIgnoreCase(value.getInternalName(), lastWord)) {
-+                        list.add(value.name().toLowerCase());
-+                    }
-+                }
-+            }
-+        }
-+        return list;
-+    }
-+}
-diff --git a/src/main/java/gg/pufferfish/pufferfish/flare/FlareSetup.java b/src/main/java/gg/pufferfish/pufferfish/flare/FlareSetup.java
-new file mode 100644
-index 0000000000000000000000000000000000000000..cd22e4dcc8b7b57b10a95ef084637249a98e524f
---- /dev/null
-+++ b/src/main/java/gg/pufferfish/pufferfish/flare/FlareSetup.java
-@@ -0,0 +1,33 @@
-+package gg.pufferfish.pufferfish.flare;
-+
-+import co.technove.flare.FlareInitializer;
-+import co.technove.flare.internal.profiling.InitializationException;
-+import net.minecraft.server.MinecraftServer;
-+import org.apache.logging.log4j.Level;
-+
-+public class FlareSetup {
-+
-+    private static boolean initialized = false;
-+    private static boolean supported = false;
-+
-+    public static void init() {
-+        if (initialized) {
-+            return;
-+        }
-+
-+        initialized = true;
-+        try {
-+            for (String warning : FlareInitializer.initialize()) {
-+                MinecraftServer.LOGGER.warn("Flare warning: " + warning);
-+            }
-+            supported = true;
-+        } catch (InitializationException e) {
-+            MinecraftServer.LOGGER.warn("Failed to enable Flare:", e);
-+        }
-+    }
-+
-+    public static boolean isSupported() {
-+        return supported;
-+    }
-+
-+}
-diff --git a/src/main/java/gg/pufferfish/pufferfish/flare/PluginLookup.java b/src/main/java/gg/pufferfish/pufferfish/flare/PluginLookup.java
-new file mode 100644
-index 0000000000000000000000000000000000000000..74aab5eb4b54ffbaf19b8976ffb8ca4a64584006
---- /dev/null
-+++ b/src/main/java/gg/pufferfish/pufferfish/flare/PluginLookup.java
-@@ -0,0 +1,44 @@
-+package gg.pufferfish.pufferfish.flare;
-+
-+import com.google.common.cache.Cache;
-+import com.google.common.cache.CacheBuilder;
-+import org.bukkit.Bukkit;
-+import org.bukkit.plugin.Plugin;
-+import org.bukkit.plugin.java.PluginClassLoader;
-+
-+import java.util.Optional;
-+import java.util.concurrent.TimeUnit;
-+
-+public class PluginLookup {
-+    private static final Cache<String, String> pluginNameCache = CacheBuilder.newBuilder()
-+      .expireAfterAccess(1, TimeUnit.MINUTES)
-+      .maximumSize(1024)
-+      .build();
-+
-+    public static Optional<String> getPluginForClass(String name) {
-+        if (name.startsWith("net.minecraft") || name.startsWith("java.") || name.startsWith("com.mojang") ||
-+          name.startsWith("com.google") || name.startsWith("it.unimi") || name.startsWith("sun")) {
-+            return Optional.empty();
-+        }
-+
-+        String existing = pluginNameCache.getIfPresent(name);
-+        if (existing != null) {
-+            return Optional.ofNullable(existing.isEmpty() ? null : existing);
-+        }
-+
-+        String newValue = "";
-+
-+        for (Plugin plugin : Bukkit.getPluginManager().getPlugins()) {
-+            ClassLoader classLoader = plugin.getClass().getClassLoader();
-+            if (classLoader instanceof PluginClassLoader) {
-+                if (((PluginClassLoader) classLoader)._airplane_hasClass(name)) {
-+                    newValue = plugin.getName();
-+                    break;
-+                }
-+            }
-+        }
-+
-+        pluginNameCache.put(name, newValue);
-+        return Optional.ofNullable(newValue.isEmpty() ? null : newValue);
-+    }
-+}
-diff --git a/src/main/java/gg/pufferfish/pufferfish/flare/ProfilingManager.java b/src/main/java/gg/pufferfish/pufferfish/flare/ProfilingManager.java
-new file mode 100644
-index 0000000000000000000000000000000000000000..e3f76eb11a261c3347f0cd89b5da309bc2dc82f9
---- /dev/null
-+++ b/src/main/java/gg/pufferfish/pufferfish/flare/ProfilingManager.java
-@@ -0,0 +1,151 @@
-+package gg.pufferfish.pufferfish.flare;
-+
-+import co.technove.flare.Flare;
-+import co.technove.flare.FlareAuth;
-+import co.technove.flare.FlareBuilder;
-+import co.technove.flare.exceptions.UserReportableException;
-+import co.technove.flare.internal.profiling.ProfileType;
-+import gg.pufferfish.pufferfish.PufferfishConfig;
-+import gg.pufferfish.pufferfish.PufferfishLogger;
-+import gg.pufferfish.pufferfish.compat.ServerConfigurations;
-+import gg.pufferfish.pufferfish.flare.collectors.GCEventCollector;
-+import gg.pufferfish.pufferfish.flare.collectors.StatCollector;
-+import gg.pufferfish.pufferfish.flare.collectors.TPSCollector;
-+import gg.pufferfish.pufferfish.flare.collectors.WorldCountCollector;
-+import org.bukkit.Bukkit;
-+import org.bukkit.craftbukkit.scheduler.MinecraftInternalPlugin;
-+import org.bukkit.scheduler.BukkitTask;
-+import oshi.SystemInfo;
-+import oshi.hardware.CentralProcessor;
-+import oshi.hardware.GlobalMemory;
-+import oshi.hardware.HardwareAbstractionLayer;
-+import oshi.hardware.VirtualMemory;
-+import oshi.software.os.OperatingSystem;
-+
-+import java.io.IOException;
-+import java.net.URI;
-+import java.time.Duration;
-+import java.util.Objects;
-+import java.util.logging.Level;
-+
-+public class ProfilingManager {
-+
-+    private static Flare currentFlare;
-+    private static BukkitTask currentTask = null;
-+
-+    public static synchronized boolean isProfiling() {
-+        return currentFlare != null && currentFlare.isRunning();
-+    }
-+
-+    public static synchronized String getProfilingUri() {
-+        return Objects.requireNonNull(currentFlare).getURI().map(URI::toString).orElse("Flare is not running");
-+    }
-+
-+    public static Duration getTimeRan() {
-+        Flare flare = currentFlare; // copy reference so no need to sync
-+        if (flare == null) {
-+            return Duration.ofMillis(0);
-+        }
-+        return flare.getCurrentDuration();
-+    }
-+
-+    public static synchronized boolean start(ProfileType profileType) throws UserReportableException {
-+        if (currentFlare != null && !currentFlare.isRunning()) {
-+            currentFlare = null; // errored out
-+        }
-+        if (isProfiling()) {
-+            return false;
-+        }
-+        if (Bukkit.isPrimaryThread()) {
-+            throw new UserReportableException("Profiles should be started off-thread");
-+        }
-+
-+        try {
-+            OperatingSystem os = new SystemInfo().getOperatingSystem();
-+
-+            SystemInfo systemInfo = new SystemInfo();
-+            HardwareAbstractionLayer hardware = systemInfo.getHardware();
-+
-+            CentralProcessor processor = hardware.getProcessor();
-+            CentralProcessor.ProcessorIdentifier processorIdentifier = processor.getProcessorIdentifier();
-+
-+            GlobalMemory memory = hardware.getMemory();
-+            VirtualMemory virtualMemory = memory.getVirtualMemory();
-+
-+            FlareBuilder builder = new FlareBuilder()
-+                    .withProfileType(profileType)
-+                    .withMemoryProfiling(true)
-+                    .withAuth(FlareAuth.fromTokenAndUrl(PufferfishConfig.accessToken, PufferfishConfig.profileWebUrl))
-+
-+                    .withFiles(ServerConfigurations.getCleanCopies())
-+                    .withVersion("Primary Version", Bukkit.getVersion())
-+                    .withVersion("Bukkit Version", Bukkit.getBukkitVersion())
-+                    .withVersion("Minecraft Version", Bukkit.getMinecraftVersion())
-+
-+                    .withGraphCategories(CustomCategories.ENTITIES_AND_CHUNKS, CustomCategories.MC_PERF)
-+                    .withCollectors(new TPSCollector(), new WorldCountCollector(), new GCEventCollector(), new StatCollector())
-+                    .withClassIdentifier(PluginLookup::getPluginForClass)
-+
-+                    .withHardware(new FlareBuilder.HardwareBuilder()
-+                            .setCoreCount(processor.getPhysicalProcessorCount())
-+                            .setThreadCount(processor.getLogicalProcessorCount())
-+                            .setCpuModel(processorIdentifier.getName())
-+                            .setCpuFrequency(processor.getMaxFreq())
-+
-+                            .setTotalMemory(memory.getTotal())
-+                            .setTotalSwap(virtualMemory.getSwapTotal())
-+                            .setTotalVirtual(virtualMemory.getVirtualMax())
-+                    )
-+
-+                    .withOperatingSystem(new FlareBuilder.OperatingSystemBuilder()
-+                            .setManufacturer(os.getManufacturer())
-+                            .setFamily(os.getFamily())
-+                            .setVersion(os.getVersionInfo().toString())
-+                            .setBitness(os.getBitness())
-+                    );
-+
-+            currentFlare = builder.build();
-+        } catch (IOException e) {
-+            PufferfishLogger.LOGGER.log(Level.WARNING, "Failed to read configuration files:", e);
-+            throw new UserReportableException("Failed to load configuration files, check logs for further details.");
-+        }
-+
-+        try {
-+            currentFlare.start();
-+        } catch (IllegalStateException e) {
-+            PufferfishLogger.LOGGER.log(Level.WARNING, "Error starting Flare:", e);
-+            throw new UserReportableException("Failed to start Flare, check logs for further details.");
-+        }
-+
-+        currentTask = Bukkit.getScheduler().runTaskLater(new MinecraftInternalPlugin(), ProfilingManager::stop, 20 * 60 * 15);
-+        PufferfishLogger.LOGGER.log(Level.INFO, "Flare has been started: " + getProfilingUri());
-+        return true;
-+    }
-+
-+    public static synchronized boolean stop() {
-+        if (!isProfiling()) {
-+            return false;
-+        }
-+        if (!currentFlare.isRunning()) {
-+            currentFlare = null;
-+            return true;
-+        }
-+        PufferfishLogger.LOGGER.log(Level.INFO, "Flare has been stopped: " + getProfilingUri());
-+        try {
-+            currentFlare.stop();
-+        } catch (IllegalStateException e) {
-+            PufferfishLogger.LOGGER.log(Level.WARNING, "Error occurred stopping Flare", e);
-+        }
-+        currentFlare = null;
-+
-+        try {
-+            currentTask.cancel();
-+        } catch (Throwable t) {
-+            PufferfishLogger.LOGGER.log(Level.WARNING, "Error occurred stopping Flare", t);
-+        }
-+
-+        currentTask = null;
-+        return true;
-+    }
-+
-+}
-diff --git a/src/main/java/gg/pufferfish/pufferfish/flare/collectors/GCEventCollector.java b/src/main/java/gg/pufferfish/pufferfish/flare/collectors/GCEventCollector.java
-new file mode 100644
-index 0000000000000000000000000000000000000000..d426575c669020f369960107da1e2de2f11f082f
---- /dev/null
-+++ b/src/main/java/gg/pufferfish/pufferfish/flare/collectors/GCEventCollector.java
-@@ -0,0 +1,66 @@
-+package gg.pufferfish.pufferfish.flare.collectors;
-+
-+import co.technove.flare.Flare;
-+import co.technove.flare.internal.FlareInternal;
-+import co.technove.flare.live.CollectorData;
-+import co.technove.flare.live.EventCollector;
-+import co.technove.flare.live.LiveEvent;
-+import co.technove.flare.live.category.GraphCategory;
-+import co.technove.flare.live.formatter.DataFormatter;
-+import com.google.common.collect.ImmutableMap;
-+import com.sun.management.GarbageCollectionNotificationInfo;
-+
-+import javax.management.ListenerNotFoundException;
-+import javax.management.Notification;
-+import javax.management.NotificationEmitter;
-+import javax.management.NotificationListener;
-+import javax.management.openmbean.CompositeData;
-+import java.lang.management.GarbageCollectorMXBean;
-+import java.lang.management.ManagementFactory;
-+
-+public class GCEventCollector extends EventCollector implements NotificationListener {
-+
-+    private static final CollectorData MINOR_GC = new CollectorData("builtin:gc:minor", "Minor GC", "A small pause in the program to allow Garbage Collection to run.", DataFormatter.MILLISECONDS, GraphCategory.SYSTEM);
-+    private static final CollectorData MAJOR_GC = new CollectorData("builtin:gc:major", "Major GC", "A large pause in the program to allow Garbage Collection to run.", DataFormatter.MILLISECONDS, GraphCategory.SYSTEM);
-+    private static final CollectorData UNKNOWN_GC = new CollectorData("builtin:gc:generic", "Major GC", "A run of the Garbage Collection.", DataFormatter.MILLISECONDS, GraphCategory.SYSTEM);
-+
-+    public GCEventCollector() {
-+        super(MINOR_GC, MAJOR_GC, UNKNOWN_GC);
-+    }
-+
-+    private static CollectorData fromString(String string) {
-+        if (string.endsWith("minor GC")) {
-+            return MINOR_GC;
-+        } else if (string.endsWith("major GC")) {
-+            return MAJOR_GC;
-+        }
-+        return UNKNOWN_GC;
-+    }
-+
-+    @Override
-+    public void start(Flare flare) {
-+        for (GarbageCollectorMXBean garbageCollectorBean : ManagementFactory.getGarbageCollectorMXBeans()) {
-+            NotificationEmitter notificationEmitter = (NotificationEmitter) garbageCollectorBean;
-+            notificationEmitter.addNotificationListener(this, null, null);
-+        }
-+    }
-+
-+    @Override
-+    public void stop(Flare flare) {
-+        for (GarbageCollectorMXBean garbageCollectorBean : ManagementFactory.getGarbageCollectorMXBeans()) {
-+            NotificationEmitter notificationEmitter = (NotificationEmitter) garbageCollectorBean;
-+            try {
-+                notificationEmitter.removeNotificationListener(this);
-+            } catch (ListenerNotFoundException e) {
-+            }
-+        }
-+    }
-+
-+    @Override
-+    public void handleNotification(Notification notification, Object o) {
-+        if (notification.getType().equals(GarbageCollectionNotificationInfo.GARBAGE_COLLECTION_NOTIFICATION)) {
-+            GarbageCollectionNotificationInfo gcInfo = GarbageCollectionNotificationInfo.from((CompositeData) notification.getUserData());
-+            reportEvent(new LiveEvent(fromString(gcInfo.getGcAction()), System.currentTimeMillis(), (int) gcInfo.getGcInfo().getDuration(), ImmutableMap.of()));
-+        }
-+    }
-+}
-diff --git a/src/main/java/gg/pufferfish/pufferfish/flare/collectors/StatCollector.java b/src/main/java/gg/pufferfish/pufferfish/flare/collectors/StatCollector.java
-new file mode 100644
-index 0000000000000000000000000000000000000000..a22c6dbae53667e4c72464fa27153aee30c7946e
---- /dev/null
-+++ b/src/main/java/gg/pufferfish/pufferfish/flare/collectors/StatCollector.java
-@@ -0,0 +1,41 @@
-+package gg.pufferfish.pufferfish.flare.collectors;
-+
-+import co.technove.flare.live.CollectorData;
-+import co.technove.flare.live.LiveCollector;
-+import co.technove.flare.live.category.GraphCategory;
-+import co.technove.flare.live.formatter.DataFormatter;
-+import com.sun.management.OperatingSystemMXBean;
-+import oshi.SystemInfo;
-+import oshi.hardware.CentralProcessor;
-+
-+import java.lang.management.ManagementFactory;
-+import java.time.Duration;
-+
-+public class StatCollector extends LiveCollector {
-+
-+    private static final CollectorData CPU = new CollectorData("builtin:stat:cpu", "CPU Load", "The total amount of CPU usage across all cores.", DataFormatter.PERCENT, GraphCategory.SYSTEM);
-+    private static final CollectorData CPU_PROCESS = new CollectorData("builtin:stat:cpu_process", "Process CPU", "The amount of CPU being used by this process.", DataFormatter.PERCENT, GraphCategory.SYSTEM);
-+    private static final CollectorData MEMORY = new CollectorData("builtin:stat:memory_used", "Memory", "The amount of memory being used currently.", DataFormatter.BYTES, GraphCategory.SYSTEM);
-+    private static final CollectorData MEMORY_TOTAL = new CollectorData("builtin:stat:memory_total", "Memory Total", "The total amount of memory allocated.", DataFormatter.BYTES, GraphCategory.SYSTEM);
-+
-+    private final OperatingSystemMXBean bean;
-+    private final CentralProcessor processor;
-+
-+    public StatCollector() {
-+        super(CPU, CPU_PROCESS, MEMORY, MEMORY_TOTAL);
-+        this.interval = Duration.ofSeconds(5);
-+
-+        this.bean = (OperatingSystemMXBean) ManagementFactory.getOperatingSystemMXBean();
-+        this.processor = new SystemInfo().getHardware().getProcessor();
-+    }
-+
-+    @Override
-+    public void run() {
-+        Runtime runtime = Runtime.getRuntime();
-+
-+        this.report(CPU, this.processor.getSystemLoadAverage(1)[0] / 100); // percentage
-+        this.report(CPU_PROCESS, this.bean.getProcessCpuLoad());
-+        this.report(MEMORY, runtime.totalMemory() - runtime.freeMemory());
-+        this.report(MEMORY_TOTAL, runtime.totalMemory());
-+    }
-+}
-diff --git a/src/main/java/gg/pufferfish/pufferfish/flare/collectors/TPSCollector.java b/src/main/java/gg/pufferfish/pufferfish/flare/collectors/TPSCollector.java
-new file mode 100644
-index 0000000000000000000000000000000000000000..40447d00aefb5ffedb8a2ee87155a04088f0649f
---- /dev/null
-+++ b/src/main/java/gg/pufferfish/pufferfish/flare/collectors/TPSCollector.java
-@@ -0,0 +1,31 @@
-+package gg.pufferfish.pufferfish.flare.collectors;
-+
-+import co.technove.flare.live.CollectorData;
-+import co.technove.flare.live.LiveCollector;
-+import co.technove.flare.live.formatter.SuffixFormatter;
-+import gg.pufferfish.pufferfish.flare.CustomCategories;
-+import net.minecraft.server.MinecraftServer;
-+import org.bukkit.Bukkit;
-+
-+import java.time.Duration;
-+import java.util.Arrays;
-+
-+public class TPSCollector extends LiveCollector {
-+    private static final CollectorData TPS = new CollectorData("airplane:tps", "TPS", "Ticks per second, or how fast the server updates. For a smooth server this should be a constant 20TPS.", SuffixFormatter.of("TPS"), CustomCategories.MC_PERF);
-+    private static final CollectorData MSPT = new CollectorData("airplane:mspt", "MSPT", "Milliseconds per tick, which can show how well your server is performing. This value should always be under 50mspt.", SuffixFormatter.of("mspt"), CustomCategories.MC_PERF);
-+
-+    public TPSCollector() {
-+        super(TPS, MSPT);
-+
-+        this.interval = Duration.ofSeconds(5);
-+    }
-+
-+    @Override
-+    public void run() {
-+        long[] times = MinecraftServer.getServer().tickTimes5s.getTimes();
-+        double mspt = ((double) Arrays.stream(times).sum() / (double) times.length) * 1.0E-6D;
-+
-+        this.report(TPS, Math.min(20D, Math.round(Bukkit.getServer().getTPS()[0] * 100d) / 100d));
-+        this.report(MSPT, (double) Math.round(mspt * 100d) / 100d);
-+    }
-+}
-diff --git a/src/main/java/gg/pufferfish/pufferfish/flare/collectors/WorldCountCollector.java b/src/main/java/gg/pufferfish/pufferfish/flare/collectors/WorldCountCollector.java
-new file mode 100644
-index 0000000000000000000000000000000000000000..029d840e28d67d26d3c0dd6785e25dbf15f9226c
---- /dev/null
-+++ b/src/main/java/gg/pufferfish/pufferfish/flare/collectors/WorldCountCollector.java
-@@ -0,0 +1,45 @@
-+package gg.pufferfish.pufferfish.flare.collectors;
-+
-+import co.technove.flare.live.CollectorData;
-+import co.technove.flare.live.LiveCollector;
-+import co.technove.flare.live.formatter.SuffixFormatter;
-+import gg.pufferfish.pufferfish.flare.CustomCategories;
-+import org.bukkit.Bukkit;
-+import org.bukkit.World;
-+
-+import java.time.Duration;
-+
-+public class WorldCountCollector extends LiveCollector {
-+
-+    private static final CollectorData PLAYER_COUNT = new CollectorData("airplane:world:playercount", "Player Count", "The number of players currently on the server.", new SuffixFormatter(" Player", " Players"), CustomCategories.ENTITIES_AND_CHUNKS);
-+    private static final CollectorData ENTITY_COUNT = new CollectorData("airplane:world:entitycount", "Entity Count", "The number of entities in all worlds", new SuffixFormatter(" Entity", " Entities"), CustomCategories.ENTITIES_AND_CHUNKS);
-+    private static final CollectorData CHUNK_COUNT = new CollectorData("airplane:world:chunkcount", "Chunk Count", "The number of chunks currently loaded.", new SuffixFormatter(" Chunk", " Chunks"), CustomCategories.ENTITIES_AND_CHUNKS);
-+    private static final CollectorData TILE_ENTITY_COUNT = new CollectorData("airplane:world:blockentitycount", "Block Entity Count", "The number of block entities currently loaded.", new SuffixFormatter(" Block Entity", " Block Entities"), CustomCategories.ENTITIES_AND_CHUNKS);
-+
-+    public WorldCountCollector() {
-+        super(PLAYER_COUNT, ENTITY_COUNT, CHUNK_COUNT, TILE_ENTITY_COUNT);
-+
-+        this.interval = Duration.ofSeconds(5);
-+    }
-+
-+    @Override
-+    public void run() {
-+        if (true) return; // This doesn't work, and it's not worth fixing at the moment.
-+        int entities = 0;
-+        int chunkCount = 0;
-+        int tileEntityCount = 0;
-+
-+        if (!Bukkit.isStopping()) {
-+            for (World world : Bukkit.getWorlds()) {
-+                world.getEntityCount();
-+                chunkCount += world.getChunkCount();
-+                tileEntityCount += world.getTileEntityCount();
-+            }
-+        }
-+
-+        this.report(PLAYER_COUNT, Bukkit.getOnlinePlayers().size());
-+        this.report(ENTITY_COUNT, entities);
-+        this.report(CHUNK_COUNT, chunkCount);
-+        this.report(TILE_ENTITY_COUNT, tileEntityCount);
-+    }
-+}
 diff --git a/src/main/java/gg/pufferfish/pufferfish/sentry/PufferfishSentryAppender.java b/src/main/java/gg/pufferfish/pufferfish/sentry/PufferfishSentryAppender.java
 new file mode 100644
 index 0000000000000000000000000000000000000000..731ef11c7a025ae95ed8a757b530d834733d0621
@@ -2083,43 +1070,6 @@ index 0000000000000000000000000000000000000000..8e5323d5d9af25c8a85c4b34a6be76cf
 +	}
 +	
 +}
-diff --git a/src/main/java/gg/pufferfish/pufferfish/util/AsyncPlayerAreaMap.java b/src/main/java/gg/pufferfish/pufferfish/util/AsyncPlayerAreaMap.java
-new file mode 100644
-index 0000000000000000000000000000000000000000..fdcb62d12164024a5f354d60cc863821a18d1b2a
---- /dev/null
-+++ b/src/main/java/gg/pufferfish/pufferfish/util/AsyncPlayerAreaMap.java
-@@ -0,0 +1,31 @@
-+package gg.pufferfish.pufferfish.util;
-+
-+import com.destroystokyo.paper.util.misc.PlayerAreaMap;
-+import com.destroystokyo.paper.util.misc.PooledLinkedHashSets;
-+import java.util.concurrent.ConcurrentHashMap;
-+import net.minecraft.server.level.ServerPlayer;
-+
-+public final class AsyncPlayerAreaMap extends PlayerAreaMap {
-+	
-+	public AsyncPlayerAreaMap() {
-+		super();
-+		this.areaMap = new Long2ObjectOpenHashMapWrapper<>(new ConcurrentHashMap<>(1024, 0.7f));
-+	}
-+	
-+	public AsyncPlayerAreaMap(final PooledLinkedHashSets<ServerPlayer> pooledHashSets) {
-+		super(pooledHashSets);
-+		this.areaMap = new Long2ObjectOpenHashMapWrapper<>(new ConcurrentHashMap<>(1024, 0.7f));
-+	}
-+	
-+	public AsyncPlayerAreaMap(final PooledLinkedHashSets<ServerPlayer> pooledHashSets, final ChangeCallback<ServerPlayer> addCallback,
-+			final ChangeCallback<ServerPlayer> removeCallback) {
-+		this(pooledHashSets, addCallback, removeCallback, null);
-+	}
-+	
-+	public AsyncPlayerAreaMap(final PooledLinkedHashSets<ServerPlayer> pooledHashSets, final ChangeCallback<ServerPlayer> addCallback,
-+			final ChangeCallback<ServerPlayer> removeCallback, final ChangeSourceCallback<ServerPlayer> changeSourceCallback) {
-+		super(pooledHashSets, addCallback, removeCallback, changeSourceCallback);
-+		this.areaMap = new Long2ObjectOpenHashMapWrapper<>(new ConcurrentHashMap<>(1024, 0.7f));
-+	}
-+
-+}
 diff --git a/src/main/java/gg/pufferfish/pufferfish/util/IterableWrapper.java b/src/main/java/gg/pufferfish/pufferfish/util/IterableWrapper.java
 new file mode 100644
 index 0000000000000000000000000000000000000000..c1929840254a3e6d721816f4a20415bea1742580
@@ -2192,104 +1142,11 @@ index 0000000000000000000000000000000000000000..facd55463d44cb7e3d2ca6892982f549
 +		return backingMap.size();
 +	}
 +}
-diff --git a/src/main/java/io/papermc/paper/ServerBuildInfoImpl.java b/src/main/java/io/papermc/paper/ServerBuildInfoImpl.java
-index 790bad0494454ca12ee152e3de6da3da634d9b20..12d52f6677a1c19084a8d5c7d56850efbe203877 100644
---- a/src/main/java/io/papermc/paper/ServerBuildInfoImpl.java
-+++ b/src/main/java/io/papermc/paper/ServerBuildInfoImpl.java
-@@ -31,6 +31,7 @@ public record ServerBuildInfoImpl(
-     private static final String ATTRIBUTE_GIT_COMMIT = "Git-Commit";
- 
-     private static final String BRAND_PAPER_NAME = "Paper";
-+    private static final String BRAND_PUFFERFISH_NAME = "Pufferfish"; // Pufferfish
- 
-     private static final String BUILD_DEV = "DEV";
- 
-@@ -42,9 +43,9 @@ public record ServerBuildInfoImpl(
-         this(
-             getManifestAttribute(manifest, ATTRIBUTE_BRAND_ID)
-                 .map(Key::key)
--                .orElse(BRAND_PAPER_ID),
-+                .orElse(BRAND_PUFFERFISH_ID), // Pufferfish
-             getManifestAttribute(manifest, ATTRIBUTE_BRAND_NAME)
--                .orElse(BRAND_PAPER_NAME),
-+                .orElse(BRAND_PUFFERFISH_NAME), // Pufferfish
-             SharedConstants.getCurrentVersion().getId(),
-             SharedConstants.getCurrentVersion().getName(),
-             getManifestAttribute(manifest, ATTRIBUTE_BUILD_NUMBER)
-diff --git a/src/main/java/io/papermc/paper/configuration/GlobalConfiguration.java b/src/main/java/io/papermc/paper/configuration/GlobalConfiguration.java
-index 2874bc3001c4e7d9191e47ba512c5a68369c21f1..32035e37b39ba42232fea948166e7c1d4d06190c 100644
---- a/src/main/java/io/papermc/paper/configuration/GlobalConfiguration.java
-+++ b/src/main/java/io/papermc/paper/configuration/GlobalConfiguration.java
-@@ -8,6 +8,7 @@ import net.kyori.adventure.text.Component;
- import net.kyori.adventure.text.format.NamedTextColor;
- import net.minecraft.network.protocol.Packet;
- import net.minecraft.network.protocol.game.ServerboundPlaceRecipePacket;
-+import org.bukkit.Bukkit; // Pufferfish
- import org.checkerframework.checker.nullness.qual.Nullable;
- import org.slf4j.Logger;
- import org.spongepowered.configurate.objectmapping.ConfigSerializable;
-@@ -19,6 +20,7 @@ import org.spongepowered.configurate.objectmapping.meta.Setting;
- import java.util.List;
- import java.util.Map;
- import java.util.Objects;
-+import java.util.logging.Level; // Pufferfish
- 
- @SuppressWarnings({"CanBeFinal", "FieldCanBeLocal", "FieldMayBeFinal", "NotNullFieldNotInitialized", "InnerClassMayBeStatic"})
- public class GlobalConfiguration extends ConfigurationPart {
-@@ -97,6 +99,7 @@ public class GlobalConfiguration extends ConfigurationPart {
-     @Deprecated(forRemoval = true)
-     public class Timings extends ConfigurationPart {
-         public boolean enabled = true;
-+        public boolean reallyEnabled = false;
-         public boolean verbose = true;
-         public String url = "https://timings.aikar.co/";
-         public boolean serverNamePrivacy = false;
-@@ -110,6 +113,14 @@ public class GlobalConfiguration extends ConfigurationPart {
- 
-         @PostProcess
-         private void postProcess() {
-+            // Pufferfish start
-+            if (enabled && !reallyEnabled) {
-+                Bukkit.getLogger().log(Level.WARNING, "[Pufferfish] To improve performance, timings have been disabled by default");
-+                Bukkit.getLogger().log(Level.WARNING, "[Pufferfish] You can still use timings by using /timings on, but they will not start on server startup unless you set timings.really-enabled to true in paper.yml");
-+                Bukkit.getLogger().log(Level.WARNING, "[Pufferfish] If you would like to disable this message, either set timings.really-enabled to true or timings.enabled to false.");
-+            }
-+            enabled = reallyEnabled;
-+            // Pufferfish end
-             MinecraftTimings.processConfig(this);
-         }
-     }
-diff --git a/src/main/java/io/papermc/paper/util/MCUtil.java b/src/main/java/io/papermc/paper/util/MCUtil.java
-index 1d6b3fe2ce240af4ede61588795456b046eee6c9..cdcb1bff7913bfe86fed008271016a3175b6df90 100644
---- a/src/main/java/io/papermc/paper/util/MCUtil.java
-+++ b/src/main/java/io/papermc/paper/util/MCUtil.java
-@@ -215,7 +215,7 @@ public final class MCUtil {
-     }
- 
-     public static long getCoordinateKey(final Entity entity) {
--        return ((long)(MCUtil.fastFloor(entity.getZ()) >> 4) << 32) | ((MCUtil.fastFloor(entity.getX()) >> 4) & 0xFFFFFFFFL);
-+        return ((long)(entity.blockPosition.getZ() >> 4) << 32) | ((entity.blockPosition.getX() >> 4) & 0xFFFFFFFFL); // Pufferfish - eliminate double->long cast in hotpath
-     }
- 
-     public static long getCoordinateKey(final ChunkPos pair) {
-diff --git a/src/main/java/net/minecraft/network/chat/SignedMessageChain.java b/src/main/java/net/minecraft/network/chat/SignedMessageChain.java
-index 300929a406905f5ff1ede664d5b99fb0938d4d2e..01a6b1135420ea659d092ddca499f281d7240054 100644
---- a/src/main/java/net/minecraft/network/chat/SignedMessageChain.java
-+++ b/src/main/java/net/minecraft/network/chat/SignedMessageChain.java
-@@ -45,7 +45,7 @@ public class SignedMessageChain {
-                     SignedMessageLink signedMessageLink = SignedMessageChain.this.nextLink;
-                     if (signedMessageLink == null) {
-                         throw new SignedMessageChain.DecodeException(SignedMessageChain.DecodeException.CHAIN_BROKEN);
--                    } else if (body.timeStamp().isBefore(SignedMessageChain.this.lastTimeStamp)) {
-+                    } else if (!gg.pufferfish.pufferfish.PufferfishConfig.disableOutOfOrderChat && body.timeStamp().isBefore(SignedMessageChain.this.lastTimeStamp)) { // Pufferfish
-                         this.setChainBroken();
-                         throw new SignedMessageChain.DecodeException(SignedMessageChain.DecodeException.OUT_OF_ORDER_CHAT, org.bukkit.event.player.PlayerKickEvent.Cause.OUT_OF_ORDER_CHAT); // Paper - kick event causes
-                     } else {
 diff --git a/src/main/java/net/minecraft/server/MinecraftServer.java b/src/main/java/net/minecraft/server/MinecraftServer.java
-index 0ed42fa899721f83b598db05be1b5f321af3614a..c110559de69f61c56445f12e733021b6acbcfb4a 100644
+index 696d075ca2883f3c37e35f983c4d020e5db89d16..e63721261258dba60b1eef2eee011e0aa18b0fd2 100644
 --- a/src/main/java/net/minecraft/server/MinecraftServer.java
 +++ b/src/main/java/net/minecraft/server/MinecraftServer.java
-@@ -316,6 +316,7 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
+@@ -322,6 +322,7 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
      public volatile Thread shutdownThread; // Paper
      public volatile boolean abnormalExit = false; // Paper
      public static final long SERVER_INIT = System.nanoTime(); // Paper - Lag compensation
@@ -2297,7 +1154,7 @@ index 0ed42fa899721f83b598db05be1b5f321af3614a..c110559de69f61c56445f12e733021b6
  
      public static <S extends MinecraftServer> S spin(Function<Thread, S> serverFactory) {
          AtomicReference<S> atomicreference = new AtomicReference();
-@@ -1234,6 +1235,12 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
+@@ -1312,6 +1313,12 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
                  this.profiler.popPush("nextTickWait");
                  this.mayHaveDelayedTasks = true;
                  this.delayedTasksMaxNextTickTimeNanos = Math.max(Util.getNanos() + i, this.nextTickTimeNanos);
@@ -2310,7 +1167,7 @@ index 0ed42fa899721f83b598db05be1b5f321af3614a..c110559de69f61c56445f12e733021b6
                  this.startMeasuringTaskExecutionTime();
                  this.waitUntilNextTick();
                  this.finishMeasuringTaskExecutionTime();
-@@ -2555,6 +2562,7 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
+@@ -2575,6 +2582,7 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
      }
  
      public ProfilerFiller getProfiler() {
@@ -2319,11 +1176,11 @@ index 0ed42fa899721f83b598db05be1b5f321af3614a..c110559de69f61c56445f12e733021b6
      }
  
 diff --git a/src/main/java/net/minecraft/server/dedicated/DedicatedServer.java b/src/main/java/net/minecraft/server/dedicated/DedicatedServer.java
-index 2eb9c584cc77237f1c82d880a51a3f8b51008d73..55f14f6d56fdff07c49b1c223f5c6df34833b825 100644
+index dd56c8e041116ef3602a9f89c998c8208ab89b51..18bf9c42e76c8c35f57d74ea4adfa5b3bb53762f 100644
 --- a/src/main/java/net/minecraft/server/dedicated/DedicatedServer.java
 +++ b/src/main/java/net/minecraft/server/dedicated/DedicatedServer.java
-@@ -233,6 +233,8 @@ public class DedicatedServer extends MinecraftServer implements ServerInterface
-         io.papermc.paper.command.PaperCommands.registerCommands(this); // Paper - setup /paper command
+@@ -239,6 +239,8 @@ public class DedicatedServer extends MinecraftServer implements ServerInterface
+         this.server.spark.registerCommandBeforePlugins(this.server); // Paper - spark
          com.destroystokyo.paper.Metrics.PaperMetrics.startMetrics(); // Paper - start metrics
          com.destroystokyo.paper.VersionHistoryManager.INSTANCE.getClass(); // Paper - load version history now
 +        gg.pufferfish.pufferfish.PufferfishConfig.load(); // Pufferfish
@@ -2331,7 +1188,7 @@ index 2eb9c584cc77237f1c82d880a51a3f8b51008d73..55f14f6d56fdff07c49b1c223f5c6df3
  
          this.setPvpAllowed(dedicatedserverproperties.pvp);
          this.setFlightAllowed(dedicatedserverproperties.allowFlight);
-@@ -353,6 +355,7 @@ public class DedicatedServer extends MinecraftServer implements ServerInterface
+@@ -359,6 +361,7 @@ public class DedicatedServer extends MinecraftServer implements ServerInterface
                  DedicatedServer.LOGGER.info("JMX monitoring enabled");
              }
  
@@ -2340,19 +1197,21 @@ index 2eb9c584cc77237f1c82d880a51a3f8b51008d73..55f14f6d56fdff07c49b1c223f5c6df3
          }
      }
 diff --git a/src/main/java/net/minecraft/server/level/ChunkMap.java b/src/main/java/net/minecraft/server/level/ChunkMap.java
-index 7fb9ba3dadb1eca4a1000ea8cf4d13fed2b7db1e..aa91bc5657716321e23ab5848a53b6b18667ddc4 100644
+index af8cb316ac169aa8d98a88765b85bb013b9ba961..6abae547de1c9de07a75800550631ca5ee693e0a 100644
 --- a/src/main/java/net/minecraft/server/level/ChunkMap.java
 +++ b/src/main/java/net/minecraft/server/level/ChunkMap.java
-@@ -246,7 +246,7 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
+@@ -172,6 +172,10 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
+         return null; // Paper - rewrite chunk system
+     }
      // Paper end
-     // Paper start - optimise chunk tick iteration
-     public final it.unimi.dsi.fastutil.objects.ReferenceOpenHashSet<ChunkHolder> needsChangeBroadcasting = new it.unimi.dsi.fastutil.objects.ReferenceOpenHashSet<>();
--    public final com.destroystokyo.paper.util.misc.PlayerAreaMap playerMobSpawnMap = new com.destroystokyo.paper.util.misc.PlayerAreaMap(this.pooledLinkedPlayerHashSets);
-+    public final com.destroystokyo.paper.util.misc.PlayerAreaMap playerMobSpawnMap = new gg.pufferfish.pufferfish.util.AsyncPlayerAreaMap(this.pooledLinkedPlayerHashSets); // Pufferfish
-     // Paper end - optimise chunk tick iteration
++    // Paper start - optimise chunk tick iteration
++//    public final it.unimi.dsi.fastutil.objects.ReferenceOpenHashSet<ChunkHolder> needsChangeBroadcasting = new it.unimi.dsi.fastutil.objects.ReferenceOpenHashSet<>();
++//    public final com.destroystokyo.paper.util.misc.PlayerAreaMap playerMobSpawnMap = new gg.pufferfish.pufferfish.util.AsyncPlayerAreaMap(this.pooledLinkedPlayerHashSets); // Pufferfish
++    // Paper end - optimise chunk tick iteration
  
      public ChunkMap(ServerLevel world, LevelStorageSource.LevelStorageAccess session, DataFixer dataFixer, StructureTemplateManager structureTemplateManager, Executor executor, BlockableEventLoop<Runnable> mainThreadExecutor, LightChunkGetter chunkProvider, ChunkGenerator chunkGenerator, ChunkProgressListener worldGenerationProgressListener, ChunkStatusUpdateListener chunkStatusChangeListener, Supplier<DimensionDataStorage> persistentStateManagerFactory, int viewDistance, boolean dsync) {
-@@ -1463,8 +1463,28 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
+         super(new RegionStorageInfo(session.getLevelId(), world.dimension(), "chunk"), session.getDimensionPath(world.dimension()).resolve("region"), dataFixer, dsync);
+@@ -1282,8 +1286,28 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
              return ChunkMap.this.level.getServer().getScaledTrackingDistance(initialDistance);
          }
  
@@ -2381,7 +1240,7 @@ index 7fb9ba3dadb1eca4a1000ea8cf4d13fed2b7db1e..aa91bc5657716321e23ab5848a53b6b1
              Iterator iterator = this.entity.getIndirectPassengers().iterator();
  
              while (iterator.hasNext()) {
-@@ -1476,6 +1496,9 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
+@@ -1295,6 +1319,9 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
                      i = j;
                  }
              }
@@ -2392,12 +1251,12 @@ index 7fb9ba3dadb1eca4a1000ea8cf4d13fed2b7db1e..aa91bc5657716321e23ab5848a53b6b1
              return this.scaledRange(i);
          }
 diff --git a/src/main/java/net/minecraft/server/level/ServerChunkCache.java b/src/main/java/net/minecraft/server/level/ServerChunkCache.java
-index b99f50604bafecbc68835974c9ed0caa91911a40..cadbf2501c87ea22b3ff5db7d8e4aeebfa3d3abc 100644
+index dcb5651d1d9b10b40430fb2f713beedf68336704..dbc62bf37a9e6e1936558338521938a47a51e2d6 100644
 --- a/src/main/java/net/minecraft/server/level/ServerChunkCache.java
 +++ b/src/main/java/net/minecraft/server/level/ServerChunkCache.java
-@@ -75,6 +75,9 @@ public class ServerChunkCache extends ChunkSource {
-     private final LevelChunk[] lastLoadedChunks = new LevelChunk[4 * 4];
-     // Paper end
+@@ -128,6 +128,9 @@ public class ServerChunkCache extends ChunkSource implements ca.spottedleaf.moon
+     // Paper end - rewrite chunk system
+     private ServerChunkCache.ChunkAndHolder[] iterationCopy; // Paper - chunk tick iteration optimisations
  
 +    public boolean firstRunSpawnCounts = true; // Pufferfish
 +    public final java.util.concurrent.atomic.AtomicBoolean _pufferfish_spawnCountsReady = new java.util.concurrent.atomic.AtomicBoolean(false); // Pufferfish - optimize countmobs
@@ -2405,15 +1264,7 @@ index b99f50604bafecbc68835974c9ed0caa91911a40..cadbf2501c87ea22b3ff5db7d8e4aeeb
      public ServerChunkCache(ServerLevel world, LevelStorageSource.LevelStorageAccess session, DataFixer dataFixer, StructureTemplateManager structureTemplateManager, Executor workerExecutor, ChunkGenerator chunkGenerator, int viewDistance, int simulationDistance, boolean dsync, ChunkProgressListener worldGenerationProgressListener, ChunkStatusUpdateListener chunkStatusChangeListener, Supplier<DimensionDataStorage> persistentStateManagerFactory) {
          this.level = world;
          this.mainThreadProcessor = new ServerChunkCache.MainThreadExecutor(world);
-@@ -511,6 +514,7 @@ public class ServerChunkCache extends ChunkSource {
- 
-             // Paper - optimise chunk tick iteration
- 
-+            this.level.resetIceAndSnowTick(); // Pufferfish - reset ice & snow tick random
-             if (this.level.tickRateManager().runsNormally()) {
-                 gameprofilerfiller.popPush("naturalSpawnCount");
-                 this.level.timings.countNaturalMobs.startTiming(); // Paper - timings
-@@ -519,6 +523,7 @@ public class ServerChunkCache extends ChunkSource {
+@@ -461,6 +464,7 @@ public class ServerChunkCache extends ChunkSource implements ca.spottedleaf.moon
                  int naturalSpawnChunkCount = k;
                  NaturalSpawner.SpawnState spawnercreature_d; // moved down
                  if ((this.spawnFriendlies || this.spawnEnemies) && this.level.paperConfig().entities.spawning.perPlayerMobSpawns) { // don't count mobs when animals and monsters are disabled
@@ -2421,7 +1272,7 @@ index b99f50604bafecbc68835974c9ed0caa91911a40..cadbf2501c87ea22b3ff5db7d8e4aeeb
                      // re-set mob counts
                      for (ServerPlayer player : this.level.players) {
                          // Paper start - per player mob spawning backoff
-@@ -533,14 +538,18 @@ public class ServerChunkCache extends ChunkSource {
+@@ -475,14 +479,18 @@ public class ServerChunkCache extends ChunkSource implements ca.spottedleaf.moon
                          }
                          // Paper end - per player mob spawning backoff
                      }
@@ -2443,18 +1294,18 @@ index b99f50604bafecbc68835974c9ed0caa91911a40..cadbf2501c87ea22b3ff5db7d8e4aeeb
                  gameprofilerfiller.popPush("spawnAndTick");
                  boolean flag = this.level.getGameRules().getBoolean(GameRules.RULE_DOMOBSPAWNING) && !this.level.players().isEmpty(); // CraftBukkit
  
-@@ -630,8 +639,8 @@ public class ServerChunkCache extends ChunkSource {
-                     if (tick && chunk1.chunkStatus.isOrAfter(net.minecraft.server.level.FullChunkStatus.ENTITY_TICKING)) {
-                         // Paper end - optimise chunk tick iteration
+@@ -507,8 +515,8 @@ public class ServerChunkCache extends ChunkSource implements ca.spottedleaf.moon
+ 
+                     if (true && this.chunkMap.anyPlayerCloseEnoughForSpawning(chunkcoordintpair)) { // Paper - rewrite chunk system
                          chunk1.incrementInhabitedTime(j);
--                        if (spawn && flag && (this.spawnEnemies || this.spawnFriendlies) && this.level.getWorldBorder().isWithinBounds(chunkcoordintpair)) { // Spigot // Paper - optimise chunk tick iteration
+-                        if (flag && (this.spawnEnemies || this.spawnFriendlies) && this.level.getWorldBorder().isWithinBounds(chunkcoordintpair) && this.chunkMap.anyPlayerCloseEnoughForSpawning(chunkcoordintpair, true)) { // Spigot
 -                            NaturalSpawner.spawnForChunk(this.level, chunk1, spawnercreature_d, this.spawnFriendlies, this.spawnEnemies, flag1);
-+                        if (spawn && flag && (!gg.pufferfish.pufferfish.PufferfishConfig.enableAsyncMobSpawning || _pufferfish_spawnCountsReady.get()) && (this.spawnEnemies || this.spawnFriendlies) && this.level.getWorldBorder().isWithinBounds(chunkcoordintpair)) { // Spigot // Paper - optimise chunk tick iteration // Pufferfish
++                        if (flag && (this.spawnEnemies || this.spawnFriendlies) && (!gg.pufferfish.pufferfish.PufferfishConfig.enableAsyncMobSpawning || _pufferfish_spawnCountsReady.get()) && this.level.getWorldBorder().isWithinBounds(chunkcoordintpair) && this.chunkMap.anyPlayerCloseEnoughForSpawning(chunkcoordintpair, true)) { // Spigot
 +                            NaturalSpawner.spawnForChunk(this.level, chunk1, lastSpawnState, this.spawnFriendlies, this.spawnEnemies, flag1); // Pufferfish
                          }
  
-                         if (true || this.level.shouldTickBlocksAt(chunkcoordintpair.toLong())) { // Paper - optimise chunk tick iteration
-@@ -678,6 +687,40 @@ public class ServerChunkCache extends ChunkSource {
+                         if (true) { // Paper - rewrite chunk system
+@@ -552,6 +560,40 @@ public class ServerChunkCache extends ChunkSource implements ca.spottedleaf.moon
              gameprofilerfiller.pop();
              gameprofilerfiller.pop();
          }
@@ -2481,8 +1332,8 @@ index b99f50604bafecbc68835974c9ed0caa91911a40..cadbf2501c87ea22b3ff5db7d8e4aeeb
 +            if (_pufferfish_spawnCountsReady.getAndSet(false)) {
 +                net.minecraft.server.MinecraftServer.getServer().mobSpawnExecutor.submit(() -> {
 +                    int mapped = distanceManager.getNaturalSpawnChunkCount();
-+                    io.papermc.paper.util.maplist.IteratorSafeOrderedReferenceSet.Iterator<Entity> objectiterator =
-+                            level.entityTickList.entities.iterator(io.papermc.paper.util.maplist.IteratorSafeOrderedReferenceSet.ITERATOR_FLAG_SEE_ADDITIONS);
++                    ca.spottedleaf.moonrise.common.list.IteratorSafeOrderedReferenceSet.Iterator<Entity> objectiterator =
++                            level.entityTickList.entities.iterator(ca.spottedleaf.moonrise.common.list.IteratorSafeOrderedReferenceSet.ITERATOR_FLAG_SEE_ADDITIONS);
 +                    gg.pufferfish.pufferfish.util.IterableWrapper<Entity> wrappedIterator =
 +                            new gg.pufferfish.pufferfish.util.IterableWrapper<>(objectiterator);
 +                    lastSpawnState = NaturalSpawner.createState(mapped, wrappedIterator, this::getFullChunk, null, true);
@@ -2496,30 +1347,30 @@ index b99f50604bafecbc68835974c9ed0caa91911a40..cadbf2501c87ea22b3ff5db7d8e4aeeb
  
      private void getFullChunk(long pos, Consumer<LevelChunk> chunkConsumer) {
 diff --git a/src/main/java/net/minecraft/server/level/ServerEntity.java b/src/main/java/net/minecraft/server/level/ServerEntity.java
-index a2279262c93408c11f5d2290b48fd794975e8cfe..ba1e0a61d3ecf73bfe962b5dfe892b4509278ae8 100644
+index 8ea2f24695f5dad55e21f238b69442513e7a90c6..5a2f7f7cf79dcbb996574e18cad86ebb54bd718e 100644
 --- a/src/main/java/net/minecraft/server/level/ServerEntity.java
 +++ b/src/main/java/net/minecraft/server/level/ServerEntity.java
-@@ -191,6 +191,7 @@ public class ServerEntity {
-                     boolean flag6 = k < -32768L || k > 32767L || l < -32768L || l > 32767L || i1 < -32768L || i1 > 32767L;
+@@ -193,6 +193,7 @@ public class ServerEntity {
+                 boolean flag6 = k < -32768L || k > 32767L || l < -32768L || l > 32767L || i1 < -32768L || i1 > 32767L;
  
-                     if (!this.forceStateResync && !flag6 && this.teleportDelay <= 400 && !this.wasRiding && this.wasOnGround == this.entity.onGround()&& !(io.papermc.paper.configuration.GlobalConfiguration.get().collisions.sendFullPosForHardCollidingEntities && this.entity.hardCollides())) { // Paper - send full pos for hard colliding entities to prevent collision problems due to desync
-+                        if (flag2 || flag3 || this.entity instanceof AbstractArrow) { // Pufferfish
-                         if ((!flag2 || !flag3) && !(this.entity instanceof AbstractArrow)) {
-                             if (flag2) {
-                                 packet1 = new ClientboundMoveEntityPacket.Pos(this.entity.getId(), (short) ((int) k), (short) ((int) l), (short) ((int) i1), this.entity.onGround());
-@@ -204,6 +205,7 @@ public class ServerEntity {
-                             flag4 = true;
-                             flag5 = true;
-                         }
-+                        } // Pufferfish
-                     } else {
-                         this.wasOnGround = this.entity.onGround();
-                         this.teleportDelay = 0;
+                 if (!this.forceStateResync && !flag6 && this.teleportDelay <= 400 && !this.wasRiding && this.wasOnGround == this.entity.onGround()) { // Paper - fix desync when a player is added to the tracker
++                    if (flag2 || flag3 || this.entity instanceof AbstractArrow) { // Pufferfish
+                     if ((!flag2 || !flag3) && !(this.entity instanceof AbstractArrow)) {
+                         if (flag2) {
+                             packet1 = new ClientboundMoveEntityPacket.Pos(this.entity.getId(), (short) ((int) k), (short) ((int) l), (short) ((int) i1), this.entity.onGround());
+@@ -206,6 +207,7 @@ public class ServerEntity {
+                         flag4 = true;
+                         flag5 = true;
+                     }
++                    } // Pufferfish
+                 } else {
+                     this.wasOnGround = this.entity.onGround();
+                     this.teleportDelay = 0;
 diff --git a/src/main/java/net/minecraft/server/level/ServerLevel.java b/src/main/java/net/minecraft/server/level/ServerLevel.java
-index ca56a0b596976448da6bb2a0e82b3d5cd4133e12..377ca8c01864d6817eff30d33403bc15bf85e6d4 100644
+index f9abf63e12ea930275121b470e4e4906cff0fc12..2a8ffcdd262ea73844500846c6401cdda7153d61 100644
 --- a/src/main/java/net/minecraft/server/level/ServerLevel.java
 +++ b/src/main/java/net/minecraft/server/level/ServerLevel.java
-@@ -900,6 +900,7 @@ public class ServerLevel extends Level implements WorldGenLevel {
+@@ -715,6 +715,7 @@ public class ServerLevel extends Level implements WorldGenLevel, ca.spottedleaf.
              org.spigotmc.ActivationRange.activateEntities(this); // Spigot
              this.timings.entityTick.startTiming(); // Spigot
              this.entityTickList.forEach((entity) -> {
@@ -2527,7 +1378,7 @@ index ca56a0b596976448da6bb2a0e82b3d5cd4133e12..377ca8c01864d6817eff30d33403bc15
                  if (!entity.isRemoved()) {
                      if (false && this.shouldDiscardEntity(entity)) { // CraftBukkit - We prevent spawning in general, so this butchering is not needed
                          entity.discard();
-@@ -919,7 +920,20 @@ public class ServerLevel extends Level implements WorldGenLevel {
+@@ -734,7 +735,20 @@ public class ServerLevel extends Level implements WorldGenLevel, ca.spottedleaf.
                              }
  
                              gameprofilerfiller.push("tick");
@@ -2535,7 +1386,6 @@ index ca56a0b596976448da6bb2a0e82b3d5cd4133e12..377ca8c01864d6817eff30d33403bc15
 +                        // Pufferfish start - copied from this.guardEntityTick
 +                        try {
 +                            this.tickNonPassenger(entity); // Pufferfish - changed
-+                            MinecraftServer.getServer().executeMidTickTasks(); // Tuinity - execute chunk tasks mid tick
 +                        } catch (Throwable throwable) {
 +                            if (throwable instanceof ThreadDeath) throw throwable; // Paper
 +                            // Paper start - Prevent tile entity and entity crashes
@@ -2545,169 +1395,40 @@ index ca56a0b596976448da6bb2a0e82b3d5cd4133e12..377ca8c01864d6817eff30d33403bc15
 +                            entity.discard(org.bukkit.event.entity.EntityRemoveEvent.Cause.DISCARD);
 +                            // Paper end
 +                        }
++                        this.moonrise$midTickTasks(); // Paper - rewrite chunk system
 +                        // Pufferfish end
                              gameprofilerfiller.pop();
                          }
                      }
-@@ -984,9 +998,11 @@ public class ServerLevel extends Level implements WorldGenLevel {
-     }
-     // Paper start - optimise random block ticking
-     private final BlockPos.MutableBlockPos chunkTickMutablePosition = new BlockPos.MutableBlockPos();
--    private final io.papermc.paper.util.math.ThreadUnsafeRandom randomTickRandom = new io.papermc.paper.util.math.ThreadUnsafeRandom(this.random.nextLong());
-+    // private final io.papermc.paper.util.math.ThreadUnsafeRandom randomTickRandom = new io.papermc.paper.util.math.ThreadUnsafeRandom(); // Pufferfish - moved to super
-     // Paper end
- 
-+    private int currentIceAndSnowTick = 0; protected void resetIceAndSnowTick() { this.currentIceAndSnowTick = this.randomTickRandom.nextInt(16); } // Pufferfish
-+
-     public void tickChunk(LevelChunk chunk, int randomTickSpeed) {
-         ChunkPos chunkcoordintpair = chunk.getPos();
-         boolean flag = this.isRaining();
-@@ -997,7 +1013,7 @@ public class ServerLevel extends Level implements WorldGenLevel {
+@@ -861,9 +875,9 @@ public class ServerLevel extends Level implements WorldGenLevel, ca.spottedleaf.
+         int j = chunkcoordintpair.getMinBlockX();
+         int k = chunkcoordintpair.getMinBlockZ();
+         ProfilerFiller gameprofilerfiller = this.getProfiler();
+-
          gameprofilerfiller.push("thunder");
-         final BlockPos.MutableBlockPos blockposition = this.chunkTickMutablePosition; // Paper - use mutable to reduce allocation rate, final to force compile fail on change
- 
 -        if (!this.paperConfig().environment.disableThunder && flag && this.isThundering() && this.spigotConfig.thunderChance > 0 && this.random.nextInt(this.spigotConfig.thunderChance) == 0) { // Spigot // Paper - Option to disable thunder
++
 +        if (!this.paperConfig().environment.disableThunder && flag && this.isThundering() && this.spigotConfig.thunderChance > 0 && /*this.random.nextInt(this.spigotConfig.thunderChance) == 0 &&*/ chunk.shouldDoLightning(this.random)) { // Spigot // Paper - Option to disable thunder // Pufferfish - replace random with shouldDoLightning
-             blockposition.set(this.findLightningTargetAround(this.getBlockRandomPos(j, 0, k, 15))); // Paper
+             BlockPos blockposition = this.findLightningTargetAround(this.getBlockRandomPos(j, 0, k, 15));
  
              if (this.isRainingAt(blockposition)) {
 diff --git a/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java b/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
-index 4ae88bfcead40cd05f9514a48a922a37767cb3cf..24257e653672a7632bca4f9eb55f127588604498 100644
+index 064d52d4479727c6a32bf357be8da32d1760e7fc..8f2214008d76d00267152b5db0cf0fbdd3fbbfb7 100644
 --- a/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
 +++ b/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
-@@ -1154,6 +1154,7 @@ public class ServerGamePacketListenerImpl extends ServerCommonPacketListenerImpl
+@@ -1157,6 +1157,7 @@ public class ServerGamePacketListenerImpl extends ServerCommonPacketListenerImpl
  
      @Override
      public void handleEditBook(ServerboundEditBookPacket packet) {
 +        if (!gg.pufferfish.pufferfish.PufferfishConfig.enableBooks && !this.player.getBukkitEntity().hasPermission("pufferfish.usebooks")) return; // Pufferfish
          // Paper start - Book size limits
-         if (!this.cserver.isPrimaryThread()) {
-             List<String> pageList = packet.pages();
-diff --git a/src/main/java/net/minecraft/world/CompoundContainer.java b/src/main/java/net/minecraft/world/CompoundContainer.java
-index 241fec02e6869c638d3a160819b32173a081467b..e1caa652db6035c12918dad2fcbc7f9df658e92d 100644
---- a/src/main/java/net/minecraft/world/CompoundContainer.java
-+++ b/src/main/java/net/minecraft/world/CompoundContainer.java
-@@ -1,5 +1,6 @@
- package net.minecraft.world;
- 
-+import net.minecraft.core.Direction; // Pufferfish
- import net.minecraft.world.entity.player.Player;
- import net.minecraft.world.item.ItemStack;
- 
-@@ -64,6 +65,23 @@ public class CompoundContainer implements Container {
-         this.container2 = second;
-     }
- 
-+    // Pufferfish start
-+    @Override
-+    public boolean hasEmptySlot(Direction enumdirection) {
-+        return this.container1.hasEmptySlot(null) || this.container2.hasEmptySlot(null);
-+    }
-+
-+    @Override
-+    public boolean isCompletelyFull(Direction enumdirection) {
-+        return this.container1.isCompletelyFull(null) && this.container2.isCompletelyFull(null);
-+    }
-+
-+    @Override
-+    public boolean isCompletelyEmpty(Direction enumdirection) {
-+        return this.container1.isCompletelyEmpty(null) && this.container2.isCompletelyEmpty(null);
-+    }
-+    // Pufferfish end
-+
-     @Override
-     public int getContainerSize() {
-         return this.container1.getContainerSize() + this.container2.getContainerSize();
-diff --git a/src/main/java/net/minecraft/world/Container.java b/src/main/java/net/minecraft/world/Container.java
-index f402dbbfe3a443e6bc51f88b85abe937852b52f0..c960ddfe628051257cca0d25da385c1da09d505e 100644
---- a/src/main/java/net/minecraft/world/Container.java
-+++ b/src/main/java/net/minecraft/world/Container.java
-@@ -3,6 +3,7 @@ package net.minecraft.world;
- import java.util.Set;
- import java.util.function.Predicate;
- import net.minecraft.core.BlockPos;
-+import net.minecraft.core.Direction; // Pufferfish
- import net.minecraft.world.entity.player.Player;
- import net.minecraft.world.item.Item;
- import net.minecraft.world.item.ItemStack;
-@@ -14,6 +15,63 @@ import org.bukkit.craftbukkit.entity.CraftHumanEntity;
- // CraftBukkit end
- 
- public interface Container extends Clearable {
-+    // Pufferfish start - allow the inventory to override and optimize these frequent calls
-+    default boolean hasEmptySlot(@org.jetbrains.annotations.Nullable Direction enumdirection) { // there is a slot with 0 items in it
-+        if (this instanceof WorldlyContainer worldlyContainer) {
-+            for (int i : worldlyContainer.getSlotsForFace(enumdirection)) {
-+                if (this.getItem(i).isEmpty()) {
-+                    return true;
-+                }
-+            }
-+        } else {
-+            int size = this.getContainerSize();
-+            for (int i = 0; i < size; i++) {
-+                if (this.getItem(i).isEmpty()) {
-+                    return true;
-+                }
-+            }
-+        }
-+        return false;
-+    }
-+
-+    default boolean isCompletelyFull(@org.jetbrains.annotations.Nullable Direction enumdirection) { // every stack is maxed
-+        if (this instanceof WorldlyContainer worldlyContainer) {
-+            for (int i : worldlyContainer.getSlotsForFace(enumdirection)) {
-+                ItemStack itemStack = this.getItem(i);
-+                if (itemStack.getCount() < itemStack.getMaxStackSize()) {
-+                    return false;
-+                }
-+            }
-+        } else {
-+            int size = this.getContainerSize();
-+            for (int i = 0; i < size; i++) {
-+                ItemStack itemStack = this.getItem(i);
-+                if (itemStack.getCount() < itemStack.getMaxStackSize()) {
-+                    return false;
-+                }
-+            }
-+        }
-+        return true;
-+    }
-+
-+    default boolean isCompletelyEmpty(@org.jetbrains.annotations.Nullable Direction enumdirection) {
-+        if (this instanceof WorldlyContainer worldlyContainer) {
-+            for (int i : worldlyContainer.getSlotsForFace(enumdirection)) {
-+                if (!this.getItem(i).isEmpty()) {
-+                    return false;
-+                }
-+            }
-+        } else {
-+            int size = this.getContainerSize();
-+            for (int i = 0; i < size; i++) {
-+                if (!this.getItem(i).isEmpty()) {
-+                    return false;
-+                }
-+            }
-+        }
-+        return true;
-+    }
-+    // Pufferfish end
- 
-     float DEFAULT_DISTANCE_BUFFER = 4.0F;
- 
+         final io.papermc.paper.configuration.type.number.IntOr.Disabled pageMax = io.papermc.paper.configuration.GlobalConfiguration.get().itemValidation.bookSize.pageMax;
+         if (!this.cserver.isPrimaryThread() && pageMax.enabled()) {
 diff --git a/src/main/java/net/minecraft/world/entity/Entity.java b/src/main/java/net/minecraft/world/entity/Entity.java
-index 7ef9f67d27cc240191dd5d07e8dcf5fbdebe1049..8ae15962f4f52e436041731094f62550fdae2b73 100644
+index 4b54d0ea31062972e68ee8fafe3cfaf68f65a5cd..8492421ed2186c0eab517a67f3140b9988f65250 100644
 --- a/src/main/java/net/minecraft/world/entity/Entity.java
 +++ b/src/main/java/net/minecraft/world/entity/Entity.java
-@@ -311,7 +311,7 @@ public abstract class Entity implements SyncedDataHolder, Nameable, EntityAccess
-     public double yo;
-     public double zo;
-     private Vec3 position;
--    private BlockPos blockPosition;
-+    public BlockPos blockPosition; // Pufferfish - private->public
-     private ChunkPos chunkPosition;
-     private Vec3 deltaMovement;
-     private float yRot;
-@@ -425,6 +425,9 @@ public abstract class Entity implements SyncedDataHolder, Nameable, EntityAccess
+@@ -429,6 +429,9 @@ public abstract class Entity implements SyncedDataHolder, Nameable, EntityAccess
      private UUID originWorld;
      public boolean freezeLocked = false; // Paper - Freeze Tick Lock API
      public boolean fixedPose = false; // Paper - Expand Pose API
@@ -2717,7 +1438,7 @@ index 7ef9f67d27cc240191dd5d07e8dcf5fbdebe1049..8ae15962f4f52e436041731094f62550
  
      public void setOrigin(@javax.annotation.Nonnull Location location) {
          this.origin = location.toVector();
-@@ -863,6 +866,12 @@ public abstract class Entity implements SyncedDataHolder, Nameable, EntityAccess
+@@ -845,6 +848,12 @@ public abstract class Entity implements SyncedDataHolder, Nameable, EntityAccess
      }
  
      public void tick() {
@@ -2730,7 +1451,7 @@ index 7ef9f67d27cc240191dd5d07e8dcf5fbdebe1049..8ae15962f4f52e436041731094f62550
          this.baseTick();
      }
  
-@@ -4483,16 +4492,18 @@ public abstract class Entity implements SyncedDataHolder, Nameable, EntityAccess
+@@ -4452,16 +4461,18 @@ public abstract class Entity implements SyncedDataHolder, Nameable, EntityAccess
      }
  
      public boolean updateFluidHeightAndDoFluidPushing(TagKey<Fluid> tag, double speed) {
@@ -2756,7 +1477,7 @@ index 7ef9f67d27cc240191dd5d07e8dcf5fbdebe1049..8ae15962f4f52e436041731094f62550
              double d1 = 0.0D;
              boolean flag = this.isPushedByFluid();
              boolean flag1 = false;
-@@ -4500,14 +4511,61 @@ public abstract class Entity implements SyncedDataHolder, Nameable, EntityAccess
+@@ -4469,14 +4480,61 @@ public abstract class Entity implements SyncedDataHolder, Nameable, EntityAccess
              int k1 = 0;
              BlockPos.MutableBlockPos blockposition_mutableblockposition = new BlockPos.MutableBlockPos();
  
@@ -2766,8 +1487,8 @@ index 7ef9f67d27cc240191dd5d07e8dcf5fbdebe1049..8ae15962f4f52e436041731094f62550
 -                        blockposition_mutableblockposition.set(l1, i2, j2);
 -                        FluidState fluid = this.level().getFluidState(blockposition_mutableblockposition);
 +            // Pufferfish start - based off CollisionUtil.getCollisionsForBlocksOrWorldBorder
-+            final int minSection = io.papermc.paper.util.WorldUtil.getMinSection(this.level());
-+            final int maxSection = io.papermc.paper.util.WorldUtil.getMaxSection(this.level());
++            final int minSection = ca.spottedleaf.moonrise.common.util.WorldUtil.getMinSection(this.level());
++            final int maxSection = ca.spottedleaf.moonrise.common.util.WorldUtil.getMaxSection(this.level());
 +            final int minBlock = minSection << 4;
 +            final int maxBlock = (maxSection << 4) | 15;
 +
@@ -2824,7 +1545,7 @@ index 7ef9f67d27cc240191dd5d07e8dcf5fbdebe1049..8ae15962f4f52e436041731094f62550
  
                              if (d2 >= axisalignedbb.minY) {
                                  flag1 = true;
-@@ -4529,9 +4587,12 @@ public abstract class Entity implements SyncedDataHolder, Nameable, EntityAccess
+@@ -4498,9 +4556,12 @@ public abstract class Entity implements SyncedDataHolder, Nameable, EntityAccess
                                  // CraftBukkit end
                              }
                          }
@@ -2838,7 +1559,7 @@ index 7ef9f67d27cc240191dd5d07e8dcf5fbdebe1049..8ae15962f4f52e436041731094f62550
              if (vec3d.length() > 0.0D) {
                  if (k1 > 0) {
 diff --git a/src/main/java/net/minecraft/world/entity/EntityType.java b/src/main/java/net/minecraft/world/entity/EntityType.java
-index a46bf73c608641bf1f00fd55242de71a0f2ee06e..e6edbe6177b168d85759bd9c414dc87ea8a394fe 100644
+index cb61462d4691a055a4b25f7b953609d8a154fdfe..f9440014ab2fe753c16b9383f5fffbb8adb76e79 100644
 --- a/src/main/java/net/minecraft/world/entity/EntityType.java
 +++ b/src/main/java/net/minecraft/world/entity/EntityType.java
 @@ -316,6 +316,8 @@ public class EntityType<T extends Entity> implements FeatureElement, EntityTypeT
@@ -2851,10 +1572,10 @@ index a46bf73c608641bf1f00fd55242de71a0f2ee06e..e6edbe6177b168d85759bd9c414dc87e
      private String descriptionId;
      @Nullable
 diff --git a/src/main/java/net/minecraft/world/entity/LivingEntity.java b/src/main/java/net/minecraft/world/entity/LivingEntity.java
-index ce01fe82dc1eaaf06ca317ddbc62b7d1b87a48b2..60d8fddfecdcd0fe3609a3851230aa06ce5297a0 100644
+index 2aa6374cd4a96efd85899be8cd3172a8257bfe6b..5132e108df37ca97ba94b8b72c0ef292cbb2ec94 100644
 --- a/src/main/java/net/minecraft/world/entity/LivingEntity.java
 +++ b/src/main/java/net/minecraft/world/entity/LivingEntity.java
-@@ -150,7 +150,6 @@ import org.bukkit.event.entity.EntityTeleportEvent;
+@@ -157,7 +157,6 @@ import org.bukkit.event.entity.EntityTeleportEvent;
  import org.bukkit.event.player.PlayerItemConsumeEvent;
  // CraftBukkit end
  
@@ -2862,7 +1583,7 @@ index ce01fe82dc1eaaf06ca317ddbc62b7d1b87a48b2..60d8fddfecdcd0fe3609a3851230aa06
  
  public abstract class LivingEntity extends Entity implements Attackable {
  
-@@ -427,7 +426,7 @@ public abstract class LivingEntity extends Entity implements Attackable {
+@@ -449,7 +448,7 @@ public abstract class LivingEntity extends Entity implements Attackable {
              boolean flag = this instanceof net.minecraft.world.entity.player.Player;
  
              if (!this.level().isClientSide) {
@@ -2871,7 +1592,7 @@ index ce01fe82dc1eaaf06ca317ddbc62b7d1b87a48b2..60d8fddfecdcd0fe3609a3851230aa06
                      this.hurt(this.damageSources().inWall(), 1.0F);
                  } else if (flag && !this.level().getWorldBorder().isWithinBounds(this.getBoundingBox())) {
                      double d0 = this.level().getWorldBorder().getDistanceToBorder(this) + this.level().getWorldBorder().getDamageSafeZone();
-@@ -1431,6 +1430,19 @@ public abstract class LivingEntity extends Entity implements Attackable {
+@@ -1409,6 +1408,19 @@ public abstract class LivingEntity extends Entity implements Attackable {
          return this.getHealth() <= 0.0F;
      }
  
@@ -2891,7 +1612,7 @@ index ce01fe82dc1eaaf06ca317ddbc62b7d1b87a48b2..60d8fddfecdcd0fe3609a3851230aa06
      @Override
      public boolean hurt(DamageSource source, float amount) {
          if (this.isInvulnerableTo(source)) {
-@@ -2040,6 +2052,20 @@ public abstract class LivingEntity extends Entity implements Attackable {
+@@ -2065,6 +2077,20 @@ public abstract class LivingEntity extends Entity implements Attackable {
          return this.lastClimbablePos;
      }
  
@@ -2913,10 +1634,10 @@ index ce01fe82dc1eaaf06ca317ddbc62b7d1b87a48b2..60d8fddfecdcd0fe3609a3851230aa06
          if (this.isSpectator()) {
              return false;
 diff --git a/src/main/java/net/minecraft/world/entity/Mob.java b/src/main/java/net/minecraft/world/entity/Mob.java
-index 8b612b772ca87c852d0b108c2afd6785c261c9b9..5e42bfa9e98215ecb8aca4da2486a4b3d94b38aa 100644
+index 763abeea3f14f15c27d600e0bdae44b387687bb4..1f3a55d34f58964fb1f642ad59c9d7b7aa6fa4ff 100644
 --- a/src/main/java/net/minecraft/world/entity/Mob.java
 +++ b/src/main/java/net/minecraft/world/entity/Mob.java
-@@ -237,14 +237,16 @@ public abstract class Mob extends LivingEntity implements EquipmentUser, Targeti
+@@ -232,14 +232,16 @@ public abstract class Mob extends LivingEntity implements EquipmentUser, Leashab
          return this.lookControl;
      }
  
@@ -2935,7 +1656,7 @@ index 8b612b772ca87c852d0b108c2afd6785c261c9b9..5e42bfa9e98215ecb8aca4da2486a4b3
              this.targetSelector.tick();
          }
      }
-@@ -972,16 +974,20 @@ public abstract class Mob extends LivingEntity implements EquipmentUser, Targeti
+@@ -929,16 +931,20 @@ public abstract class Mob extends LivingEntity implements EquipmentUser, Leashab
  
          if (i % 2 != 0 && this.tickCount > 1) {
              gameprofilerfiller.push("targetSelector");
@@ -2957,12 +1678,12 @@ index 8b612b772ca87c852d0b108c2afd6785c261c9b9..5e42bfa9e98215ecb8aca4da2486a4b3
              gameprofilerfiller.pop();
          }
 diff --git a/src/main/java/net/minecraft/world/entity/ai/attributes/AttributeMap.java b/src/main/java/net/minecraft/world/entity/ai/attributes/AttributeMap.java
-index 9ef8f014af332da129bfcd3370da983ec035ecc6..bc178967affd21ad04b83ea26639a2dd9b497454 100644
+index 69992ebc999ea3ff9e47e4e049bcc514c01150ca..2c9aab24b51d2f0a50100089fe72093b501d383a 100644
 --- a/src/main/java/net/minecraft/world/entity/ai/attributes/AttributeMap.java
 +++ b/src/main/java/net/minecraft/world/entity/ai/attributes/AttributeMap.java
-@@ -22,9 +22,11 @@ public class AttributeMap {
-     private final Map<Holder<Attribute>, AttributeInstance> attributes = new Object2ObjectOpenHashMap<>();
-     private final Set<AttributeInstance> dirtyAttributes = new ObjectOpenHashSet<>();
+@@ -23,9 +23,11 @@ public class AttributeMap {
+     private final Set<AttributeInstance> attributesToSync = new ObjectOpenHashSet<>();
+     private final Set<AttributeInstance> attributesToUpdate = new ObjectOpenHashSet<>();
      private final AttributeSupplier supplier;
 +    private final java.util.function.Function<Holder<Attribute>, AttributeInstance> createInstance; // Pufferfish
  
@@ -2972,8 +1693,11 @@ index 9ef8f014af332da129bfcd3370da983ec035ecc6..bc178967affd21ad04b83ea26639a2dd
      }
  
      private void onAttributeModified(AttributeInstance instance) {
-@@ -43,7 +45,7 @@ public class AttributeMap {
+@@ -47,9 +49,10 @@ public class AttributeMap {
+         return this.attributes.values().stream().filter(attribute -> attribute.getAttribute().value().isClientSyncable()).collect(Collectors.toList());
+     }
  
++
      @Nullable
      public AttributeInstance getInstance(Holder<Attribute> attribute) {
 -        return this.attributes.computeIfAbsent(attribute, attributex -> this.supplier.createInstance(this::onAttributeModified, attributex));
@@ -2999,16 +1723,17 @@ index 758f62416ca9c02351348ac0d41deeb4624abc0e..69130969c9a434ec2361e573c9a1ec9f
          }
      }
 diff --git a/src/main/java/net/minecraft/world/entity/ai/goal/GoalSelector.java b/src/main/java/net/minecraft/world/entity/ai/goal/GoalSelector.java
-index 74d4f653d5c7f1923c59019effd78337402f7025..59e1014cb7604e7a56096284be24a33f87fb580b 100644
+index 9bdbf3e9453bc3ce96d52d04b8cde0d05f7356d8..e32c3120f9c5ddf429d8428c370ff61320a38de6 100644
 --- a/src/main/java/net/minecraft/world/entity/ai/goal/GoalSelector.java
 +++ b/src/main/java/net/minecraft/world/entity/ai/goal/GoalSelector.java
-@@ -43,9 +43,11 @@ public class GoalSelector {
+@@ -43,9 +43,12 @@ public class GoalSelector {
      }
  
      // Paper start
 -    public boolean inactiveTick() {
 +    public boolean inactiveTick(int tickRate, boolean inactive) { // Pufferfish start
-+        if (inactive && !gg.pufferfish.pufferfish.PufferfishConfig.dearEnabled) tickRate = 3; // reset to Paper's
++        if (inactive && !gg.pufferfish.pufferfish.PufferfishConfig.dearEnabled) tickRate = 4; // reset to Paper's
++        tickRate = Math.min(tickRate, 3);
          this.curRate++;
 -        return this.curRate % 3 == 0; // TODO newGoalRate was already unused in 1.20.4, check if this is correct
 +        return this.curRate % tickRate == 0; // TODO newGoalRate was already unused in 1.20.4, check if this is correct
@@ -3029,7 +1754,7 @@ index aee0147649d458b87d92496eda0c1723ebe570d2..89e9ea999d2fbd81a1d74382ef3fcd67
                              this.blockPos = mutableBlockPos;
                              this.mob.movingTarget = mutableBlockPos == BlockPos.ZERO ? null : mutableBlockPos.immutable(); // Paper
 diff --git a/src/main/java/net/minecraft/world/entity/ai/targeting/TargetingConditions.java b/src/main/java/net/minecraft/world/entity/ai/targeting/TargetingConditions.java
-index d2f0c3b26d4beedb49d86e0242d843590d469d02..28cff997a1b263784e245f692adbff2a888a2d53 100644
+index aecb0ad814586bfc5e56755ee14379a69388b38c..00ef7f6d60bcaee2506cf111461f2c2f8eedd59a 100644
 --- a/src/main/java/net/minecraft/world/entity/ai/targeting/TargetingConditions.java
 +++ b/src/main/java/net/minecraft/world/entity/ai/targeting/TargetingConditions.java
 @@ -76,9 +76,18 @@ public class TargetingConditions {
@@ -3082,10 +1807,10 @@ index dc27ddf5131e7398a5390a5187261d4c7fb6ccaa..e44af851263f27aa0009b14a60bb2d06
      private void setupAnimationStates() {
          if (this.isResting()) {
 diff --git a/src/main/java/net/minecraft/world/entity/animal/allay/Allay.java b/src/main/java/net/minecraft/world/entity/animal/allay/Allay.java
-index 991e3274091c4e25eebc6debd44653e5b566eedb..789d3469ce4983868e4b880b6053bd2d8c33a10a 100644
+index 69986f75d3cf729204cca0c7e5428536af31f695..98a759dbe46e2ead39af0f340c9b73c8f4ddce1e 100644
 --- a/src/main/java/net/minecraft/world/entity/animal/allay/Allay.java
 +++ b/src/main/java/net/minecraft/world/entity/animal/allay/Allay.java
-@@ -215,9 +215,11 @@ public class Allay extends PathfinderMob implements InventoryCarrier, VibrationS
+@@ -217,9 +217,11 @@ public class Allay extends PathfinderMob implements InventoryCarrier, VibrationS
          return 0.4F;
      }
  
@@ -3098,10 +1823,10 @@ index 991e3274091c4e25eebc6debd44653e5b566eedb..789d3469ce4983868e4b880b6053bd2d
          this.level().getProfiler().pop();
          this.level().getProfiler().push("allayActivityUpdate");
 diff --git a/src/main/java/net/minecraft/world/entity/animal/axolotl/Axolotl.java b/src/main/java/net/minecraft/world/entity/animal/axolotl/Axolotl.java
-index a8cc6ddbf45370fe632e5c5fb7ceef3d299e62a4..98766696556b520cf565ccadc8dba207832b4ae3 100644
+index 01a0731e92d39c8718538244e34a271fb8717fc2..44937570f8e968ba4fe2822f69ca8f09679da89d 100644
 --- a/src/main/java/net/minecraft/world/entity/animal/axolotl/Axolotl.java
 +++ b/src/main/java/net/minecraft/world/entity/animal/axolotl/Axolotl.java
-@@ -268,9 +268,11 @@ public class Axolotl extends Animal implements LerpingModel, VariantHolder<Axolo
+@@ -269,9 +269,11 @@ public class Axolotl extends Animal implements LerpingModel, VariantHolder<Axolo
          return true;
      }
  
@@ -3130,7 +1855,7 @@ index 816977990639ec0559b652fc9666afd5046f0a5d..714703519965e8dae42be7442f292b58
          this.level().getProfiler().pop();
          this.level().getProfiler().push("frogActivityUpdate");
 diff --git a/src/main/java/net/minecraft/world/entity/animal/frog/Tadpole.java b/src/main/java/net/minecraft/world/entity/animal/frog/Tadpole.java
-index 290d41136f5ec7671bc4990dfe50da0a770c124d..0d34e9e0f7ce35c3c28a9216cf3cdd5eddfe90f6 100644
+index 43046f4a0cff620834ac4647efdcde227185b2ff..90393485ebcf8a4c8c74802fff942b1af8cfbf00 100644
 --- a/src/main/java/net/minecraft/world/entity/animal/frog/Tadpole.java
 +++ b/src/main/java/net/minecraft/world/entity/animal/frog/Tadpole.java
 @@ -83,9 +83,11 @@ public class Tadpole extends AbstractFish {
@@ -3162,7 +1887,7 @@ index 376bcbc189008464f4d518c1e07643431ba96306..07bdea8a7d6706839a758afe0242202c
          this.level().getProfiler().pop();
          this.level().getProfiler().push("goatActivityUpdate");
 diff --git a/src/main/java/net/minecraft/world/entity/boss/wither/WitherBoss.java b/src/main/java/net/minecraft/world/entity/boss/wither/WitherBoss.java
-index 7ddca52f7fe3f289b4b867e134326b1ead1a2aee..5040b1a7125dd9647a98fd812f558ec3a2171092 100644
+index d3b4d492aee380dc17f4232d90eaae4f07bb9f86..82921c56c49edb0ca07425da563aa4876d4e6fb1 100644
 --- a/src/main/java/net/minecraft/world/entity/boss/wither/WitherBoss.java
 +++ b/src/main/java/net/minecraft/world/entity/boss/wither/WitherBoss.java
 @@ -154,6 +154,13 @@ public class WitherBoss extends Monster implements PowerableMob, RangedAttackMob
@@ -3180,10 +1905,10 @@ index 7ddca52f7fe3f289b4b867e134326b1ead1a2aee..5040b1a7125dd9647a98fd812f558ec3
      protected SoundEvent getAmbientSound() {
          return SoundEvents.WITHER_AMBIENT;
 diff --git a/src/main/java/net/minecraft/world/entity/monster/EnderMan.java b/src/main/java/net/minecraft/world/entity/monster/EnderMan.java
-index 260202fab3ac300552c557b44dcf251f083c6a78..9cf4e2f309e182c69e9592ac606c0ae85a1200b6 100644
+index 828c51477cd8f35d591367b30bf4feef6a250292..ace4959f818bf56882b290d109b8b97f2c145631 100644
 --- a/src/main/java/net/minecraft/world/entity/monster/EnderMan.java
 +++ b/src/main/java/net/minecraft/world/entity/monster/EnderMan.java
-@@ -318,11 +318,17 @@ public class EnderMan extends Monster implements NeutralMob {
+@@ -320,11 +320,17 @@ public class EnderMan extends Monster implements NeutralMob {
      private boolean teleport(double x, double y, double z) {
          BlockPos.MutableBlockPos blockposition_mutableblockposition = new BlockPos.MutableBlockPos(x, y, z);
  
@@ -3204,7 +1929,7 @@ index 260202fab3ac300552c557b44dcf251f083c6a78..9cf4e2f309e182c69e9592ac606c0ae8
          boolean flag1 = iblockdata.getFluidState().is(FluidTags.WATER);
  
 diff --git a/src/main/java/net/minecraft/world/entity/monster/hoglin/Hoglin.java b/src/main/java/net/minecraft/world/entity/monster/hoglin/Hoglin.java
-index c583d883118ded5e1884c757427dc5e73c10dd27..6f8a22c51ba5e2713dcdfc61c61b35123f9bf326 100644
+index d5e0c493f4c348724958193795ceb987765a465f..7de73564bc73d6504e18977e97a2ef5f46189e15 100644
 --- a/src/main/java/net/minecraft/world/entity/monster/hoglin/Hoglin.java
 +++ b/src/main/java/net/minecraft/world/entity/monster/hoglin/Hoglin.java
 @@ -153,9 +153,11 @@ public class Hoglin extends Animal implements Enemy, HoglinBase {
@@ -3220,10 +1945,10 @@ index c583d883118ded5e1884c757427dc5e73c10dd27..6f8a22c51ba5e2713dcdfc61c61b3512
          this.level().getProfiler().pop();
          HoglinAi.updateActivity(this);
 diff --git a/src/main/java/net/minecraft/world/entity/monster/piglin/Piglin.java b/src/main/java/net/minecraft/world/entity/monster/piglin/Piglin.java
-index a8ab486c7e11ec137da48174af6f1030dfd48056..5878a6ecadc2b9f7ac9f70622a8c85e2940e139a 100644
+index bc58323801ee16fe9b63c21332144ec002a902f2..b2ae7088f90bf3cd04a59c6ddfdba60c58c6e1c8 100644
 --- a/src/main/java/net/minecraft/world/entity/monster/piglin/Piglin.java
 +++ b/src/main/java/net/minecraft/world/entity/monster/piglin/Piglin.java
-@@ -294,9 +294,11 @@ public class Piglin extends AbstractPiglin implements CrossbowAttackMob, Invento
+@@ -293,9 +293,11 @@ public class Piglin extends AbstractPiglin implements CrossbowAttackMob, Invento
          return !this.cannotHunt;
      }
  
@@ -3236,10 +1961,10 @@ index a8ab486c7e11ec137da48174af6f1030dfd48056..5878a6ecadc2b9f7ac9f70622a8c85e2
          this.level().getProfiler().pop();
          PiglinAi.updateActivity(this);
 diff --git a/src/main/java/net/minecraft/world/entity/monster/warden/Warden.java b/src/main/java/net/minecraft/world/entity/monster/warden/Warden.java
-index ddd60be52dce5773c80934be5aa5705db239e3dd..9cf56f2ada025aae0710099bcc3b5c62fd7bbb9e 100644
+index 38bf417a9ad4647f4af24d969f3bf4fed9c4bad7..40bbd80b1ed4afede6f0769e7f3fcfc61200452f 100644
 --- a/src/main/java/net/minecraft/world/entity/monster/warden/Warden.java
 +++ b/src/main/java/net/minecraft/world/entity/monster/warden/Warden.java
-@@ -271,11 +271,13 @@ public class Warden extends Monster implements VibrationSystem {
+@@ -272,11 +272,13 @@ public class Warden extends Monster implements VibrationSystem {
  
      }
  
@@ -3254,7 +1979,7 @@ index ddd60be52dce5773c80934be5aa5705db239e3dd..9cf56f2ada025aae0710099bcc3b5c62
          this.level().getProfiler().pop();
          super.customServerAiStep();
 diff --git a/src/main/java/net/minecraft/world/entity/npc/Villager.java b/src/main/java/net/minecraft/world/entity/npc/Villager.java
-index a7930f9875aa4aca997caaead46ecdc21e5e11d7..81c2fb02779d416933502abd416324ad4c7ef22b 100644
+index 7e1871401ec5e3e9a85232053490259f132aec0a..a16d9c1661690de0374a4a3c31b119293d8fa52b 100644
 --- a/src/main/java/net/minecraft/world/entity/npc/Villager.java
 +++ b/src/main/java/net/minecraft/world/entity/npc/Villager.java
 @@ -143,6 +143,8 @@ public class Villager extends AbstractVillager implements ReputationEventHandler
@@ -3288,7 +2013,7 @@ index a7930f9875aa4aca997caaead46ecdc21e5e11d7..81c2fb02779d416933502abd416324ad
          if (this.assignProfessionWhenSpawned) {
              this.assignProfessionWhenSpawned = false;
 diff --git a/src/main/java/net/minecraft/world/entity/player/Inventory.java b/src/main/java/net/minecraft/world/entity/player/Inventory.java
-index ca7fbe4f8c1e1d2fb90095aa35be4dda3029c23e..38c9fc3b740fcfaacae8c39defe2627c7442ca96 100644
+index 6e66141dca61f777b354854b5d0bac2570b8bf3b..abf231e6099cda766d73e67f31234e9f4cbc9545 100644
 --- a/src/main/java/net/minecraft/world/entity/player/Inventory.java
 +++ b/src/main/java/net/minecraft/world/entity/player/Inventory.java
 @@ -643,6 +643,8 @@ public class Inventory implements Container, Nameable {
@@ -3300,14 +2025,13 @@ index ca7fbe4f8c1e1d2fb90095aa35be4dda3029c23e..38c9fc3b740fcfaacae8c39defe2627c
          Iterator iterator = this.compartments.iterator();
  
          while (iterator.hasNext()) {
-@@ -657,11 +659,26 @@ public class Inventory implements Container, Nameable {
+@@ -657,6 +659,18 @@ public class Inventory implements Container, Nameable {
                  }
              }
          }
-+        */
++         */
 +        for (int i = 0; i < this.compartments.size(); i++) {
 +            List<ItemStack> list = this.compartments.get(i);
-+
 +            for (int j = 0; j < list.size(); j++) {
 +                ItemStack itemstack1 = list.get(j);
 +
@@ -3320,65 +2044,11 @@ index ca7fbe4f8c1e1d2fb90095aa35be4dda3029c23e..38c9fc3b740fcfaacae8c39defe2627c
  
          return false;
      }
- 
-     public boolean contains(TagKey<Item> tag) {
-+        // Pufferfish start - don't allocate iterators
-+        /*
-         Iterator iterator = this.compartments.iterator();
- 
-         while (iterator.hasNext()) {
-@@ -676,11 +693,26 @@ public class Inventory implements Container, Nameable {
-                 }
-             }
-         }
-+        */
-+        for (int i = 0; i < this.compartments.size(); i++) {
-+            List<ItemStack> list = this.compartments.get(i);
-+
-+            for (int j = 0; j < list.size(); j++) {
-+                ItemStack itemstack = list.get(j);
-+
-+                if (!itemstack.isEmpty() && itemstack.is(tag)) {
-+                    return true;
-+                }
-+            }
-+        }
-+        // Pufferfish end
- 
-         return false;
-     }
- 
-     public boolean contains(Predicate<ItemStack> predicate) {
-+        // Pufferfish start - don't allocate iterators
-+        /*
-         Iterator iterator = this.compartments.iterator();
- 
-         while (iterator.hasNext()) {
-@@ -695,6 +727,19 @@ public class Inventory implements Container, Nameable {
-                 }
-             }
-         }
-+        */
-+        for (int i = 0; i < this.compartments.size(); i++) {
-+            List<ItemStack> list = this.compartments.get(i);
-+
-+            for (int j = 0; j < list.size(); j++) {
-+                ItemStack itemstack = list.get(j);
-+
-+                if (predicate.test(itemstack)) {
-+                    return true;
-+                }
-+            }
-+        }
-+        // Pufferfish end
- 
-         return false;
-     }
 diff --git a/src/main/java/net/minecraft/world/entity/projectile/Projectile.java b/src/main/java/net/minecraft/world/entity/projectile/Projectile.java
-index 74c596264d4da551437bd2a23e1c70022cfc73fc..0e4d180d257d7180a8e1300f35924d0c52ce421a 100644
+index 10ade433c083851d9ea4797c6ec618db122229f9..091ca20cc7e495dbff90f2fcaae51fb1b2bb33d5 100644
 --- a/src/main/java/net/minecraft/world/entity/projectile/Projectile.java
 +++ b/src/main/java/net/minecraft/world/entity/projectile/Projectile.java
-@@ -46,6 +46,36 @@ public abstract class Projectile extends Entity implements TraceableEntity {
+@@ -52,6 +52,36 @@ public abstract class Projectile extends Entity implements TraceableEntity {
          super(type, world);
      }
  
@@ -3397,7 +2067,7 @@ index 74c596264d4da551437bd2a23e1c70022cfc73fc..0e4d180d257d7180a8e1300f35924d0c
 +        int previousX = Mth.floor(this.getX()) >> 4, previousZ = Mth.floor(this.getZ()) >> 4;
 +        int newX = Mth.floor(x) >> 4, newZ = Mth.floor(z) >> 4;
 +        if (previousX != newX || previousZ != newZ) {
-+            boolean isLoaded = ((net.minecraft.server.level.ServerChunkCache) this.level().getChunkSource()).getChunkAtIfLoadedMainThread(newX, newZ) != null;
++            boolean isLoaded = ((net.minecraft.server.level.ServerChunkCache) this.level().getChunkSource()).getChunkAtIfLoadedImmediately(newX, newZ) != null;
 +            if (!isLoaded) {
 +                if (Projectile.loadedThisTick > gg.pufferfish.pufferfish.PufferfishConfig.maxProjectileLoadsPerTick) {
 +                    if (++this.loadedLifetime > gg.pufferfish.pufferfish.PufferfishConfig.maxProjectileLoadsPerProjectile) {
@@ -3415,53 +2085,6 @@ index 74c596264d4da551437bd2a23e1c70022cfc73fc..0e4d180d257d7180a8e1300f35924d0c
      public void setOwner(@Nullable Entity entity) {
          if (entity != null) {
              this.ownerUUID = entity.getUUID();
-diff --git a/src/main/java/net/minecraft/world/entity/vehicle/AbstractMinecartContainer.java b/src/main/java/net/minecraft/world/entity/vehicle/AbstractMinecartContainer.java
-index 9549eee0d92f322bd5232abd7e695213660c2e22..2cd8ac8840c2c0346fbf209c5ae3bb67eb3905e8 100644
---- a/src/main/java/net/minecraft/world/entity/vehicle/AbstractMinecartContainer.java
-+++ b/src/main/java/net/minecraft/world/entity/vehicle/AbstractMinecartContainer.java
-@@ -30,7 +30,10 @@ import org.bukkit.inventory.InventoryHolder;
- 
- public abstract class AbstractMinecartContainer extends AbstractMinecart implements ContainerEntity {
- 
-+    // Pufferfish start
-     private NonNullList<ItemStack> itemStacks;
-+    private gg.airplane.structs.ItemListWithBitset itemStacksOptimized;
-+    // Pufferfish end
-     @Nullable
-     public ResourceKey<LootTable> lootTable;
-     public long lootTableSeed;
-@@ -86,12 +89,18 @@ public abstract class AbstractMinecartContainer extends AbstractMinecart impleme
- 
-     protected AbstractMinecartContainer(EntityType<?> type, Level world) {
-         super(type, world);
--        this.itemStacks = NonNullList.withSize(this.getContainerSize(), ItemStack.EMPTY); // CraftBukkit - SPIGOT-3513
-+        // Pufferfish start
-+        this.itemStacksOptimized = new gg.airplane.structs.ItemListWithBitset(this.getContainerSize()); // CraftBukkit - SPIGOT-3513
-+        this.itemStacks = this.itemStacksOptimized.nonNullList;
-+        // Pufferfish end
-     }
- 
-     protected AbstractMinecartContainer(EntityType<?> type, double x, double y, double z, Level world) {
-         super(type, world, x, y, z);
--        this.itemStacks = NonNullList.withSize(this.getContainerSize(), ItemStack.EMPTY); // CraftBukkit - SPIGOT-3513
-+        // Pufferfish start
-+        this.itemStacksOptimized = new gg.airplane.structs.ItemListWithBitset(this.getContainerSize()); // CraftBukkit - SPIGOT-3513
-+        this.itemStacks = this.itemStacksOptimized.nonNullList;
-+        // Pufferfish end
-     }
- 
-     @Override
-@@ -158,6 +167,10 @@ public abstract class AbstractMinecartContainer extends AbstractMinecart impleme
-     @Override
-     protected void readAdditionalSaveData(CompoundTag nbt) {
-         super.readAdditionalSaveData(nbt);
-+        // Pufferfish start
-+        this.itemStacksOptimized = new gg.airplane.structs.ItemListWithBitset(this.getContainerSize());
-+        this.itemStacks = this.itemStacksOptimized.nonNullList;
-+        // Pufferfish end
-         this.readChestVehicleSaveData(nbt, this.registryAccess());
-     }
- 
 diff --git a/src/main/java/net/minecraft/world/item/EndCrystalItem.java b/src/main/java/net/minecraft/world/item/EndCrystalItem.java
 index 5f51e64cb0611a4ba6bdcdcacbcba1063a7f3a5c..cc1e5882bee94864ad189d7f01ce78223411e51d 100644
 --- a/src/main/java/net/minecraft/world/item/EndCrystalItem.java
@@ -3476,10 +2099,18 @@ index 5f51e64cb0611a4ba6bdcdcacbcba1063a7f3a5c..cc1e5882bee94864ad189d7f01ce7822
                          }
                      }
 diff --git a/src/main/java/net/minecraft/world/item/crafting/ShapelessRecipe.java b/src/main/java/net/minecraft/world/item/crafting/ShapelessRecipe.java
-index 3554109bcc4651ca93b6275c914e57e007e2204e..60c7a9520335de8e2638572100affcfdd776c5a3 100644
+index 213ee4aa988dd4c2a5a7be99b1d13f67338e5209..8e46753af60aa9fd8e4b4c0f955f7a55a77de314 100644
 --- a/src/main/java/net/minecraft/world/item/crafting/ShapelessRecipe.java
 +++ b/src/main/java/net/minecraft/world/item/crafting/ShapelessRecipe.java
-@@ -27,8 +27,13 @@ public class ShapelessRecipe extends io.papermc.paper.inventory.recipe.RecipeBoo
+@@ -10,6 +10,7 @@ import net.minecraft.core.HolderLookup;
+ import net.minecraft.core.NonNullList;
+ import net.minecraft.network.RegistryFriendlyByteBuf;
+ import net.minecraft.network.codec.StreamCodec;
++import net.minecraft.world.inventory.CraftingContainer;
+ import net.minecraft.world.item.ItemStack;
+ import net.minecraft.world.level.Level;
+ // CraftBukkit start
+@@ -25,8 +26,13 @@ public class ShapelessRecipe extends io.papermc.paper.inventory.recipe.RecipeBoo
      final CraftingBookCategory category;
      final ItemStack result;
      final NonNullList<Ingredient> ingredients;
@@ -3493,16 +2124,16 @@ index 3554109bcc4651ca93b6275c914e57e007e2204e..60c7a9520335de8e2638572100affcfd
          this.group = group;
          this.category = category;
          this.result = result;
-@@ -78,6 +83,28 @@ public class ShapelessRecipe extends io.papermc.paper.inventory.recipe.RecipeBoo
+@@ -76,6 +82,28 @@ public class ShapelessRecipe extends io.papermc.paper.inventory.recipe.RecipeBoo
      }
  
-     public boolean matches(CraftingContainer inventory, Level world) {
+     public boolean matches(CraftingInput input, Level world) {
 +        // Pufferfish start
 +        if (!this.isBukkit) {
 +            java.util.List<Ingredient> ingredients = com.google.common.collect.Lists.newArrayList(this.ingredients.toArray(new Ingredient[0]));
 +
-+            inventory: for (int index = 0; index < inventory.getContainerSize(); index++) {
-+                ItemStack itemStack = inventory.getItem(index);
++            inventory: for (int index = 0; index < input.size(); index++) {
++                ItemStack itemStack = input.getItem(index);
 +
 +                if (!itemStack.isEmpty()) {
 +                    for (int i = 0; i < ingredients.size(); i++) {
@@ -3519,26 +2150,17 @@ index 3554109bcc4651ca93b6275c914e57e007e2204e..60c7a9520335de8e2638572100affcfd
 +        }
 +        // Pufferfish end
 +
-         StackedContents autorecipestackmanager = new StackedContents();
-         autorecipestackmanager.initialize(this); // Paper - better exact choice recipes
-         int i = 0;
+         // Paper start - unwrap ternary & better exact choice recipes
+         if (input.ingredientCount() != this.ingredients.size()) {
+             return false;
 diff --git a/src/main/java/net/minecraft/world/level/Level.java b/src/main/java/net/minecraft/world/level/Level.java
-index 14281a4e72f49dc4eb2ca3da8479c1f81a3a175d..4146bf151ffa5abf006f65a7290f6214dda3392f 100644
+index 507671476c3d2d92a2fdb05be24443af27d26dcf..2479b47186202de40cdb4ae773c696a4adee9bad 100644
 --- a/src/main/java/net/minecraft/world/level/Level.java
 +++ b/src/main/java/net/minecraft/world/level/Level.java
-@@ -204,6 +204,8 @@ public abstract class Level implements LevelAccessor, AutoCloseable {
-     // Paper end
- 
-     public abstract ResourceKey<LevelStem> getTypeKey();
-+    
-+    protected final io.papermc.paper.util.math.ThreadUnsafeRandom randomTickRandom = new io.papermc.paper.util.math.ThreadUnsafeRandom(java.util.concurrent.ThreadLocalRandom.current().nextLong()); public net.minecraft.util.RandomSource getThreadUnsafeRandom() { return this.randomTickRandom; } // Pufferfish - move thread unsafe random initialization // Pufferfish - getter
- 
-     protected Level(WritableLevelData worlddatamutable, ResourceKey<Level> resourcekey, RegistryAccess iregistrycustom, Holder<DimensionType> holder, Supplier<ProfilerFiller> supplier, boolean flag, boolean flag1, long i, int j, org.bukkit.generator.ChunkGenerator gen, org.bukkit.generator.BiomeProvider biomeProvider, org.bukkit.World.Environment env, java.util.function.Function<org.spigotmc.SpigotWorldConfig, io.papermc.paper.configuration.WorldConfiguration> paperWorldConfigCreator, java.util.concurrent.Executor executor) { // Paper - create paper world config; Async-Anti-Xray: Pass executor
-         this.spigotConfig = new org.spigotmc.SpigotWorldConfig(((net.minecraft.world.level.storage.PrimaryLevelData) worlddatamutable).getLevelName()); // Spigot
-@@ -1300,13 +1302,13 @@ public abstract class Level implements LevelAccessor, AutoCloseable {
+@@ -1418,16 +1418,16 @@ public abstract class Level implements LevelAccessor, AutoCloseable, ca.spottedl
+     public <T extends Entity> void guardEntityTick(Consumer<T> tickConsumer, T entity) {
          try {
              tickConsumer.accept(entity);
-             MinecraftServer.getServer().executeMidTickTasks(); // Paper - execute chunk tasks mid tick
 -        } catch (Throwable throwable) {
 +        } catch (Throwable throwable) { // Pufferfish - diff on change ServerLevel.tick
              if (throwable instanceof ThreadDeath) throw throwable; // Paper
@@ -3550,8 +2172,12 @@ index 14281a4e72f49dc4eb2ca3da8479c1f81a3a175d..4146bf151ffa5abf006f65a7290f6214
 +            entity.discard(org.bukkit.event.entity.EntityRemoveEvent.Cause.DISCARD); // Pufferfish - diff on change ServerLevel.tick
              // Paper end - Prevent block entity and entity crashes
          }
+-        this.moonrise$midTickTasks(); // Paper - rewrite chunk system
++        this.moonrise$midTickTasks(); // Paper - rewrite chunk system // Pufferfish - diff on change ServerLevel.tick
      }
-@@ -1781,6 +1783,7 @@ public abstract class Level implements LevelAccessor, AutoCloseable {
+     // Paper start - Option to prevent armor stands from doing entity lookups
+     @Override
+@@ -1961,6 +1961,7 @@ public abstract class Level implements LevelAccessor, AutoCloseable, ca.spottedl
      }
  
      public ProfilerFiller getProfiler() {
@@ -3559,257 +2185,13 @@ index 14281a4e72f49dc4eb2ca3da8479c1f81a3a175d..4146bf151ffa5abf006f65a7290f6214
          return (ProfilerFiller) this.profiler.get();
      }
  
-diff --git a/src/main/java/net/minecraft/world/level/NaturalSpawner.java b/src/main/java/net/minecraft/world/level/NaturalSpawner.java
-index ed8032495af9ce9c23419224814b8d27e4a97c17..382c5773f773837f8182ee5d4f97f588c15eaacd 100644
---- a/src/main/java/net/minecraft/world/level/NaturalSpawner.java
-+++ b/src/main/java/net/minecraft/world/level/NaturalSpawner.java
-@@ -408,12 +408,12 @@ public final class NaturalSpawner {
-         }
-     }
- 
--    private static BlockPos getRandomPosWithin(Level world, LevelChunk chunk) {
-+    private static BlockPos getRandomPosWithin(ServerLevel world, LevelChunk chunk) { // Pufferfish - accept serverlevel
-         ChunkPos chunkcoordintpair = chunk.getPos();
--        int i = chunkcoordintpair.getMinBlockX() + world.random.nextInt(16);
--        int j = chunkcoordintpair.getMinBlockZ() + world.random.nextInt(16);
-+        int i = chunkcoordintpair.getMinBlockX() + world.getThreadUnsafeRandom().nextInt(16); // Pufferfish - use thread unsafe random
-+        int j = chunkcoordintpair.getMinBlockZ() + world.getThreadUnsafeRandom().nextInt(16); // Pufferfish
-         int k = chunk.getHeight(Heightmap.Types.WORLD_SURFACE, i, j) + 1;
--        int l = Mth.randomBetweenInclusive(world.random, world.getMinBuildHeight(), k);
-+        int l = Mth.randomBetweenInclusive(world.getThreadUnsafeRandom(), world.getMinBuildHeight(), k); // Pufferfish
- 
-         return new BlockPos(i, l, j);
-     }
-diff --git a/src/main/java/net/minecraft/world/level/biome/Biome.java b/src/main/java/net/minecraft/world/level/biome/Biome.java
-index 15f82c9a1ce1fef2e951d1b3c7a65e64b82061ea..f9fbfb63f19decb3b15284306d7edda072e609af 100644
---- a/src/main/java/net/minecraft/world/level/biome/Biome.java
-+++ b/src/main/java/net/minecraft/world/level/biome/Biome.java
-@@ -63,13 +63,18 @@ public final class Biome {
-     private final BiomeGenerationSettings generationSettings;
-     private final MobSpawnSettings mobSettings;
-     private final BiomeSpecialEffects specialEffects;
--    private final ThreadLocal<Long2FloatLinkedOpenHashMap> temperatureCache = ThreadLocal.withInitial(() -> Util.make(() -> {
-+    // Pufferfish start - use our cache
-+    private final ThreadLocal<gg.airplane.structs.Long2FloatAgingCache> temperatureCache = ThreadLocal.withInitial(() -> Util.make(() -> {
-+            /*
-             Long2FloatLinkedOpenHashMap long2FloatLinkedOpenHashMap = new Long2FloatLinkedOpenHashMap(1024, 0.25F) {
-                 protected void rehash(int i) {
-                 }
-             };
-             long2FloatLinkedOpenHashMap.defaultReturnValue(Float.NaN);
-             return long2FloatLinkedOpenHashMap;
-+             */
-+            return new gg.airplane.structs.Long2FloatAgingCache(TEMPERATURE_CACHE_SIZE);
-+            // Pufferfish end
-         }));
- 
-     Biome(Biome.ClimateSettings weather, BiomeSpecialEffects effects, BiomeGenerationSettings generationSettings, MobSpawnSettings spawnSettings) {
-@@ -112,17 +117,15 @@ public final class Biome {
-     @Deprecated
-     public float getTemperature(BlockPos blockPos) {
-         long l = blockPos.asLong();
--        Long2FloatLinkedOpenHashMap long2FloatLinkedOpenHashMap = this.temperatureCache.get();
--        float f = long2FloatLinkedOpenHashMap.get(l);
-+        // Pufferfish start
-+        gg.airplane.structs.Long2FloatAgingCache cache = this.temperatureCache.get();
-+        float f = cache.getValue(l);
-         if (!Float.isNaN(f)) {
-             return f;
-         } else {
-             float g = this.getHeightAdjustedTemperature(blockPos);
--            if (long2FloatLinkedOpenHashMap.size() == 1024) {
--                long2FloatLinkedOpenHashMap.removeFirstFloat();
--            }
--
--            long2FloatLinkedOpenHashMap.put(l, g);
-+            cache.putValue(l, g);
-+            // Pufferfish end
-             return g;
-         }
-     }
-diff --git a/src/main/java/net/minecraft/world/level/block/entity/ChestBlockEntity.java b/src/main/java/net/minecraft/world/level/block/entity/ChestBlockEntity.java
-index b88aa184cd06a0485146f58a5b61a56a50911209..7b64c57795fe27d8397500bfa41f71f9d2103b20 100644
---- a/src/main/java/net/minecraft/world/level/block/entity/ChestBlockEntity.java
-+++ b/src/main/java/net/minecraft/world/level/block/entity/ChestBlockEntity.java
-@@ -32,7 +32,10 @@ import org.bukkit.entity.HumanEntity;
- public class ChestBlockEntity extends RandomizableContainerBlockEntity implements LidBlockEntity {
- 
-     private static final int EVENT_SET_OPEN_COUNT = 1;
-+    // Pufferfish start
-     private NonNullList<ItemStack> items;
-+    private gg.airplane.structs.ItemListWithBitset optimizedItems;
-+    // Pufferfish end
-     public final ContainerOpenersCounter openersCounter;
-     private final ChestLidController chestLidController;
- 
-@@ -66,9 +69,13 @@ public class ChestBlockEntity extends RandomizableContainerBlockEntity implement
-     }
-     // CraftBukkit end
- 
-+    private final boolean isNative = getClass().equals(ChestBlockEntity.class); // Pufferfish
-     protected ChestBlockEntity(BlockEntityType<?> type, BlockPos pos, BlockState state) {
-         super(type, pos, state);
--        this.items = NonNullList.withSize(27, ItemStack.EMPTY);
-+        // Pufferfish start
-+        this.optimizedItems = new gg.airplane.structs.ItemListWithBitset(27);
-+        this.items = this.optimizedItems.nonNullList;
-+        // Pufferfish end
-         this.openersCounter = new ContainerOpenersCounter() {
-             @Override
-             protected void onOpen(Level world, BlockPos pos, BlockState state) {
-@@ -99,6 +106,23 @@ public class ChestBlockEntity extends RandomizableContainerBlockEntity implement
-         this.chestLidController = new ChestLidController();
-     }
- 
-+    // Pufferfish start
-+    @Override
-+    public boolean hasEmptySlot(Direction enumdirection) {
-+        return isNative ? !this.optimizedItems.hasFullStacks() : super.hasEmptySlot(enumdirection);
-+    }
-+
-+    @Override
-+    public boolean isCompletelyFull(Direction enumdirection) {
-+        return isNative ? this.optimizedItems.hasFullStacks() && super.isCompletelyFull(enumdirection) : super.isCompletelyFull(enumdirection);
-+    }
-+
-+    @Override
-+    public boolean isCompletelyEmpty(Direction enumdirection) {
-+        return isNative && this.optimizedItems.isCompletelyEmpty() || super.isCompletelyEmpty(enumdirection);
-+    }
-+    // Pufferfish end
-+
-     public ChestBlockEntity(BlockPos pos, BlockState state) {
-         this(BlockEntityType.CHEST, pos, state);
-     }
-@@ -116,7 +140,10 @@ public class ChestBlockEntity extends RandomizableContainerBlockEntity implement
-     @Override
-     protected void loadAdditional(CompoundTag nbt, HolderLookup.Provider registryLookup) {
-         super.loadAdditional(nbt, registryLookup);
--        this.items = NonNullList.withSize(this.getContainerSize(), ItemStack.EMPTY);
-+        // Pufferfish start
-+        this.optimizedItems = new gg.airplane.structs.ItemListWithBitset(this.getContainerSize());
-+        this.items = this.optimizedItems.nonNullList;
-+        // Pufferfish end
-         if (!this.tryLoadLootTable(nbt)) {
-             ContainerHelper.loadAllItems(nbt, this.items, registryLookup);
-         }
-@@ -188,7 +215,10 @@ public class ChestBlockEntity extends RandomizableContainerBlockEntity implement
- 
-     @Override
-     protected void setItems(NonNullList<ItemStack> inventory) {
--        this.items = inventory;
-+        // Pufferfish start
-+        this.optimizedItems = gg.airplane.structs.ItemListWithBitset.fromList(inventory);
-+        this.items = this.optimizedItems.nonNullList;
-+        // Pufferfish end
-     }
- 
-     @Override
-diff --git a/src/main/java/net/minecraft/world/level/block/entity/HopperBlockEntity.java b/src/main/java/net/minecraft/world/level/block/entity/HopperBlockEntity.java
-index 8310d132006043e93c612890514c4c7f3eb1c74d..1bd1f88aea2c841c20e21f1472f2ccfbde953bd4 100644
---- a/src/main/java/net/minecraft/world/level/block/entity/HopperBlockEntity.java
-+++ b/src/main/java/net/minecraft/world/level/block/entity/HopperBlockEntity.java
-@@ -47,7 +47,10 @@ public class HopperBlockEntity extends RandomizableContainerBlockEntity implemen
-     public static final int MOVE_ITEM_SPEED = 8;
-     public static final int HOPPER_CONTAINER_SIZE = 5;
-     private static final int[][] CACHED_SLOTS = new int[54][];
-+    // Pufferfish start
-     private NonNullList<ItemStack> items;
-+    private gg.airplane.structs.ItemListWithBitset optimizedItems;
-+    // Pufferfish end
-     public int cooldownTime;
-     private long tickedGameTime;
-     private Direction facing;
-@@ -84,15 +87,38 @@ public class HopperBlockEntity extends RandomizableContainerBlockEntity implemen
- 
-     public HopperBlockEntity(BlockPos pos, BlockState state) {
-         super(BlockEntityType.HOPPER, pos, state);
--        this.items = NonNullList.withSize(5, ItemStack.EMPTY);
-+        // Pufferfish start
-+        this.optimizedItems = new gg.airplane.structs.ItemListWithBitset(5);
-+        this.items = this.optimizedItems.nonNullList;
-+        // Pufferfish end
-         this.cooldownTime = -1;
-         this.facing = (Direction) state.getValue(HopperBlock.FACING);
-     }
- 
-+    // Pufferfish start
-+    @Override
-+    public boolean hasEmptySlot(Direction enumdirection) {
-+        return !this.optimizedItems.hasFullStacks();
-+    }
-+
-+    @Override
-+    public boolean isCompletelyFull(Direction enumdirection) {
-+        return this.optimizedItems.hasFullStacks() && super.isCompletelyFull(enumdirection);
-+    }
-+
-+    @Override
-+    public boolean isCompletelyEmpty(Direction enumdirection) {
-+        return this.optimizedItems.isCompletelyEmpty() || super.isCompletelyEmpty(enumdirection);
-+    }
-+    // Pufferfish end
-+
-     @Override
-     protected void loadAdditional(CompoundTag nbt, HolderLookup.Provider registryLookup) {
-         super.loadAdditional(nbt, registryLookup);
--        this.items = NonNullList.withSize(this.getContainerSize(), ItemStack.EMPTY);
-+        // Pufferfish start
-+        this.optimizedItems = new gg.airplane.structs.ItemListWithBitset(this.getContainerSize());
-+        this.items = this.optimizedItems.nonNullList;
-+        // Pufferfish end
-         if (!this.tryLoadLootTable(nbt)) {
-             ContainerHelper.loadAllItems(nbt, this.items, registryLookup);
-         }
-@@ -525,6 +551,7 @@ public class HopperBlockEntity extends RandomizableContainerBlockEntity implemen
-     }
- 
-     private static boolean isFullContainer(Container inventory, Direction direction) {
-+        if (true) return inventory.isCompletelyFull(direction); // Pufferfish - use bitsets
-         int[] aint = HopperBlockEntity.getSlots(inventory, direction);
-         int[] aint1 = aint;
-         int i = aint.length;
-@@ -723,7 +750,7 @@ public class HopperBlockEntity extends RandomizableContainerBlockEntity implemen
- 
-         if (HopperBlockEntity.canPlaceItemInContainer(to, stack, slot, side)) {
-             boolean flag = false;
--            boolean flag1 = to.isEmpty();
-+            boolean flag1 = to.isCompletelyEmpty(side); // Pufferfish
- 
-             if (itemstack1.isEmpty()) {
-                 // Spigot start - SPIGOT-6693, InventorySubcontainer#setItem
-@@ -911,7 +938,10 @@ public class HopperBlockEntity extends RandomizableContainerBlockEntity implemen
- 
-     @Override
-     protected void setItems(NonNullList<ItemStack> inventory) {
--        this.items = inventory;
-+        // Pufferfish start
-+        this.optimizedItems = gg.airplane.structs.ItemListWithBitset.fromList(inventory);
-+        this.items = this.optimizedItems.nonNullList;
-+        // Pufferfish end
-     }
- 
-     public static void entityInside(Level world, BlockPos pos, BlockState state, Entity entity, HopperBlockEntity blockEntity) {
-diff --git a/src/main/java/net/minecraft/world/level/block/entity/RandomizableContainerBlockEntity.java b/src/main/java/net/minecraft/world/level/block/entity/RandomizableContainerBlockEntity.java
-index e2752752417c50b06f7c15b7d00bda0eaad3b0ae..23cb5d00e9f171f445f3dc8cd3947450da979da3 100644
---- a/src/main/java/net/minecraft/world/level/block/entity/RandomizableContainerBlockEntity.java
-+++ b/src/main/java/net/minecraft/world/level/block/entity/RandomizableContainerBlockEntity.java
-@@ -48,7 +48,7 @@ public abstract class RandomizableContainerBlockEntity extends BaseContainerBloc
-     @Override
-     public boolean isEmpty() {
-         this.unpackLootTable(null);
--        return super.isEmpty();
-+        return this.isCompletelyEmpty(null); // Pufferfish - use super
-     }
- 
-     @Override
 diff --git a/src/main/java/net/minecraft/world/level/chunk/LevelChunk.java b/src/main/java/net/minecraft/world/level/chunk/LevelChunk.java
-index 14ee7b5b9b804bebd4e2a846b238547a28a36035..e5b7a14c0325cf0c35a03890d2526a90a1b17fad 100644
+index 7c11853c5090fbc4fa5b3e73a69acf166158fdec..00987d0e1ee8a9541b0610616ace1c84d50e5f1a 100644
 --- a/src/main/java/net/minecraft/world/level/chunk/LevelChunk.java
 +++ b/src/main/java/net/minecraft/world/level/chunk/LevelChunk.java
-@@ -88,6 +88,18 @@ public class LevelChunk extends ChunkAccess {
+@@ -86,6 +86,18 @@ public class LevelChunk extends ChunkAccess implements ca.spottedleaf.moonrise.p
+     private final LevelChunkTicks<Block> blockTicks;
      private final LevelChunkTicks<Fluid> fluidTicks;
-     public volatile FullChunkStatus chunkStatus = FullChunkStatus.INACCESSIBLE; // Paper - rewrite chunk system
  
 +    // Pufferfish start - instead of using a random every time the chunk is ticked, define when lightning strikes preemptively
 +    private int lightningTick;
@@ -3826,28 +2208,28 @@ index 14ee7b5b9b804bebd4e2a846b238547a28a36035..e5b7a14c0325cf0c35a03890d2526a90
      public LevelChunk(Level world, ChunkPos pos) {
          this(world, pos, UpgradeData.EMPTY, new LevelChunkTicks<>(), new LevelChunkTicks<>(), 0L, (LevelChunkSection[]) null, (LevelChunk.PostLoadProcessor) null, (BlendingData) null);
      }
-@@ -111,6 +123,8 @@ public class LevelChunk extends ChunkAccess {
-         this.postLoad = entityLoader;
-         this.blockTicks = blockTickScheduler;
-         this.fluidTicks = fluidTickScheduler;
+@@ -117,6 +129,8 @@ public class LevelChunk extends ChunkAccess implements ca.spottedleaf.moonrise.p
+         this.debug = !empty && this.level.isDebug();
+         this.defaultBlockState = empty ? VOID_AIR_BLOCKSTATE : AIR_BLOCKSTATE;
+         // Paper end - get block chunk optimisation
 +
-+        this.lightningTick = this.level.getThreadUnsafeRandom().nextInt(100000) << 1; // Pufferfish - initialize lightning tick
++        this.lightningTick = new java.util.Random().nextInt(100000) << 1; // Pufferfish - initialize lightning tick
      }
  
      // CraftBukkit start
 diff --git a/src/main/java/net/minecraft/world/level/chunk/LevelChunkSection.java b/src/main/java/net/minecraft/world/level/chunk/LevelChunkSection.java
-index a2a5aef769ee8bb638a5a9f3da9812fa4a85dda5..7288261b8924d08e93abecb664e2273c624a325b 100644
+index c3b1caa352b988ec44fa2b2eb0536517711f5460..a28366b8ed0da356dad6941e0a817d0b7ec43738 100644
 --- a/src/main/java/net/minecraft/world/level/chunk/LevelChunkSection.java
 +++ b/src/main/java/net/minecraft/world/level/chunk/LevelChunkSection.java
-@@ -25,6 +25,7 @@ public class LevelChunkSection {
+@@ -22,6 +22,7 @@ public class LevelChunkSection implements ca.spottedleaf.moonrise.patches.block_
+     short nonEmptyBlockCount; // Paper - package private
+     private short tickingBlockCount;
+     private short tickingFluidCount;
++    public short fluidStateCount; // Pufferfish
      public final PalettedContainer<BlockState> states;
      // CraftBukkit start - read/write
      private PalettedContainer<Holder<Biome>> biomes;
-+    public short fluidStateCount; // Pufferfish
-     public final com.destroystokyo.paper.util.maplist.IBlockDataList tickingList = new com.destroystokyo.paper.util.maplist.IBlockDataList(); // Paper
-     // Paper start - optimise collisions
-     private int specialCollidingBlocks;
-@@ -102,6 +103,7 @@ public class LevelChunkSection {
+@@ -104,6 +105,7 @@ public class LevelChunkSection implements ca.spottedleaf.moonrise.patches.block_
  
          if (!fluid.isEmpty()) {
              --this.tickingFluidCount;
@@ -3855,37 +2237,37 @@ index a2a5aef769ee8bb638a5a9f3da9812fa4a85dda5..7288261b8924d08e93abecb664e2273c
          }
  
          if (!state.isAir()) {
-@@ -116,6 +118,7 @@ public class LevelChunkSection {
+@@ -115,6 +117,7 @@ public class LevelChunkSection implements ca.spottedleaf.moonrise.patches.block_
  
          if (!fluid1.isEmpty()) {
              ++this.tickingFluidCount;
 +            ++this.fluidStateCount; // Pufferfish
          }
  
-         this.updateBlockCallback(x, y, z, iblockdata1, state); // Paper - optimise collisions
-@@ -162,6 +165,7 @@ public class LevelChunkSection {
+         // Paper start - block counting
+@@ -208,6 +211,7 @@ public class LevelChunkSection implements ca.spottedleaf.moonrise.patches.block_
                      if (fluid.isRandomlyTicking()) {
-                         this.tickingFluidCount = (short) (this.tickingFluidCount + 1);
+                         this.tickingFluidCount += paletteCount;
                      }
-+                this.fluidStateCount++; // Pufferfish
++                    this.fluidStateCount++; // Pufferfish
                  }
- 
-                 // Paper start - optimise collisions
+             }
+         }
 diff --git a/src/main/java/net/minecraft/world/level/entity/EntityTickList.java b/src/main/java/net/minecraft/world/level/entity/EntityTickList.java
-index 83a39f900551e39d5af6f17a339a386ddee4feef..0c8c534fc69172387f188af5282accfed7597ac7 100644
+index d8b4196adf955f8d414688dc451caac2d9c609d9..80a43def4912a3228cd95117d5c2aac68798b4ec 100644
 --- a/src/main/java/net/minecraft/world/level/entity/EntityTickList.java
 +++ b/src/main/java/net/minecraft/world/level/entity/EntityTickList.java
 @@ -9,7 +9,7 @@ import javax.annotation.Nullable;
  import net.minecraft.world.entity.Entity;
  
  public class EntityTickList {
--    private final io.papermc.paper.util.maplist.IteratorSafeOrderedReferenceSet<Entity> entities = new io.papermc.paper.util.maplist.IteratorSafeOrderedReferenceSet<>(true); // Paper - rewrite this, always keep this updated - why would we EVER tick an entity that's not ticking?
-+    public final io.papermc.paper.util.maplist.IteratorSafeOrderedReferenceSet<Entity> entities = new io.papermc.paper.util.maplist.IteratorSafeOrderedReferenceSet<>(true); // Paper - rewrite this, always keep this updated - why would we EVER tick an entity that's not ticking? // Pufferfish - private->public
+-    private final ca.spottedleaf.moonrise.common.list.IteratorSafeOrderedReferenceSet<net.minecraft.world.entity.Entity> entities = new ca.spottedleaf.moonrise.common.list.IteratorSafeOrderedReferenceSet<>(); // Paper - rewrite chunk system
++    public final ca.spottedleaf.moonrise.common.list.IteratorSafeOrderedReferenceSet<net.minecraft.world.entity.Entity> entities = new ca.spottedleaf.moonrise.common.list.IteratorSafeOrderedReferenceSet<>(); // Paper - rewrite chunk system // Pufferfish - private->public
  
      private void ensureActiveIsNotIterated() {
-         // Paper - replace with better logic, do not delay removals
+         // Paper - rewrite chunk system
 diff --git a/src/main/java/net/minecraft/world/level/material/FlowingFluid.java b/src/main/java/net/minecraft/world/level/material/FlowingFluid.java
-index c2943d892b067b3f1fb3b93301a092e912d71f08..58296b67f80587af485b0068e461cfd3d8d6f96f 100644
+index 1c0712295695727ee9c4d430d4157b8e17cbd71f..6785baf574f233ed1c3bea8d406be8a524d9ff82 100644
 --- a/src/main/java/net/minecraft/world/level/material/FlowingFluid.java
 +++ b/src/main/java/net/minecraft/world/level/material/FlowingFluid.java
 @@ -45,6 +45,8 @@ public abstract class FlowingFluid extends Fluid {
@@ -3912,16 +2294,16 @@ index c2943d892b067b3f1fb3b93301a092e912d71f08..58296b67f80587af485b0068e461cfd3
      private final Map<FluidState, VoxelShape> shapes = Maps.newIdentityHashMap();
  
      public FlowingFluid() {}
-@@ -251,6 +261,8 @@ public abstract class FlowingFluid extends Fluid {
-             return false;
-         }
-         // Paper end - optimise collisions
+@@ -240,6 +250,8 @@ public abstract class FlowingFluid extends Fluid {
+     }
+ 
+     private boolean canPassThroughWall(Direction face, BlockGetter world, BlockPos pos, BlockState state, BlockPos fromPos, BlockState fromState) {
 +        // Pufferfish start - modify to use our cache
 +        /*
          Object2ByteLinkedOpenHashMap object2bytelinkedopenhashmap;
  
          if (!state.getBlock().hasDynamicShape() && !fromState.getBlock().hasDynamicShape()) {
-@@ -258,9 +270,16 @@ public abstract class FlowingFluid extends Fluid {
+@@ -247,9 +259,16 @@ public abstract class FlowingFluid extends Fluid {
          } else {
              object2bytelinkedopenhashmap = null;
          }
@@ -3938,7 +2320,7 @@ index c2943d892b067b3f1fb3b93301a092e912d71f08..58296b67f80587af485b0068e461cfd3
          if (object2bytelinkedopenhashmap != null) {
              block_a = new Block.BlockStatePairKey(state, fromState, face);
              byte b0 = object2bytelinkedopenhashmap.getAndMoveToFirst(block_a);
-@@ -271,11 +290,22 @@ public abstract class FlowingFluid extends Fluid {
+@@ -260,11 +279,22 @@ public abstract class FlowingFluid extends Fluid {
          } else {
              block_a = null;
          }
@@ -3961,7 +2343,7 @@ index c2943d892b067b3f1fb3b93301a092e912d71f08..58296b67f80587af485b0068e461cfd3
          if (object2bytelinkedopenhashmap != null) {
              if (object2bytelinkedopenhashmap.size() == 200) {
                  object2bytelinkedopenhashmap.removeLastByte();
-@@ -283,6 +313,11 @@ public abstract class FlowingFluid extends Fluid {
+@@ -272,6 +302,11 @@ public abstract class FlowingFluid extends Fluid {
  
              object2bytelinkedopenhashmap.putAndMoveToFirst(block_a, (byte) (flag ? 1 : 0));
          }
@@ -4083,22 +2465,6 @@ index 88a4a72bb390947dc17e5da09a99b2d1b3ac4621..284c76ddb9724b44bb2e93f590685c72
      }
  
      @Nullable
-diff --git a/src/main/java/org/bukkit/craftbukkit/CraftServer.java b/src/main/java/org/bukkit/craftbukkit/CraftServer.java
-index 94a31c8f903eb61eb6d203e8e6fe8fb0beca28b1..5562e2a34d6baf5949435d6c9e233d86a51d8da3 100644
---- a/src/main/java/org/bukkit/craftbukkit/CraftServer.java
-+++ b/src/main/java/org/bukkit/craftbukkit/CraftServer.java
-@@ -1124,6 +1124,11 @@ public final class CraftServer implements Server {
-                 plugin.getPluginMeta().getDisplayName(),
-                 "This plugin is not properly shutting down its async tasks when it is being shut down. This task may throw errors during the final shutdown logs and might not complete before process dies."
-             ));
-+            getLogger().log(Level.SEVERE, String.format("%s Stacktrace", worker.getThread().getName()));
-+            StackTraceElement[] stackTrace = worker.getThread().getStackTrace();
-+            for (StackTraceElement element : stackTrace) {
-+                getLogger().log(Level.SEVERE, "  " + element.toString());
-+            }
-             if (console.isDebugging()) io.papermc.paper.util.TraceUtil.dumpTraceForThread(worker.getThread(), "still running"); // Paper - Debugging
-         }
-     }
 diff --git a/src/main/java/org/bukkit/craftbukkit/inventory/CraftShapelessRecipe.java b/src/main/java/org/bukkit/craftbukkit/inventory/CraftShapelessRecipe.java
 index 96d772eb02f79f8c478f5e6f065e387aa7665b18..c5ce412f321b8b4f31cc042893659e213b081f29 100644
 --- a/src/main/java/org/bukkit/craftbukkit/inventory/CraftShapelessRecipe.java
@@ -4111,48 +2477,11 @@ index 96d772eb02f79f8c478f5e6f065e387aa7665b18..c5ce412f321b8b4f31cc042893659e21
 +        MinecraftServer.getServer().getRecipeManager().addRecipe(new RecipeHolder<>(CraftNamespacedKey.toMinecraft(this.getKey()), new net.minecraft.world.item.crafting.ShapelessRecipe(this.getGroup(), CraftRecipe.getCategory(this.getCategory()), CraftItemStack.asNMSCopy(this.getResult()), data, true))); // Pufferfish
      }
  }
-diff --git a/src/main/java/org/bukkit/craftbukkit/scheduler/MinecraftInternalPlugin.java b/src/main/java/org/bukkit/craftbukkit/scheduler/MinecraftInternalPlugin.java
-index 66bdac50130f523f9dc4379b103b7a469f9ca36b..ef780e0566dbac07da88ba26dc595b49c8ff5ab3 100644
---- a/src/main/java/org/bukkit/craftbukkit/scheduler/MinecraftInternalPlugin.java
-+++ b/src/main/java/org/bukkit/craftbukkit/scheduler/MinecraftInternalPlugin.java
-@@ -22,7 +22,8 @@ public class MinecraftInternalPlugin extends PluginBase {
-     private boolean enabled = true;
- 
-     private final String pluginName;
--    private PluginDescriptionFile pdf;
-+    private org.bukkit.plugin.PluginLogger logger;
-+    private PluginDescriptionFile pdf; // Pufferfish
- 
-     public MinecraftInternalPlugin() {
-         this.pluginName = "Minecraft";
-@@ -81,7 +82,12 @@ public class MinecraftInternalPlugin extends PluginBase {
- 
-     @Override
-     public PluginLogger getLogger() {
--        throw new UnsupportedOperationException("Not supported.");
-+        // Pufferfish start
-+        if (this.logger == null) {
-+            this.logger = new org.bukkit.plugin.PluginLogger(this); // Pufferfish
-+        }
-+        return this.logger;
-+        // Pufferfish end
-     }
- 
-     @Override
-@@ -91,7 +97,7 @@ public class MinecraftInternalPlugin extends PluginBase {
- 
-     @Override
-     public Server getServer() {
--        throw new UnsupportedOperationException("Not supported.");
-+        return org.bukkit.Bukkit.getServer(); // Pufferfish - impl
-     }
- 
-     @Override
 diff --git a/src/main/java/org/bukkit/craftbukkit/util/CraftMagicNumbers.java b/src/main/java/org/bukkit/craftbukkit/util/CraftMagicNumbers.java
-index 4788a591f40f506d81b10fd9f6ab68f308a68e23..aa9e901b243a0296966254f802437cb7c1a3a846 100644
+index d06aab9bd5cd901c8367f9680f5d27ddb17b3dc4..8fa2b2a67891d34ec95f7eed2a4118ddd8a5be15 100644
 --- a/src/main/java/org/bukkit/craftbukkit/util/CraftMagicNumbers.java
 +++ b/src/main/java/org/bukkit/craftbukkit/util/CraftMagicNumbers.java
-@@ -503,7 +503,7 @@ public final class CraftMagicNumbers implements UnsafeValues {
+@@ -489,7 +489,7 @@ public final class CraftMagicNumbers implements UnsafeValues {
  
      @Override
      public com.destroystokyo.paper.util.VersionFetcher getVersionFetcher() {
@@ -4161,18 +2490,6 @@ index 4788a591f40f506d81b10fd9f6ab68f308a68e23..aa9e901b243a0296966254f802437cb7
      }
  
      @Override
-diff --git a/src/main/java/org/bukkit/craftbukkit/util/ServerShutdownThread.java b/src/main/java/org/bukkit/craftbukkit/util/ServerShutdownThread.java
-index e8e93538dfd71de86515d9405f728db1631e949a..3dff02fd97f001508e2f81192817bf1b0ef92446 100644
---- a/src/main/java/org/bukkit/craftbukkit/util/ServerShutdownThread.java
-+++ b/src/main/java/org/bukkit/craftbukkit/util/ServerShutdownThread.java
-@@ -11,6 +11,7 @@ public class ServerShutdownThread extends Thread {
- 
-     @Override
-     public void run() {
-+        try { gg.pufferfish.pufferfish.flare.ProfilingManager.stop(); } catch (Throwable t) {} // Pufferfish - shut down Flare if it's running
-         try {
-             // Paper start - try to shutdown on main
-             server.safeShutdown(false, false);
 diff --git a/src/main/java/org/bukkit/craftbukkit/util/Versioning.java b/src/main/java/org/bukkit/craftbukkit/util/Versioning.java
 index 774556a62eb240da42e84db4502e2ed43495be17..80553face9c70c2a3d897681e7761df85b22d464 100644
 --- a/src/main/java/org/bukkit/craftbukkit/util/Versioning.java
@@ -4187,7 +2504,7 @@ index 774556a62eb240da42e84db4502e2ed43495be17..80553face9c70c2a3d897681e7761df8
  
          if (stream != null) {
 diff --git a/src/main/java/org/spigotmc/ActivationRange.java b/src/main/java/org/spigotmc/ActivationRange.java
-index 3283ed99c35ffed6805567705e0518d9f84feedc..d7c7e12c0b8f77e59d94de130972f762ed227726 100644
+index bf2d18f74b0f0da7c3c30310c74224a1c0853564..1461daa08c5b671b8556f29f90400b7e98285a44 100644
 --- a/src/main/java/org/spigotmc/ActivationRange.java
 +++ b/src/main/java/org/spigotmc/ActivationRange.java
 @@ -38,6 +38,10 @@ import co.aikar.timings.MinecraftTimings;

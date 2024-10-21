@@ -105,19 +105,27 @@ paperweight {
     }
 }
 
+val paperRepoVal = property("paperRepo").toString()
+val paperBranch = property("paperBranch").toString()
+val purpurRepoVal = property("purpurRepo").toString()
+val purpurBranch = property("purpurBranch").toString()
+val pufferfishRepoVal = property("pufferfishRepo").toString()
+val pufferfishBranch = property("pufferfishBranch").toString()
+val isUsePufferfish = property("usePufferfish").toString().toBoolean()
+
 alwaysUpToDate {
 
-    paperRepo.set("https://github.com/PaperMC/Paper")
-    paperRef.set("master")
+    paperRepo.set(paperRepoVal)
+    paperRef.set(paperBranch)
     paperCommitName.set("paperCommit")
 
-    purpurRepo.set("https://github.com/PlazmaMC/Purpur")
-    purpurRef.set("ver/1.20.6")
+    purpurRepo.set(purpurRepoVal)
+    purpurRef.set(purpurBranch)
     purpurCommitName.set("purpurCommit")
 
-    pufferfishRepo.set("https://github.com/PlazmaMC/Pufferfish")
-    pufferfishRef.set("ver/1.20")
-    usePufferfish.set(true)
+    pufferfishRepo.set(pufferfishRepoVal)
+    pufferfishRef.set(pufferfishBranch)
+    usePufferfish.set(isUsePufferfish)
 
 }
 

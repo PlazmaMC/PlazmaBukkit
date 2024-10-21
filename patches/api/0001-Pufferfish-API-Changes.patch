@@ -1,6 +1,6 @@
 From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
 From: Kevin Raneri <kevin.raneri@gmail.com>
-Date: Sun, 2 Jun 2024 23:04:51 +0000
+Date: Tue, 22 Oct 2024 07:31:43 +0900
 Subject: [PATCH] Pufferfish API Changes
 
 Pufferfish
@@ -20,7 +20,7 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 diff --git a/build.gradle.kts b/build.gradle.kts
-index fd39ed209b20c927054b8482c400beeeeab460a3..1336685fde70c4a88a1fb591cdfcd781a8f06d0b 100644
+index e7c96be769fde8375b9a1b128cc7ce474144d16d..f9b44a03fe8d9a2fea2d968f4e944a6663c6f9c9 100644
 --- a/build.gradle.kts
 +++ b/build.gradle.kts
 @@ -52,6 +52,7 @@ dependencies {
@@ -29,9 +29,9 @@ index fd39ed209b20c927054b8482c400beeeeab460a3..1336685fde70c4a88a1fb591cdfcd781
      api("org.slf4j:slf4j-api:$slf4jVersion")
 +    api("io.sentry:sentry:5.4.0") // Pufferfish
  
-     implementation("org.ow2.asm:asm:9.7")
-     implementation("org.ow2.asm:asm-commons:9.7")
-@@ -130,6 +131,13 @@ val generateApiVersioningFile by tasks.registering {
+     implementation("org.ow2.asm:asm:9.7.1")
+     implementation("org.ow2.asm:asm-commons:9.7.1")
+@@ -131,6 +132,13 @@ val generateApiVersioningFile by tasks.registering {
      }
  }
  
@@ -214,7 +214,7 @@ index 0000000000000000000000000000000000000000..10310fdd53de28efb8a8250f6d3b0c8e
 +}
 diff --git a/src/main/java/gg/pufferfish/pufferfish/simd/SIMDChecker.java b/src/main/java/gg/pufferfish/pufferfish/simd/SIMDChecker.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..ab5fea0b03224bf249352ce340e94704ff713345
+index 0000000000000000000000000000000000000000..3441cdad70da1bd523c5933b1a914688718c2657
 --- /dev/null
 +++ b/src/main/java/gg/pufferfish/pufferfish/simd/SIMDChecker.java
 @@ -0,0 +1,40 @@
@@ -235,7 +235,7 @@ index 0000000000000000000000000000000000000000..ab5fea0b03224bf249352ce340e94704
 +	@Deprecated
 +	public static boolean canEnable(Logger logger) {
 +		try {
-+			if (SIMDDetection.getJavaVersion() != 17 && SIMDDetection.getJavaVersion() != 18 && SIMDDetection.getJavaVersion() != 19) {
++			if (SIMDDetection.getJavaVersion() < 17 || SIMDDetection.getJavaVersion() > 21) {
 +				return false;
 +			} else {
 +				SIMDDetection.testRun = true;
@@ -388,24 +388,6 @@ index 0000000000000000000000000000000000000000..ae2464920c9412ac90b819a540ee58be
 +	}
 +	
 +}
-diff --git a/src/main/java/io/papermc/paper/ServerBuildInfo.java b/src/main/java/io/papermc/paper/ServerBuildInfo.java
-index 9df9d09aa477d4cd3c496ba0933c816df1ef0964..ad81341bdd1eb73554cd24f27ac5d655d89db791 100644
---- a/src/main/java/io/papermc/paper/ServerBuildInfo.java
-+++ b/src/main/java/io/papermc/paper/ServerBuildInfo.java
-@@ -17,6 +17,13 @@ public interface ServerBuildInfo {
-      * The brand id for Paper.
-      */
-     Key BRAND_PAPER_ID = Key.key("papermc", "paper");
-+    
-+    // Pufferfish start
-+    /**
-+     * The brand id for Paper.
-+     */
-+    Key BRAND_PUFFERFISH_ID = Key.key("pufferfishgg", "pufferfish");
-+    // Pufferfish end
- 
-     /**
-      * Gets the {@code ServerBuildInfo}.
 diff --git a/src/main/java/org/bukkit/map/MapPalette.java b/src/main/java/org/bukkit/map/MapPalette.java
 index c80faa079eca1564847070f0338fc98024639829..e632d51d3487eb4807243b6705999ad124466bf5 100644
 --- a/src/main/java/org/bukkit/map/MapPalette.java
@@ -444,10 +426,10 @@ index c80faa079eca1564847070f0338fc98024639829..e632d51d3487eb4807243b6705999ad1
      }
  
 diff --git a/src/main/java/org/bukkit/plugin/SimplePluginManager.java b/src/main/java/org/bukkit/plugin/SimplePluginManager.java
-index 07a9c9e254188c251165ca84c8e961fccda01175..5dc64d8c9aeae612fd31af0673f3530a9e777dfc 100644
+index 003bece642b682985625db93cad93026352bfc66..e8ba4f1108f2548a487877027e37d81fc150e042 100644
 --- a/src/main/java/org/bukkit/plugin/SimplePluginManager.java
 +++ b/src/main/java/org/bukkit/plugin/SimplePluginManager.java
-@@ -596,7 +596,9 @@ public final class SimplePluginManager implements PluginManager {
+@@ -597,7 +597,9 @@ public final class SimplePluginManager implements PluginManager {
  
      // Paper start
      private void handlePluginException(String msg, Throwable ex, Plugin plugin) {
@@ -457,7 +439,7 @@ index 07a9c9e254188c251165ca84c8e961fccda01175..5dc64d8c9aeae612fd31af0673f3530a
          callEvent(new com.destroystokyo.paper.event.server.ServerExceptionEvent(new com.destroystokyo.paper.exception.ServerPluginEnableDisableException(msg, ex, plugin)));
      }
      // Paper end
-@@ -666,9 +668,11 @@ public final class SimplePluginManager implements PluginManager {
+@@ -667,9 +669,11 @@ public final class SimplePluginManager implements PluginManager {
                              ));
                  }
              } catch (Throwable ex) {

@@ -1,6 +1,6 @@
 From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
 From: granny <contact@granny.dev>
-Date: Sun, 2 Jun 2024 23:06:07 +0000
+Date: Tue, 22 Oct 2024 07:33:42 +0900
 Subject: [PATCH] Purpur API Changes
 
 PurpurMC
@@ -25,10 +25,10 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 
 diff --git a/build.gradle.kts b/build.gradle.kts
-index 1336685fde70c4a88a1fb591cdfcd781a8f06d0b..7aa138f7123dcfb7d1d9ae9efcf2359522f5d2fd 100644
+index f9b44a03fe8d9a2fea2d968f4e944a6663c6f9c9..f536f8f42b99e4b7dc2e25785617837fbc405b5b 100644
 --- a/build.gradle.kts
 +++ b/build.gradle.kts
-@@ -150,6 +150,8 @@ tasks.jar {
+@@ -151,6 +151,8 @@ tasks.jar {
  }
  
  tasks.withType<Javadoc> {
@@ -38,10 +38,10 @@ index 1336685fde70c4a88a1fb591cdfcd781a8f06d0b..7aa138f7123dcfb7d1d9ae9efcf23595
      options.overview = "src/main/javadoc/overview.html"
      options.use()
 diff --git a/src/main/java/co/aikar/timings/TimedEventExecutor.java b/src/main/java/co/aikar/timings/TimedEventExecutor.java
-index 8f29c1561ba5916cb5634392edd8bd2a5a294a51..6fbc64e0f214d0c8e5afcbe385e414a4e1fe1c72 100644
+index 157617933a772451f6c073d97afaf305769b4d40..438a9c76381ea3f5b774e2232ff56c5dc6f82586 100644
 --- a/src/main/java/co/aikar/timings/TimedEventExecutor.java
 +++ b/src/main/java/co/aikar/timings/TimedEventExecutor.java
-@@ -77,9 +77,9 @@ public class TimedEventExecutor implements EventExecutor {
+@@ -80,9 +80,9 @@ public class TimedEventExecutor implements EventExecutor {
              executor.execute(listener, event);
              return;
          }
@@ -54,7 +54,7 @@ index 8f29c1561ba5916cb5634392edd8bd2a5a294a51..6fbc64e0f214d0c8e5afcbe385e414a4
  
      @Override
 diff --git a/src/main/java/co/aikar/timings/Timing.java b/src/main/java/co/aikar/timings/Timing.java
-index 7514fad26f955329f8bf17ff17db75f0c8301ee5..1d866e980abc542bdfee1ce082cd9cdd7761e9f7 100644
+index 4195efcfe044618052bb03dea34a4fb2ca7c44f0..8709c955bac34bc546a8e022cfac808bc61ee793 100644
 --- a/src/main/java/co/aikar/timings/Timing.java
 +++ b/src/main/java/co/aikar/timings/Timing.java
 @@ -39,6 +39,7 @@ public interface Timing extends AutoCloseable {
@@ -104,7 +104,7 @@ index 7514fad26f955329f8bf17ff17db75f0c8301ee5..1d866e980abc542bdfee1ce082cd9cdd
      void close();
  }
 diff --git a/src/main/java/co/aikar/timings/Timings.java b/src/main/java/co/aikar/timings/Timings.java
-index 9812d668ad945aba486fbf6d5bf83c4292cb5d03..752d54830aa8baa1450bf72da03ae55ed30293c2 100644
+index e81d0bc309de877ed2b5da6122f55c162e9b5f10..3d663104c8e3089abdb9dc4d7309f873ac182e98 100644
 --- a/src/main/java/co/aikar/timings/Timings.java
 +++ b/src/main/java/co/aikar/timings/Timings.java
 @@ -124,7 +124,7 @@ public final class Timings {
@@ -132,10 +132,10 @@ index 9812d668ad945aba486fbf6d5bf83c4292cb5d03..752d54830aa8baa1450bf72da03ae55e
  
      private static void warnAboutDeprecationOnEnable() {
 diff --git a/src/main/java/co/aikar/timings/TimingsCommand.java b/src/main/java/co/aikar/timings/TimingsCommand.java
-index e801e79fa57c44b2e5d359647c920f88064826f1..1abfcee0f6d632f4cd8d74b4994a90c9ea9d254c 100644
+index 95d87c9dbf2b237787294dfbe7fed87a36e6dedf..9e165525c4c4c07c783ae2899e07c37ae49ec2de 100644
 --- a/src/main/java/co/aikar/timings/TimingsCommand.java
 +++ b/src/main/java/co/aikar/timings/TimingsCommand.java
-@@ -45,7 +45,7 @@ public class TimingsCommand extends BukkitCommand {
+@@ -47,7 +47,7 @@ public class TimingsCommand extends BukkitCommand {
      public TimingsCommand(@NotNull String name) {
          super(name);
          this.description = "Manages Spigot Timings data to see performance of the server.";
@@ -144,22 +144,24 @@ index e801e79fa57c44b2e5d359647c920f88064826f1..1abfcee0f6d632f4cd8d74b4994a90c9
          this.setPermission("bukkit.command.timings");
      }
  
-@@ -54,8 +54,12 @@ public class TimingsCommand extends BukkitCommand {
+@@ -56,8 +56,14 @@ public class TimingsCommand extends BukkitCommand {
          if (!testPermission(sender)) {
              return true;
          }
 -        if (false) {
 -            sender.sendMessage(Timings.deprecationMessage());
++        // Purpur start
 +        if (true) {
 +            net.kyori.adventure.text.minimessage.MiniMessage mm = net.kyori.adventure.text.minimessage.MiniMessage.miniMessage();
 +            sender.sendMessage(mm.deserialize("<gold>Purpur has removed timings to save your performance. Please use <click:suggest_command:'/spark'><grey>/spark</grey></click> instead"));
 +            sender.sendMessage(mm.deserialize("<gold>For more information, view its documentation at"));
 +            sender.sendMessage(mm.deserialize("<gold><click:open_url:'https://spark.lucko.me/docs/Command-Usage'>https://spark.lucko.me/docs/Command-Usage</click>"));
 +            return true;
++        // Purpur end
          }
          if (args.length < 1) {
              sender.sendMessage(text("Usage: " + this.usageMessage, NamedTextColor.RED));
-@@ -115,7 +119,7 @@ public class TimingsCommand extends BukkitCommand {
+@@ -117,7 +123,7 @@ public class TimingsCommand extends BukkitCommand {
          Preconditions.checkNotNull(args, "Arguments cannot be null");
          Preconditions.checkNotNull(alias, "Alias cannot be null");
  
@@ -169,12 +171,12 @@ index e801e79fa57c44b2e5d359647c920f88064826f1..1abfcee0f6d632f4cd8d74b4994a90c9
                  new ArrayList<String>(TIMINGS_SUBCOMMANDS.size()));
          }
 diff --git a/src/main/java/com/destroystokyo/paper/util/VersionFetcher.java b/src/main/java/com/destroystokyo/paper/util/VersionFetcher.java
-index a736d7bcdc5861a01b66ba36158db1c716339346..22fc165fd9c95f0f3ae1be7a0857e48cc50fad5b 100644
+index 023cc52a9e28e1238c7452c0f3f577f2850fd861..00b3f46ddd26ae08744d3dba211f92624d4b1063 100644
 --- a/src/main/java/com/destroystokyo/paper/util/VersionFetcher.java
 +++ b/src/main/java/com/destroystokyo/paper/util/VersionFetcher.java
-@@ -26,6 +26,12 @@ public interface VersionFetcher {
-     @NotNull
-     Component getVersionMessage(@NotNull String serverVersion);
+@@ -28,6 +28,12 @@ public interface VersionFetcher {
+      */
+     Component getVersionMessage(String serverVersion);
  
 +    // Purpur start
 +    default int distance() {
@@ -182,30 +184,24 @@ index a736d7bcdc5861a01b66ba36158db1c716339346..22fc165fd9c95f0f3ae1be7a0857e48c
 +    }
 +    // Purpur end
 +
+     @ApiStatus.Internal
      class DummyVersionFetcher implements VersionFetcher {
  
-         @Override
-diff --git a/src/main/java/gg/pufferfish/pufferfish/simd/SIMDChecker.java b/src/main/java/gg/pufferfish/pufferfish/simd/SIMDChecker.java
-index ab5fea0b03224bf249352ce340e94704ff713345..3441cdad70da1bd523c5933b1a914688718c2657 100644
---- a/src/main/java/gg/pufferfish/pufferfish/simd/SIMDChecker.java
-+++ b/src/main/java/gg/pufferfish/pufferfish/simd/SIMDChecker.java
-@@ -15,7 +15,7 @@ public class SIMDChecker {
- 	@Deprecated
- 	public static boolean canEnable(Logger logger) {
- 		try {
--			if (SIMDDetection.getJavaVersion() != 17 && SIMDDetection.getJavaVersion() != 18 && SIMDDetection.getJavaVersion() != 19) {
-+			if (SIMDDetection.getJavaVersion() < 17 || SIMDDetection.getJavaVersion() > 21) {
- 				return false;
- 			} else {
- 				SIMDDetection.testRun = true;
 diff --git a/src/main/java/io/papermc/paper/ServerBuildInfo.java b/src/main/java/io/papermc/paper/ServerBuildInfo.java
-index ad81341bdd1eb73554cd24f27ac5d655d89db791..fe23268c418cccbd45caf2870f7931cfed978d28 100644
+index 652ff54e7c50412503725d628bfe72ed03059790..7196594e07af19a14c320d77df893978525fe386 100644
 --- a/src/main/java/io/papermc/paper/ServerBuildInfo.java
 +++ b/src/main/java/io/papermc/paper/ServerBuildInfo.java
-@@ -25,6 +25,13 @@ public interface ServerBuildInfo {
-     Key BRAND_PUFFERFISH_ID = Key.key("pufferfishgg", "pufferfish");
-     // Pufferfish end
+@@ -19,6 +19,20 @@ public interface ServerBuildInfo {
+      */
+     Key BRAND_PAPER_ID = Key.key("papermc", "paper");
  
++    // Purpur start
++    /**
++     * The brand id for Pufferfish.
++     */
++    Key BRAND_PUFFERFISH_ID = Key.key("pufferfish", "pufferfish");
++    // Purpur end
++
 +    // Purpur start
 +    /**
 +     * The brand id for Purpur.
@@ -217,10 +213,10 @@ index ad81341bdd1eb73554cd24f27ac5d655d89db791..fe23268c418cccbd45caf2870f7931cf
       * Gets the {@code ServerBuildInfo}.
       *
 diff --git a/src/main/java/org/bukkit/Bukkit.java b/src/main/java/org/bukkit/Bukkit.java
-index 9a219b255b63f10005fc68faacb771dd32f61ac2..83b979fbb8c0dd64f0a19feef654af2b165bd603 100644
+index e20e4239a5a1f952e1c70e899549989d5e42f73c..3a71f8fe73a2309f57cb06dedf204d3e37b46b03 100644
 --- a/src/main/java/org/bukkit/Bukkit.java
 +++ b/src/main/java/org/bukkit/Bukkit.java
-@@ -2913,4 +2913,127 @@ public final class Bukkit {
+@@ -2921,4 +2921,127 @@ public final class Bukkit {
      public static Server.Spigot spigot() {
          return server.spigot();
      }
@@ -349,18 +345,10 @@ index 9a219b255b63f10005fc68faacb771dd32f61ac2..83b979fbb8c0dd64f0a19feef654af2b
 +    // Purpur end
  }
 diff --git a/src/main/java/org/bukkit/ChatColor.java b/src/main/java/org/bukkit/ChatColor.java
-index 918a045165cdcde264bc24082b7afebb407271de..687d11619379aead7f665d4a5f8f8bcc857cb8e9 100644
+index 918a045165cdcde264bc24082b7afebb407271de..e98d6321c5f2cdde91b54f8a74cbcc045eae75a8 100644
 --- a/src/main/java/org/bukkit/ChatColor.java
 +++ b/src/main/java/org/bukkit/ChatColor.java
-@@ -3,6 +3,7 @@ package org.bukkit;
- import com.google.common.base.Preconditions;
- import com.google.common.collect.Maps;
- import java.util.Map;
-+import java.util.regex.Matcher;
- import java.util.regex.Pattern;
- import org.jetbrains.annotations.Contract;
- import org.jetbrains.annotations.NotNull;
-@@ -456,4 +457,77 @@ public enum ChatColor {
+@@ -456,4 +456,77 @@ public enum ChatColor {
              BY_CHAR.put(color.code, color);
          }
      }
@@ -375,7 +363,7 @@ index 918a045165cdcde264bc24082b7afebb407271de..687d11619379aead7f665d4a5f8f8bcc
 +    @NotNull
 +    public static String toMM(@NotNull String str) {
 +        StringBuilder sb = new StringBuilder(str);
-+        Matcher m = STRIP_COLOR_PATTERN.matcher(sb);
++        java.util.regex.Matcher m = STRIP_COLOR_PATTERN.matcher(sb);
 +        while (m.find()) {
 +            sb.replace(m.start(), m.end(), sb.substring(m.start(), m.end()).toLowerCase());
 +        }
@@ -439,12 +427,12 @@ index 918a045165cdcde264bc24082b7afebb407271de..687d11619379aead7f665d4a5f8f8bcc
 +    // Purpur end
  }
 diff --git a/src/main/java/org/bukkit/Material.java b/src/main/java/org/bukkit/Material.java
-index 7509b61dfdc0a6675256970cb850b08f9e814580..c1986ca90c3adb81daca4f72b62cda65e5465bff 100644
+index 77a15a99e441bd81650806142581bd5b24f30e10..3ec2154956087a370799f0fa485f3b6cae894c69 100644
 --- a/src/main/java/org/bukkit/Material.java
 +++ b/src/main/java/org/bukkit/Material.java
-@@ -5733,4 +5733,40 @@ public enum Material implements Keyed, Translatable, net.kyori.adventure.transla
-         }
-         return Registry.BLOCK.get(material.key);
+@@ -5636,4 +5636,40 @@ public enum Material implements Keyed, Translatable, net.kyori.adventure.transla
+     public BlockType asBlockType() {
+         return blockType.get();
      }
 +
 +    // Purpur start
@@ -484,13 +472,13 @@ index 7509b61dfdc0a6675256970cb850b08f9e814580..c1986ca90c3adb81daca4f72b62cda65
 +    // Purpur end
  }
 diff --git a/src/main/java/org/bukkit/OfflinePlayer.java b/src/main/java/org/bukkit/OfflinePlayer.java
-index 30298a629b39bd43ce14b414fc697b2dfcbea89c..ce00af9121de7a910aaea4e0685a06d4cf31b4e3 100644
+index a028f2fe541491729856051780b33dba07832fb6..fc64902368a068481f16d5db99c94386caf6b60b 100644
 --- a/src/main/java/org/bukkit/OfflinePlayer.java
 +++ b/src/main/java/org/bukkit/OfflinePlayer.java
-@@ -557,4 +557,106 @@ public interface OfflinePlayer extends ServerOperator, AnimalTamer, Configuratio
-      */
-     @Nullable
-     public Location getLocation();
+@@ -573,4 +573,106 @@ public interface OfflinePlayer extends ServerOperator, AnimalTamer, Configuratio
+     @Override
+     io.papermc.paper.persistence.@NotNull PersistentDataContainerView getPersistentDataContainer();
+     // Paper end - add pdc to offline player
 +
 +    // Purpur start - OfflinePlayer API
 +    /**
@@ -595,10 +583,10 @@ index 30298a629b39bd43ce14b414fc697b2dfcbea89c..ce00af9121de7a910aaea4e0685a06d4
 +    // Purpur end - OfflinePlayer API
  }
 diff --git a/src/main/java/org/bukkit/Server.java b/src/main/java/org/bukkit/Server.java
-index 49d2547fcdaf779e284f513e58c1ac2ae3000bda..916db0d6096338c4f1b8707048eb38b50a2b027d 100644
+index 6246251caf2c6f025c824b8e7a944b8d48751fa1..eb29794f6ca2efc9cde4dd1685822f9a3a73f3b9 100644
 --- a/src/main/java/org/bukkit/Server.java
 +++ b/src/main/java/org/bukkit/Server.java
-@@ -2257,6 +2257,18 @@ public interface Server extends PluginMessageRecipient, net.kyori.adventure.audi
+@@ -2265,6 +2265,18 @@ public interface Server extends PluginMessageRecipient, net.kyori.adventure.audi
          }
          // Paper end
  
@@ -617,7 +605,7 @@ index 49d2547fcdaf779e284f513e58c1ac2ae3000bda..916db0d6096338c4f1b8707048eb38b5
          /**
           * Sends the component to the player
           *
-@@ -2546,4 +2558,105 @@ public interface Server extends PluginMessageRecipient, net.kyori.adventure.audi
+@@ -2554,4 +2566,105 @@ public interface Server extends PluginMessageRecipient, net.kyori.adventure.audi
       */
      boolean isOwnedByCurrentRegion(@NotNull Entity entity);
      // Paper end - Folia region threading API
@@ -724,10 +712,10 @@ index 49d2547fcdaf779e284f513e58c1ac2ae3000bda..916db0d6096338c4f1b8707048eb38b5
 +    // Purpur end
  }
 diff --git a/src/main/java/org/bukkit/World.java b/src/main/java/org/bukkit/World.java
-index 97f97ea5c6aa513c439f86a9c82821e0f7d9cd1e..83a5b68c785a88594e6e3824ed282844086f7f1a 100644
+index ef32a937e6faf1e8a5d6b1207986715bae5a246c..36cf567973900d1e472616748926aecb9afcb42f 100644
 --- a/src/main/java/org/bukkit/World.java
 +++ b/src/main/java/org/bukkit/World.java
-@@ -4249,6 +4249,86 @@ public interface World extends RegionAccessor, WorldInfo, PluginMessageRecipient
+@@ -4209,6 +4209,86 @@ public interface World extends RegionAccessor, WorldInfo, PluginMessageRecipient
      @Nullable
      public DragonBattle getEnderDragonBattle();
  
@@ -844,10 +832,10 @@ index 739911cda33b373f99df627a3a378b37d7d461aa..51e78c22cd021722b963fe31d1d9175d
       * Add an entity to the block.
       *
 diff --git a/src/main/java/org/bukkit/command/SimpleCommandMap.java b/src/main/java/org/bukkit/command/SimpleCommandMap.java
-index c3a9cf65db73ed534bf20996c7f05b5eb0aaebe1..fdedac32544be6534288c8ba28abe7f5c4c56f3b 100644
+index 5df19bd701c67506689fc7f49d91f99ebfbc83f0..7740ad53796d08584bb0110f99af5639993e4d71 100644
 --- a/src/main/java/org/bukkit/command/SimpleCommandMap.java
 +++ b/src/main/java/org/bukkit/command/SimpleCommandMap.java
-@@ -152,6 +152,19 @@ public class SimpleCommandMap implements CommandMap {
+@@ -153,6 +153,19 @@ public class SimpleCommandMap implements CommandMap {
              return false;
          }
  
@@ -867,7 +855,7 @@ index c3a9cf65db73ed534bf20996c7f05b5eb0aaebe1..fdedac32544be6534288c8ba28abe7f5
          // Paper start - Plugins do weird things to workaround normal registration
          if (target.timings == null) {
              target.timings = co.aikar.timings.TimingsManager.getCommandTiming(null, target);
-@@ -159,10 +172,10 @@ public class SimpleCommandMap implements CommandMap {
+@@ -160,10 +173,10 @@ public class SimpleCommandMap implements CommandMap {
          // Paper end
  
          try {
@@ -882,10 +870,10 @@ index c3a9cf65db73ed534bf20996c7f05b5eb0aaebe1..fdedac32544be6534288c8ba28abe7f5
              server.getPluginManager().callEvent(new com.destroystokyo.paper.event.server.ServerExceptionEvent(new com.destroystokyo.paper.exception.ServerCommandException(ex, target, sender, args))); // Paper
              //target.timings.stopTiming(); // Spigot // Paper
 diff --git a/src/main/java/org/bukkit/command/defaults/VersionCommand.java b/src/main/java/org/bukkit/command/defaults/VersionCommand.java
-index fd5d9881abfd930bb883120f018f76dc78b62b14..3d29c47ac0620af82d990faf5dfc266c6f0235f1 100644
+index e64bb57f74e6d6f78927be228825b3e0bdf41f48..c880d0010849ab733ad13bbd18fab3c864d0cf61 100644
 --- a/src/main/java/org/bukkit/command/defaults/VersionCommand.java
 +++ b/src/main/java/org/bukkit/command/defaults/VersionCommand.java
-@@ -214,7 +214,7 @@ public class VersionCommand extends BukkitCommand {
+@@ -215,7 +215,7 @@ public class VersionCommand extends BukkitCommand {
          String version = Bukkit.getVersion();
          // Paper start
          if (version.startsWith("null")) { // running from ide?
@@ -894,7 +882,7 @@ index fd5d9881abfd930bb883120f018f76dc78b62b14..3d29c47ac0620af82d990faf5dfc266c
              return;
          }
          setVersionMessage(getVersionFetcher().getVersionMessage(version));
-@@ -255,9 +255,11 @@ public class VersionCommand extends BukkitCommand {
+@@ -256,9 +256,11 @@ public class VersionCommand extends BukkitCommand {
      // Paper start
      private void setVersionMessage(final @NotNull Component msg) {
          lastCheck = System.currentTimeMillis();
@@ -977,13 +965,13 @@ index 138d2530de2410f4a9424dabd3e5ce0cd1c1dcd2..10a8d64ad2da0be2c14f34c3e7d1957c
      // Paper start
      /**
 diff --git a/src/main/java/org/bukkit/entity/Entity.java b/src/main/java/org/bukkit/entity/Entity.java
-index 725ef320f929d5e3d141c1ed3246d73a7d741f31..2d12c70b0baa50504619c8e37881a11a56d7df2c 100644
+index d0ae8a94db20281d3664d74718c65234eb2e5f83..b7d53973ac4e829a03821d59e0b3a28d6f6a4373 100644
 --- a/src/main/java/org/bukkit/entity/Entity.java
 +++ b/src/main/java/org/bukkit/entity/Entity.java
-@@ -1159,4 +1159,55 @@ public interface Entity extends Metadatable, CommandSender, Nameable, Persistent
+@@ -1172,4 +1172,55 @@ public interface Entity extends Metadatable, CommandSender, Nameable, Persistent
       */
-     @NotNull String getScoreboardEntryName();
-     // Paper end - entity scoreboard name
+     void broadcastHurtAnimation(@NotNull java.util.Collection<Player> players);
+     // Paper end - broadcast hurt animation
 +
 +    // Purpur start
 +    /**
@@ -1129,22 +1117,15 @@ index bcc6ba95bd21c7972865838c636a03f50b6c1f1a..c3fcd8dd7dbb1e1a18e17c014c1e6411
 +    // Purpur end
  }
 diff --git a/src/main/java/org/bukkit/entity/LivingEntity.java b/src/main/java/org/bukkit/entity/LivingEntity.java
-index b777e530122549455dcce6fac8d4a151c1c0af42..61a046584acf48693489ff551a0dd4c4b16af9ff 100644
+index 68c08e7a212bc3e3885f9b5a4d9aef85fcb3b029..a22909446b7193b1de121bdd6d7b6fbf81dc3be4 100644
 --- a/src/main/java/org/bukkit/entity/LivingEntity.java
 +++ b/src/main/java/org/bukkit/entity/LivingEntity.java
-@@ -1447,4 +1447,27 @@ public interface LivingEntity extends Attributable, Damageable, ProjectileSource
+@@ -1468,4 +1468,20 @@ public interface LivingEntity extends Attributable, Damageable, ProjectileSource
       */
-     void setBodyYaw(float bodyYaw);
-     // Paper end - body yaw API
+     boolean canUseEquipmentSlot(org.bukkit.inventory.@NotNull EquipmentSlot slot);
+     // Paper end - Expose canUseSlot
 +
-+    // Purpur start
-+    /**
-+     * Play item break animation for the item in specified equipment slot
-+     *
-+     * @param slot Equipment slot to play break animation for
-+     */
-+    void broadcastItemBreak(@NotNull org.bukkit.inventory.EquipmentSlot slot);
-+
++    // Purpur start - API for any mob to burn daylight
 +    /**
 +     * If this mob will burn in the sunlight
 +     *
@@ -1158,7 +1139,7 @@ index b777e530122549455dcce6fac8d4a151c1c0af42..61a046584acf48693489ff551a0dd4c4
 +     * @param shouldBurnInDay True to burn in sunlight
 +     */
 +    void setShouldBurnInDay(boolean shouldBurnInDay);
-+    // Purpur end
++    // Purpur end - API for any mob to burn daylight
  }
 diff --git a/src/main/java/org/bukkit/entity/Llama.java b/src/main/java/org/bukkit/entity/Llama.java
 index bc84b892cae5fe7019a3ad481e9da79956efa1fe..48eb5b00c460cccde29d327cef1d63fc04d6a829 100644
@@ -1186,13 +1167,13 @@ index bc84b892cae5fe7019a3ad481e9da79956efa1fe..48eb5b00c460cccde29d327cef1d63fc
 +    // Purpur end
  }
 diff --git a/src/main/java/org/bukkit/entity/Player.java b/src/main/java/org/bukkit/entity/Player.java
-index 6c327a07bf8a6aa11a2d7dad12b2830acc539484..d057743b8f6a463434c1f76398c7a98614b19d47 100644
+index 8086acceacbceb2c5a7228fff005e41a86d37008..65260b33a13858309356d573dfa2989b92e7437c 100644
 --- a/src/main/java/org/bukkit/entity/Player.java
 +++ b/src/main/java/org/bukkit/entity/Player.java
-@@ -3806,4 +3806,123 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
-     @Override
-     Spigot spigot();
-     // Spigot end
+@@ -3871,4 +3871,123 @@ public interface Player extends HumanEntity, Conversable, OfflinePlayer, PluginM
+      */
+     void sendEntityEffect(org.bukkit.@NotNull EntityEffect effect, @NotNull Entity target);
+     // Paper end - entity effect API
 +
 +    // Purpur start
 +    /**
@@ -1339,10 +1320,10 @@ index 7fbfdb07585c7b28acea1f0c1f58ada0cc744441..21fcca092e2e31baa5ece0de9e44e3fa
 +    // Purpur end
  }
 diff --git a/src/main/java/org/bukkit/entity/Villager.java b/src/main/java/org/bukkit/entity/Villager.java
-index 3bc24457d143449e6a338d79becf7c39b9f81054..4a5edf4e72e81b22c1abb2ade244f7f4292e993c 100644
+index 1db3742024e9cd1b70af2d52b4b756a544c019df..9c722a762c88a88bb5ef18c3b9eab8b371360dac 100644
 --- a/src/main/java/org/bukkit/entity/Villager.java
 +++ b/src/main/java/org/bukkit/entity/Villager.java
-@@ -328,4 +328,14 @@ public interface Villager extends AbstractVillager {
+@@ -367,4 +367,14 @@ public interface Villager extends AbstractVillager {
       */
      public void clearReputations();
      // Paper end
@@ -1383,11 +1364,11 @@ index 14543c2238b45c526dd9aebea2aa5c22f5df54dc..5312daf33405704c74e2c9e109754285
 +    // Purpur end
  }
 diff --git a/src/main/java/org/bukkit/entity/Wolf.java b/src/main/java/org/bukkit/entity/Wolf.java
-index 4b84c04675775e2a606630b00de8afe51665cebc..ccbaf40a3131f477b4be2264401ad893725c1162 100644
+index c73489f4b745bc84501ce94f0227b034d9768eae..a97129e71f16ec691759add664bdfd35ab90aaed 100644
 --- a/src/main/java/org/bukkit/entity/Wolf.java
 +++ b/src/main/java/org/bukkit/entity/Wolf.java
-@@ -112,4 +112,20 @@ public interface Wolf extends Tameable, Sittable, io.papermc.paper.entity.Collar
-             return variant;
+@@ -108,4 +108,20 @@ public interface Wolf extends Tameable, Sittable, io.papermc.paper.entity.Collar
+             return Registry.WOLF_VARIANT.getOrThrow(NamespacedKey.minecraft(key));
          }
      }
 +
@@ -1408,10 +1389,10 @@ index 4b84c04675775e2a606630b00de8afe51665cebc..ccbaf40a3131f477b4be2264401ad893
 +    // Purpur end
  }
 diff --git a/src/main/java/org/bukkit/event/entity/EntityDamageEvent.java b/src/main/java/org/bukkit/event/entity/EntityDamageEvent.java
-index 446b3ffd5caca5344be1c250475679834cd0d4a2..3da8d3d8925cd7a111c0c357bceecfd3a801c8eb 100644
+index ef5b2a0f18c1c126db0b0c4a4d2a57483680665a..e6c8ffc2583af754eaedc55160ef45c61c22e213 100644
 --- a/src/main/java/org/bukkit/event/entity/EntityDamageEvent.java
 +++ b/src/main/java/org/bukkit/event/entity/EntityDamageEvent.java
-@@ -303,7 +303,8 @@ public class EntityDamageEvent extends EntityEvent implements Cancellable {
+@@ -307,7 +307,8 @@ public class EntityDamageEvent extends EntityEvent implements Cancellable {
          WORLD_BORDER,
          /**
           * Damage caused when an entity contacts a block such as a Cactus,
@@ -1422,10 +1403,10 @@ index 446b3ffd5caca5344be1c250475679834cd0d4a2..3da8d3d8925cd7a111c0c357bceecfd3
           * Damage: variable
           */
 diff --git a/src/main/java/org/bukkit/event/entity/EntityPotionEffectEvent.java b/src/main/java/org/bukkit/event/entity/EntityPotionEffectEvent.java
-index c9f395064656dd0126410eb3c6e197baa450c063..13156a12e5df50cdc1e465dc0bd9d94108275629 100644
+index 8fdfcbc7d20fe0af6b220ab94516247093637621..f6a8928408e11a5ae723366e4ea1280dfcc6111e 100644
 --- a/src/main/java/org/bukkit/event/entity/EntityPotionEffectEvent.java
 +++ b/src/main/java/org/bukkit/event/entity/EntityPotionEffectEvent.java
-@@ -217,6 +217,12 @@ public class EntityPotionEffectEvent extends EntityEvent implements Cancellable
+@@ -216,6 +216,12 @@ public class EntityPotionEffectEvent extends EntityEvent implements Cancellable
           * When all effects are removed due to a bucket of milk.
           */
          MILK,
@@ -1437,44 +1418,72 @@ index c9f395064656dd0126410eb3c6e197baa450c063..13156a12e5df50cdc1e465dc0bd9d941
 +        // Purpur end
          /**
           * When a player gets bad omen after killing a patrol captain.
-          */
+          *
 diff --git a/src/main/java/org/bukkit/event/inventory/InventoryType.java b/src/main/java/org/bukkit/event/inventory/InventoryType.java
-index 59b375569a75cb1e1f7c610f96078e102ec0d3ed..a3f74891abbdc51dbbddaeb511f2754e0603c904 100644
+index 7184f80899206bedeac387e9f8a35482801efd4b..e4197c89c04b91732ce96981f8df0a0bdaee24ce 100644
 --- a/src/main/java/org/bukkit/event/inventory/InventoryType.java
 +++ b/src/main/java/org/bukkit/event/inventory/InventoryType.java
-@@ -166,7 +166,7 @@ public enum InventoryType {
-     SMITHING_NEW(4, "Upgrade Gear"),
+@@ -164,7 +164,7 @@ public enum InventoryType {
+     SMITHING_NEW(4, "Upgrade Gear", MenuType.SMITHING),
      ;
  
 -    private final int size;
 +    private int size; public void setDefaultSize(int size) { this.size = size; } // Purpur - remove final and add setter
      private final String title;
+     private final MenuType menuType;
      private final boolean isCreatable;
- 
 diff --git a/src/main/java/org/bukkit/inventory/AnvilInventory.java b/src/main/java/org/bukkit/inventory/AnvilInventory.java
-index c60be4fd24c7fdf65251dd6169e5e1ac3b588d95..569deccd2f1cf21da9b5906433ac493c1f2081be 100644
+index f1f97a85ec713c05c882d7588f4a3e4a017f4795..813f6cd253322538bdf96eb323dd23a7809a1c1e 100644
 --- a/src/main/java/org/bukkit/inventory/AnvilInventory.java
 +++ b/src/main/java/org/bukkit/inventory/AnvilInventory.java
-@@ -123,4 +123,14 @@ public interface AnvilInventory extends Inventory {
+@@ -138,4 +138,42 @@ public interface AnvilInventory extends Inventory {
          setItem(2, result);
      }
      // Paper end
 +
 +    // Purpur start
++    /**
++     * Gets if the player viewing the anvil inventory can bypass experience cost
++     *
++     * @return whether the player viewing the anvil inventory can bypass the experience cost
++     * @deprecated use {@link AnvilView#canBypassCost()}.
++     */
++    @Deprecated(forRemoval = true, since = "1.21")
 +    boolean canBypassCost();
 +
++    /**
++     * Set if the player viewing the anvil inventory can bypass the experience cost
++     *
++     * @param bypassCost whether the player viewing the anvil inventory can bypass the experience cost
++     * @deprecated use {@link AnvilView#setBypassCost(boolean)}.
++     */
++    @Deprecated(forRemoval = true, since = "1.21")
 +    void setBypassCost(boolean bypassCost);
 +
++    /**
++     * Gets if the player viewing the anvil inventory can do unsafe enchants
++     *
++     * @return whether the player viewing the anvil inventory can do unsafe enchants
++     * @deprecated use {@link AnvilView#canDoUnsafeEnchants()}.
++     */
++    @Deprecated(forRemoval = true, since = "1.21")
 +    boolean canDoUnsafeEnchants();
 +
++    /**
++     * Set if the player viewing the anvil inventory can do unsafe enchants
++     *
++     * @param canDoUnsafeEnchants whether the player viewing the anvil inventory can do unsafe enchants
++     * @deprecated use {@link AnvilView#setDoUnsafeEnchants(boolean)}.
++     */
++    @Deprecated(forRemoval = true, since = "1.21")
 +    void setDoUnsafeEnchants(boolean canDoUnsafeEnchants);
 +    // Purpur end
  }
 diff --git a/src/main/java/org/bukkit/inventory/ItemStack.java b/src/main/java/org/bukkit/inventory/ItemStack.java
-index c64413a6740b604282984dea2a8430a6e7478d68..5c609d916e2d2f08ba90ebd23f13c5c9a14bc73c 100644
+index b59222b8c262545d100a9fd28b3bf1d2a4cf4eb0..4414381ac942c040480d53b03565b160eb85c444 100644
 --- a/src/main/java/org/bukkit/inventory/ItemStack.java
 +++ b/src/main/java/org/bukkit/inventory/ItemStack.java
-@@ -19,6 +19,17 @@ import org.bukkit.inventory.meta.ItemMeta;
+@@ -19,6 +19,13 @@ import org.bukkit.inventory.meta.ItemMeta;
  import org.bukkit.material.MaterialData;
  import org.jetbrains.annotations.NotNull;
  import org.jetbrains.annotations.Nullable;
@@ -1484,15 +1493,11 @@ index c64413a6740b604282984dea2a8430a6e7478d68..5c609d916e2d2f08ba90ebd23f13c5c9
 +import org.bukkit.attribute.Attribute;
 +import org.bukkit.attribute.AttributeModifier;
 +import org.bukkit.block.data.BlockData;
-+import org.bukkit.inventory.meta.BlockDataMeta;
-+import org.bukkit.inventory.meta.Repairable;
-+import org.bukkit.persistence.PersistentDataContainer;
-+import org.bukkit.persistence.PersistentDataHolder;
 +// Purpur end
  
  /**
   * Represents a stack of items.
-@@ -1079,4 +1090,565 @@ public class ItemStack implements Cloneable, ConfigurationSerializable, Translat
+@@ -1137,4 +1144,482 @@ public class ItemStack implements Cloneable, ConfigurationSerializable, Translat
          return Bukkit.getUnsafe().computeTooltipLines(this, tooltipContext, player);
      }
      // Paper end - expose itemstack tooltip lines
@@ -1508,7 +1513,7 @@ index c64413a6740b604282984dea2a8430a6e7478d68..5c609d916e2d2f08ba90ebd23f13c5c9
 +     */
 +    @NotNull
 +    public String getDisplayName() {
-+        return getItemMeta().getDisplayName();
++        return this.craftDelegate.getDisplayName();
 +    }
 +
 +    /**
@@ -1517,9 +1522,7 @@ index c64413a6740b604282984dea2a8430a6e7478d68..5c609d916e2d2f08ba90ebd23f13c5c9
 +     * @param name the name to set
 +     */
 +    public void setDisplayName(@Nullable String name) {
-+        ItemMeta itemMeta = getItemMeta();
-+        itemMeta.setDisplayName(name);
-+        setItemMeta(itemMeta);
++        this.craftDelegate.setDisplayName(name);
 +    }
 +
 +    /**
@@ -1528,7 +1531,7 @@ index c64413a6740b604282984dea2a8430a6e7478d68..5c609d916e2d2f08ba90ebd23f13c5c9
 +     * @return true if this has a display name
 +     */
 +    public boolean hasDisplayName() {
-+        return hasItemMeta() && getItemMeta().hasDisplayName();
++        return this.craftDelegate.hasDisplayName();
 +    }
 +
 +    /**
@@ -1541,7 +1544,7 @@ index c64413a6740b604282984dea2a8430a6e7478d68..5c609d916e2d2f08ba90ebd23f13c5c9
 +     */
 +    @NotNull
 +    public String getLocalizedName() {
-+        return getItemMeta().getLocalizedName();
++        return this.craftDelegate.getLocalizedName();
 +    }
 +
 +    /**
@@ -1550,9 +1553,7 @@ index c64413a6740b604282984dea2a8430a6e7478d68..5c609d916e2d2f08ba90ebd23f13c5c9
 +     * @param name the name to set
 +     */
 +    public void setLocalizedName(@Nullable String name) {
-+        ItemMeta itemMeta = getItemMeta();
-+        itemMeta.setLocalizedName(name);
-+        setItemMeta(itemMeta);
++        this.craftDelegate.setLocalizedName(name);
 +    }
 +
 +    /**
@@ -1561,7 +1562,7 @@ index c64413a6740b604282984dea2a8430a6e7478d68..5c609d916e2d2f08ba90ebd23f13c5c9
 +     * @return true if this has a localized name
 +     */
 +    public boolean hasLocalizedName() {
-+        return hasItemMeta() && getItemMeta().hasLocalizedName();
++        return this.craftDelegate.hasLocalizedName();
 +    }
 +
 +    /**
@@ -1570,7 +1571,7 @@ index c64413a6740b604282984dea2a8430a6e7478d68..5c609d916e2d2f08ba90ebd23f13c5c9
 +     * @return true if this has lore
 +     */
 +    public boolean hasLore() {
-+        return hasItemMeta() && getItemMeta().hasLore();
++        return this.craftDelegate.hasLore();
 +    }
 +
 +    /**
@@ -1580,7 +1581,7 @@ index c64413a6740b604282984dea2a8430a6e7478d68..5c609d916e2d2f08ba90ebd23f13c5c9
 +     * @return true if this enchantment exists for this meta
 +     */
 +    public boolean hasEnchant(@NotNull Enchantment ench) {
-+        return hasItemMeta() && getItemMeta().hasEnchant(ench);
++        return this.craftDelegate.hasEnchant(ench);
 +    }
 +
 +    /**
@@ -1590,7 +1591,7 @@ index c64413a6740b604282984dea2a8430a6e7478d68..5c609d916e2d2f08ba90ebd23f13c5c9
 +     * @return The level that the specified enchantment has, or 0 if none
 +     */
 +    public int getEnchantLevel(@NotNull Enchantment ench) {
-+        return getItemMeta().getEnchantLevel(ench);
++        return this.craftDelegate.getEnchantLevel(ench);
 +    }
 +
 +    /**
@@ -1601,7 +1602,7 @@ index c64413a6740b604282984dea2a8430a6e7478d68..5c609d916e2d2f08ba90ebd23f13c5c9
 +     */
 +    @NotNull
 +    public Map<Enchantment, Integer> getEnchants() {
-+        return getItemMeta().getEnchants();
++        return this.craftDelegate.getEnchants();
 +    }
 +
 +    /**
@@ -1615,10 +1616,7 @@ index c64413a6740b604282984dea2a8430a6e7478d68..5c609d916e2d2f08ba90ebd23f13c5c9
 +     *     otherwise
 +     */
 +    public boolean addEnchant(@NotNull Enchantment ench, int level, boolean ignoreLevelRestriction) {
-+        ItemMeta itemMeta = getItemMeta();
-+        boolean result = itemMeta.addEnchant(ench, level, ignoreLevelRestriction);
-+        setItemMeta(itemMeta);
-+        return result;
++        return this.craftDelegate.addEnchant(ench, level, ignoreLevelRestriction);
 +    }
 +
 +    /**
@@ -1629,10 +1627,7 @@ index c64413a6740b604282984dea2a8430a6e7478d68..5c609d916e2d2f08ba90ebd23f13c5c9
 +     *     otherwise
 +     */
 +    public boolean removeEnchant(@NotNull Enchantment ench) {
-+        ItemMeta itemMeta = getItemMeta();
-+        boolean result = itemMeta.removeEnchant(ench);
-+        setItemMeta(itemMeta);
-+        return result;
++        return this.craftDelegate.removeEnchant(ench);
 +    }
 +
 +    /**
@@ -1641,7 +1636,7 @@ index c64413a6740b604282984dea2a8430a6e7478d68..5c609d916e2d2f08ba90ebd23f13c5c9
 +     * @return true if an enchantment exists on this meta
 +     */
 +    public boolean hasEnchants() {
-+        return hasItemMeta() && getItemMeta().hasEnchants();
++        return this.craftDelegate.hasEnchants();
 +    }
 +
 +    /**
@@ -1652,7 +1647,7 @@ index c64413a6740b604282984dea2a8430a6e7478d68..5c609d916e2d2f08ba90ebd23f13c5c9
 +     * @return true if the enchantment conflicts, false otherwise
 +     */
 +    public boolean hasConflictingEnchant(@NotNull Enchantment ench) {
-+        return hasItemMeta() && getItemMeta().hasConflictingEnchant(ench);
++        return this.craftDelegate.hasConflictingEnchant(ench);
 +    }
 +
 +    /**
@@ -1664,9 +1659,7 @@ index c64413a6740b604282984dea2a8430a6e7478d68..5c609d916e2d2f08ba90ebd23f13c5c9
 +     * @param data the data to set, or null to clear
 +     */
 +    public void setCustomModelData(@Nullable Integer data) {
-+        ItemMeta itemMeta = getItemMeta();
-+        itemMeta.setCustomModelData(data);
-+        setItemMeta(itemMeta);
++        this.craftDelegate.setCustomModelData(data);
 +    }
 +
 +    /**
@@ -1681,7 +1674,7 @@ index c64413a6740b604282984dea2a8430a6e7478d68..5c609d916e2d2f08ba90ebd23f13c5c9
 +     * @return the localized name that is set
 +     */
 +    public int getCustomModelData() {
-+        return getItemMeta().getCustomModelData();
++        return this.craftDelegate.getCustomModelData();
 +    }
 +
 +    /**
@@ -1693,7 +1686,7 @@ index c64413a6740b604282984dea2a8430a6e7478d68..5c609d916e2d2f08ba90ebd23f13c5c9
 +     * @return true if this has custom model data
 +     */
 +    public boolean hasCustomModelData() {
-+        return hasItemMeta() && getItemMeta().hasCustomModelData();
++        return this.craftDelegate.hasCustomModelData();
 +    }
 +
 +    /**
@@ -1702,7 +1695,7 @@ index c64413a6740b604282984dea2a8430a6e7478d68..5c609d916e2d2f08ba90ebd23f13c5c9
 +     * @return whether block data is already attached
 +     */
 +    public boolean hasBlockData() {
-+        return hasItemMeta() && ((BlockDataMeta) getItemMeta()).hasBlockData();
++        return this.craftDelegate.hasBlockData();
 +    }
 +
 +    /**
@@ -1717,7 +1710,7 @@ index c64413a6740b604282984dea2a8430a6e7478d68..5c609d916e2d2f08ba90ebd23f13c5c9
 +     */
 +    @NotNull
 +    public BlockData getBlockData(@NotNull Material material) {
-+        return ((BlockDataMeta) getItemMeta()).getBlockData(material);
++        return this.craftDelegate.getBlockData(material);
 +    }
 +
 +    /**
@@ -1728,9 +1721,7 @@ index c64413a6740b604282984dea2a8430a6e7478d68..5c609d916e2d2f08ba90ebd23f13c5c9
 +     * this item.
 +     */
 +    public void setBlockData(@NotNull BlockData blockData) {
-+        ItemMeta itemMeta = getItemMeta();
-+        ((BlockDataMeta) itemMeta).setBlockData(blockData);
-+        setItemMeta(itemMeta);
++        this.craftDelegate.setBlockData(blockData);
 +    }
 +
 +    /**
@@ -1739,7 +1730,7 @@ index c64413a6740b604282984dea2a8430a6e7478d68..5c609d916e2d2f08ba90ebd23f13c5c9
 +     * @return the repair penalty
 +     */
 +    public int getRepairCost() {
-+        return ((Repairable) getItemMeta()).getRepairCost();
++        return this.craftDelegate.getRepairCost();
 +    }
 +
 +    /**
@@ -1748,9 +1739,7 @@ index c64413a6740b604282984dea2a8430a6e7478d68..5c609d916e2d2f08ba90ebd23f13c5c9
 +     * @param cost repair penalty
 +     */
 +    public void setRepairCost(int cost) {
-+        ItemMeta itemMeta = getItemMeta();
-+        ((Repairable) itemMeta).setRepairCost(cost);
-+        setItemMeta(itemMeta);
++        this.craftDelegate.setRepairCost(cost);
 +    }
 +
 +    /**
@@ -1759,7 +1748,7 @@ index c64413a6740b604282984dea2a8430a6e7478d68..5c609d916e2d2f08ba90ebd23f13c5c9
 +     * @return true if this has a repair penalty
 +     */
 +    public boolean hasRepairCost() {
-+        return hasItemMeta() && ((Repairable) getItemMeta()).hasRepairCost();
++        return this.craftDelegate.hasRepairCost();
 +    }
 +
 +    /**
@@ -1769,7 +1758,7 @@ index c64413a6740b604282984dea2a8430a6e7478d68..5c609d916e2d2f08ba90ebd23f13c5c9
 +     * @return true if the unbreakable tag is true
 +     */
 +    public boolean isUnbreakable() {
-+        return hasItemMeta() && getItemMeta().isUnbreakable();
++        return this.craftDelegate.isUnbreakable();
 +    }
 +
 +    /**
@@ -1778,9 +1767,7 @@ index c64413a6740b604282984dea2a8430a6e7478d68..5c609d916e2d2f08ba90ebd23f13c5c9
 +     * @param unbreakable true if set unbreakable
 +     */
 +    public void setUnbreakable(boolean unbreakable) {
-+        ItemMeta itemMeta = getItemMeta();
-+        itemMeta.setUnbreakable(unbreakable);
-+        setItemMeta(itemMeta);
++        this.craftDelegate.setUnbreakable(unbreakable);
 +    }
 +
 +    /**
@@ -1789,7 +1776,7 @@ index c64413a6740b604282984dea2a8430a6e7478d68..5c609d916e2d2f08ba90ebd23f13c5c9
 +     * @return true if any AttributeModifiers exist
 +     */
 +    public boolean hasAttributeModifiers() {
-+        return hasItemMeta() && getItemMeta().hasAttributeModifiers();
++        return this.craftDelegate.hasAttributeModifiers();
 +    }
 +
 +    /**
@@ -1802,7 +1789,7 @@ index c64413a6740b604282984dea2a8430a6e7478d68..5c609d916e2d2f08ba90ebd23f13c5c9
 +     */
 +    @Nullable
 +    public Multimap<Attribute, AttributeModifier> getAttributeModifiers() {
-+        return getItemMeta().getAttributeModifiers();
++        return this.craftDelegate.getAttributeModifiers();
 +    }
 +
 +    /**
@@ -1821,7 +1808,7 @@ index c64413a6740b604282984dea2a8430a6e7478d68..5c609d916e2d2f08ba90ebd23f13c5c9
 +     */
 +    @NotNull
 +    public Multimap<Attribute, AttributeModifier> getAttributeModifiers(@Nullable EquipmentSlot slot) {
-+        return getItemMeta().getAttributeModifiers(slot);
++        return this.craftDelegate.getAttributeModifiers(slot);
 +    }
 +
 +    /**
@@ -1835,7 +1822,7 @@ index c64413a6740b604282984dea2a8430a6e7478d68..5c609d916e2d2f08ba90ebd23f13c5c9
 +     */
 +    @Nullable
 +    public Collection<AttributeModifier> getAttributeModifiers(@NotNull Attribute attribute) {
-+        return getItemMeta().getAttributeModifiers(attribute);
++        return this.craftDelegate.getAttributeModifiers(attribute);
 +    }
 +
 +    /**
@@ -1855,10 +1842,7 @@ index c64413a6740b604282984dea2a8430a6e7478d68..5c609d916e2d2f08ba90ebd23f13c5c9
 +     * @throws IllegalArgumentException if AttributeModifier already exists
 +     */
 +    public boolean addAttributeModifier(@NotNull Attribute attribute, @NotNull AttributeModifier modifier) {
-+        ItemMeta itemMeta = getItemMeta();
-+        boolean result = itemMeta.addAttributeModifier(attribute, modifier);
-+        setItemMeta(itemMeta);
-+        return result;
++        return this.craftDelegate.addAttributeModifier(attribute, modifier);
 +    }
 +
 +    /**
@@ -1872,9 +1856,7 @@ index c64413a6740b604282984dea2a8430a6e7478d68..5c609d916e2d2f08ba90ebd23f13c5c9
 +     *                           and their AttributeModifiers
 +     */
 +    public void setAttributeModifiers(@Nullable Multimap<Attribute, AttributeModifier> attributeModifiers) {
-+        ItemMeta itemMeta = getItemMeta();
-+        itemMeta.setAttributeModifiers(attributeModifiers);
-+        setItemMeta(itemMeta);
++        this.craftDelegate.setAttributeModifiers(attributeModifiers);
 +    }
 +
 +    /**
@@ -1889,10 +1871,7 @@ index c64413a6740b604282984dea2a8430a6e7478d68..5c609d916e2d2f08ba90ebd23f13c5c9
 +     * @throws NullPointerException if Attribute is null
 +     */
 +    public boolean removeAttributeModifier(@NotNull Attribute attribute) {
-+        ItemMeta itemMeta = getItemMeta();
-+        boolean result = itemMeta.removeAttributeModifier(attribute);
-+        setItemMeta(itemMeta);
-+        return result;
++        return this.craftDelegate.removeAttributeModifier(attribute);
 +    }
 +
 +    /**
@@ -1907,10 +1886,7 @@ index c64413a6740b604282984dea2a8430a6e7478d68..5c609d916e2d2f08ba90ebd23f13c5c9
 +     *         EquipmentSlot.
 +     */
 +    public boolean removeAttributeModifier(@Nullable EquipmentSlot slot) {
-+        ItemMeta itemMeta = getItemMeta();
-+        boolean result = itemMeta.removeAttributeModifier(slot);
-+        setItemMeta(itemMeta);
-+        return result;
++        return this.craftDelegate.removeAttributeModifier(slot);
 +    }
 +
 +    /**
@@ -1927,24 +1903,7 @@ index c64413a6740b604282984dea2a8430a6e7478d68..5c609d916e2d2f08ba90ebd23f13c5c9
 +     * @see AttributeModifier#getUniqueId()
 +     */
 +    public boolean removeAttributeModifier(@NotNull Attribute attribute, @NotNull AttributeModifier modifier) {
-+        ItemMeta itemMeta = getItemMeta();
-+        boolean result = itemMeta.removeAttributeModifier(attribute, modifier);
-+        setItemMeta(itemMeta);
-+        return result;
-+    }
-+
-+    /**
-+     * Returns a custom tag container capable of storing tags on the object.
-+     *
-+     * Note that the tags stored on this container are all stored under their
-+     * own custom namespace therefore modifying default tags using this
-+     * {@link PersistentDataHolder} is impossible.
-+     *
-+     * @return the persistent metadata container
-+     */
-+    @NotNull
-+    public PersistentDataContainer getPersistentDataContainer() {
-+        return getItemMeta().getPersistentDataContainer();
++        return this.craftDelegate.removeAttributeModifier(attribute, modifier);
 +    }
 +
 +    /**
@@ -1953,7 +1912,7 @@ index c64413a6740b604282984dea2a8430a6e7478d68..5c609d916e2d2f08ba90ebd23f13c5c9
 +     * @return true if this has damage
 +     */
 +    public boolean hasDamage() {
-+        return hasItemMeta() && ((Damageable) getItemMeta()).hasDamage();
++        return this.craftDelegate.hasDamage();
 +    }
 +
 +    /**
@@ -1962,7 +1921,7 @@ index c64413a6740b604282984dea2a8430a6e7478d68..5c609d916e2d2f08ba90ebd23f13c5c9
 +     * @return the damage
 +     */
 +    public int getDamage() {
-+        return ((Damageable) getItemMeta()).getDamage();
++        return this.craftDelegate.getDamage();
 +    }
 +
 +    /**
@@ -1971,9 +1930,7 @@ index c64413a6740b604282984dea2a8430a6e7478d68..5c609d916e2d2f08ba90ebd23f13c5c9
 +     * @param damage item damage
 +     */
 +    public void setDamage(int damage) {
-+        ItemMeta itemMeta = getItemMeta();
-+        ((Damageable) itemMeta).setDamage(damage);
-+        setItemMeta(itemMeta);
++        this.craftDelegate.setDamage(damage);
 +    }
 +
 +    /**
@@ -2019,58 +1976,15 @@ index c64413a6740b604282984dea2a8430a6e7478d68..5c609d916e2d2f08ba90ebd23f13c5c9
 +     * @return True if damage broke the item
 +     */
 +    public boolean damage(int amount, boolean ignoreUnbreaking) {
-+        Damageable damageable = (Damageable) getItemMeta();
-+        if (amount > 0) {
-+            int unbreaking = getEnchantLevel(Enchantment.UNBREAKING);
-+            int reduce = 0;
-+            for (int i = 0; unbreaking > 0 && i < amount; ++i) {
-+                if (reduceDamage(java.util.concurrent.ThreadLocalRandom.current(), unbreaking)) {
-+                    ++reduce;
-+                }
-+            }
-+            amount -= reduce;
-+            if (amount <= 0) {
-+                return isBroke(damageable.getDamage());
-+            }
-+        }
-+        int damage = damageable.getDamage() + amount;
-+        damageable.setDamage(damage);
-+        setItemMeta((ItemMeta) damageable);
-+        return isBroke(damage);
-+    }
-+
-+    public boolean isBroke(int damage) {
-+        if (damage > getType().getMaxDurability()) {
-+            if (getAmount() > 0) {
-+                // ensure it "breaks"
-+                setAmount(0);
-+            }
-+            return true;
-+        }
-+        return false;
-+    }
-+
-+    private boolean reduceDamage(java.util.Random random, int unbreaking) {
-+        if (getType().isArmor()) {
-+            return random.nextFloat() < 0.6F;
-+        }
-+        return random.nextInt(unbreaking + 1) > 0;
++        return this.craftDelegate.damage(amount, ignoreUnbreaking);
 +    }
 +    // Purpur end
  }
 diff --git a/src/main/java/org/bukkit/inventory/RecipeChoice.java b/src/main/java/org/bukkit/inventory/RecipeChoice.java
-index 1cd6601c9d2e86ef850011fcb9e59811207b4af7..5ec7d9dab1935bb743e3264d9f7390795fd9f55c 100644
+index f1aa67997f904953742e8895e49341c2f73d44a2..993cf7995514fb0ef3c4388bb3ce49c3187ab251 100644
 --- a/src/main/java/org/bukkit/inventory/RecipeChoice.java
 +++ b/src/main/java/org/bukkit/inventory/RecipeChoice.java
-@@ -10,6 +10,7 @@ import java.util.function.Predicate;
- import org.bukkit.Material;
- import org.bukkit.Tag;
- import org.jetbrains.annotations.NotNull;
-+import org.jetbrains.annotations.Nullable; // Purpur
- 
- /**
-  * Represents a potential item match within a recipe. All choices within a
-@@ -180,6 +181,7 @@ public interface RecipeChoice extends Predicate<ItemStack>, Cloneable {
+@@ -191,6 +191,7 @@ public interface RecipeChoice extends Predicate<ItemStack>, Cloneable {
      public static class ExactChoice implements RecipeChoice {
  
          private List<ItemStack> choices;
@@ -2078,7 +1992,7 @@ index 1cd6601c9d2e86ef850011fcb9e59811207b4af7..5ec7d9dab1935bb743e3264d9f739079
  
          public ExactChoice(@NotNull ItemStack stack) {
              this(Arrays.asList(stack));
-@@ -229,6 +231,7 @@ public interface RecipeChoice extends Predicate<ItemStack>, Cloneable {
+@@ -241,6 +242,7 @@ public interface RecipeChoice extends Predicate<ItemStack>, Cloneable {
  
          @Override
          public boolean test(@NotNull ItemStack t) {
@@ -2086,17 +2000,17 @@ index 1cd6601c9d2e86ef850011fcb9e59811207b4af7..5ec7d9dab1935bb743e3264d9f739079
              for (ItemStack match : choices) {
                  if (t.isSimilar(match)) {
                      return true;
-@@ -238,6 +241,17 @@ public interface RecipeChoice extends Predicate<ItemStack>, Cloneable {
+@@ -250,6 +252,17 @@ public interface RecipeChoice extends Predicate<ItemStack>, Cloneable {
              return false;
          }
  
 +        // Purpur start
-+        @Nullable
++        @org.jetbrains.annotations.Nullable
 +        public Predicate<ItemStack> getPredicate() {
 +            return predicate;
 +        }
 +
-+        public void setPredicate(@Nullable Predicate<ItemStack> predicate) {
++        public void setPredicate(@org.jetbrains.annotations.Nullable Predicate<ItemStack> predicate) {
 +            this.predicate = predicate;
 +        }
 +        // Purpur end
@@ -2104,6 +2018,45 @@ index 1cd6601c9d2e86ef850011fcb9e59811207b4af7..5ec7d9dab1935bb743e3264d9f739079
          @Override
          public int hashCode() {
              int hash = 7;
+diff --git a/src/main/java/org/bukkit/inventory/view/AnvilView.java b/src/main/java/org/bukkit/inventory/view/AnvilView.java
+index 3c1aa1e036bee08304c1cdca59f6a5bc0ba306c0..709fb2d1c7e3253034a651a9f68c003601b598a4 100644
+--- a/src/main/java/org/bukkit/inventory/view/AnvilView.java
++++ b/src/main/java/org/bukkit/inventory/view/AnvilView.java
+@@ -89,4 +89,34 @@ public interface AnvilView extends InventoryView {
+      */
+     void bypassEnchantmentLevelRestriction(boolean bypassEnchantmentLevelRestriction);
+     // Paper end - bypass anvil level restrictions
++
++    // Purpur start
++    /**
++     * Gets if the player viewing the anvil inventory can bypass experience cost
++     *
++     * @return whether the player viewing the anvil inventory can bypass the experience cost
++     */
++    boolean canBypassCost();
++
++    /**
++     * Set if the player viewing the anvil inventory can bypass the experience cost
++     *
++     * @param bypassCost whether the player viewing the anvil inventory can bypass the experience cost
++     */
++    void setBypassCost(boolean bypassCost);
++
++    /**
++     * Gets if the player viewing the anvil inventory can do unsafe enchants
++     *
++     * @return whether the player viewing the anvil inventory can do unsafe enchants
++     */
++    boolean canDoUnsafeEnchants();
++
++    /**
++     * Set if the player viewing the anvil inventory can do unsafe enchants
++     *
++     * @param canDoUnsafeEnchants whether the player viewing the anvil inventory can do unsafe enchants
++     */
++    void setDoUnsafeEnchants(boolean canDoUnsafeEnchants);
++    // Purpur end
+ }
 diff --git a/src/main/java/org/bukkit/map/MapRenderer.java b/src/main/java/org/bukkit/map/MapRenderer.java
 index cb7040876a99a5a7e49b81684ef0f3b79584c376..22d8f31b1b8a5dbb5ab3275068642937c097abfe 100644
 --- a/src/main/java/org/bukkit/map/MapRenderer.java
@@ -2122,25 +2075,25 @@ index cb7040876a99a5a7e49b81684ef0f3b79584c376..22d8f31b1b8a5dbb5ab3275068642937
 +    // Purpur - end
  }
 diff --git a/src/main/java/org/bukkit/permissions/PermissibleBase.java b/src/main/java/org/bukkit/permissions/PermissibleBase.java
-index cd3296fea01648592d2af89b3d80135acb6d0958..45797a6fbae1d8edc4211cb30def24ad4f59bd49 100644
+index 75b77cc4fe189b4b6baa1af3663dc492e992a266..30b98d1645c571ba5c18e5cc93b0bec3f74b1d3b 100644
 --- a/src/main/java/org/bukkit/permissions/PermissibleBase.java
 +++ b/src/main/java/org/bukkit/permissions/PermissibleBase.java
-@@ -168,7 +168,7 @@ public class PermissibleBase implements Permissible {
+@@ -169,7 +169,7 @@ public class PermissibleBase implements Permissible {
  
          for (Permission perm : defaults) {
-             String name = perm.getName().toLowerCase(java.util.Locale.ENGLISH);
+             String name = perm.getName().toLowerCase(Locale.ROOT);
 -            permissions.put(name, new PermissionAttachmentInfo(parent, name, null, true));
 +            permissions.put(name, new PermissionAttachmentInfo(parent, name, null, perm.getDefault().getValue(isOp()))); // Purpur
              Bukkit.getServer().getPluginManager().subscribeToPermission(name, parent);
              calculateChildPermissions(perm.getChildren(), false, null);
          }
-@@ -196,7 +196,7 @@ public class PermissibleBase implements Permissible {
+@@ -197,7 +197,7 @@ public class PermissibleBase implements Permissible {
              String name = entry.getKey();
  
              Permission perm = Bukkit.getServer().getPluginManager().getPermission(name);
 -            boolean value = entry.getValue() ^ invert;
 +            boolean value = (entry.getValue() == null && perm != null ? perm.getDefault().getValue(isOp()) : entry.getValue()) ^ invert; // Purpur
-             String lname = name.toLowerCase(java.util.Locale.ENGLISH);
+             String lname = name.toLowerCase(Locale.ROOT);
  
              permissions.put(lname, new PermissionAttachmentInfo(parent, lname, attachment, value));
 diff --git a/src/main/java/org/bukkit/plugin/java/JavaPluginLoader.java b/src/main/java/org/bukkit/plugin/java/JavaPluginLoader.java
@@ -2406,10 +2359,10 @@ index 0000000000000000000000000000000000000000..29540d55532197d2381a52ea9222b578
 +}
 diff --git a/src/main/java/org/purpurmc/purpur/event/ExecuteCommandEvent.java b/src/main/java/org/purpurmc/purpur/event/ExecuteCommandEvent.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..bc590c4d49d32f4365a50ceb5785e798702a8179
+index 0000000000000000000000000000000000000000..55feef2321c7d966c72a33a58cf10136a9cacfa6
 --- /dev/null
 +++ b/src/main/java/org/purpurmc/purpur/event/ExecuteCommandEvent.java
-@@ -0,0 +1,130 @@
+@@ -0,0 +1,127 @@
 +package org.purpurmc.purpur.event;
 +
 +import com.google.common.base.Preconditions;
@@ -2418,21 +2371,24 @@ index 0000000000000000000000000000000000000000..bc590c4d49d32f4365a50ceb5785e798
 +import org.bukkit.event.Cancellable;
 +import org.bukkit.event.Event;
 +import org.bukkit.event.HandlerList;
-+import org.jetbrains.annotations.NotNull;
-+import org.jetbrains.annotations.Nullable;
++import org.jetbrains.annotations.ApiStatus;
++import org.jspecify.annotations.NullMarked;
++import org.jspecify.annotations.Nullable;
 +
 +/**
 + * This event is called whenever someone runs a command
 + */
++@NullMarked
 +public class ExecuteCommandEvent extends Event implements Cancellable {
 +    private static final HandlerList handlers = new HandlerList();
 +    private boolean cancel = false;
 +    private CommandSender sender;
 +    private Command command;
 +    private String label;
-+    private String[] args;
++    private @Nullable String[] args;
 +
-+    public ExecuteCommandEvent(@NotNull CommandSender sender, @NotNull Command command, @NotNull String label, @Nullable String[] args) {
++    @ApiStatus.Internal
++    public ExecuteCommandEvent(CommandSender sender, Command command, String label, @Nullable String[] args) {
 +        this.sender = sender;
 +        this.command = command;
 +        this.label = label;
@@ -2444,7 +2400,6 @@ index 0000000000000000000000000000000000000000..bc590c4d49d32f4365a50ceb5785e798
 +     *
 +     * @return Command the player is attempting to execute
 +     */
-+    @NotNull
 +    public Command getCommand() {
 +        return command;
 +    }
@@ -2455,7 +2410,7 @@ index 0000000000000000000000000000000000000000..bc590c4d49d32f4365a50ceb5785e798
 +     * @param command New command that the player will execute
 +     * @throws IllegalArgumentException if command is null or empty
 +     */
-+    public void setCommand(@NotNull Command command) throws IllegalArgumentException {
++    public void setCommand(Command command) throws IllegalArgumentException {
 +        Preconditions.checkArgument(command != null, "Command cannot be null");
 +        this.command = command;
 +    }
@@ -2465,7 +2420,6 @@ index 0000000000000000000000000000000000000000..bc590c4d49d32f4365a50ceb5785e798
 +     *
 +     * @return Sender this command will be executed as
 +     */
-+    @NotNull
 +    public CommandSender getSender() {
 +        return sender;
 +    }
@@ -2476,7 +2430,7 @@ index 0000000000000000000000000000000000000000..bc590c4d49d32f4365a50ceb5785e798
 +     * @param sender New sender which this event will execute as
 +     * @throws IllegalArgumentException if the sender provided is null
 +     */
-+    public void setSender(@NotNull final CommandSender sender) throws IllegalArgumentException {
++    public void setSender(final CommandSender sender) throws IllegalArgumentException {
 +        Preconditions.checkArgument(sender != null, "Sender cannot be null");
 +        this.sender = sender;
 +    }
@@ -2486,7 +2440,6 @@ index 0000000000000000000000000000000000000000..bc590c4d49d32f4365a50ceb5785e798
 +     *
 +     * @return Label used to execute this command
 +     */
-+    @NotNull
 +    public String getLabel() {
 +        return label;
 +    }
@@ -2496,7 +2449,7 @@ index 0000000000000000000000000000000000000000..bc590c4d49d32f4365a50ceb5785e798
 +     *
 +     * @param label Label used
 +     */
-+    public void setLabel(@NotNull String label) {
++    public void setLabel(String label) {
 +        this.label = label;
 +    }
 +
@@ -2505,7 +2458,6 @@ index 0000000000000000000000000000000000000000..bc590c4d49d32f4365a50ceb5785e798
 +     *
 +     * @return Args passed to the command
 +     */
-+    @NotNull
 +    public String[] getArgs() {
 +        return args;
 +    }
@@ -2515,7 +2467,7 @@ index 0000000000000000000000000000000000000000..bc590c4d49d32f4365a50ceb5785e798
 +     *
 +     * @param args Args passed to the command
 +     */
-+    public void setArgs(@NotNull String[] args) {
++    public void setArgs(String[] args) {
 +        this.args = args;
 +    }
 +
@@ -2529,40 +2481,41 @@ index 0000000000000000000000000000000000000000..bc590c4d49d32f4365a50ceb5785e798
 +        this.cancel = cancel;
 +    }
 +
-+    @NotNull
 +    @Override
 +    public HandlerList getHandlers() {
 +        return handlers;
 +    }
 +
-+    @NotNull
 +    public static HandlerList getHandlerList() {
 +        return handlers;
 +    }
 +}
 diff --git a/src/main/java/org/purpurmc/purpur/event/PlayerAFKEvent.java b/src/main/java/org/purpurmc/purpur/event/PlayerAFKEvent.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..25e92af7710316ed2afedf846a59dbd672869b51
+index 0000000000000000000000000000000000000000..e9637b82014fe3f4f4671b24d18f77f3d5e4b8ad
 --- /dev/null
 +++ b/src/main/java/org/purpurmc/purpur/event/PlayerAFKEvent.java
-@@ -0,0 +1,70 @@
+@@ -0,0 +1,71 @@
 +package org.purpurmc.purpur.event;
 +
 +import org.bukkit.entity.Player;
 +import org.bukkit.event.Cancellable;
 +import org.bukkit.event.HandlerList;
 +import org.bukkit.event.player.PlayerEvent;
-+import org.jetbrains.annotations.NotNull;
-+import org.jetbrains.annotations.Nullable;
++import org.jetbrains.annotations.ApiStatus;
++import org.jspecify.annotations.NullMarked;
++import org.jspecify.annotations.Nullable;
 +
++@NullMarked
 +public class PlayerAFKEvent extends PlayerEvent implements Cancellable {
 +    private static final HandlerList handlers = new HandlerList();
 +    private final boolean setAfk;
 +    private boolean shouldKick;
-+    private String broadcast;
++    private @Nullable String broadcast;
 +    private boolean cancel;
 +
-+    public PlayerAFKEvent(@NotNull Player player, boolean setAfk, boolean shouldKick, @Nullable String broadcast, boolean async) {
++    @ApiStatus.Internal
++    public PlayerAFKEvent(Player player, boolean setAfk, boolean shouldKick, @Nullable String broadcast, boolean async) {
 +        super(player, async);
 +        this.setAfk = setAfk;
 +        this.shouldKick = shouldKick;
@@ -2606,22 +2559,20 @@ index 0000000000000000000000000000000000000000..25e92af7710316ed2afedf846a59dbd6
 +    }
 +
 +    @Override
-+    @NotNull
 +    public HandlerList getHandlers() {
 +        return handlers;
 +    }
 +
-+    @NotNull
 +    public static HandlerList getHandlerList() {
 +        return handlers;
 +    }
 +}
 diff --git a/src/main/java/org/purpurmc/purpur/event/PlayerSetSpawnerTypeWithEggEvent.java b/src/main/java/org/purpurmc/purpur/event/PlayerSetSpawnerTypeWithEggEvent.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..519809eab5d926dc7b0a7bad5d446d0defc099dc
+index 0000000000000000000000000000000000000000..795c558b481f4e2a550925bd88b8e7d41711456f
 --- /dev/null
 +++ b/src/main/java/org/purpurmc/purpur/event/PlayerSetSpawnerTypeWithEggEvent.java
-@@ -0,0 +1,85 @@
+@@ -0,0 +1,83 @@
 +package org.purpurmc.purpur.event;
 +
 +import org.bukkit.block.Block;
@@ -2631,8 +2582,10 @@ index 0000000000000000000000000000000000000000..519809eab5d926dc7b0a7bad5d446d0d
 +import org.bukkit.event.Cancellable;
 +import org.bukkit.event.HandlerList;
 +import org.bukkit.event.player.PlayerEvent;
-+import org.jetbrains.annotations.NotNull;
++import org.jetbrains.annotations.ApiStatus;
++import org.jspecify.annotations.NullMarked;
 +
++@NullMarked
 +public class PlayerSetSpawnerTypeWithEggEvent extends PlayerEvent implements Cancellable {
 +    private static final HandlerList handlers = new HandlerList();
 +    private final Block block;
@@ -2640,7 +2593,8 @@ index 0000000000000000000000000000000000000000..519809eab5d926dc7b0a7bad5d446d0d
 +    private EntityType type;
 +    private boolean cancel;
 +
-+    public PlayerSetSpawnerTypeWithEggEvent(@NotNull Player player, @NotNull Block block, @NotNull CreatureSpawner spawner, @NotNull EntityType type) {
++    @ApiStatus.Internal
++    public PlayerSetSpawnerTypeWithEggEvent(Player player, Block block, CreatureSpawner spawner, EntityType type) {
 +        super(player);
 +        this.block = block;
 +        this.spawner = spawner;
@@ -2652,7 +2606,6 @@ index 0000000000000000000000000000000000000000..519809eab5d926dc7b0a7bad5d446d0d
 +     *
 +     * @return Spawner Block
 +     */
-+    @NotNull
 +    public Block getBlock() {
 +        return block;
 +    }
@@ -2662,7 +2615,6 @@ index 0000000000000000000000000000000000000000..519809eab5d926dc7b0a7bad5d446d0d
 +     *
 +     * @return Spawner state
 +     */
-+    @NotNull
 +    public CreatureSpawner getSpawner() {
 +        return spawner;
 +    }
@@ -2672,7 +2624,6 @@ index 0000000000000000000000000000000000000000..519809eab5d926dc7b0a7bad5d446d0d
 +     *
 +     * @return EntityType being set
 +     */
-+    @NotNull
 +    public EntityType getEntityType() {
 +        return type;
 +    }
@@ -2682,7 +2633,7 @@ index 0000000000000000000000000000000000000000..519809eab5d926dc7b0a7bad5d446d0d
 +     *
 +     * @param type EntityType to set
 +     */
-+    public void setEntityType(@NotNull EntityType type) {
++    public void setEntityType(EntityType type) {
 +        this.type = type;
 +    }
 +
@@ -2697,42 +2648,133 @@ index 0000000000000000000000000000000000000000..519809eab5d926dc7b0a7bad5d446d0d
 +    }
 +
 +    @Override
-+    @NotNull
 +    public HandlerList getHandlers() {
 +        return handlers;
 +    }
 +
-+    @NotNull
++    public static HandlerList getHandlerList() {
++        return handlers;
++    }
++}
+diff --git a/src/main/java/org/purpurmc/purpur/event/PlayerSetTrialSpawnerTypeWithEggEvent.java b/src/main/java/org/purpurmc/purpur/event/PlayerSetTrialSpawnerTypeWithEggEvent.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..1d4dbf60a182a2a5f93c449e387b82743d20616c
+--- /dev/null
++++ b/src/main/java/org/purpurmc/purpur/event/PlayerSetTrialSpawnerTypeWithEggEvent.java
+@@ -0,0 +1,83 @@
++package org.purpurmc.purpur.event;
++
++import org.bukkit.block.Block;
++import org.bukkit.block.TrialSpawner;
++import org.bukkit.entity.EntityType;
++import org.bukkit.entity.Player;
++import org.bukkit.event.Cancellable;
++import org.bukkit.event.HandlerList;
++import org.bukkit.event.player.PlayerEvent;
++import org.jetbrains.annotations.ApiStatus;
++import org.jspecify.annotations.NullMarked;
++
++@NullMarked
++public class PlayerSetTrialSpawnerTypeWithEggEvent extends PlayerEvent implements Cancellable {
++    private static final HandlerList handlers = new HandlerList();
++    private final Block block;
++    private final TrialSpawner spawner;
++    private EntityType type;
++    private boolean cancel;
++
++    @ApiStatus.Internal
++    public PlayerSetTrialSpawnerTypeWithEggEvent(Player player, Block block, TrialSpawner spawner, EntityType type) {
++        super(player);
++        this.block = block;
++        this.spawner = spawner;
++        this.type = type;
++    }
++
++    /**
++     * Get the spawner Block in the world
++     *
++     * @return Spawner Block
++     */
++    public Block getBlock() {
++        return block;
++    }
++
++    /**
++     * Get the spawner state
++     *
++     * @return Spawner state
++     */
++    public TrialSpawner getSpawner() {
++        return spawner;
++    }
++
++    /**
++     * Gets the EntityType being set on the spawner
++     *
++     * @return EntityType being set
++     */
++    public EntityType getEntityType() {
++        return type;
++    }
++
++    /**
++     * Sets the EntityType being set on the spawner
++     *
++     * @param type EntityType to set
++     */
++    public void setEntityType(EntityType type) {
++        this.type = type;
++    }
++
++    @Override
++    public boolean isCancelled() {
++        return cancel;
++    }
++
++    @Override
++    public void setCancelled(boolean cancel) {
++        this.cancel = cancel;
++    }
++
++    @Override
++    public HandlerList getHandlers() {
++        return handlers;
++    }
++
 +    public static HandlerList getHandlerList() {
 +        return handlers;
 +    }
 +}
 diff --git a/src/main/java/org/purpurmc/purpur/event/PreBlockExplodeEvent.java b/src/main/java/org/purpurmc/purpur/event/PreBlockExplodeEvent.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..8ea97ddceedb7c719e8a50a0dd8f3f0919ca1647
+index 0000000000000000000000000000000000000000..4b4d32c58224e1208f14024ca214078a37550bb5
 --- /dev/null
 +++ b/src/main/java/org/purpurmc/purpur/event/PreBlockExplodeEvent.java
-@@ -0,0 +1,53 @@
+@@ -0,0 +1,56 @@
 +package org.purpurmc.purpur.event;
 +
++import org.bukkit.ExplosionResult;
 +import org.bukkit.block.Block;
 +import org.bukkit.block.BlockState;
 +import org.bukkit.event.Cancellable;
 +import org.bukkit.event.HandlerList;
 +import org.bukkit.event.block.BlockExplodeEvent;
-+import org.jetbrains.annotations.NotNull;
++import org.jetbrains.annotations.ApiStatus;
 +import java.util.Collections;
++import org.jspecify.annotations.NullMarked;
 +
 +/**
 + * Called before a block's explosion is processed
 + */
++@NullMarked
 +public class PreBlockExplodeEvent extends BlockExplodeEvent implements Cancellable {
 +    private static final HandlerList handlers = new HandlerList();
 +    private boolean cancelled;
 +    private final float yield;
 +
-+    public PreBlockExplodeEvent(@NotNull final Block what, final float yield, @NotNull BlockState explodedBlockState) {
-+        super(what, explodedBlockState, Collections.emptyList(), yield);
++    @ApiStatus.Internal
++    public PreBlockExplodeEvent(final Block what, final float yield, BlockState explodedBlockState, ExplosionResult result) {
++        super(what, explodedBlockState, Collections.emptyList(), yield, result);
 +        this.yield = yield;
 +        this.cancelled = false;
 +    }
@@ -2757,18 +2799,17 @@ index 0000000000000000000000000000000000000000..8ea97ddceedb7c719e8a50a0dd8f3f09
 +    }
 +
 +    @Override
-+    public @NotNull HandlerList getHandlers() {
++    public HandlerList getHandlers() {
 +        return handlers;
 +    }
 +
-+    @NotNull
 +    public static HandlerList getHandlerList() {
 +        return handlers;
 +    }
 +}
 diff --git a/src/main/java/org/purpurmc/purpur/event/entity/BeeFoundFlowerEvent.java b/src/main/java/org/purpurmc/purpur/event/entity/BeeFoundFlowerEvent.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..833f46d1941f377765132fc528c45567ee0290d2
+index 0000000000000000000000000000000000000000..7f631a41abee4640a37339a7896ce96e61747735
 --- /dev/null
 +++ b/src/main/java/org/purpurmc/purpur/event/entity/BeeFoundFlowerEvent.java
 @@ -0,0 +1,48 @@
@@ -2778,23 +2819,25 @@ index 0000000000000000000000000000000000000000..833f46d1941f377765132fc528c45567
 +import org.bukkit.entity.Bee;
 +import org.bukkit.event.HandlerList;
 +import org.bukkit.event.entity.EntityEvent;
-+import org.jetbrains.annotations.NotNull;
-+import org.jetbrains.annotations.Nullable;
++import org.jetbrains.annotations.ApiStatus;
++import org.jspecify.annotations.NullMarked;
++import org.jspecify.annotations.Nullable;
 +
 +/**
 + * Called when a bee targets a flower
 + */
++@NullMarked
 +public class BeeFoundFlowerEvent extends EntityEvent {
 +    private static final HandlerList handlers = new HandlerList();
 +    private final Location location;
 +
-+    public BeeFoundFlowerEvent(@NotNull Bee bee, @Nullable Location location) {
++    @ApiStatus.Internal
++    public BeeFoundFlowerEvent(Bee bee, @Nullable Location location) {
 +        super(bee);
 +        this.location = location;
 +    }
 +
 +    @Override
-+    @NotNull
 +    public Bee getEntity() {
 +        return (Bee) super.getEntity();
 +    }
@@ -2810,44 +2853,44 @@ index 0000000000000000000000000000000000000000..833f46d1941f377765132fc528c45567
 +    }
 +
 +    @Override
-+    @NotNull
 +    public HandlerList getHandlers() {
 +        return handlers;
 +    }
 +
-+    @NotNull
 +    public static HandlerList getHandlerList() {
 +        return handlers;
 +    }
 +}
 diff --git a/src/main/java/org/purpurmc/purpur/event/entity/BeeStartedPollinatingEvent.java b/src/main/java/org/purpurmc/purpur/event/entity/BeeStartedPollinatingEvent.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..ae0bb654745724889c67fae9072ae90ea3778ba4
+index 0000000000000000000000000000000000000000..e260145d6dc556bbe9e3654296b965c4e393084d
 --- /dev/null
 +++ b/src/main/java/org/purpurmc/purpur/event/entity/BeeStartedPollinatingEvent.java
-@@ -0,0 +1,47 @@
+@@ -0,0 +1,46 @@
 +package org.purpurmc.purpur.event.entity;
 +
 +import org.bukkit.Location;
 +import org.bukkit.entity.Bee;
 +import org.bukkit.event.HandlerList;
 +import org.bukkit.event.entity.EntityEvent;
-+import org.jetbrains.annotations.NotNull;
++import org.jetbrains.annotations.ApiStatus;
++import org.jspecify.annotations.NullMarked;
 +
 +/**
 + * Called when a bee starts pollinating
 + */
++@NullMarked
 +public class BeeStartedPollinatingEvent extends EntityEvent {
 +    private static final HandlerList handlers = new HandlerList();
 +    private final Location location;
 +
-+    public BeeStartedPollinatingEvent(@NotNull Bee bee, @NotNull Location location) {
++    @ApiStatus.Internal
++    public BeeStartedPollinatingEvent(Bee bee, Location location) {
 +        super(bee);
 +        this.location = location;
 +    }
 +
 +    @Override
-+    @NotNull
 +    public Bee getEntity() {
 +        return (Bee) super.getEntity();
 +    }
@@ -2857,25 +2900,22 @@ index 0000000000000000000000000000000000000000..ae0bb654745724889c67fae9072ae90e
 +     *
 +     * @return The location of the flower
 +     */
-+    @NotNull
 +    public Location getLocation() {
 +        return this.location;
 +    }
 +
 +    @Override
-+    @NotNull
 +    public HandlerList getHandlers() {
 +        return handlers;
 +    }
 +
-+    @NotNull
 +    public static HandlerList getHandlerList() {
 +        return handlers;
 +    }
 +}
 diff --git a/src/main/java/org/purpurmc/purpur/event/entity/BeeStopPollinatingEvent.java b/src/main/java/org/purpurmc/purpur/event/entity/BeeStopPollinatingEvent.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..ff3c9f075be2f624af8b0ce5fffc5ea69a41f32e
+index 0000000000000000000000000000000000000000..8b2b351d620c749cdf58d7e824b55cf55578fde6
 --- /dev/null
 +++ b/src/main/java/org/purpurmc/purpur/event/entity/BeeStopPollinatingEvent.java
 @@ -0,0 +1,60 @@
@@ -2885,25 +2925,27 @@ index 0000000000000000000000000000000000000000..ff3c9f075be2f624af8b0ce5fffc5ea6
 +import org.bukkit.entity.Bee;
 +import org.bukkit.event.HandlerList;
 +import org.bukkit.event.entity.EntityEvent;
-+import org.jetbrains.annotations.NotNull;
-+import org.jetbrains.annotations.Nullable;
++import org.jetbrains.annotations.ApiStatus;
++import org.jspecify.annotations.NullMarked;
++import org.jspecify.annotations.Nullable;
 +
 +/**
 + * Called when a bee stops pollinating
 + */
++@NullMarked
 +public class BeeStopPollinatingEvent extends EntityEvent {
 +    private static final HandlerList handlers = new HandlerList();
 +    private final Location location;
 +    private final boolean success;
 +
-+    public BeeStopPollinatingEvent(@NotNull Bee bee, @Nullable Location location, boolean success) {
++    @ApiStatus.Internal
++    public BeeStopPollinatingEvent(Bee bee, @Nullable Location location, boolean success) {
 +        super(bee);
 +        this.location = location;
 +        this.success = success;
 +    }
 +
 +    @Override
-+    @NotNull
 +    public Bee getEntity() {
 +        return (Bee) super.getEntity();
 +    }
@@ -2929,47 +2971,45 @@ index 0000000000000000000000000000000000000000..ff3c9f075be2f624af8b0ce5fffc5ea6
 +
 +
 +    @Override
-+    @NotNull
 +    public HandlerList getHandlers() {
 +        return handlers;
 +    }
 +
-+    @NotNull
 +    public static HandlerList getHandlerList() {
 +        return handlers;
 +    }
 +}
 diff --git a/src/main/java/org/purpurmc/purpur/event/entity/EntityTeleportHinderedEvent.java b/src/main/java/org/purpurmc/purpur/event/entity/EntityTeleportHinderedEvent.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..c66eb163877e872f234d86dc244cab7efeb818cd
+index 0000000000000000000000000000000000000000..daf3bbf83ee76322828a38814b483fa2b337bd60
 --- /dev/null
 +++ b/src/main/java/org/purpurmc/purpur/event/entity/EntityTeleportHinderedEvent.java
-@@ -0,0 +1,117 @@
+@@ -0,0 +1,114 @@
 +package org.purpurmc.purpur.event.entity;
 +
 +import org.bukkit.entity.Entity;
 +import org.bukkit.event.HandlerList;
 +import org.bukkit.event.entity.EntityEvent;
 +import org.bukkit.event.player.PlayerTeleportEvent.TeleportCause;
-+import org.jetbrains.annotations.NotNull;
-+import org.jetbrains.annotations.Nullable;
++import org.jetbrains.annotations.ApiStatus;
++import org.jspecify.annotations.NullMarked;
++import org.jspecify.annotations.Nullable;
 +
 +/**
 + * Fired when an entity is hindered from teleporting.
 + */
++@NullMarked
 +public class EntityTeleportHinderedEvent extends EntityEvent {
 +  private static final HandlerList handlers = new HandlerList();
 +
-+  @NotNull
 +  private final Reason reason;
 +
-+  @Nullable
-+  private final TeleportCause teleportCause;
++  private final @Nullable TeleportCause teleportCause;
 +
 +  private boolean retry = false;
 +
-+  public EntityTeleportHinderedEvent(@NotNull Entity what, @NotNull Reason reason,
-+      @Nullable TeleportCause teleportCause) {
++    @ApiStatus.Internal
++  public EntityTeleportHinderedEvent(Entity what, Reason reason, @Nullable TeleportCause teleportCause) {
 +    super(what);
 +    this.reason = reason;
 +    this.teleportCause = teleportCause;
@@ -2978,7 +3018,6 @@ index 0000000000000000000000000000000000000000..c66eb163877e872f234d86dc244cab7e
 +  /**
 +   * @return why the teleport was hindered.
 +   */
-+  @NotNull
 +  public Reason getReason() {
 +    return reason;
 +  }
@@ -3029,12 +3068,10 @@ index 0000000000000000000000000000000000000000..c66eb163877e872f234d86dc244cab7e
 +  }
 +
 +  @Override
-+  @NotNull
 +  public HandlerList getHandlers() {
 +    return handlers;
 +  }
 +
-+  @NotNull
 +  public static HandlerList getHandlerList() {
 +    return handlers;
 +  }
@@ -3064,10 +3101,10 @@ index 0000000000000000000000000000000000000000..c66eb163877e872f234d86dc244cab7e
 +}
 diff --git a/src/main/java/org/purpurmc/purpur/event/entity/GoatRamEntityEvent.java b/src/main/java/org/purpurmc/purpur/event/entity/GoatRamEntityEvent.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..f62c14f3d4999e9112c1c73642aa337d97b94b5a
+index 0000000000000000000000000000000000000000..f0a7fe694db145294ff93d320382d1baecc68702
 --- /dev/null
 +++ b/src/main/java/org/purpurmc/purpur/event/entity/GoatRamEntityEvent.java
-@@ -0,0 +1,59 @@
+@@ -0,0 +1,58 @@
 +package org.purpurmc.purpur.event.entity;
 +
 +import org.bukkit.entity.Goat;
@@ -3075,17 +3112,20 @@ index 0000000000000000000000000000000000000000..f62c14f3d4999e9112c1c73642aa337d
 +import org.bukkit.event.Cancellable;
 +import org.bukkit.event.HandlerList;
 +import org.bukkit.event.entity.EntityEvent;
-+import org.jetbrains.annotations.NotNull;
++import org.jetbrains.annotations.ApiStatus;
++import org.jspecify.annotations.NullMarked;
 +
 +/**
 + * Called when a goat rams an entity
 + */
++@NullMarked
 +public class GoatRamEntityEvent extends EntityEvent implements Cancellable {
 +    private static final HandlerList handlers = new HandlerList();
 +    private final LivingEntity rammedEntity;
 +    private boolean cancelled;
 +
-+    public GoatRamEntityEvent(@NotNull Goat goat, @NotNull LivingEntity rammedEntity) {
++    @ApiStatus.Internal
++    public GoatRamEntityEvent(Goat goat, LivingEntity rammedEntity) {
 +        super(goat);
 +        this.rammedEntity = rammedEntity;
 +    }
@@ -3095,24 +3135,20 @@ index 0000000000000000000000000000000000000000..f62c14f3d4999e9112c1c73642aa337d
 +     *
 +     * @return The rammed entity
 +     */
-+    @NotNull
 +    public LivingEntity getRammedEntity() {
 +        return this.rammedEntity;
 +    }
 +
 +    @Override
-+    @NotNull
 +    public Goat getEntity() {
 +        return (Goat) super.getEntity();
 +    }
 +
 +    @Override
-+    @NotNull
 +    public HandlerList getHandlers() {
 +        return handlers;
 +    }
 +
-+    @NotNull
 +    public static HandlerList getHandlerList() {
 +        return handlers;
 +    }
@@ -3129,17 +3165,18 @@ index 0000000000000000000000000000000000000000..f62c14f3d4999e9112c1c73642aa337d
 +}
 diff --git a/src/main/java/org/purpurmc/purpur/event/entity/LlamaJoinCaravanEvent.java b/src/main/java/org/purpurmc/purpur/event/entity/LlamaJoinCaravanEvent.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..8849bb0becb16db907fa648cca2e98ab9d957c75
+index 0000000000000000000000000000000000000000..e34c37579dc8a5a108c03b9eff6bb916a910d867
 --- /dev/null
 +++ b/src/main/java/org/purpurmc/purpur/event/entity/LlamaJoinCaravanEvent.java
-@@ -0,0 +1,61 @@
+@@ -0,0 +1,60 @@
 +package org.purpurmc.purpur.event.entity;
 +
 +import org.bukkit.entity.Llama;
 +import org.bukkit.event.Cancellable;
 +import org.bukkit.event.HandlerList;
 +import org.bukkit.event.entity.EntityEvent;
-+import org.jetbrains.annotations.NotNull;
++import org.jetbrains.annotations.ApiStatus;
++import org.jspecify.annotations.NullMarked;
 +
 +/**
 + * Called when a Llama tries to join a caravan.
@@ -3147,18 +3184,19 @@ index 0000000000000000000000000000000000000000..8849bb0becb16db907fa648cca2e98ab
 + * Cancelling the event will not let the Llama join. To prevent future attempts
 + * at joining a caravan use {@link Llama#setShouldJoinCaravan(boolean)}.
 + */
++@NullMarked
 +public class LlamaJoinCaravanEvent extends EntityEvent implements Cancellable {
 +    private static final HandlerList handlers = new HandlerList();
 +    private boolean canceled;
 +    private final Llama head;
 +
-+    public LlamaJoinCaravanEvent(@NotNull Llama llama, @NotNull Llama head) {
++    @ApiStatus.Internal
++    public LlamaJoinCaravanEvent(Llama llama, Llama head) {
 +        super(llama);
 +        this.head = head;
 +    }
 +
 +    @Override
-+    @NotNull
 +    public Llama getEntity() {
 +        return (Llama) entity;
 +    }
@@ -3168,7 +3206,6 @@ index 0000000000000000000000000000000000000000..8849bb0becb16db907fa648cca2e98ab
 +     *
 +     * @return Llama about to be followed
 +     */
-+    @NotNull
 +    public Llama getHead() {
 +        return head;
 +    }
@@ -3184,19 +3221,17 @@ index 0000000000000000000000000000000000000000..8849bb0becb16db907fa648cca2e98ab
 +    }
 +
 +    @Override
-+    @NotNull
 +    public HandlerList getHandlers() {
 +        return handlers;
 +    }
 +
-+    @NotNull
 +    public static HandlerList getHandlerList() {
 +        return handlers;
 +    }
 +}
 diff --git a/src/main/java/org/purpurmc/purpur/event/entity/LlamaLeaveCaravanEvent.java b/src/main/java/org/purpurmc/purpur/event/entity/LlamaLeaveCaravanEvent.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..c268c35b541a222d50875c29770c846a8ffcc4f8
+index 0000000000000000000000000000000000000000..23ea41ff5dc43a915a263aeb1a246705de8bf9e1
 --- /dev/null
 +++ b/src/main/java/org/purpurmc/purpur/event/entity/LlamaLeaveCaravanEvent.java
 @@ -0,0 +1,34 @@
@@ -3205,61 +3240,65 @@ index 0000000000000000000000000000000000000000..c268c35b541a222d50875c29770c846a
 +import org.bukkit.entity.Llama;
 +import org.bukkit.event.HandlerList;
 +import org.bukkit.event.entity.EntityEvent;
-+import org.jetbrains.annotations.NotNull;
++import org.jetbrains.annotations.ApiStatus;
++import org.jspecify.annotations.NullMarked;
 +
 +/**
 + * Called when a Llama leaves a caravan
 + */
++@NullMarked
 +public class LlamaLeaveCaravanEvent extends EntityEvent {
 +    private static final HandlerList handlers = new HandlerList();
 +
-+    public LlamaLeaveCaravanEvent(@NotNull Llama llama) {
++    @ApiStatus.Internal
++    public LlamaLeaveCaravanEvent(Llama llama) {
 +        super(llama);
 +    }
 +
 +    @Override
-+    @NotNull
 +    public Llama getEntity() {
 +        return (Llama) entity;
 +    }
 +
 +    @Override
-+    @NotNull
 +    public HandlerList getHandlers() {
 +        return handlers;
 +    }
 +
-+    @NotNull
 +    public static HandlerList getHandlerList() {
 +        return handlers;
 +    }
 +}
 diff --git a/src/main/java/org/purpurmc/purpur/event/entity/PreEntityExplodeEvent.java b/src/main/java/org/purpurmc/purpur/event/entity/PreEntityExplodeEvent.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..2d4f68228861492baaea0bcc604dfef623b337ba
+index 0000000000000000000000000000000000000000..d56fb066455007cc710f7ba34ba722af6e89bc1d
 --- /dev/null
 +++ b/src/main/java/org/purpurmc/purpur/event/entity/PreEntityExplodeEvent.java
-@@ -0,0 +1,64 @@
+@@ -0,0 +1,66 @@
 +package org.purpurmc.purpur.event.entity;
 +
++import org.bukkit.ExplosionResult;
 +import org.bukkit.Location;
 +import org.bukkit.event.Cancellable;
 +import org.bukkit.event.HandlerList;
 +import org.bukkit.event.entity.EntityExplodeEvent;
-+import org.jetbrains.annotations.NotNull;
++import org.jetbrains.annotations.ApiStatus;
 +import java.util.Collections;
++import org.jspecify.annotations.NullMarked;
 +
 +/**
 + * Called before an entity's explosion is processed
 + */
++@NullMarked
 +public class PreEntityExplodeEvent extends EntityExplodeEvent implements Cancellable {
 +    private static final HandlerList handlers = new HandlerList();
 +    private boolean cancelled;
 +    private final float yield;
 +    private final Location location;
 +
-+    public PreEntityExplodeEvent(@NotNull org.bukkit.entity.Entity what, @NotNull final Location location, final float yield) {
-+        super(what, location, Collections.emptyList(), yield);
++    @ApiStatus.Internal
++    public PreEntityExplodeEvent(org.bukkit.entity.Entity what, final Location location, final float yield, ExplosionResult result) {
++        super(what, location, Collections.emptyList(), yield, result);
 +        this.cancelled = false;
 +        this.yield = yield;
 +        this.location = location;
@@ -3279,7 +3318,6 @@ index 0000000000000000000000000000000000000000..2d4f68228861492baaea0bcc604dfef6
 +     *
 +     * @return The location of the explosion
 +     */
-+    @NotNull
 +    public Location getLocation() {
 +        return location;
 +    }
@@ -3295,21 +3333,20 @@ index 0000000000000000000000000000000000000000..2d4f68228861492baaea0bcc604dfef6
 +    }
 +
 +    @Override
-+    public @NotNull HandlerList getHandlers() {
++    public HandlerList getHandlers() {
 +        return handlers;
 +    }
 +
-+    @NotNull
 +    public static HandlerList getHandlerList() {
 +        return handlers;
 +    }
 +}
 diff --git a/src/main/java/org/purpurmc/purpur/event/entity/RidableMoveEvent.java b/src/main/java/org/purpurmc/purpur/event/entity/RidableMoveEvent.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..a037df01b07af9ffb98b67aca412c1d34fade03b
+index 0000000000000000000000000000000000000000..c31a656daa3df1ab87302d8f14110a828c920102
 --- /dev/null
 +++ b/src/main/java/org/purpurmc/purpur/event/entity/RidableMoveEvent.java
-@@ -0,0 +1,103 @@
+@@ -0,0 +1,100 @@
 +package org.purpurmc.purpur.event.entity;
 +
 +import com.google.common.base.Preconditions;
@@ -3319,11 +3356,13 @@ index 0000000000000000000000000000000000000000..a037df01b07af9ffb98b67aca412c1d3
 +import org.bukkit.event.Cancellable;
 +import org.bukkit.event.HandlerList;
 +import org.bukkit.event.entity.EntityEvent;
-+import org.jetbrains.annotations.NotNull;
++import org.jetbrains.annotations.ApiStatus;
++import org.jspecify.annotations.NullMarked;
 +
 +/**
 + * Triggered when a ridable mob moves with a rider
 + */
++@NullMarked
 +public class RidableMoveEvent extends EntityEvent implements Cancellable {
 +    private static final HandlerList handlers = new HandlerList();
 +    private boolean canceled;
@@ -3331,7 +3370,8 @@ index 0000000000000000000000000000000000000000..a037df01b07af9ffb98b67aca412c1d3
 +    private Location from;
 +    private Location to;
 +
-+    public RidableMoveEvent(@NotNull Mob entity, @NotNull Player rider, @NotNull Location from, @NotNull Location to) {
++    @ApiStatus.Internal
++    public RidableMoveEvent(Mob entity, Player rider, Location from, Location to) {
 +        super(entity);
 +        this.rider = rider;
 +        this.from = from;
@@ -3339,12 +3379,10 @@ index 0000000000000000000000000000000000000000..a037df01b07af9ffb98b67aca412c1d3
 +    }
 +
 +    @Override
-+    @NotNull
 +    public Mob getEntity() {
 +        return (Mob) entity;
 +    }
 +
-+    @NotNull
 +    public Player getRider() {
 +        return rider;
 +    }
@@ -3362,7 +3400,6 @@ index 0000000000000000000000000000000000000000..a037df01b07af9ffb98b67aca412c1d3
 +     *
 +     * @return Location the entity moved from
 +     */
-+    @NotNull
 +    public Location getFrom() {
 +        return from;
 +    }
@@ -3372,7 +3409,7 @@ index 0000000000000000000000000000000000000000..a037df01b07af9ffb98b67aca412c1d3
 +     *
 +     * @param from New location to mark as the entity's previous location
 +     */
-+    public void setFrom(@NotNull Location from) {
++    public void setFrom(Location from) {
 +        validateLocation(from);
 +        this.from = from;
 +    }
@@ -3382,7 +3419,6 @@ index 0000000000000000000000000000000000000000..a037df01b07af9ffb98b67aca412c1d3
 +     *
 +     * @return Location the entity moved to
 +     */
-+    @NotNull
 +    public Location getTo() {
 +        return to;
 +    }
@@ -3392,46 +3428,47 @@ index 0000000000000000000000000000000000000000..a037df01b07af9ffb98b67aca412c1d3
 +     *
 +     * @param to New Location this entity will move to
 +     */
-+    public void setTo(@NotNull Location to) {
++    public void setTo(Location to) {
 +        validateLocation(to);
 +        this.to = to;
 +    }
 +
-+    private void validateLocation(@NotNull Location loc) {
++    private void validateLocation(Location loc) {
 +        Preconditions.checkArgument(loc != null, "Cannot use null location!");
 +        Preconditions.checkArgument(loc.getWorld() != null, "Cannot use null location with null world!");
 +    }
 +
 +    @Override
-+    @NotNull
 +    public HandlerList getHandlers() {
 +        return handlers;
 +    }
 +
-+    @NotNull
 +    public static HandlerList getHandlerList() {
 +        return handlers;
 +    }
 +}
 diff --git a/src/main/java/org/purpurmc/purpur/event/entity/RidableSpacebarEvent.java b/src/main/java/org/purpurmc/purpur/event/entity/RidableSpacebarEvent.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..3d3a7d898e3278ce998d713dafbb4b354dad7fc7
+index 0000000000000000000000000000000000000000..02de629f066ef7d4898b3053efa957edeea16a3f
 --- /dev/null
 +++ b/src/main/java/org/purpurmc/purpur/event/entity/RidableSpacebarEvent.java
-@@ -0,0 +1,37 @@
+@@ -0,0 +1,38 @@
 +package org.purpurmc.purpur.event.entity;
 +
 +import org.bukkit.entity.Entity;
 +import org.bukkit.event.Cancellable;
 +import org.bukkit.event.HandlerList;
 +import org.bukkit.event.entity.EntityEvent;
-+import org.jetbrains.annotations.NotNull;
++import org.jetbrains.annotations.ApiStatus;
++import org.jspecify.annotations.NullMarked;
 +
++@NullMarked
 +public class RidableSpacebarEvent extends EntityEvent implements Cancellable {
 +    private static final HandlerList handlers = new HandlerList();
 +    private boolean cancelled;
 +
-+    public RidableSpacebarEvent(@NotNull Entity entity) {
++    @ApiStatus.Internal
++    public RidableSpacebarEvent(Entity entity) {
 +        super(entity);
 +    }
 +
@@ -3446,22 +3483,20 @@ index 0000000000000000000000000000000000000000..3d3a7d898e3278ce998d713dafbb4b35
 +    }
 +
 +    @Override
-+    @NotNull
 +    public HandlerList getHandlers() {
 +        return handlers;
 +    }
 +
-+    @NotNull
 +    public static HandlerList getHandlerList() {
 +        return handlers;
 +    }
 +}
 diff --git a/src/main/java/org/purpurmc/purpur/event/inventory/AnvilTakeResultEvent.java b/src/main/java/org/purpurmc/purpur/event/inventory/AnvilTakeResultEvent.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..b363c91a29f826910db22f2643decf996a067ab5
+index 0000000000000000000000000000000000000000..b2199854b5c7e74a673cbadbe584e5aaebbe3883
 --- /dev/null
 +++ b/src/main/java/org/purpurmc/purpur/event/inventory/AnvilTakeResultEvent.java
-@@ -0,0 +1,52 @@
+@@ -0,0 +1,50 @@
 +package org.purpurmc.purpur.event.inventory;
 +
 +import org.bukkit.entity.HumanEntity;
@@ -3471,52 +3506,50 @@ index 0000000000000000000000000000000000000000..b363c91a29f826910db22f2643decf99
 +import org.bukkit.inventory.AnvilInventory;
 +import org.bukkit.inventory.InventoryView;
 +import org.bukkit.inventory.ItemStack;
-+import org.jetbrains.annotations.NotNull;
++import org.jetbrains.annotations.ApiStatus;
++import org.jspecify.annotations.NullMarked;
 +
 +/**
 + * Called when a player takes the result item out of an anvil
 + */
++@NullMarked
 +public class AnvilTakeResultEvent extends InventoryEvent {
 +    private static final HandlerList handlers = new HandlerList();
 +    private final Player player;
 +    private final ItemStack result;
 +
-+    public AnvilTakeResultEvent(@NotNull HumanEntity player, @NotNull InventoryView view, @NotNull ItemStack result) {
++    @ApiStatus.Internal
++    public AnvilTakeResultEvent(HumanEntity player, InventoryView view, ItemStack result) {
 +        super(view);
 +        this.player = (Player) player;
 +        this.result = result;
 +    }
 +
-+    @NotNull
 +    public Player getPlayer() {
 +        return player;
 +    }
 +
-+    @NotNull
 +    public ItemStack getResult() {
 +        return result;
 +    }
 +
-+    @NotNull
 +    @Override
 +    public AnvilInventory getInventory() {
 +        return (AnvilInventory) super.getInventory();
 +    }
 +
-+    @NotNull
 +    @Override
 +    public HandlerList getHandlers() {
 +        return handlers;
 +    }
 +
-+    @NotNull
 +    public static HandlerList getHandlerList() {
 +        return handlers;
 +    }
 +}
 diff --git a/src/main/java/org/purpurmc/purpur/event/inventory/AnvilUpdateResultEvent.java b/src/main/java/org/purpurmc/purpur/event/inventory/AnvilUpdateResultEvent.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..fd6a5a3589d436c2aaf988fd305899695799d3bb
+index 0000000000000000000000000000000000000000..4293c4a57c1c054e8248b7712e8664bd4cb1a972
 --- /dev/null
 +++ b/src/main/java/org/purpurmc/purpur/event/inventory/AnvilUpdateResultEvent.java
 @@ -0,0 +1,35 @@
@@ -3526,38 +3559,38 @@ index 0000000000000000000000000000000000000000..fd6a5a3589d436c2aaf988fd30589969
 +import org.bukkit.event.inventory.InventoryEvent;
 +import org.bukkit.inventory.AnvilInventory;
 +import org.bukkit.inventory.InventoryView;
-+import org.jetbrains.annotations.NotNull;
++import org.jetbrains.annotations.ApiStatus;
++import org.jspecify.annotations.NullMarked;
 +
 +/**
 + * Called when anvil slots change, triggering the result slot to be updated
 + */
++@NullMarked
 +public class AnvilUpdateResultEvent extends InventoryEvent {
 +    private static final HandlerList handlers = new HandlerList();
 +
-+    public AnvilUpdateResultEvent(@NotNull InventoryView view) {
++    @ApiStatus.Internal
++    public AnvilUpdateResultEvent(InventoryView view) {
 +        super(view);
 +    }
 +
-+    @NotNull
 +    @Override
 +    public AnvilInventory getInventory() {
 +        return (AnvilInventory) super.getInventory();
 +    }
 +
-+    @NotNull
 +    @Override
 +    public HandlerList getHandlers() {
 +        return handlers;
 +    }
 +
-+    @NotNull
 +    public static HandlerList getHandlerList() {
 +        return handlers;
 +    }
 +}
 diff --git a/src/main/java/org/purpurmc/purpur/event/inventory/GrindstoneTakeResultEvent.java b/src/main/java/org/purpurmc/purpur/event/inventory/GrindstoneTakeResultEvent.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..eebb5d124456b8209d1b8e8cc4cb772dd3714f04
+index 0000000000000000000000000000000000000000..d6db2d355553c9c54b83328d237b9c75e7a8e375
 --- /dev/null
 +++ b/src/main/java/org/purpurmc/purpur/event/inventory/GrindstoneTakeResultEvent.java
 @@ -0,0 +1,72 @@
@@ -3570,35 +3603,35 @@ index 0000000000000000000000000000000000000000..eebb5d124456b8209d1b8e8cc4cb772d
 +import org.bukkit.inventory.GrindstoneInventory;
 +import org.bukkit.inventory.InventoryView;
 +import org.bukkit.inventory.ItemStack;
-+import org.jetbrains.annotations.NotNull;
++import org.jetbrains.annotations.ApiStatus;
++import org.jspecify.annotations.NullMarked;
 +
 +/**
 + * Called when a player takes the result item out of a Grindstone
 + */
++@NullMarked
 +public class GrindstoneTakeResultEvent extends InventoryEvent {
 +    private static final HandlerList handlers = new HandlerList();
 +    private final Player player;
 +    private final ItemStack result;
 +    private int experienceAmount;
 +
-+    public GrindstoneTakeResultEvent(@NotNull HumanEntity player, @NotNull InventoryView view, @NotNull ItemStack result, int experienceAmount) {
++    @ApiStatus.Internal
++    public GrindstoneTakeResultEvent(HumanEntity player, InventoryView view, ItemStack result, int experienceAmount) {
 +        super(view);
 +        this.player = (Player) player;
 +        this.result = result;
 +        this.experienceAmount = experienceAmount;
 +    }
 +
-+    @NotNull
 +    public Player getPlayer() {
 +        return player;
 +    }
 +
-+    @NotNull
 +    public ItemStack getResult() {
 +        return result;
 +    }
 +
-+    @NotNull
 +    @Override
 +    public GrindstoneInventory getInventory() {
 +        return (GrindstoneInventory) super.getInventory();
@@ -3606,6 +3639,7 @@ index 0000000000000000000000000000000000000000..eebb5d124456b8209d1b8e8cc4cb772d
 +
 +    /**
 +     * Get the amount of experience this transaction will give
++     * (takes priority over and uses result from {@link org.bukkit.event.block.BlockExpEvent})
 +     *
 +     * @return Amount of experience to give
 +     */
@@ -3615,6 +3649,7 @@ index 0000000000000000000000000000000000000000..eebb5d124456b8209d1b8e8cc4cb772d
 +
 +    /**
 +     * Set the amount of experience this transaction will give
++     * (takes priority over {@link org.bukkit.event.block.BlockExpEvent})
 +     *
 +     * @param experienceAmount Amount of experience to give
 +     */
@@ -3622,20 +3657,18 @@ index 0000000000000000000000000000000000000000..eebb5d124456b8209d1b8e8cc4cb772d
 +        this.experienceAmount = experienceAmount;
 +    }
 +
-+    @NotNull
 +    @Override
 +    public HandlerList getHandlers() {
 +        return handlers;
 +    }
 +
-+    @NotNull
 +    public static HandlerList getHandlerList() {
 +        return handlers;
 +    }
 +}
 diff --git a/src/main/java/org/purpurmc/purpur/event/player/PlayerBookTooLargeEvent.java b/src/main/java/org/purpurmc/purpur/event/player/PlayerBookTooLargeEvent.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..c88394336bc9ab0f66a2af24d393f4a176a234d5
+index 0000000000000000000000000000000000000000..31cce9f4e398135016114b96254376325a22ba7c
 --- /dev/null
 +++ b/src/main/java/org/purpurmc/purpur/event/player/PlayerBookTooLargeEvent.java
 @@ -0,0 +1,65 @@
@@ -3646,11 +3679,13 @@ index 0000000000000000000000000000000000000000..c88394336bc9ab0f66a2af24d393f4a1
 +import org.bukkit.event.HandlerList;
 +import org.bukkit.event.player.PlayerEvent;
 +import org.bukkit.inventory.ItemStack;
-+import org.jetbrains.annotations.NotNull;
++import org.jetbrains.annotations.ApiStatus;
++import org.jspecify.annotations.NullMarked;
 +
 +/**
 + * Called when a player tries to bypass book limitations
 + */
++@NullMarked
 +public class PlayerBookTooLargeEvent extends PlayerEvent {
 +    private static final HandlerList handlers = new HandlerList();
 +    private final ItemStack book;
@@ -3660,7 +3695,8 @@ index 0000000000000000000000000000000000000000..c88394336bc9ab0f66a2af24d393f4a1
 +     * @param player The player
 +     * @param book The book
 +     */
-+    public PlayerBookTooLargeEvent(@NotNull Player player, @NotNull ItemStack book) {
++    @ApiStatus.Internal
++    public PlayerBookTooLargeEvent(Player player, ItemStack book) {
 +        super(player, !Bukkit.isPrimaryThread());
 +        this.book = book;
 +    }
@@ -3670,7 +3706,6 @@ index 0000000000000000000000000000000000000000..c88394336bc9ab0f66a2af24d393f4a1
 +     *
 +     * @return The book
 +     */
-+    @NotNull
 +    public ItemStack getBook() {
 +        return book;
 +    }
@@ -3694,42 +3729,42 @@ index 0000000000000000000000000000000000000000..c88394336bc9ab0f66a2af24d393f4a1
 +    }
 +
 +    @Override
-+    @NotNull
 +    public HandlerList getHandlers() {
 +        return handlers;
 +    }
 +
-+    @NotNull
 +    public static HandlerList getHandlerList() {
 +        return handlers;
 +    }
 +}
 diff --git a/src/main/java/org/purpurmc/purpur/language/Language.java b/src/main/java/org/purpurmc/purpur/language/Language.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..38483d908ed830e97883733bee2370f87060f4c7
+index 0000000000000000000000000000000000000000..cbdad4cf09c170064a45644efdf7aa0b28608301
 --- /dev/null
 +++ b/src/main/java/org/purpurmc/purpur/language/Language.java
 @@ -0,0 +1,60 @@
 +package org.purpurmc.purpur.language;
 +
 +import net.kyori.adventure.translation.Translatable;
-+import org.jetbrains.annotations.NotNull;
++import org.jspecify.annotations.NullMarked;
++import org.jspecify.annotations.Nullable;
 +
 +/**
 + * Represents a language that can translate translation keys
 + */
++@NullMarked
 +public abstract class Language {
-+    private static Language language;
++    private static @Nullable Language language;
 +
 +    /**
 +     * Returns the default language of the server
 +     */
-+    @NotNull
++    @Nullable
 +    public static Language getLanguage() {
 +        return language;
 +    }
 +
-+    public static void setLanguage(@NotNull Language language) {
++    public static void setLanguage(Language language) {
 +        if (Language.language != null) {
 +            throw new UnsupportedOperationException("Cannot redefine singleton Language");
 +        }
@@ -3741,14 +3776,14 @@ index 0000000000000000000000000000000000000000..38483d908ed830e97883733bee2370f8
 +     * @param key The translation key
 +     * @return Whether this language can translate the key
 +     */
-+    abstract public boolean has(@NotNull String key);
++    abstract public boolean has(String key);
 +
 +    /**
 +     * Checks if a certain translation key is translatable with this language
 +     * @param key The translation key
 +     * @return Whether this language can translate the key
 +     */
-+    public boolean has(@NotNull Translatable key) {
++    public boolean has(Translatable key) {
 +        return has(key.translationKey());
 +    }
 +
@@ -3757,16 +3792,14 @@ index 0000000000000000000000000000000000000000..38483d908ed830e97883733bee2370f8
 +     * @param key The translation key
 +     * @return The translated key, or the translation key if it couldn't be translated
 +     */
-+    @NotNull
-+    abstract public String getOrDefault(@NotNull String key);
++    abstract public String getOrDefault(String key);
 +
 +    /**
 +     * Translates a translation key to this language
 +     * @param key The translation key
 +     * @return The translated key, or the translation key if it couldn't be translated
 +     */
-+    @NotNull
-+    public String getOrDefault(@NotNull Translatable key) {
++    public String getOrDefault(Translatable key) {
 +        return getOrDefault(key.translationKey());
 +    }
 +}
@@ -3785,7 +3818,7 @@ index 12946bd55fcf7c40d39081779a7fa30049ee6165..9c2d605c50cbf9aefa56ec209df9f6ce
  
  }
 diff --git a/src/test/java/org/bukkit/AnnotationTest.java b/src/test/java/org/bukkit/AnnotationTest.java
-index 057dc3ebea3516863dda24252fe05d344c16fab3..5b341346cb9582ad5a0bb77a0d4046d8527797a3 100644
+index f9e4b16a21d6cc6c9cbbe06d20c8af25e72e3ddb..4028b230e7fe1c78520f227a377a2a61e8381ecc 100644
 --- a/src/test/java/org/bukkit/AnnotationTest.java
 +++ b/src/test/java/org/bukkit/AnnotationTest.java
 @@ -47,6 +47,10 @@ public class AnnotationTest {
