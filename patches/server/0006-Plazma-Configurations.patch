@@ -5,12 +5,12 @@ Subject: [PATCH] Plazma Configurations
 
 
 diff --git a/src/main/java/io/papermc/paper/configuration/Configurations.java b/src/main/java/io/papermc/paper/configuration/Configurations.java
-index 62b602450a53cfebf08f839b505d0e965aff6e20..cda3636a1ff914c7177e95a8f813e9f4dd27a2c5 100644
+index 17e52f4b6..62efd5439 100644
 --- a/src/main/java/io/papermc/paper/configuration/Configurations.java
 +++ b/src/main/java/io/papermc/paper/configuration/Configurations.java
-@@ -39,28 +39,95 @@ public abstract class Configurations<G, W> {
+@@ -39,27 +39,94 @@ public abstract class Configurations<G, W> {
      public static final String WORLD_DEFAULTS = "__world_defaults__";
-     public static final ResourceLocation WORLD_DEFAULTS_KEY = new ResourceLocation("configurations", WORLD_DEFAULTS);
+     public static final ResourceLocation WORLD_DEFAULTS_KEY = ResourceLocation.fromNamespaceAndPath("configurations", WORLD_DEFAULTS);
      protected final Path globalFolder;
 -    protected final Class<G> globalConfigClass;
 -    protected final Class<W> worldConfigClass;
@@ -26,7 +26,13 @@ index 62b602450a53cfebf08f839b505d0e965aff6e20..cda3636a1ff914c7177e95a8f813e9f4
 -        final String defaultWorldConfigFileName,
 -        final String worldConfigFileName
 -    ) {
-+    
+-        this.globalFolder = globalFolder;
+-        this.globalConfigClass = globalConfigType;
+-        this.worldConfigClass = worldConfigClass;
+-        this.globalConfigFileName = globalConfigFileName;
+-        this.defaultWorldConfigFileName = defaultWorldConfigFileName;
+-        this.worldConfigFileName = worldConfigFileName;
++
 +    // Plazma start - Configurable Plazma
 +    @org.jetbrains.annotations.VisibleForTesting
 +    public static final java.util.function.Supplier<org.spigotmc.SpigotWorldConfig> SPIGOT_WORLD_DEFAULTS = com.google.common.base.Suppliers.memoize(() -> new org.spigotmc.SpigotWorldConfig(org.apache.commons.lang.RandomStringUtils.randomAlphabetic(255)) {
@@ -43,14 +49,9 @@ index 62b602450a53cfebf08f839b505d0e965aff6e20..cda3636a1ff914c7177e95a8f813e9f4
 +        } catch (IOException e) {
 +            throw new RuntimeException("Could not setup configurations", e);
 +        }
-         this.globalFolder = globalFolder;
--        this.globalConfigClass = globalConfigType;
--        this.worldConfigClass = worldConfigClass;
--        this.globalConfigFileName = globalConfigFileName;
--        this.defaultWorldConfigFileName = defaultWorldConfigFileName;
--        this.worldConfigFileName = worldConfigFileName;
-     }
- 
++        this.globalFolder = globalFolder; // Plazma - diff on changes
++    } // Plazma - diff on changes
++
 +    protected abstract Class<G> globalConfigClass();
 +    protected abstract String globalConfigFileName();
 +    protected abstract org.spongepowered.configurate.NodePath[] removedGlobalPaths();
@@ -117,12 +118,11 @@ index 62b602450a53cfebf08f839b505d0e965aff6e20..cda3636a1ff914c7177e95a8f813e9f4
 +        } catch (Exception e) {
 +            throw new RuntimeException("Could not reload configuration files", e);
 +        }
-+    }
+     }
 +    // Plazma end - Configurable Plazma
-+
+ 
      protected ObjectMapper.Factory.Builder createObjectMapper() {
          return ObjectMapper.factoryBuilder()
-             .addConstraint(Constraint.class, new Constraint.Factory())
 @@ -68,17 +135,21 @@ public abstract class Configurations<G, W> {
      }
  
@@ -153,7 +153,7 @@ index 62b602450a53cfebf08f839b505d0e965aff6e20..cda3636a1ff914c7177e95a8f813e9f4
      }
  
 -    static <T> CheckedFunction<ConfigurationNode, T, SerializationException> reloader(Class<T> type, T instance) {
-+    protected static <T> CheckedFunction<ConfigurationNode, T, SerializationException> reloader(Class<T> type, T instance) { // Plazma - AT (package -> public)
++    protected static <T> CheckedFunction<ConfigurationNode, T, SerializationException> reloader(Class<T> type, T instance) { // Plazma - package -> protected
          return node -> {
              ObjectMapper.Factory factory = (ObjectMapper.Factory) Objects.requireNonNull(node.options().serializers().get(type));
              ObjectMapper.Mutable<T> mutable = (ObjectMapper.Mutable<T>) factory.get(type);
@@ -166,7 +166,7 @@ index 62b602450a53cfebf08f839b505d0e965aff6e20..cda3636a1ff914c7177e95a8f813e9f4
      }
  
      private void trySaveFileNode(YamlConfigurationLoader loader, ConfigurationNode node, String filename) throws ConfigurateException {
-@@ -125,7 +196,7 @@ public abstract class Configurations<G, W> {
+@@ -118,7 +189,7 @@ public abstract class Configurations<G, W> {
      }
  
      protected G initializeGlobalConfiguration(final CheckedFunction<ConfigurationNode, G, SerializationException> creator) throws ConfigurateException {
@@ -175,7 +175,7 @@ index 62b602450a53cfebf08f839b505d0e965aff6e20..cda3636a1ff914c7177e95a8f813e9f4
          final YamlConfigurationLoader loader = this.createGlobalLoaderBuilder()
              .defaultOptions(this.applyObjectMapperFactory(this.createGlobalObjectMapperFactoryBuilder().build()))
              .path(configFile)
-@@ -156,6 +227,13 @@ public abstract class Configurations<G, W> {
+@@ -149,6 +220,13 @@ public abstract class Configurations<G, W> {
      }
  
      protected void applyGlobalConfigTransformations(final ConfigurationNode node) throws ConfigurateException {
@@ -189,7 +189,7 @@ index 62b602450a53cfebf08f839b505d0e965aff6e20..cda3636a1ff914c7177e95a8f813e9f4
      }
  
      @MustBeInvokedByOverriders
-@@ -163,6 +241,7 @@ public abstract class Configurations<G, W> {
+@@ -156,6 +234,7 @@ public abstract class Configurations<G, W> {
          return ContextMap.builder()
              .put(WORLD_NAME, WORLD_DEFAULTS)
              .put(WORLD_KEY, WORLD_DEFAULTS_KEY)
@@ -197,7 +197,7 @@ index 62b602450a53cfebf08f839b505d0e965aff6e20..cda3636a1ff914c7177e95a8f813e9f4
              .put(REGISTRY_ACCESS, registryAccess);
      }
  
-@@ -170,7 +249,7 @@ public abstract class Configurations<G, W> {
+@@ -163,7 +242,7 @@ public abstract class Configurations<G, W> {
          final ContextMap contextMap = this.createDefaultContextMap(registryAccess)
              .put(FIRST_DEFAULT)
              .build();
@@ -206,7 +206,7 @@ index 62b602450a53cfebf08f839b505d0e965aff6e20..cda3636a1ff914c7177e95a8f813e9f4
          final DefaultWorldLoader result = this.createDefaultWorldLoader(false, contextMap, configFile);
          final YamlConfigurationLoader loader = result.loader();
          final ConfigurationNode node = loader.load();
-@@ -180,8 +259,8 @@ public abstract class Configurations<G, W> {
+@@ -173,8 +252,8 @@ public abstract class Configurations<G, W> {
              this.verifyWorldConfigVersion(contextMap, node);
          }
          this.applyWorldConfigTransformations(contextMap, node, null);
@@ -217,29 +217,33 @@ index 62b602450a53cfebf08f839b505d0e965aff6e20..cda3636a1ff914c7177e95a8f813e9f4
          this.trySaveFileNode(loader, node, configFile.toString());
      }
  
-@@ -202,31 +281,42 @@ public abstract class Configurations<G, W> {
-     private record DefaultWorldLoader(YamlConfigurationLoader loader, boolean isNewFile) {
+@@ -196,30 +275,45 @@ public abstract class Configurations<G, W> {
      }
  
-+    // Plazma start - Configurable Plazma
      protected ObjectMapper.Factory.Builder createWorldObjectMapperFactoryBuilder(final ContextMap contextMap) {
 -        return this.createObjectMapper();
++        // Plazma start - Configurable Plazma
 +        return this.createObjectMapper()
 +            .addNodeResolver(new io.papermc.paper.configuration.legacy.RequiresSpigotInitialization.Factory(contextMap.require(SPIGOT_WORLD_CONFIG_CONTEXT_KEY).get()))
 +            .addNodeResolver(new NestedSetting.Factory())
 +            .addDiscoverer(new io.papermc.paper.configuration.mapping.InnerClassFieldDiscoverer(Map.of(this.worldConfigClass(), createWorldConfigInstance(contextMap))));
++        // Plazma end - Configurable Plazma
      }
  
      @MustBeInvokedByOverriders
      protected YamlConfigurationLoader.Builder createWorldConfigLoaderBuilder(final ContextMap contextMap) {
 -        return this.createLoaderBuilder();
++        // Plazma start - Configurable Plazma
 +        return this.createLoaderBuilder().defaultOptions(options -> options
 +            .header(contextMap.require(WORLD_NAME).equals(WORLD_DEFAULTS) ? this.worldDefaultHeader() : this.buildWorldHeader(contextMap)));
++        // Plazma end - Configurable Plazma
      }
  
++    // Plazma start - Configurable Plazma
      // Make sure to run version transforms on the default world config first via #setupWorldDefaultsConfig
 -    public W createWorldConfig(final ContextMap contextMap) throws IOException {
 -        return this.createWorldConfig(contextMap, creator(this.worldConfigClass, false));
+-    }
 +    public W createWorldConfig(final ContextMap contextMap) {
 +        final String levelName = contextMap.require(WORLD_NAME);
 +        try {
@@ -247,7 +251,7 @@ index 62b602450a53cfebf08f839b505d0e965aff6e20..cda3636a1ff914c7177e95a8f813e9f4
 +        } catch (IOException exception) {
 +            throw new RuntimeException("Could not create world config for " + levelName, exception);
 +        }
-     }
++    } // diff on change
 +    // Plazma end - Configurable Plazma
  
      protected W createWorldConfig(final ContextMap contextMap, final CheckedFunction<ConfigurationNode, W, SerializationException> creator) throws IOException {
@@ -267,7 +271,7 @@ index 62b602450a53cfebf08f839b505d0e965aff6e20..cda3636a1ff914c7177e95a8f813e9f4
              Files.createFile(worldConfigFile); // create empty file as template
              newFile = true;
          }
-@@ -270,6 +360,13 @@ public abstract class Configurations<G, W> {
+@@ -263,6 +357,13 @@ public abstract class Configurations<G, W> {
      }
  
      protected void applyWorldConfigTransformations(final ContextMap contextMap, final ConfigurationNode node, final @Nullable ConfigurationNode defaultsNode) throws ConfigurateException {
@@ -281,7 +285,7 @@ index 62b602450a53cfebf08f839b505d0e965aff6e20..cda3636a1ff914c7177e95a8f813e9f4
      }
  
      protected void applyDefaultsAwareWorldConfigTransformations(final ContextMap contextMap, final ConfigurationNode worldNode, final ConfigurationNode defaultsNode) throws ConfigurateException {
-@@ -282,7 +379,7 @@ public abstract class Configurations<G, W> {
+@@ -275,7 +376,7 @@ public abstract class Configurations<G, W> {
      }
  
      public Path getWorldConfigFile(ServerLevel level) {
@@ -291,10 +295,10 @@ index 62b602450a53cfebf08f839b505d0e965aff6e20..cda3636a1ff914c7177e95a8f813e9f4
  
      public static class ContextMap {
 diff --git a/src/main/java/io/papermc/paper/configuration/PaperConfigurations.java b/src/main/java/io/papermc/paper/configuration/PaperConfigurations.java
-index 83a726bcf8b7dce73a361b0d79dbd63a0afc7a12..3c893e5da90f7fcf519f190e34e2b15ea16ea262 100644
+index ee0d1df78..3807ab246 100644
 --- a/src/main/java/io/papermc/paper/configuration/PaperConfigurations.java
 +++ b/src/main/java/io/papermc/paper/configuration/PaperConfigurations.java
-@@ -134,6 +134,7 @@ public class PaperConfigurations extends Configurations<GlobalConfiguration, Wor
+@@ -135,6 +135,7 @@ public class PaperConfigurations extends Configurations<GlobalConfiguration, Wor
          See https://docs.papermc.io/paper/configuration for more information.
          """;
  
@@ -302,16 +306,14 @@ index 83a726bcf8b7dce73a361b0d79dbd63a0afc7a12..3c893e5da90f7fcf519f190e34e2b15e
      @VisibleForTesting
      public static final Supplier<SpigotWorldConfig> SPIGOT_WORLD_DEFAULTS = Suppliers.memoize(() -> new SpigotWorldConfig(RandomStringUtils.randomAlphabetic(255)) {
          @Override // override to ensure "verbose" is false
-@@ -142,12 +143,69 @@ public class PaperConfigurations extends Configurations<GlobalConfiguration, Wor
+@@ -143,11 +144,68 @@ public class PaperConfigurations extends Configurations<GlobalConfiguration, Wor
          }
      });
      public static final ContextKey<Supplier<SpigotWorldConfig>> SPIGOT_WORLD_CONFIG_CONTEXT_KEY = new ContextKey<>(new TypeToken<Supplier<SpigotWorldConfig>>() {}, "spigot world config");
--
-+    // Plazma start - Configurable Plazma
-+     */
++     */ // Plazma - Configurable Plazma
  
-     public PaperConfigurations(final Path globalFolder) {
--        super(globalFolder, GlobalConfiguration.class, WorldConfiguration.class, GLOBAL_CONFIG_FILE_NAME, WORLD_DEFAULTS_CONFIG_FILE_NAME, WORLD_CONFIG_FILE_NAME);
++    // Plazma start - Configurable Plazma
++    public PaperConfigurations(final Path globalFolder) { // diff on change
 +        super(globalFolder);
 +    }
 +
@@ -359,22 +361,23 @@ index 83a726bcf8b7dce73a361b0d79dbd63a0afc7a12..3c893e5da90f7fcf519f190e34e2b15e
 +    protected String worldDefaultHeader() {
 +        return WORLD_DEFAULTS_HEADER;
 +    }
-+
+ 
+-    public PaperConfigurations(final Path globalFolder) {
+-        super(globalFolder, GlobalConfiguration.class, WorldConfiguration.class, GLOBAL_CONFIG_FILE_NAME, WORLD_DEFAULTS_CONFIG_FILE_NAME, WORLD_CONFIG_FILE_NAME);
 +    @Override
 +    protected String buildWorldHeader(final ContextMap contextMap) {
 +        return WORLD_HEADER.apply(contextMap);
-     }
- 
++     }
++ 
 +    @Override
 +    protected WorldConfiguration getWorldConfiguration(final ServerLevel level) {
 +        return level.paperConfig();
-+    }
+     }
 +    // Plazma end - Configurable Plazma
-+
+ 
      @Override
      protected int globalConfigVersion() {
-         return GlobalConfiguration.CURRENT_VERSION;
-@@ -158,6 +216,7 @@ public class PaperConfigurations extends Configurations<GlobalConfiguration, Wor
+@@ -159,6 +217,7 @@ public class PaperConfigurations extends Configurations<GlobalConfiguration, Wor
          return WorldConfiguration.CURRENT_VERSION;
      }
  
@@ -382,23 +385,7 @@ index 83a726bcf8b7dce73a361b0d79dbd63a0afc7a12..3c893e5da90f7fcf519f190e34e2b15e
      @Override
      protected YamlConfigurationLoader.Builder createLoaderBuilder() {
          return super.createLoaderBuilder()
-@@ -180,6 +239,7 @@ public class PaperConfigurations extends Configurations<GlobalConfiguration, Wor
-     private static ObjectMapper.Factory.Builder defaultGlobalFactoryBuilder(ObjectMapper.Factory.Builder builder) {
-         return builder.addDiscoverer(InnerClassFieldDiscoverer.globalConfig());
-     }
-+     */ // Plazma - Configurable Plazma
- 
-     @Override
-     protected YamlConfigurationLoader.Builder createGlobalLoaderBuilder() {
-@@ -203,6 +263,7 @@ public class PaperConfigurations extends Configurations<GlobalConfiguration, Wor
-         return configuration;
-     }
- 
-+    /* // Plazma - Configurable Plazma
-     @Override
-     protected ContextMap.Builder createDefaultContextMap(final RegistryAccess registryAccess) {
-         return super.createDefaultContextMap(registryAccess)
-@@ -216,8 +277,9 @@ public class PaperConfigurations extends Configurations<GlobalConfiguration, Wor
+@@ -224,8 +283,9 @@ public class PaperConfigurations extends Configurations<GlobalConfiguration, Wor
              .addNodeResolver(new NestedSetting.Factory())
              .addDiscoverer(InnerClassFieldDiscoverer.worldConfig(createWorldConfigInstance(contextMap)));
      }
@@ -409,7 +396,7 @@ index 83a726bcf8b7dce73a361b0d79dbd63a0afc7a12..3c893e5da90f7fcf519f190e34e2b15e
          return new WorldConfiguration(
              contextMap.require(PaperConfigurations.SPIGOT_WORLD_CONFIG_CONTEXT_KEY).get(),
              contextMap.require(Configurations.WORLD_KEY)
-@@ -229,7 +291,7 @@ public class PaperConfigurations extends Configurations<GlobalConfiguration, Wor
+@@ -237,7 +297,7 @@ public class PaperConfigurations extends Configurations<GlobalConfiguration, Wor
          final RegistryAccess access = contextMap.require(REGISTRY_ACCESS);
          return super.createWorldConfigLoaderBuilder(contextMap)
              .defaultOptions(options -> options
@@ -418,7 +405,7 @@ index 83a726bcf8b7dce73a361b0d79dbd63a0afc7a12..3c893e5da90f7fcf519f190e34e2b15e
                  .serializers(serializers -> serializers
                      .register(new TypeToken<Reference2IntMap<?>>() {}, new FastutilMapSerializer.SomethingToPrimitive<Reference2IntMap<?>>(Reference2IntOpenHashMap::new, Integer.TYPE))
                      .register(new TypeToken<Reference2LongMap<?>>() {}, new FastutilMapSerializer.SomethingToPrimitive<Reference2LongMap<?>>(Reference2LongOpenHashMap::new, Long.TYPE))
-@@ -254,11 +316,7 @@ public class PaperConfigurations extends Configurations<GlobalConfiguration, Wor
+@@ -256,12 +316,7 @@ public class PaperConfigurations extends Configurations<GlobalConfiguration, Wor
  
      @Override
      protected void applyWorldConfigTransformations(final ContextMap contextMap, final ConfigurationNode node, final @Nullable ConfigurationNode defaultsNode) throws ConfigurateException {
@@ -426,12 +413,13 @@ index 83a726bcf8b7dce73a361b0d79dbd63a0afc7a12..3c893e5da90f7fcf519f190e34e2b15e
 -        for (final NodePath path : RemovedConfigurations.REMOVED_WORLD_PATHS) {
 -            builder.addAction(path, TransformAction.remove());
 -        }
+-        org.purpurmc.purpur.configuration.transformation.VoidDamageHeightMigration.apply(builder, contextMap); // Purpur
 -        builder.build().apply(node);
-+        super.applyWorldConfigTransformations(contextMap, node, defaultsNode); // Plazma - Configurable Plazma // Plazma - Configurable Plazma
++        super.applyWorldConfigTransformations(contextMap, node, defaultsNode); // Plazma - Configurable Plazma
  
          final ConfigurationTransformation.VersionedBuilder versionedBuilder = Transformations.versionedBuilder();
          V29_ZeroWorldHeight.apply(versionedBuilder);
-@@ -270,11 +328,7 @@ public class PaperConfigurations extends Configurations<GlobalConfiguration, Wor
+@@ -273,11 +328,7 @@ public class PaperConfigurations extends Configurations<GlobalConfiguration, Wor
  
      @Override
      protected void applyGlobalConfigTransformations(ConfigurationNode node) throws ConfigurateException {
@@ -444,7 +432,7 @@ index 83a726bcf8b7dce73a361b0d79dbd63a0afc7a12..3c893e5da90f7fcf519f190e34e2b15e
  
          final ConfigurationTransformation.VersionedBuilder versionedBuilder = Transformations.versionedBuilder();
          V29_LogIPs.apply(versionedBuilder);
-@@ -294,6 +348,7 @@ public class PaperConfigurations extends Configurations<GlobalConfiguration, Wor
+@@ -297,6 +348,7 @@ public class PaperConfigurations extends Configurations<GlobalConfiguration, Wor
          builder.build().apply(worldNode);
      }
  
@@ -452,7 +440,7 @@ index 83a726bcf8b7dce73a361b0d79dbd63a0afc7a12..3c893e5da90f7fcf519f190e34e2b15e
      @Override
      public WorldConfiguration createWorldConfig(final ContextMap contextMap) {
          final String levelName = contextMap.require(WORLD_NAME);
-@@ -335,6 +390,7 @@ public class PaperConfigurations extends Configurations<GlobalConfiguration, Wor
+@@ -338,6 +390,7 @@ public class PaperConfigurations extends Configurations<GlobalConfiguration, Wor
              .put(GAME_RULES, gameRules)
              .build();
      }
@@ -460,7 +448,7 @@ index 83a726bcf8b7dce73a361b0d79dbd63a0afc7a12..3c893e5da90f7fcf519f190e34e2b15e
  
      public static PaperConfigurations setup(final Path legacyConfig, final Path configDir, final Path worldFolder, final File spigotConfig) throws Exception {
          final Path legacy = Files.isSymbolicLink(legacyConfig) ? Files.readSymbolicLink(legacyConfig) : legacyConfig;
-@@ -368,12 +424,7 @@ public class PaperConfigurations extends Configurations<GlobalConfiguration, Wor
+@@ -371,12 +424,7 @@ public class PaperConfigurations extends Configurations<GlobalConfiguration, Wor
                  throw new RuntimeException("Could not convert '" + legacyFileName + "' to the new configuration format", ex);
              }
          }
@@ -474,7 +462,7 @@ index 83a726bcf8b7dce73a361b0d79dbd63a0afc7a12..3c893e5da90f7fcf519f190e34e2b15e
      }
  
      private static void convert(final Path legacyConfig, final Path configDir, final Path worldFolder, final File spigotConfig) throws Exception {
-@@ -424,6 +475,7 @@ public class PaperConfigurations extends Configurations<GlobalConfiguration, Wor
+@@ -427,6 +475,7 @@ public class PaperConfigurations extends Configurations<GlobalConfiguration, Wor
          return Files.exists(legacyConfig) && Files.isRegularFile(legacyConfig);
      }
  
@@ -482,7 +470,7 @@ index 83a726bcf8b7dce73a361b0d79dbd63a0afc7a12..3c893e5da90f7fcf519f190e34e2b15e
      @Deprecated
      public YamlConfiguration createLegacyObject(final MinecraftServer server) {
          YamlConfiguration global = YamlConfiguration.loadConfiguration(this.globalFolder.resolve(this.globalConfigFileName).toFile());
-@@ -434,6 +486,7 @@ public class PaperConfigurations extends Configurations<GlobalConfiguration, Wor
+@@ -437,6 +486,7 @@ public class PaperConfigurations extends Configurations<GlobalConfiguration, Wor
          }
          return global;
      }
@@ -490,7 +478,7 @@ index 83a726bcf8b7dce73a361b0d79dbd63a0afc7a12..3c893e5da90f7fcf519f190e34e2b15e
  
      @Deprecated
      public static YamlConfiguration loadLegacyConfigFile(File configFile) throws Exception {
-@@ -456,10 +509,13 @@ public class PaperConfigurations extends Configurations<GlobalConfiguration, Wor
+@@ -459,10 +509,13 @@ public class PaperConfigurations extends Configurations<GlobalConfiguration, Wor
          return BasicConfigurationNode.root(options);
      }
  
@@ -505,18 +493,18 @@ index 83a726bcf8b7dce73a361b0d79dbd63a0afc7a12..3c893e5da90f7fcf519f190e34e2b15e
 +
  }
 diff --git a/src/main/java/net/minecraft/server/MinecraftServer.java b/src/main/java/net/minecraft/server/MinecraftServer.java
-index 468cb5034f7648e6ef39b1961298f592535aad88..79ee153cd3c7bd3b2f34e7d30f70be5080cfa3c6 100644
+index e36b99645..ccfeda1ba 100644
 --- a/src/main/java/net/minecraft/server/MinecraftServer.java
 +++ b/src/main/java/net/minecraft/server/MinecraftServer.java
-@@ -311,6 +311,7 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
+@@ -318,6 +318,7 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
      public final double[] recentTps = new double[ 4 ]; // Purpur
      // Spigot end
      public final io.papermc.paper.configuration.PaperConfigurations paperConfigurations; // Paper - add paper configuration files
 +    public final org.plazmamc.plazma.configurations.PlazmaConfigurations plazmaConfigurations; // Plazma - Configurable Plazma
-     public static long currentTickLong = 0L; // Paper - track current tick as a long
      public boolean isIteratingOverLevels = false; // Paper - Throw exception on world create while being ticked
      public boolean lagging = false; // Purpur
-@@ -422,6 +423,7 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
+     protected boolean upnp = false; // Purpur
+@@ -500,6 +501,7 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
          Runtime.getRuntime().addShutdownHook(new org.bukkit.craftbukkit.util.ServerShutdownThread(this));
          // CraftBukkit end
          this.paperConfigurations = services.paperConfigurations(); // Paper - add paper configuration files
@@ -584,31 +572,31 @@ index 33e3815a0c979609d4c7ab83ad91e87ac07a556d..4f1071c48fec78036d6759cdff179df3
      }
  
 diff --git a/src/main/java/net/minecraft/server/dedicated/DedicatedServer.java b/src/main/java/net/minecraft/server/dedicated/DedicatedServer.java
-index 6d3f61a05c4d4ad20e62175eb0331bc31b5d6807..6cbbe9c692068edee7e66f85081ec95b8dd12101 100644
+index 68780b0ae..1bc42bcb5 100644
 --- a/src/main/java/net/minecraft/server/dedicated/DedicatedServer.java
 +++ b/src/main/java/net/minecraft/server/dedicated/DedicatedServer.java
-@@ -222,6 +222,8 @@ public class DedicatedServer extends MinecraftServer implements ServerInterface
+@@ -235,6 +235,8 @@ public class DedicatedServer extends MinecraftServer implements ServerInterface
          // Paper start - initialize global and world-defaults configuration
          this.paperConfigurations.initializeGlobalConfiguration(this.registryAccess());
          this.paperConfigurations.initializeWorldDefaultsConfiguration(this.registryAccess());
 +        this.plazmaConfigurations.initializeGlobalConfiguration(this.registryAccess()); // Plazma - Configurable Plazma
 +        this.plazmaConfigurations.initializeWorldDefaultsConfiguration(this.registryAccess()); // Plazma - Configurable Plazma
          // Paper end - initialize global and world-defaults configuration
+         this.server.spark.enableEarlyIfRequested(); // Paper - spark
          // Paper start - fix converting txt to json file; convert old users earlier after PlayerList creation but before file load/save
-         if (this.convertOldUsers()) {
-@@ -232,6 +234,7 @@ public class DedicatedServer extends MinecraftServer implements ServerInterface
+@@ -246,6 +248,7 @@ public class DedicatedServer extends MinecraftServer implements ServerInterface
          org.spigotmc.WatchdogThread.doStart(org.spigotmc.SpigotConfig.timeoutTime, org.spigotmc.SpigotConfig.restartOnCrash); // Paper - start watchdog thread
          thread.start(); // Paper - Enhance console tab completions for brigadier commands; start console thread after MinecraftServer.console & PaperConfig are initialized
          io.papermc.paper.command.PaperCommands.registerCommands(this); // Paper - setup /paper command
 +        org.plazmamc.plazma.commands.Commands.register(this); // Plazma - Configurable Plazma
+         this.server.spark.registerCommandBeforePlugins(this.server); // Paper - spark
          com.destroystokyo.paper.Metrics.PaperMetrics.startMetrics(); // Paper - start metrics
-         // Purpur start
-         try {
+         com.destroystokyo.paper.VersionHistoryManager.INSTANCE.getClass(); // Paper - load version history now
 diff --git a/src/main/java/net/minecraft/server/level/ServerLevel.java b/src/main/java/net/minecraft/server/level/ServerLevel.java
-index b3d47d16fb9733ca5cc4f90051ee8694ff3545c5..5456d2ded6f6e75c48868147e5a2dde5eb23bec8 100644
+index 067b10134..dfcd3989f 100644
 --- a/src/main/java/net/minecraft/server/level/ServerLevel.java
 +++ b/src/main/java/net/minecraft/server/level/ServerLevel.java
-@@ -700,15 +700,33 @@ public class ServerLevel extends Level implements WorldGenLevel {
+@@ -506,7 +506,25 @@ public class ServerLevel extends Level implements WorldGenLevel, ca.spottedleaf.
          // Holder holder = worlddimension.type(); // CraftBukkit - decompile error
  
          // Objects.requireNonNull(minecraftserver); // CraftBukkit - decompile error
@@ -635,21 +623,11 @@ index b3d47d16fb9733ca5cc4f90051ee8694ff3545c5..5456d2ded6f6e75c48868147e5a2dde5
          this.pvpMode = minecraftserver.isPvpAllowed();
          this.convertable = convertable_conversionsession;
          this.uuid = WorldUUID.getUUID(convertable_conversionsession.levelDirectory.path().toFile());
-         // CraftBukkit end
-         this.players = Lists.newArrayList();
-         this.entityTickList = new EntityTickList();
--        this.blockTicks = new LevelTicks<>(this::isPositionTickingWithEntitiesLoaded, this.getProfilerSupplier());
--        this.fluidTicks = new LevelTicks<>(this::isPositionTickingWithEntitiesLoaded, this.getProfilerSupplier());
-+        this.blockTicks = new LevelTicks<>(this::isPositionTickingWithEntitiesLoaded/*, this.getProfilerSupplier()*/); // Plazma - Completely remove Mojang's Profiler
-+        this.fluidTicks = new LevelTicks<>(this::isPositionTickingWithEntitiesLoaded/*, this.getProfilerSupplier()*/); // Plazma - Completely remove Mojang's Profiler
-         this.pathTypesByPosCache = new PathTypeCache();
-         this.navigatingMobs = new ObjectOpenHashSet();
-         this.blockEvents = new ObjectLinkedOpenHashSet();
 diff --git a/src/main/java/net/minecraft/world/level/Level.java b/src/main/java/net/minecraft/world/level/Level.java
-index 6fab30d186d64d51f7dd9af00fccded4c388844c..df73867ee5682fb966b69dd85da61a6928d8dab3 100644
+index 5057d9d43..253d47418 100644
 --- a/src/main/java/net/minecraft/world/level/Level.java
 +++ b/src/main/java/net/minecraft/world/level/Level.java
-@@ -169,6 +169,12 @@ public abstract class Level implements LevelAccessor, AutoCloseable {
+@@ -171,6 +171,12 @@ public abstract class Level implements LevelAccessor, AutoCloseable, ca.spottedl
          return this.paperConfig;
      }
      // Paper end - add paper world config
@@ -662,11 +640,11 @@ index 6fab30d186d64d51f7dd9af00fccded4c388844c..df73867ee5682fb966b69dd85da61a69
  
      public final com.destroystokyo.paper.antixray.ChunkPacketBlockController chunkPacketBlockController; // Paper - Anti-Xray
      public final org.purpurmc.purpur.PurpurWorldConfig purpurConfig; // Purpur
-@@ -251,9 +257,28 @@ public abstract class Level implements LevelAccessor, AutoCloseable {
+@@ -728,9 +734,28 @@ public abstract class Level implements LevelAccessor, AutoCloseable, ca.spottedl
+     }
+     // Paper end - optimise random ticking
  
-     //protected final io.papermc.paper.util.math.ThreadUnsafeRandom randomTickRandom = new io.papermc.paper.util.math.ThreadUnsafeRandom(java.util.concurrent.ThreadLocalRandom.current().nextLong()); public net.minecraft.util.RandomSource getThreadUnsafeRandom() { return this.randomTickRandom; } // Pufferfish - move thread unsafe random initialization // Pufferfish - getter // Purpur - dont break ABI
- 
--    protected Level(WritableLevelData worlddatamutable, ResourceKey<Level> resourcekey, RegistryAccess iregistrycustom, Holder<DimensionType> holder, Supplier<ProfilerFiller> supplier, boolean flag, boolean flag1, long i, int j, org.bukkit.generator.ChunkGenerator gen, org.bukkit.generator.BiomeProvider biomeProvider, org.bukkit.World.Environment env, java.util.function.Function<org.spigotmc.SpigotWorldConfig, io.papermc.paper.configuration.WorldConfiguration> paperWorldConfigCreator, java.util.concurrent.Executor executor) { // Paper - create paper world config; Async-Anti-Xray: Pass executor
+-    protected Level(WritableLevelData worlddatamutable, ResourceKey<Level> resourcekey, RegistryAccess iregistrycustom, Holder<DimensionType> holder, Supplier<ProfilerFiller> supplier, boolean flag, boolean flag1, long i, int j, org.bukkit.generator.ChunkGenerator gen, org.bukkit.generator.BiomeProvider biomeProvider, org.bukkit.World.Environment env, java.util.function.Function<org.spigotmc.SpigotWorldConfig, io.papermc.paper.configuration.WorldConfiguration> paperWorldConfigCreator, java.util.concurrent.Executor executor) { // Paper - create paper world config & Anti-Xray
 +    // Plazma start - Configurable Plazma
 +    protected Level(
 +        WritableLevelData worlddatamutable,
@@ -693,10 +671,10 @@ index 6fab30d186d64d51f7dd9af00fccded4c388844c..df73867ee5682fb966b69dd85da61a69
          this.playerBreedingCooldowns = this.getNewBreedingCooldownCache(); // Purpur
          this.generator = gen;
 diff --git a/src/main/java/org/bukkit/craftbukkit/CraftServer.java b/src/main/java/org/bukkit/craftbukkit/CraftServer.java
-index 3c505f631f15fe97e380c96ac719b1f61ed22690..02037da80f2f3cada359bbe0f58160fd15761b77 100644
+index 8854e3adc..0bd9f4dc2 100644
 --- a/src/main/java/org/bukkit/craftbukkit/CraftServer.java
 +++ b/src/main/java/org/bukkit/craftbukkit/CraftServer.java
-@@ -1047,6 +1047,7 @@ public final class CraftServer implements Server {
+@@ -1086,6 +1086,7 @@ public final class CraftServer implements Server {
  
          org.spigotmc.SpigotConfig.init((File) this.console.options.valueOf("spigot-settings")); // Spigot
          this.console.paperConfigurations.reloadConfigs(this.console);
@@ -704,7 +682,7 @@ index 3c505f631f15fe97e380c96ac719b1f61ed22690..02037da80f2f3cada359bbe0f58160fd
          org.purpurmc.purpur.PurpurConfig.init((File) console.options.valueOf("purpur-settings")); // Purpur
          for (ServerLevel world : this.console.getAllLevels()) {
              // world.serverLevelData.setDifficulty(config.difficulty); // Paper - per level difficulty
-@@ -3113,6 +3114,13 @@ public final class CraftServer implements Server {
+@@ -3068,6 +3069,13 @@ public final class CraftServer implements Server {
          }
          // Purpur end
  
@@ -719,7 +697,7 @@ index 3c505f631f15fe97e380c96ac719b1f61ed22690..02037da80f2f3cada359bbe0f58160fd
          public void restart() {
              org.spigotmc.RestartCommand.restart();
 diff --git a/src/main/java/org/bukkit/craftbukkit/Main.java b/src/main/java/org/bukkit/craftbukkit/Main.java
-index 90d6650aa37247f3907f6bcf2fe5201cac4e05ea..24c3914ba4f144a2e43c17e98373b7a4ce1f6217 100644
+index 8d67bf7aa..f12a0a44c 100644
 --- a/src/main/java/org/bukkit/craftbukkit/Main.java
 +++ b/src/main/java/org/bukkit/craftbukkit/Main.java
 @@ -197,6 +197,14 @@ public class Main {
@@ -1303,18 +1281,18 @@ index 0000000000000000000000000000000000000000..f2d3d51cb4b8fc7a5fd6db1a63289fff
 +    int version = VERSION;
 +
 +}
-diff --git a/src/test/java/org/bukkit/support/AbstractTestingBase.java b/src/test/java/org/bukkit/support/AbstractTestingBase.java
-index 1b1d51a68c0abe7d8f0aa1172064192c71ae645e..74af3501397bfd89d637ad5ce72bb8f2c2bbdc8a 100644
---- a/src/test/java/org/bukkit/support/AbstractTestingBase.java
-+++ b/src/test/java/org/bukkit/support/AbstractTestingBase.java
-@@ -64,6 +64,7 @@ public abstract class AbstractTestingBase {
+diff --git a/src/test/java/org/bukkit/support/DummyServerHelper.java b/src/test/java/org/bukkit/support/DummyServerHelper.java
+index cb2b39c56..272ccfb9b 100644
+--- a/src/test/java/org/bukkit/support/DummyServerHelper.java
++++ b/src/test/java/org/bukkit/support/DummyServerHelper.java
+@@ -92,6 +92,7 @@ public final class DummyServerHelper {
+         // Paper end - testing additions
  
-         DummyServer.setup();
-         io.papermc.paper.configuration.GlobalConfigTestingBase.setupGlobalConfigForTest(); // Paper
+         io.papermc.paper.configuration.GlobalConfigTestingBase.setupGlobalConfigForTest(); // Paper - configuration files - setup global configuration test base
 +        org.plazmamc.plazma.configurations.GlobalConfigurationTestingBase.setupGlobalConfigForTest(); // Plazma - Configurable Plazma
  
-         CraftRegistry.setMinecraftRegistry(REGISTRY_CUSTOM);
- 
+         // Paper start - add test for recipe conversion
+         when(instance.recipeIterator()).thenAnswer(ignored ->
 diff --git a/src/test/java/org/plazmamc/plazma/configurations/GlobalConfigurationTestingBase.java b/src/test/java/org/plazmamc/plazma/configurations/GlobalConfigurationTestingBase.java
 new file mode 100644
 index 0000000000000000000000000000000000000000..c63942e2dc00ed6d6b4119f418bdaa5a64b4c0fe
