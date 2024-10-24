@@ -94,10 +94,10 @@ index 03be23690a94a14d7343526acad67ccf53b85c70..416c0a736edf47f76a37be0bc5fe8678
                  )
              );
 diff --git a/src/main/java/net/minecraft/server/MinecraftServer.java b/src/main/java/net/minecraft/server/MinecraftServer.java
-index 4782f19409d300fbcaa952ae0dd6a0577ade5f7b..f926376ee95b28a9c09a1ad87223f89f1c28f50e 100644
+index c921595420939847bf91dc0cbb07faf3d815b02f..565d601f16f054cc5aa7eb4040e1bd6586f62b7d 100644
 --- a/src/main/java/net/minecraft/server/MinecraftServer.java
 +++ b/src/main/java/net/minecraft/server/MinecraftServer.java
-@@ -254,8 +254,10 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
+@@ -260,8 +260,10 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
      private final long[] tickTimesNanos;
      private long aggregatedTickTimesNanos;
      // Paper start - Add tick times API and /mspt command
@@ -108,8 +108,8 @@ index 4782f19409d300fbcaa952ae0dd6a0577ade5f7b..f926376ee95b28a9c09a1ad87223f89f
      public final TickTimes tickTimes60s = new TickTimes(1200);
      // Paper end - Add tick times API and /mspt command
      @Nullable
-@@ -1821,8 +1823,10 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
-                 worldserver.tick(shouldKeepTicking);
+@@ -1851,8 +1853,10 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
+                 worldserver.tick(shouldKeepTicking); // diff on changes
                  long after = Util.getNanos() - before;
  
 +                worldserver.tickTimes1s.add(this.tickCount, after); // Plazma - Add more MSPT
@@ -118,12 +118,12 @@ index 4782f19409d300fbcaa952ae0dd6a0577ade5f7b..f926376ee95b28a9c09a1ad87223f89f
 +                worldserver.tickTimes30s.add(this.tickCount, after); // Plazma - Add more MSPT
                  worldserver.tickTimes60s.add(this.tickCount, after);
                  // Plazma end - Port SparklyPaper patches; Track World specific MSPT
-                 // Paper start
+                 //worldserver.timings.doTick.stopTiming(); // Spigot // Purpur
 diff --git a/src/main/java/net/minecraft/server/level/ServerLevel.java b/src/main/java/net/minecraft/server/level/ServerLevel.java
-index 508e01e9ef41f006e6d9be71969c0d82dc646628..15548aac320ae6d707cab4a61dfc99eaebb06634 100644
+index f5f944899d860d8363db43d430f3daab96e0d774..6fbf3a479ee1927b1099d2678db693341491b2b7 100644
 --- a/src/main/java/net/minecraft/server/level/ServerLevel.java
 +++ b/src/main/java/net/minecraft/server/level/ServerLevel.java
-@@ -234,8 +234,10 @@ public class ServerLevel extends Level implements WorldGenLevel {
+@@ -234,8 +234,10 @@ public class ServerLevel extends Level implements WorldGenLevel, ca.spottedleaf.
      public boolean hasRidableMoveEvent = false; // Purpur
  
      // Plazma start - Port SparklyPaper patches; Track World specific MSPT

@@ -5,14 +5,14 @@ Subject: [PATCH] Use Plazma logo instead if server favicon doesn't exist
 
 
 diff --git a/src/main/java/net/minecraft/server/MinecraftServer.java b/src/main/java/net/minecraft/server/MinecraftServer.java
-index f926376ee95b28a9c09a1ad87223f89f1c28f50e..cf13166d1fdd663f1f99fd6d00a5296631276511 100644
+index 565d601f16f054cc5aa7eb4040e1bd6586f62b7d..6db6ba1adde3cd2d76055de12d780251623cb896 100644
 --- a/src/main/java/net/minecraft/server/MinecraftServer.java
 +++ b/src/main/java/net/minecraft/server/MinecraftServer.java
-@@ -1555,29 +1555,36 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
+@@ -1588,29 +1588,32 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
      }
  
      private Optional<ServerStatus.Favicon> loadStatusIcon() {
--        Optional<Path> optional = Optional.of(this.getFile("server-icon.png").toPath()).filter((path) -> {
+-        Optional<Path> optional = Optional.of(this.getFile("server-icon.png")).filter((path) -> {
 -            return Files.isRegularFile(path, new LinkOption[0]);
 -        }).or(() -> {
 -            return this.storageSource.getIconFile().filter((path) -> {
@@ -38,7 +38,6 @@ index f926376ee95b28a9c09a1ad87223f89f1c28f50e..cf13166d1fdd663f1f99fd6d00a52966
 +        // Plazma start - Use Plazma logo instead if server favicon doesn't exist
 +        @Nullable File file = Optional.of(this.getFile("server-icon.png").toPath()).filter(Files::isRegularFile)
 +            .or(() -> this.storageSource.getIconFile().filter(Files::isRegularFile)).map(Path::toFile).orElse(null);
-+
 +        try (
 +            java.io.InputStream stream = (file != null)
 +                ? new java.io.FileInputStream(file)
@@ -51,13 +50,10 @@ index f926376ee95b28a9c09a1ad87223f89f1c28f50e..cf13166d1fdd663f1f99fd6d00a52966
 +            if (stream == null) return Optional.empty();
 +            if (file == null && !org.plazmamc.plazma.Options.VANILLA_ICO)
 +                LOGGER.info("No server icon found, using the logo instead.");
-+
 +            BufferedImage bufferedimage = ImageIO.read(stream);
-+
 +            Preconditions.checkState(bufferedimage.getWidth() == 64, "Must be 64 pixels wide");
 +            Preconditions.checkState(bufferedimage.getHeight() == 64, "Must be 64 pixels high");
 +            ByteArrayOutputStream bytearrayoutputstream = new ByteArrayOutputStream();
-+
 +            ImageIO.write(bufferedimage, "PNG", bytearrayoutputstream);
 +            return Optional.of(new ServerStatus.Favicon(bytearrayoutputstream.toByteArray()));
 +        } catch (Exception exception) {

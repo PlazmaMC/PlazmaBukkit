@@ -464,11 +464,11 @@ index 0000000000000000000000000000000000000000..3456f38d381643b0461669b0b5fec6bf
 +
 +}
 diff --git a/src/main/java/net/minecraft/world/entity/ai/behavior/AcquirePoi.java b/src/main/java/net/minecraft/world/entity/ai/behavior/AcquirePoi.java
-index 6499e3fe49e453db11e51eaf717ca8b3b682056b..09aca895b56cc564f2b2c5da0256ae27b6b433f6 100644
+index ecd1bbd17cb0134cf1f4e99a3fea9e205d38f46b..a064bca7d59dc645b28d5c4d92611d7aff5d3c7d 100644
 --- a/src/main/java/net/minecraft/world/entity/ai/behavior/AcquirePoi.java
 +++ b/src/main/java/net/minecraft/world/entity/ai/behavior/AcquirePoi.java
 @@ -76,6 +76,35 @@ public class AcquirePoi {
-                         io.papermc.paper.util.PoiAccess.findNearestPoiPositions(poiManager, poiPredicate, predicate2, entity.blockPosition(), world.purpurConfig.villagerAcquirePoiSearchRadius, world.purpurConfig.villagerAcquirePoiSearchRadius*world.purpurConfig.villagerAcquirePoiSearchRadius, PoiManager.Occupancy.HAS_SPACE, false, 5, poiposes); // Purpur
+                                     io.papermc.paper.util.PoiAccess.findNearestPoiPositions(poiManager, poiPredicate, predicate2, entity.blockPosition(), world.purpurConfig.villagerAcquirePoiSearchRadius, world.purpurConfig.villagerAcquirePoiSearchRadius*world.purpurConfig.villagerAcquirePoiSearchRadius, PoiManager.Occupancy.HAS_SPACE, false, 5, poiposes); // Purpur
                                      Set<Pair<Holder<PoiType>, BlockPos>> set = new java.util.HashSet<>(poiposes);
                                      // Paper end - optimise POI access
 +                                    // Plazma start - Process Pathfinding Asynchronously
@@ -903,10 +903,10 @@ index 9104d7010bda6f9f73b478c11490ef9c53f76da2..a53950a6e4cb2e672b6f130461fa6306
              // Paper end - optimise POI access
              if (path != null && path.canReach()) {
 diff --git a/src/main/java/net/minecraft/world/entity/animal/Bee.java b/src/main/java/net/minecraft/world/entity/animal/Bee.java
-index 539170813921de2dfcd7ef84dd7512d73cd27e68..4722e95397fbec585a0ce5240bdfd08d9d5e7a07 100644
+index 9a6ec5e465684be7f0d54b1f7e66bdf52603e442..d1a31e04899e3bce3f884f60916abd4e25dd3afd 100644
 --- a/src/main/java/net/minecraft/world/entity/animal/Bee.java
 +++ b/src/main/java/net/minecraft/world/entity/animal/Bee.java
-@@ -1135,7 +1135,7 @@ public class Bee extends Animal implements NeutralMob, FlyingAnimal {
+@@ -1147,7 +1147,7 @@ public class Bee extends Animal implements NeutralMob, FlyingAnimal {
                          } else {
                              Bee.this.pathfindRandomlyTowards(Bee.this.hivePos);
                          }
@@ -915,7 +915,7 @@ index 539170813921de2dfcd7ef84dd7512d73cd27e68..4722e95397fbec585a0ce5240bdfd08d
                          boolean flag = this.pathfindDirectlyTowards(Bee.this.hivePos);
  
                          if (!flag) {
-@@ -1197,7 +1197,7 @@ public class Bee extends Animal implements NeutralMob, FlyingAnimal {
+@@ -1209,7 +1209,7 @@ public class Bee extends Animal implements NeutralMob, FlyingAnimal {
              } else {
                  Path pathentity = Bee.this.navigation.getPath();
  
@@ -955,7 +955,7 @@ index 651f30b4fb02dc03fabad34b62d7d86fa0889754..2fb5e4fc7422c81c67a026143c92f5e7
      }
  }
 diff --git a/src/main/java/net/minecraft/world/entity/monster/Drowned.java b/src/main/java/net/minecraft/world/entity/monster/Drowned.java
-index 15afee3c4f6307557321424560d2340e23cd472b..8b52add9080dd664c4e34393f535145d37ea9a78 100644
+index 94de51bf9acb32421838ffe54602310f0263b3c4..1afa876e6abac59320c10d37ec8664db1af751b2 100644
 --- a/src/main/java/net/minecraft/world/entity/monster/Drowned.java
 +++ b/src/main/java/net/minecraft/world/entity/monster/Drowned.java
 @@ -296,7 +296,7 @@ public class Drowned extends Zombie implements RangedAttackMob {
@@ -968,10 +968,10 @@ index 15afee3c4f6307557321424560d2340e23cd472b..8b52add9080dd664c4e34393f535145d
  
              if (blockposition != null) {
 diff --git a/src/main/java/net/minecraft/world/entity/monster/Strider.java b/src/main/java/net/minecraft/world/entity/monster/Strider.java
-index 5ea5bf9c0e11b0e1f9fe50093899c6e35ee6cf4f..310d942dca115d2048812e7d7e6e7fab8086f993 100644
+index 70650cc6f76bed79a31a9e8c86205910994a920f..ca521f6ddaf898f17473e9b87e302ddaf9f30380 100644
 --- a/src/main/java/net/minecraft/world/entity/monster/Strider.java
 +++ b/src/main/java/net/minecraft/world/entity/monster/Strider.java
-@@ -609,12 +609,26 @@ public class Strider extends Animal implements ItemSteerable, Saddleable {
+@@ -610,10 +610,23 @@ public class Strider extends Animal implements ItemSteerable, Saddleable {
              super(entity, world);
          }
  
@@ -985,24 +985,21 @@ index 5ea5bf9c0e11b0e1f9fe50093899c6e35ee6cf4f..310d942dca115d2048812e7d7e6e7fab
 +                evaluator.setCanFloat(features.canFloat());
 +                return evaluator;
 +            };
++        // Plazma end - Process pathfinding asynchronously
 +
          @Override
          protected PathFinder createPathFinder(int range) {
              this.nodeEvaluator = new WalkNodeEvaluator();
              this.nodeEvaluator.setCanPassDoors(true);
-+            if (org.plazmamc.plazma.configurations.GlobalConfiguration.get().entity.asyncPathProcess.enabled)
-+                return new PathFinder(this.nodeEvaluator, range, GENERATOR);
++            if (org.plazmamc.plazma.configurations.GlobalConfiguration.get().entity.asyncPathProcess.enabled) return new PathFinder(this.nodeEvaluator, range, GENERATOR); // Plazma - Process pathfinding asynchronously
              return new PathFinder(this.nodeEvaluator, range);
          }
-+        // Plazma end - Process pathfinding asynchronously
  
-         @Override
-         protected boolean hasValidPathType(PathType pathType) {
 diff --git a/src/main/java/net/minecraft/world/entity/monster/warden/Warden.java b/src/main/java/net/minecraft/world/entity/monster/warden/Warden.java
-index 16891921341f8967c9115f415f91ec379fcd5b0c..524d2304a1dbc873a47c95c55ad70c4120f07ad4 100644
+index c0398f21cb2ecc9e07f01163a4432a603ff26f03..78a5631753e5bdc16b786ac6951c8d39c4337767 100644
 --- a/src/main/java/net/minecraft/world/entity/monster/warden/Warden.java
 +++ b/src/main/java/net/minecraft/world/entity/monster/warden/Warden.java
-@@ -636,6 +636,15 @@ public class Warden extends Monster implements VibrationSystem {
+@@ -634,6 +634,15 @@ public class Warden extends Monster implements VibrationSystem {
              protected PathFinder createPathFinder(int range) {
                  this.nodeEvaluator = new WalkNodeEvaluator();
                  this.nodeEvaluator.setCanPassDoors(true);
@@ -1040,11 +1037,11 @@ index d9d0fff9962131808d54cca20f209df50b8e4af1..420dd323790e72aa12c942d31a94bcb8
          public void write(FriendlyByteBuf buf) {
              buf.writeCollection(this.targetNodes, (bufx, node) -> node.writeToStream(bufx));
 diff --git a/src/main/java/net/minecraft/world/level/pathfinder/PathFinder.java b/src/main/java/net/minecraft/world/level/pathfinder/PathFinder.java
-index 97a81d749d9fece6283fdd1b0ed89ce04be32c78..d9b4cd6777b4f19dd85f0c912e70b7c087e61c8e 100644
+index 404080976208c30e9e95e5bee47c2a749e709a45..e31ee7508a1af51bec628141c3a153997dc75672 100644
 --- a/src/main/java/net/minecraft/world/level/pathfinder/PathFinder.java
 +++ b/src/main/java/net/minecraft/world/level/pathfinder/PathFinder.java
-@@ -16,6 +16,7 @@ import net.minecraft.core.BlockPos;
- // import net.minecraft.util.profiling.metrics.MetricCategory; // Plazma - Completely remove Mojang's Profiler
+@@ -16,6 +16,7 @@ import net.minecraft.util.profiling.ProfilerFiller;
+ import net.minecraft.util.profiling.metrics.MetricCategory;
  import net.minecraft.world.entity.Mob;
  import net.minecraft.world.level.PathNavigationRegion;
 +import dev.kaiijumc.kaiiju.path.*; // Plazma - Process pathfinding asynchronously
@@ -1101,7 +1098,7 @@ index 97a81d749d9fece6283fdd1b0ed89ce04be32c78..d9b4cd6777b4f19dd85f0c912e70b7c0
 -                map.add(new java.util.AbstractMap.SimpleEntry<>(this.nodeEvaluator.getTarget(pos.getX(), pos.getY(), pos.getZ()), pos));
 -            }
 -            // Paper end - Perf: remove streams and optimize collection
--            Path path = this.findPath(/*world.getProfiler(), */node, map, followRange, distance, rangeMultiplier); // Plazma - Completely remove Mojang's Profiler
+-            Path path = this.findPath(world.getProfiler(), node, map, followRange, distance, rangeMultiplier);
 -            this.nodeEvaluator.done();
 -            return path;
          }
@@ -1128,7 +1125,7 @@ index 97a81d749d9fece6283fdd1b0ed89ce04be32c78..d9b4cd6777b4f19dd85f0c912e70b7c0
  
      @Nullable
      // Paper start - Perf: remove streams and optimize collection
--    private Path findPath(/*ProfilerFiller profiler, */Node startNode, List<Map.Entry<Target, BlockPos>> positions, float followRange, int distance, float rangeMultiplier) { // Plazma - Completely remove Mojang's Profiler
+-    private Path findPath(ProfilerFiller profiler, Node startNode, List<Map.Entry<Target, BlockPos>> positions, float followRange, int distance, float rangeMultiplier) {
 -        //profiler.push("find_path"); // Purpur
 -        //profiler.markForCharting(MetricCategory.PATH_FINDING); // Purpur
 -        // Set<Target> set = positions.keySet();
@@ -1239,19 +1236,7 @@ index 97a81d749d9fece6283fdd1b0ed89ce04be32c78..d9b4cd6777b4f19dd85f0c912e70b7c0
              }
          }
  
-@@ -117,15 +165,18 @@ public class PathFinder {
-         boolean entryListIsEmpty = entryList.isEmpty();
-         Comparator<Path> comparator = entryListIsEmpty ? Comparator.comparingInt(Path::getNodeCount)
-             : Comparator.comparingDouble(Path::getDistToTarget).thenComparingInt(Path::getNodeCount);
-+
-         for (Map.Entry<Target, BlockPos> entry : entryListIsEmpty ? positions : entryList) {
-             Path path = this.reconstructPath(entry.getKey().getBestNode(), entry.getValue(), !entryListIsEmpty);
-+
-             if (best == null || comparator.compare(path, best) < 0)
-                 best = path;
-         }
--        //profiler.pop(); // Purpur
-+
+@@ -126,6 +174,7 @@ public class PathFinder {
          return best;
          // Paper end - Perf: remove streams and optimize collection
      }
