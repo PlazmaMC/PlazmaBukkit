@@ -5,10 +5,10 @@ Subject: [PATCH] Tweak console logging
 
 
 diff --git a/src/main/java/net/minecraft/server/dedicated/DedicatedServer.java b/src/main/java/net/minecraft/server/dedicated/DedicatedServer.java
-index 3a2acbdcfb64dff5ecb686ba7ea405b488e6eca9..c48f42815314e2fb106b0dff5f38a9e5c3498632 100644
+index f6afc085b..dea61aeaf 100644
 --- a/src/main/java/net/minecraft/server/dedicated/DedicatedServer.java
 +++ b/src/main/java/net/minecraft/server/dedicated/DedicatedServer.java
-@@ -193,16 +193,6 @@ public class DedicatedServer extends MinecraftServer implements ServerInterface
+@@ -197,16 +197,6 @@ public class DedicatedServer extends MinecraftServer implements ServerInterface
              DedicatedServer.LOGGER.warn("To start the server with more ram, launch it as \"java -Xmx1024M -Xms1024M -jar minecraft_server.jar\"");
          }
  
@@ -25,13 +25,12 @@ index 3a2acbdcfb64dff5ecb686ba7ea405b488e6eca9..c48f42815314e2fb106b0dff5f38a9e5
          DedicatedServer.LOGGER.info("Loading properties");
          DedicatedServerProperties dedicatedserverproperties = this.settings.getProperties();
  
-@@ -226,6 +216,17 @@ public class DedicatedServer extends MinecraftServer implements ServerInterface
+@@ -239,6 +229,15 @@ public class DedicatedServer extends MinecraftServer implements ServerInterface
          this.plazmaConfigurations.initializeWorldDefaultsConfiguration(this.registryAccess()); // Plazma - Configurable Plazma
          net.sparklypower.sparklypaper.HalloweenManager.startSyncEpochTask(); // Plazma - Port SparklyPaper patches; Optimize Spooky Season
          // Paper end - initialize global and world-defaults configuration
-+        // Plazma - Tweak console logging; Moved down
-+        // Paper start - detect running as root
-+        if (org.plazmamc.plazma.configurations.GlobalConfiguration.get().consoleLogs.rootUserWarnings && io.papermc.paper.util.ServerEnvironment.userIsRootOrAdmin()) {
++        // Paper start - detect running as root // Plazma - Tweak console logging (moved down)
++        if (io.papermc.paper.util.ServerEnvironment.userIsRootOrAdmin()) {
 +            DedicatedServer.LOGGER.warn("****************************");
 +            DedicatedServer.LOGGER.warn("YOU ARE RUNNING THIS SERVER AS AN ADMINISTRATIVE OR ROOT USER. THIS IS NOT ADVISED.");
 +            DedicatedServer.LOGGER.warn("YOU ARE OPENING YOURSELF UP TO POTENTIAL RISKS WHEN DOING THIS.");
@@ -39,11 +38,10 @@ index 3a2acbdcfb64dff5ecb686ba7ea405b488e6eca9..c48f42815314e2fb106b0dff5f38a9e5
 +            DedicatedServer.LOGGER.warn("****************************");
 +        }
 +        // Paper end - detect running as root
-+        // Plazma end - Tweak console logging
+         this.server.spark.enableEarlyIfRequested(); // Paper - spark
          // Paper start - fix converting txt to json file; convert old users earlier after PlayerList creation but before file load/save
          if (this.convertOldUsers()) {
-             this.getProfileCache().save(false); // Paper
-@@ -333,6 +334,7 @@ public class DedicatedServer extends MinecraftServer implements ServerInterface
+@@ -339,6 +338,7 @@ public class DedicatedServer extends MinecraftServer implements ServerInterface
          String proxyFlavor = (io.papermc.paper.configuration.GlobalConfiguration.get().proxies.velocity.enabled) ? "Velocity" : "BungeeCord";
          String proxyLink = (io.papermc.paper.configuration.GlobalConfiguration.get().proxies.velocity.enabled) ? "https://docs.papermc.io/velocity/security" : "http://www.spigotmc.org/wiki/firewall-guide/";
          // Paper end - Add Velocity IP Forwarding Support
@@ -51,7 +49,7 @@ index 3a2acbdcfb64dff5ecb686ba7ea405b488e6eca9..c48f42815314e2fb106b0dff5f38a9e5
          if (!this.usesAuthentication()) {
              DedicatedServer.LOGGER.warn("**** SERVER IS RUNNING IN OFFLINE/INSECURE MODE!");
              DedicatedServer.LOGGER.warn("The server will make no attempt to authenticate usernames. Beware.");
-@@ -346,7 +348,7 @@ public class DedicatedServer extends MinecraftServer implements ServerInterface
+@@ -352,7 +352,7 @@ public class DedicatedServer extends MinecraftServer implements ServerInterface
                  DedicatedServer.LOGGER.warn("While this makes the game possible to play without internet access, it also opens up the ability for hackers to connect with any username they choose.");
              }
              // Spigot end

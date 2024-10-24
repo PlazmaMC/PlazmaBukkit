@@ -61,18 +61,18 @@ index 8b5293b0c696ef21d0101493ffa41b60bf0bc86b..03be23690a94a14d7343526acad67ccf
      }
  
 diff --git a/src/main/java/io/papermc/paper/threadedregions/EntityScheduler.java b/src/main/java/io/papermc/paper/threadedregions/EntityScheduler.java
-index 62484ebf4550b05182f693a3180bbac5d5fd906d..8b39c463b90db2d4faa33471ddce65f775908f2f 100644
+index c03608fec..931800662 100644
 --- a/src/main/java/io/papermc/paper/threadedregions/EntityScheduler.java
 +++ b/src/main/java/io/papermc/paper/threadedregions/EntityScheduler.java
 @@ -41,6 +41,7 @@ public final class EntityScheduler {
  
      private long tickCount = 0L;
      private static final long RETIRED_TICK_COUNT = -1L;
-+    private static final net.minecraft.server.MinecraftServer SERVER = net.minecraft.server.MinecraftServer.getServer();
++    private static final net.minecraft.server.MinecraftServer SERVER = net.minecraft.server.MinecraftServer.getServer(); // Plazma - Port SparklyPaper patches; Skip EntityScheduler's executeTick checks if there isn't any tasks to be run
      private final Object stateLock = new Object();
      private final Long2ObjectOpenHashMap<List<ScheduledTask>> oneTimeDelayed = new Long2ObjectOpenHashMap<>();
  
-@@ -61,14 +62,15 @@ public final class EntityScheduler {
+@@ -61,15 +62,15 @@ public final class EntityScheduler {
       * @throws IllegalStateException If the scheduler is already retired.
       */
      public void retire() {
@@ -86,26 +86,19 @@ index 62484ebf4550b05182f693a3180bbac5d5fd906d..8b39c463b90db2d4faa33471ddce65f7
          }
  
 -        final Entity thisEntity = this.entity.getHandleRaw();
- 
+-
          // correctly handle and order retiring while running executeTick
          for (int i = 0, len = this.currentlyExecuting.size(); i < len; ++i) {
-@@ -124,9 +126,12 @@ public final class EntityScheduler {
+             final ScheduledTask task = this.currentlyExecuting.pollFirst();
+@@ -124,6 +125,7 @@ public final class EntityScheduler {
              if (this.tickCount == RETIRED_TICK_COUNT) {
                  return false;
              }
--            this.oneTimeDelayed.computeIfAbsent(this.tickCount + Math.max(1L, delay), (final long keyInMap) -> {
--                return new ArrayList<>();
--            }).add(task);
-+            // Plazma start - Port SparklyPaper patches; Skip EntityScheduler's executeTick checks if there isn't any tasks to be run
-+            SERVER.entitiesWithScheduledTasks.add(this.entity.getHandleRaw());
-+            this.oneTimeDelayed.computeIfAbsent(
-+                this.tickCount + Math.max(1L, delay), (final long keyInMap) -> new ArrayList<>()
-+            ).add(task);
-+            // Plazma end - Port SparklyPaper patches; Skip EntityScheduler's executeTick checks if there isn't any tasks to be run
-         }
- 
-         return true;
-@@ -143,6 +148,12 @@ public final class EntityScheduler {
++            SERVER.entitiesWithScheduledTasks.add(this.entity.getHandleRaw()); // Plazma - Port SparklyPaper patches; Skip EntityScheduler's executeTick checks if there isn't any tasks to be run
+             this.oneTimeDelayed.computeIfAbsent(this.tickCount + Math.max(1L, delay), (final long keyInMap) -> {
+                 return new ArrayList<>();
+             }).add(task);
+@@ -143,6 +145,12 @@ public final class EntityScheduler {
          TickThread.ensureTickThread(thisEntity, "May not tick entity scheduler asynchronously");
          final List<ScheduledTask> toRun;
          synchronized (this.stateLock) {
@@ -118,29 +111,11 @@ index 62484ebf4550b05182f693a3180bbac5d5fd906d..8b39c463b90db2d4faa33471ddce65f7
              if (this.tickCount == RETIRED_TICK_COUNT) {
                  throw new IllegalStateException("Ticking retired scheduler");
              }
-diff --git a/src/main/java/io/papermc/paper/util/player/NearbyPlayers.java b/src/main/java/io/papermc/paper/util/player/NearbyPlayers.java
-index f164256d59b761264876ca0c85f812d101bfd5de..deaeb134c47da8710afa747bf980bd00aab846d6 100644
---- a/src/main/java/io/papermc/paper/util/player/NearbyPlayers.java
-+++ b/src/main/java/io/papermc/paper/util/player/NearbyPlayers.java
-@@ -106,6 +106,13 @@ public final class NearbyPlayers {
-         return chunk == null ? null : chunk.players[type.ordinal()];
-     }
- 
-+    // Plazma start - Port SparklyPaper patches; Cache coordinate key used for nearby players when ticking chunks
-+    public ReferenceList<ServerPlayer> getPlayers(final long nearbyCoordKey, final NearbyMapType type) {
-+        final TrackedChunk chunk = this.byChunk.get(nearbyCoordKey);
-+        return chunk == null ? null : chunk.players[type.ordinal()];
-+    }
-+    // Plazma end - Port SparklyPaper patches; Cache coordinate key used for nearby players when ticking chunks
-+
-     public ReferenceList<ServerPlayer> getPlayersByChunk(final int chunkX, final int chunkZ, final NearbyMapType type) {
-         final TrackedChunk chunk = this.byChunk.get(CoordinateUtils.getChunkKey(chunkX, chunkZ));
- 
 diff --git a/src/main/java/net/minecraft/server/MinecraftServer.java b/src/main/java/net/minecraft/server/MinecraftServer.java
-index 79ee153cd3c7bd3b2f34e7d30f70be5080cfa3c6..2452dae1e55165bd8c49c4670e3f2adb523de5da 100644
+index ccfeda1ba..c63910d92 100644
 --- a/src/main/java/net/minecraft/server/MinecraftServer.java
 +++ b/src/main/java/net/minecraft/server/MinecraftServer.java
-@@ -321,6 +321,7 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
+@@ -327,6 +327,7 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
      public volatile boolean abnormalExit = false; // Paper
      public static final long SERVER_INIT = System.nanoTime(); // Paper - Lag compensation
      public gg.pufferfish.pufferfish.util.AsyncExecutor mobSpawnExecutor = new gg.pufferfish.pufferfish.util.AsyncExecutor("MobSpawning"); // Pufferfish - optimize mob spawning
@@ -148,12 +123,12 @@ index 79ee153cd3c7bd3b2f34e7d30f70be5080cfa3c6..2452dae1e55165bd8c49c4670e3f2adb
  
      public static <S extends MinecraftServer> S spin(Function<Thread, S> serverFactory) {
          AtomicReference<S> atomicreference = new AtomicReference();
-@@ -1739,17 +1740,15 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
+@@ -1773,17 +1774,12 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
          //MinecraftTimings.bukkitSchedulerTimer.stopTiming(); // Spigot // Paper // Purpur
          // Paper start - Folia scheduler API
          ((io.papermc.paper.threadedregions.scheduler.FoliaGlobalRegionScheduler) Bukkit.getGlobalRegionScheduler()).tick();
 -        getAllLevels().forEach(level -> {
--            for (final Entity entity : level.getEntityLookup().getAllCopy()) { // Paper - rewrite chunk system
+-            for (final Entity entity : level.moonrise$getEntityLookup().getAllCopy()) { // Paper - rewrite chunk system
 -                if (entity.isRemoved()) {
 -                    continue;
 -                }
@@ -164,59 +139,49 @@ index 79ee153cd3c7bd3b2f34e7d30f70be5080cfa3c6..2452dae1e55165bd8c49c4670e3f2adb
 -            }
 -        });
 +        // Plazma start - Port SparklyPaper patches; Skip EntityScheduler's executeTick checks if there isn't any tasks to be run
-+        for (final Entity entity: entitiesWithScheduledTasks) {
-+            if (entity.isRemoved()) continue;
-+
-+            final org.bukkit.craftbukkit.entity.CraftEntity bukkit = entity.getBukkitEntityRaw();
-+            //noinspection ConstantValue
-+            if (bukkit != null) bukkit.taskScheduler.executeTick();
++        for (final Entity entity : entitiesWithScheduledTasks) {
++            if (entity.isRemoved() || entity.getBukkitEntityRaw() == null) continue;
++            bukkit.taskScheduler.executeTick();
 +        }
 +        // Plazma end - Port SparklyPaper patches; Skip EntityScheduler's executeTick checks if there isn't any tasks to be run
          // Paper end - Folia scheduler API
          io.papermc.paper.adventure.providers.ClickCallbackProviderImpl.CALLBACK_MANAGER.handleQueue(this.tickCount); // Paper
          //this.profiler.push("commandFunctions"); // Purpur
-@@ -1816,7 +1815,15 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
+@@ -1849,8 +1845,15 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
+             //this.profiler.push("tick"); // Purpur
  
              try {
-                 //worldserver.timings.doTick.startTiming(); // Spigot // Purpur
-+                // Plazma start - Port SparklyPaper patches; Track World specific MSPT
+-                //worldserver.timings.doTick.startTiming(); // Spigot // Purpur
+-                worldserver.tick(shouldKeepTicking);
++                //worldserver.timings.doTick.startTiming(); // Spigot // Purpur// Plazma start - Port SparklyPaper patches; Track World specific MSPT
 +                long before = Util.getNanos();
-                 worldserver.tick(shouldKeepTicking);
++                worldserver.tick(shouldKeepTicking); // diff on changes
 +                long after = Util.getNanos() - before;
 +
 +                worldserver.tickTimes5s.add(this.tickCount, after);
 +                worldserver.tickTimes10s.add(this.tickCount, after);
 +                worldserver.tickTimes60s.add(this.tickCount, after);
 +                // Plazma end - Port SparklyPaper patches; Track World specific MSPT
-                 // Paper start
-                 for (final io.papermc.paper.chunk.SingleThreadChunkRegionManager regionManager : worldserver.getChunkSource().chunkMap.regionManagers) {
-                     regionManager.recalculateRegions();
-@@ -2595,7 +2602,7 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
-     }
- 
-     public ProfilerFiller getProfiler() {
--        //if (gg.pufferfish.pufferfish.PufferfishConfig.disableMethodProfiler) return net.minecraft.util.profiling.InactiveProfiler.INSTANCE; // Pufferfish // Purpur
-+        //if (true || gg.pufferfish.pufferfish.PufferfishConfig.disableMethodProfiler) return net.minecraft.util.profiling.InactiveProfiler.INSTANCE; // Pufferfish // Purpur
-         return this.profiler;
-     }
- 
+                 //worldserver.timings.doTick.stopTiming(); // Spigot // Purpur
+             } catch (Throwable throwable) {
+                 CrashReport crashreport = CrashReport.forThrowable(throwable, "Exception ticking world");
 diff --git a/src/main/java/net/minecraft/server/dedicated/DedicatedServer.java b/src/main/java/net/minecraft/server/dedicated/DedicatedServer.java
-index 6cbbe9c692068edee7e66f85081ec95b8dd12101..3a2acbdcfb64dff5ecb686ba7ea405b488e6eca9 100644
+index 1bc42bcb5..f6afc085b 100644
 --- a/src/main/java/net/minecraft/server/dedicated/DedicatedServer.java
 +++ b/src/main/java/net/minecraft/server/dedicated/DedicatedServer.java
-@@ -224,6 +224,7 @@ public class DedicatedServer extends MinecraftServer implements ServerInterface
+@@ -237,6 +237,7 @@ public class DedicatedServer extends MinecraftServer implements ServerInterface
          this.paperConfigurations.initializeWorldDefaultsConfiguration(this.registryAccess());
          this.plazmaConfigurations.initializeGlobalConfiguration(this.registryAccess()); // Plazma - Configurable Plazma
          this.plazmaConfigurations.initializeWorldDefaultsConfiguration(this.registryAccess()); // Plazma - Configurable Plazma
 +        net.sparklypower.sparklypaper.HalloweenManager.startSyncEpochTask(); // Plazma - Port SparklyPaper patches; Optimize Spooky Season
          // Paper end - initialize global and world-defaults configuration
+         this.server.spark.enableEarlyIfRequested(); // Paper - spark
          // Paper start - fix converting txt to json file; convert old users earlier after PlayerList creation but before file load/save
-         if (this.convertOldUsers()) {
 diff --git a/src/main/java/net/minecraft/server/level/ChunkMap.java b/src/main/java/net/minecraft/server/level/ChunkMap.java
-index 4b8776e760cca21e558c8fcb1e0e8d07c3589490..dd1a38488802080f961f87b73dfbb8229fb69e99 100644
+index 1883abec1..adfc891ae 100644
 --- a/src/main/java/net/minecraft/server/level/ChunkMap.java
 +++ b/src/main/java/net/minecraft/server/level/ChunkMap.java
-@@ -1439,7 +1439,7 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
+@@ -1262,7 +1262,7 @@ public class ChunkMap extends ChunkStorage implements ChunkHolder.PlayerProvider
                  // Paper end - Configurable entity tracking range by Y
  
                  // CraftBukkit start - respect vanish API
@@ -225,21 +190,8 @@ index 4b8776e760cca21e558c8fcb1e0e8d07c3589490..dd1a38488802080f961f87b73dfbb822
                      flag = false;
                  }
                  // CraftBukkit end
-diff --git a/src/main/java/net/minecraft/server/level/ServerChunkCache.java b/src/main/java/net/minecraft/server/level/ServerChunkCache.java
-index 5eb7bcf492ee354ef775cd8d09c7ca2bdfeb7ce2..697cb18bce2f2470a0a2347ba6709e1449b360fd 100644
---- a/src/main/java/net/minecraft/server/level/ServerChunkCache.java
-+++ b/src/main/java/net/minecraft/server/level/ServerChunkCache.java
-@@ -615,7 +615,7 @@ public class ServerChunkCache extends ChunkSource {
- 
-                     // Paper start - optimise chunk tick iteration
-                     com.destroystokyo.paper.util.maplist.ReferenceList<ServerPlayer> playersNearby
--                        = nearbyPlayers.getPlayers(chunkcoordintpair, io.papermc.paper.util.player.NearbyPlayers.NearbyMapType.SPAWN_RANGE);
-+                        = nearbyPlayers.getPlayers(chunk1.nearbyPlayersCoordinateKey, io.papermc.paper.util.player.NearbyPlayers.NearbyMapType.SPAWN_RANGE);
-                     if (playersNearby == null) {
-                         continue;
-                     }
 diff --git a/src/main/java/net/minecraft/server/level/ServerEntity.java b/src/main/java/net/minecraft/server/level/ServerEntity.java
-index e16dcb7f60bc3cf2cbef4674b23f12e1e5bd59d3..c3a4fcf600e72f9e95e9df673619ce37d0480cca 100644
+index dfd090040..a0ddb5eb4 100644
 --- a/src/main/java/net/minecraft/server/level/ServerEntity.java
 +++ b/src/main/java/net/minecraft/server/level/ServerEntity.java
 @@ -78,6 +78,7 @@ public class ServerEntity {
@@ -250,32 +202,47 @@ index e16dcb7f60bc3cf2cbef4674b23f12e1e5bd59d3..c3a4fcf600e72f9e95e9df673619ce37
  
      public ServerEntity(ServerLevel worldserver, Entity entity, int i, boolean flag, Consumer<Packet<?>> consumer, Set<ServerPlayerConnection> trackedPlayers) {
          this.trackedPlayers = trackedPlayers;
-@@ -217,12 +218,15 @@ public class ServerEntity {
+@@ -218,20 +219,21 @@ public class ServerEntity {
  
                  if ((this.trackDelta || this.entity.hasImpulse || this.entity instanceof LivingEntity && ((LivingEntity) this.entity).isFallFlying()) && this.tickCount > 0) {
                      Vec3 vec3d1 = this.entity.getDeltaMovement();
--                    double d0 = vec3d1.distanceToSqr(this.ap);
+-                    double d0 = vec3d1.distanceToSqr(this.lastSentMovement);
 -
 -                    if (d0 > 1.0E-7D || d0 > 0.0D && vec3d1.lengthSqr() == 0.0D) {
--                        this.ap = vec3d1;
--                        this.broadcast.accept(new ClientboundSetEntityMotionPacket(this.entity.getId(), this.ap));
+-                        this.lastSentMovement = vec3d1;
+-                        Entity entity1 = this.entity;
+-
+-                        if (entity1 instanceof AbstractHurtingProjectile) {
+-                            AbstractHurtingProjectile entityfireball = (AbstractHurtingProjectile) entity1;
+-
+-                            this.broadcast.accept(new ClientboundBundlePacket(List.of(new ClientboundSetEntityMotionPacket(this.entity.getId(), this.lastSentMovement), new ClientboundProjectilePowerPacket(entityfireball.getId(), entityfireball.accelerationPower))));
+-                        } else {
+-                            this.broadcast.accept(new ClientboundSetEntityMotionPacket(this.entity.getId(), this.lastSentMovement));
+-                        }
+-                    }
 +                    // Plazma start - SparklyPaper port; Skip distanceToSqr if the delta movement hasn't changed
 +                    if (!skipSqrWhenNoDeltaChanges && vec3d1 != this.ap) {
-+                        double d0 = vec3d1.distanceToSqr(this.ap);
++                        double d0 = vec3d1.distanceToSqr(this.lastSentMovement);
 +                        if (d0 > 1.0E-7D || d0 > 0.0D && vec3d1.lengthSqr() == 0.0D) {
-+                            this.ap = vec3d1;
-+                            this.broadcast.accept(new ClientboundSetEntityMotionPacket(this.entity.getId(), this.ap));
-+                        }
-                     }
++                            this.lastSentMovement = vec3d1;
++                            Entity entity1 = this.entity;
++                            if (entity1 instanceof AbstractHurtingProjectile) {
++                                AbstractHurtingProjectile entityfireball = (AbstractHurtingProjectile) entity1;
++                                this.broadcast.accept(new ClientboundBundlePacket(List.of(new ClientboundSetEntityMotionPacket(this.entity.getId(), this.lastSentMovement), new ClientboundProjectilePowerPacket(entityfireball.getId(), entityfireball.accelerationPower))));
++                            } else {
++                                this.broadcast.accept(new ClientboundSetEntityMotionPacket(this.entity.getId(), this.lastSentMovement));
++                            }
++                        } // diff on changes
++                    } // diff on changes
 +                    // Plazma end - SparklyPaper port; Skip distanceToSqr if the delta movement hasn't changed
                  }
  
                  if (packet1 != null) {
 diff --git a/src/main/java/net/minecraft/server/level/ServerLevel.java b/src/main/java/net/minecraft/server/level/ServerLevel.java
-index 5456d2ded6f6e75c48868147e5a2dde5eb23bec8..e2de0c343098d65d830f27b4f80c3f8a9f18a7ae 100644
+index dfcd3989f..f5f944899 100644
 --- a/src/main/java/net/minecraft/server/level/ServerLevel.java
 +++ b/src/main/java/net/minecraft/server/level/ServerLevel.java
-@@ -233,6 +233,12 @@ public class ServerLevel extends Level implements WorldGenLevel {
+@@ -233,6 +233,12 @@ public class ServerLevel extends Level implements WorldGenLevel, ca.spottedleaf.
      private final alternate.current.wire.WireHandler wireHandler = new alternate.current.wire.WireHandler(this); // Paper - optimize redstone (Alternate Current)
      public boolean hasRidableMoveEvent = false; // Purpur
  
@@ -289,7 +256,7 @@ index 5456d2ded6f6e75c48868147e5a2dde5eb23bec8..e2de0c343098d65d830f27b4f80c3f8a
          return this.chunkSource.getChunkAtIfLoadedImmediately(x, z); // Paper - Use getChunkIfLoadedImmediately
      }
 diff --git a/src/main/java/net/minecraft/stats/ServerStatsCounter.java b/src/main/java/net/minecraft/stats/ServerStatsCounter.java
-index f890738d3bb9fb5e70a9d323c6cec97f9948f9cf..eb3fc1af68768383d524cf0f50c4f4b304b9d5ca 100644
+index fb7342f7a..8b068f6b4 100644
 --- a/src/main/java/net/minecraft/stats/ServerStatsCounter.java
 +++ b/src/main/java/net/minecraft/stats/ServerStatsCounter.java
 @@ -90,12 +90,14 @@ public class ServerStatsCounter extends StatsCounter {
@@ -325,10 +292,10 @@ index f890738d3bb9fb5e70a9d323c6cec97f9948f9cf..eb3fc1af68768383d524cf0f50c4f4b3
      }
  }
 diff --git a/src/main/java/net/minecraft/world/entity/ambient/Bat.java b/src/main/java/net/minecraft/world/entity/ambient/Bat.java
-index a70255995f380a9b0f7057cb5cb820f7655b93fc..2bffc790496fd9b09516d0d908b5319c9dbb1c63 100644
+index 36e5a6462..bdc2391ae 100644
 --- a/src/main/java/net/minecraft/world/entity/ambient/Bat.java
 +++ b/src/main/java/net/minecraft/world/entity/ambient/Bat.java
-@@ -306,7 +306,7 @@ public class Bat extends AmbientCreature {
+@@ -307,7 +307,7 @@ public class Bat extends AmbientCreature {
              int i = world.getMaxLocalRawBrightness(pos);
              byte b0 = 4;
  
@@ -337,12 +304,11 @@ index a70255995f380a9b0f7057cb5cb820f7655b93fc..2bffc790496fd9b09516d0d908b5319c
                  b0 = 7;
              } else if (random.nextBoolean()) {
                  return false;
-@@ -320,7 +320,25 @@ public class Bat extends AmbientCreature {
+@@ -321,7 +321,24 @@ public class Bat extends AmbientCreature {
      private static boolean isSpookySeason = false;
      private static final int ONE_HOUR = 20 * 60 * 60;
      private static int lastSpookyCheck = -ONE_HOUR;
 -    public static boolean isHalloweenSeason(Level level) { return level.purpurConfig.forceHalloweenSeason || isHalloween(); } // Purpur
-+
 +    // Plazma start - Port SparklyPaper patches; Optimize Spooky Season
 +    private static boolean isSpookySeason(Level level) {
 +        if (level.purpurConfig.forceHalloweenSeason) return true;
@@ -383,11 +349,11 @@ index 608390ed36710a419de1542b80340dd3fcc7299c..043f068345ca3c50209c1c3cc1feb627
                      mapItemSavedData.tickCarriedBy(player, stack);
                  }
 diff --git a/src/main/java/net/minecraft/world/level/Level.java b/src/main/java/net/minecraft/world/level/Level.java
-index df73867ee5682fb966b69dd85da61a6928d8dab3..5712ab081e9534f60248caaceea44445ff855e30 100644
+index 253d47418..28ed05ed0 100644
 --- a/src/main/java/net/minecraft/world/level/Level.java
 +++ b/src/main/java/net/minecraft/world/level/Level.java
-@@ -1339,6 +1339,8 @@ public abstract class Level implements LevelAccessor, AutoCloseable {
-         boolean flag = this.tickRateManager().runsNormally();
+@@ -1456,6 +1456,8 @@ public abstract class Level implements LevelAccessor, AutoCloseable, ca.spottedl
+         int tickedEntities = 0; // Paper - rewrite chunk system
  
          int tilesThisCycle = 0;
 +        int shouldTickBlocksAtLastResult = -1; // Plazma - Port SparklyPaper patches; Optimize tickingBlockEntities
@@ -395,15 +361,18 @@ index df73867ee5682fb966b69dd85da61a6928d8dab3..5712ab081e9534f60248caaceea44445
          var toRemove = new it.unimi.dsi.fastutil.objects.ReferenceOpenHashSet<TickingBlockEntity>(); // Paper - Fix MC-117075; use removeAll
          toRemove.add(null); // Paper - Fix MC-117075
          for (tileTickPosition = 0; tileTickPosition < this.blockEntityTickers.size(); tileTickPosition++) { // Paper - Disable tick limiters
-@@ -1351,14 +1353,28 @@ public abstract class Level implements LevelAccessor, AutoCloseable {
+@@ -1468,14 +1470,28 @@ public abstract class Level implements LevelAccessor, AutoCloseable, ca.spottedl
                  tilesThisCycle--;
                  toRemove.add(tickingblockentity); // Paper - Fix MC-117075; use removeAll
                  // Spigot end
 -            } else if (flag && this.shouldTickBlocksAt(tickingblockentity.getPos())) {
 -                tickingblockentity.tick();
--                // Paper start - execute chunk tasks during tick
--                if ((this.tileTickPosition & 7) == 0) {
--                    MinecraftServer.getServer().executeMidTickTasks();
+-                // Paper start - rewrite chunk system
+-                if ((++tickedEntities & 7) == 0) {
+-                    ((ca.spottedleaf.moonrise.patches.chunk_system.level.ChunkSystemLevel)(Level)(Object)this).moonrise$midTickTasks();
+-                }
+-                // Paper end - rewrite chunk system
+-            }
 +            // Plazma start - Port SparklyPaper patches; Optimize tickingBlockEntities
 +            } else if (flag) {
 +                long chunkPos = tickingblockentity.getChunkCoordinateKey();
@@ -414,18 +383,17 @@ index df73867ee5682fb966b69dd85da61a6928d8dab3..5712ab081e9534f60248caaceea44445
 +                    shouldTick = this.shouldTickBlocksAt(chunkPos);
 +                    shouldTickBlocksAtLastResult = shouldTick ? 1 : 0;
 +                    shouldTickBlocksAtChunkPos = chunkPos;
-+                }
++                } // diff on changes
 +
 +                if (shouldTick) {
 +                    tickingblockentity.tick();
 +                    // Paper start - execute chunk tasks during tick
-+                    if ((this.tileTickPosition & 7) == 0) {
-+                        MinecraftServer.getServer().executeMidTickTasks();
++                    if ((++tickedEntities & 7) == 0) {
++                        ((ca.spottedleaf.moonrise.patches.chunk_system.level.ChunkSystemLevel)(Level)(Object)this).moonrise$midTickTasks();
 +                    }
 +                    // Paper end - execute chunk tasks during tick
-                 }
--                // Paper end - execute chunk tasks during tick
-             }
++                } // diff on changes
++            } // diff on changes
 +            // Plazma end - Port SparklyPaper patches; Optimize tickingBlockEntities
          }
          this.blockEntityTickers.removeAll(toRemove); // Paper - Fix MC-117075
@@ -679,7 +647,7 @@ index 28e3b73507b988f7234cbf29c4024c88180d0aef..6239c171ca996f3f5c23060f728a6223
 +    long getChunkCoordinateKey(); // Plazma - Port SparklyPaper patches; Optimize tickingBlockEntities
  }
 diff --git a/src/main/java/net/minecraft/world/level/chunk/ChunkAccess.java b/src/main/java/net/minecraft/world/level/chunk/ChunkAccess.java
-index 1aac95b03a9e2e37c24f2a30bcb259c1424e1c78..e7c0c36fd3455c0536e98259b46dbcc952d90e01 100644
+index 75c8125e2..d6005f010 100644
 --- a/src/main/java/net/minecraft/world/level/chunk/ChunkAccess.java
 +++ b/src/main/java/net/minecraft/world/level/chunk/ChunkAccess.java
 @@ -66,6 +66,7 @@ public abstract class ChunkAccess implements BlockGetter, BiomeManager.NoiseBiom
@@ -690,8 +658,8 @@ index 1aac95b03a9e2e37c24f2a30bcb259c1424e1c78..e7c0c36fd3455c0536e98259b46dbcc9
      private long inhabitedTime;
      /** @deprecated */
      @Nullable
-@@ -140,6 +141,7 @@ public abstract class ChunkAccess implements BlockGetter, BiomeManager.NoiseBiom
-         // Paper end - rewrite light engine
+@@ -144,6 +145,7 @@ public abstract class ChunkAccess implements BlockGetter, BiomeManager.NoiseBiom
+     public ChunkAccess(ChunkPos pos, UpgradeData upgradeData, LevelHeightAccessor heightLimitView, Registry<Biome> biomeRegistry, long inhabitedTime, @Nullable LevelChunkSection[] sectionArray, @Nullable BlendingData blendingData) {
          this.locX = pos.x; this.locZ = pos.z; // Paper - reduce need for field lookups
          this.chunkPos = pos; this.coordinateKey = ChunkPos.asLong(locX, locZ); // Paper - cache long key
 +        this.nearbyPlayersCoordinateKey = io.papermc.paper.util.CoordinateUtils.getChunkKey(locX, locZ); // Plazma - Port SparklyPaper patches; Cache coordinate key used for nearby players when ticking chunks
@@ -699,10 +667,10 @@ index 1aac95b03a9e2e37c24f2a30bcb259c1424e1c78..e7c0c36fd3455c0536e98259b46dbcc9
          this.levelHeightAccessor = heightLimitView;
          this.sections = new LevelChunkSection[heightLimitView.getSectionsCount()];
 diff --git a/src/main/java/net/minecraft/world/level/chunk/LevelChunk.java b/src/main/java/net/minecraft/world/level/chunk/LevelChunk.java
-index ab4dd0c8b4b17ff1b54c06b72dc8b3caba430fe2..e026dc9ed15284f55cdd4bc99c0718aba6d2e8c6 100644
+index a4578ae22..87f781e94 100644
 --- a/src/main/java/net/minecraft/world/level/chunk/LevelChunk.java
 +++ b/src/main/java/net/minecraft/world/level/chunk/LevelChunk.java
-@@ -75,6 +75,8 @@ public class LevelChunk extends ChunkAccess {
+@@ -74,6 +74,8 @@ public class LevelChunk extends ChunkAccess implements ca.spottedleaf.moonrise.p
          public String getType() {
              return "<null>";
          }
@@ -711,7 +679,7 @@ index ab4dd0c8b4b17ff1b54c06b72dc8b3caba430fe2..e026dc9ed15284f55cdd4bc99c0718ab
      };
      private final Map<BlockPos, LevelChunk.RebindableTickingBlockEntityWrapper> tickersInLevel;
      public boolean loaded;
-@@ -1101,7 +1103,7 @@ public class LevelChunk extends ChunkAccess {
+@@ -966,7 +968,7 @@ public class LevelChunk extends ChunkAccess implements ca.spottedleaf.moonrise.p
      }
  
      private <T extends BlockEntity> TickingBlockEntity createTicker(T blockEntity, BlockEntityTicker<T> blockEntityTicker) {
@@ -720,7 +688,7 @@ index ab4dd0c8b4b17ff1b54c06b72dc8b3caba430fe2..e026dc9ed15284f55cdd4bc99c0718ab
      }
  
      @FunctionalInterface
-@@ -1152,17 +1154,21 @@ public class LevelChunk extends ChunkAccess {
+@@ -1017,6 +1019,8 @@ public class LevelChunk extends ChunkAccess implements ca.spottedleaf.moonrise.p
          public String toString() {
              return String.valueOf(this.ticker) + " <wrapped>";
          }
@@ -729,21 +697,16 @@ index ab4dd0c8b4b17ff1b54c06b72dc8b3caba430fe2..e026dc9ed15284f55cdd4bc99c0718ab
      }
  
      private class BoundTickingBlockEntity<T extends BlockEntity> implements TickingBlockEntity {
- 
-+        private final long chunkCoordinateKey; // Plazma - Port SparklyPaper patches; Optimize TickingBlockEntity
-         private final T blockEntity;
+@@ -1025,7 +1029,7 @@ public class LevelChunk extends ChunkAccess implements ca.spottedleaf.moonrise.p
          private final BlockEntityTicker<T> ticker;
          private boolean loggedInvalidBlockState;
  
 -        BoundTickingBlockEntity(final BlockEntity tileentity, final BlockEntityTicker blockentityticker) {
-+        BoundTickingBlockEntity(final BlockEntity tileentity, final BlockEntityTicker blockentityticker, long chunkCoordinateKey) {
++        BoundTickingBlockEntity(final BlockEntity tileentity, final BlockEntityTicker blockentityticker, long chunkCoordinateKey) { // Plazma - Port SparklyPaper patches; Optimize TickingBlockEntity
              this.blockEntity = (T) tileentity; // CraftBukkit - decompile error
              this.ticker = blockentityticker;
-+            this.chunkCoordinateKey = chunkCoordinateKey;
          }
- 
-         @Override
-@@ -1230,5 +1236,7 @@ public class LevelChunk extends ChunkAccess {
+@@ -1095,5 +1099,7 @@ public class LevelChunk extends ChunkAccess implements ca.spottedleaf.moonrise.p
  
              return "Level ticker for " + s + "@" + String.valueOf(this.getPos());
          }
