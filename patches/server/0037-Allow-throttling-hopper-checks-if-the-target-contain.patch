@@ -1,0 +1,39 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: AlphaKR93 <dev@alpha93.kr>
+Date: Fri, 25 Oct 2024 19:13:21 +0900
+Subject: [PATCH] Allow throttling hopper checks if the target container is
+ full
+
+Based on SparklyPaper, Copyright (C) 2024 SparklyPower.
+commit: c023b928439b9c71277f27cc9b5bd36ca32624ea
+
+diff --git a/src/main/java/net/minecraft/world/level/block/entity/HopperBlockEntity.java b/src/main/java/net/minecraft/world/level/block/entity/HopperBlockEntity.java
+index cab403efd471bb61835224eea4e99570d34dcaaa..4b4d31cb3c379a59c43c7356522a5b67c5a87de5 100644
+--- a/src/main/java/net/minecraft/world/level/block/entity/HopperBlockEntity.java
++++ b/src/main/java/net/minecraft/world/level/block/entity/HopperBlockEntity.java
+@@ -441,6 +441,7 @@ public class HopperBlockEntity extends RandomizableContainerBlockEntity implemen
+             Direction enumdirection = blockEntity.facing.getOpposite();
+ 
+             if (HopperBlockEntity.isFullContainer(iinventory, enumdirection)) {
++                if (world.plazmaConfig().block.hopper.fullCooldown != 0) blockEntity.setCooldown(world.plazmaConfig().block.hopper.fullCooldown); // Plazma - Allow throttling hopper checks if the target container is full
+                 return false;
+             } else {
+                 // Paper start - Perf: Optimize Hoppers
+diff --git a/src/main/java/org/plazmamc/plazma/configurations/WorldConfigurations.java b/src/main/java/org/plazmamc/plazma/configurations/WorldConfigurations.java
+index 5978970f80b1b4672298426dcd8026e453025a52..c74209e70a6fab1fd2a17605abf95f54e2156004 100644
+--- a/src/main/java/org/plazmamc/plazma/configurations/WorldConfigurations.java
++++ b/src/main/java/org/plazmamc/plazma/configurations/WorldConfigurations.java
+@@ -107,6 +107,13 @@ public class WorldConfigurations extends ConfigurationPart {
+ 
+         }
+ 
++        public Hopper hopper;
++        public class Hopper extends ConfigurationPart {
++
++            public int fullCooldown = 0;
++
++        }
++
+     }
+ 
+ }

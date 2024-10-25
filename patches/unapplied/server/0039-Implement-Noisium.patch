@@ -1,0 +1,161 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: =?UTF-8?q?IPECTER=20=EC=9D=B4=ED=8C=A9=ED=84=B0?=
+ <80433772+IPECTER@users.noreply.github.com>
+Date: Wed, 21 Aug 2024 17:31:03 +0900
+Subject: [PATCH] Implement-Noisium
+
+
+diff --git a/src/main/java/net/minecraft/world/level/chunk/LevelChunkSection.java b/src/main/java/net/minecraft/world/level/chunk/LevelChunkSection.java
+index 2422ca3ffc6ab7178cacf933b8013f85e7de4bd9..ddfcabf64bb43447379f74314a30afbf36477f0c 100644
+--- a/src/main/java/net/minecraft/world/level/chunk/LevelChunkSection.java
++++ b/src/main/java/net/minecraft/world/level/chunk/LevelChunkSection.java
+@@ -19,9 +19,10 @@ public class LevelChunkSection {
+     public static final int SECTION_HEIGHT = 16;
+     public static final int SECTION_SIZE = 4096;
+     public static final int BIOME_CONTAINER_BITS = 2;
+-    short nonEmptyBlockCount; // Paper - package private
+-    private short tickingBlockCount;
+-    private short tickingFluidCount;
++    private static final int SLICE_SIZE = 4; // Plazma - Implement Noisium
++    public short nonEmptyBlockCount; // Paper - package private // Plazma - Implement Noisium - package public
++    public short tickingBlockCount; // Plazma - Implement Noisium - package public
++    public short tickingFluidCount; // Plazma - Implement Noisium - package public
+     public final PalettedContainer<BlockState> states;
+     // CraftBukkit start - read/write
+     private PalettedContainer<Holder<Biome>> biomes;
+@@ -231,16 +232,16 @@ public class LevelChunkSection {
+ 
+     public void fillBiomesFromNoise(BiomeResolver biomeSupplier, Climate.Sampler sampler, int x, int y, int z) {
+         PalettedContainer<Holder<Biome>> datapaletteblock = this.biomes.recreate();
+-        boolean flag = true;
+-
+-        for (int l = 0; l < 4; ++l) {
+-            for (int i1 = 0; i1 < 4; ++i1) {
+-                for (int j1 = 0; j1 < 4; ++j1) {
++        // Plazma start - Implement Noisium
++        for (int l = 0; l < SLICE_SIZE; ++l) {
++            for (int i1 = 0; i1 < SLICE_SIZE; ++i1) {
++                for (int j1 = 0; j1 < SLICE_SIZE; ++j1) {
+                     datapaletteblock.getAndSetUnchecked(l, i1, j1, biomeSupplier.getNoiseBiome(x + l, y + i1, z + j1, sampler));
+                 }
+             }
+         }
+ 
+         this.biomes = datapaletteblock;
++        // Plazma end
+     }
+ }
+diff --git a/src/main/java/net/minecraft/world/level/chunk/PalettedContainer.java b/src/main/java/net/minecraft/world/level/chunk/PalettedContainer.java
+index adfbdca12fbdee2602feb0158674166d5256e49e..b8ffc5faa904cce898c792f9bd7846304c72b353 100644
+--- a/src/main/java/net/minecraft/world/level/chunk/PalettedContainer.java
++++ b/src/main/java/net/minecraft/world/level/chunk/PalettedContainer.java
+@@ -29,8 +29,8 @@ public class PalettedContainer<T> implements PaletteResize<T>, PalettedContainer
+     private final PaletteResize<T> dummyPaletteResize = (newSize, added) -> 0;
+     public final IdMap<T> registry;
+     private final T @org.jetbrains.annotations.Nullable [] presetValues; // Paper - Anti-Xray - Add preset values
+-    private volatile PalettedContainer.Data<T> data;
+-    private final PalettedContainer.Strategy strategy;
++    public volatile PalettedContainer.Data<T> data; // Plazma - Implement Noisium - package public
++    public final PalettedContainer.Strategy strategy; // Plazma - Implement Noisium - package public
+     // private final ThreadingDetector threadingDetector = new ThreadingDetector("PalettedContainer"); // Paper - unused
+ 
+     public void acquire() {
+@@ -394,7 +394,8 @@ public class PalettedContainer<T> implements PaletteResize<T>, PalettedContainer
+         void accept(T object, int count);
+     }
+ 
+-    static record Data<T>(PalettedContainer.Configuration<T> configuration, BitStorage storage, Palette<T> palette) {
++    public static record Data<T>(PalettedContainer.Configuration<T> configuration, BitStorage storage, Palette<T> palette) {
++        //public Palette<T> palette() { return palette; } // Plazma - Implement Noisium
+         public void copyFrom(Palette<T> palette, BitStorage storage) {
+             for (int i = 0; i < storage.getSize(); i++) {
+                 T object = palette.valueFor(storage.get(i));
+diff --git a/src/main/java/net/minecraft/world/level/levelgen/NoiseBasedChunkGenerator.java b/src/main/java/net/minecraft/world/level/levelgen/NoiseBasedChunkGenerator.java
+index a85b1ebb4236f131b9be0104c4aa56f22e661441..25f51220e070d5cd4eb9550291dea864d20f2362 100644
+--- a/src/main/java/net/minecraft/world/level/levelgen/NoiseBasedChunkGenerator.java
++++ b/src/main/java/net/minecraft/world/level/levelgen/NoiseBasedChunkGenerator.java
+@@ -371,7 +371,8 @@ public final class NoiseBasedChunkGenerator extends ChunkGenerator {
+ 
+                                 iblockdata = this.debugPreliminarySurfaceLevel(noisechunk, j4, j3, i5, iblockdata);
+                                 if (iblockdata != NoiseBasedChunkGenerator.AIR && !SharedConstants.debugVoidTerrain(chunk.getPos())) {
+-                                    chunksection.setBlockState(k4, k3, j5, iblockdata, false);
++                                    if (org.plazmamc.plazma.configurations.GlobalConfiguration.get().noisium.enabled) setBlockState(chunksection, k4, k3, j5, iblockdata);
++                                    else chunksection.setBlockState(k4, k3, j5, iblockdata, false);
+                                     heightmap.update(k4, j3, j5, iblockdata);
+                                     heightmap1.update(k4, j3, j5, iblockdata);
+                                     if (aquifer.shouldScheduleFluidUpdate() && !iblockdata.getFluidState().isEmpty()) {
+@@ -392,6 +393,26 @@ public final class NoiseBasedChunkGenerator extends ChunkGenerator {
+         return chunk;
+     }
+ 
++    // Plazma start - Implement Noisium
++    private BlockState setBlockState(LevelChunkSection chunkSection, int x, int y, int z, BlockState blockState) {
++        chunkSection.nonEmptyBlockCount += 1;
++
++        if (!blockState.getFluidState().isEmpty()) {
++            chunkSection.tickingFluidCount += 1;
++        }
++
++        if (blockState.isRandomlyTicking()) {
++            chunkSection.tickingBlockCount += 1;
++        }
++
++        var blockStateId = chunkSection.states.data.palette().idFor(blockState);
++        chunkSection.states.data.storage().set(
++            chunkSection.states.strategy.getIndex(x, y, z), blockStateId);
++
++        return blockState;
++    }
++    // Plazma end
++
+     private BlockState debugPreliminarySurfaceLevel(NoiseChunk chunkNoiseSampler, int x, int y, int z, BlockState state) {
+         return state;
+     }
+diff --git a/src/main/java/net/minecraft/world/level/levelgen/NoiseSettings.java b/src/main/java/net/minecraft/world/level/levelgen/NoiseSettings.java
+index 31f4862f480c210a6dd7bd8de6a2528b4a0f50e3..c566c94b1f440a319e52174c73db9fc4addf948c 100644
+--- a/src/main/java/net/minecraft/world/level/levelgen/NoiseSettings.java
++++ b/src/main/java/net/minecraft/world/level/levelgen/NoiseSettings.java
+@@ -8,7 +8,12 @@ import net.minecraft.core.QuartPos;
+ import net.minecraft.world.level.LevelHeightAccessor;
+ import net.minecraft.world.level.dimension.DimensionType;
+ 
+-public record NoiseSettings(int minY, int height, int noiseSizeHorizontal, int noiseSizeVertical) {
++// Plazma start -
++record NoiseSettings(int minY, int height, int noiseSizeHorizontal, int noiseSizeVertical, int cellHeight, int cellWidth) {
++    public NoiseSettings(int minY, int height, int noiseSizeHorizontal, int noiseSizeVertical) {
++        this(minY, height, noiseSizeHorizontal, noiseSizeVertical, QuartPos.toBlock(noiseSizeHorizontal), QuartPos.toBlock(noiseSizeVertical));
++    }
++// Plazma end
+     public static final Codec<NoiseSettings> CODEC = RecordCodecBuilder.<NoiseSettings>create(
+             instance -> instance.group(
+                         Codec.intRange(DimensionType.MIN_Y, DimensionType.MAX_Y).fieldOf("min_y").forGetter(NoiseSettings::minY),
+@@ -44,11 +49,11 @@ public record NoiseSettings(int minY, int height, int noiseSizeHorizontal, int n
+     }
+ 
+     public int getCellHeight() {
+-        return QuartPos.toBlock(this.noiseSizeVertical());
++        return this.cellHeight; // Plazma - Implement Noisium
+     }
+ 
+     public int getCellWidth() {
+-        return QuartPos.toBlock(this.noiseSizeHorizontal());
++        return this.cellWidth; // Plazma - Implement Noisium
+     }
+ 
+     public NoiseSettings clampToHeightAccessor(LevelHeightAccessor world) {
+diff --git a/src/main/java/org/plazmamc/plazma/configurations/GlobalConfiguration.java b/src/main/java/org/plazmamc/plazma/configurations/GlobalConfiguration.java
+index 9af184b55fd32d16194b669c42bfbf9b18e96e26..cd3bc8b6b6b6b8282bf0cbdde170ae853f55727a 100644
+--- a/src/main/java/org/plazmamc/plazma/configurations/GlobalConfiguration.java
++++ b/src/main/java/org/plazmamc/plazma/configurations/GlobalConfiguration.java
+@@ -126,4 +126,11 @@ public class GlobalConfiguration extends ConfigurationPart {
+ 
+     }
+ 
++    public Noisium noisium;
++    public class Noisium extends ConfigurationPart {
++
++        public boolean enabled = OPTIMIZE;
++
++    }
++
+ }
