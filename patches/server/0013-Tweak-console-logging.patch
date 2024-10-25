@@ -5,7 +5,7 @@ Subject: [PATCH] Tweak console logging
 
 
 diff --git a/src/main/java/net/minecraft/server/dedicated/DedicatedServer.java b/src/main/java/net/minecraft/server/dedicated/DedicatedServer.java
-index f6afc085b903fe0a71109792593da21b665a5300..dea61aeaf8b444c71fb54459b09486a9853772d1 100644
+index 1bc42bcb5ecbf800684484530260192cc0ed0c5f..96b017a58fd12d635822255bb501ef99cdc27da6 100644
 --- a/src/main/java/net/minecraft/server/dedicated/DedicatedServer.java
 +++ b/src/main/java/net/minecraft/server/dedicated/DedicatedServer.java
 @@ -197,16 +197,6 @@ public class DedicatedServer extends MinecraftServer implements ServerInterface
@@ -25,9 +25,9 @@ index f6afc085b903fe0a71109792593da21b665a5300..dea61aeaf8b444c71fb54459b09486a9
          DedicatedServer.LOGGER.info("Loading properties");
          DedicatedServerProperties dedicatedserverproperties = this.settings.getProperties();
  
-@@ -239,6 +229,15 @@ public class DedicatedServer extends MinecraftServer implements ServerInterface
+@@ -238,6 +228,15 @@ public class DedicatedServer extends MinecraftServer implements ServerInterface
+         this.plazmaConfigurations.initializeGlobalConfiguration(this.registryAccess()); // Plazma - Configurable Plazma
          this.plazmaConfigurations.initializeWorldDefaultsConfiguration(this.registryAccess()); // Plazma - Configurable Plazma
-         net.sparklypower.sparklypaper.HalloweenManager.startSyncEpochTask(); // Plazma - Port SparklyPaper patches; Optimize Spooky Season
          // Paper end - initialize global and world-defaults configuration
 +        // Paper start - detect running as root // Plazma - Tweak console logging (moved down)
 +        if (io.papermc.paper.util.ServerEnvironment.userIsRootOrAdmin()) {
@@ -41,7 +41,7 @@ index f6afc085b903fe0a71109792593da21b665a5300..dea61aeaf8b444c71fb54459b09486a9
          this.server.spark.enableEarlyIfRequested(); // Paper - spark
          // Paper start - fix converting txt to json file; convert old users earlier after PlayerList creation but before file load/save
          if (this.convertOldUsers()) {
-@@ -339,6 +338,7 @@ public class DedicatedServer extends MinecraftServer implements ServerInterface
+@@ -338,6 +337,7 @@ public class DedicatedServer extends MinecraftServer implements ServerInterface
          String proxyFlavor = (io.papermc.paper.configuration.GlobalConfiguration.get().proxies.velocity.enabled) ? "Velocity" : "BungeeCord";
          String proxyLink = (io.papermc.paper.configuration.GlobalConfiguration.get().proxies.velocity.enabled) ? "https://docs.papermc.io/velocity/security" : "http://www.spigotmc.org/wiki/firewall-guide/";
          // Paper end - Add Velocity IP Forwarding Support
@@ -49,7 +49,7 @@ index f6afc085b903fe0a71109792593da21b665a5300..dea61aeaf8b444c71fb54459b09486a9
          if (!this.usesAuthentication()) {
              DedicatedServer.LOGGER.warn("**** SERVER IS RUNNING IN OFFLINE/INSECURE MODE!");
              DedicatedServer.LOGGER.warn("The server will make no attempt to authenticate usernames. Beware.");
-@@ -352,7 +352,7 @@ public class DedicatedServer extends MinecraftServer implements ServerInterface
+@@ -351,7 +351,7 @@ public class DedicatedServer extends MinecraftServer implements ServerInterface
                  DedicatedServer.LOGGER.warn("While this makes the game possible to play without internet access, it also opens up the ability for hackers to connect with any username they choose.");
              }
              // Spigot end
@@ -71,10 +71,10 @@ index 0ea07da1b4bd420cd6765577b4719a2368b5740c..f78a0a224c86c0e3e5a44ce4f589cd8a
      }
  
 diff --git a/src/main/java/org/plazmamc/plazma/configurations/GlobalConfiguration.java b/src/main/java/org/plazmamc/plazma/configurations/GlobalConfiguration.java
-index 73dd69941a004b4a2ec244f28d8683e9bdb0a445..e725f6e8205976a7b137aefb98b874cf4ae14893 100644
+index 57d29f8f3bc89529db9ee8f6dc3fffdbd4a03ceb..3ec9c947ac19412ad81d0cc85e0eff289a285d1e 100644
 --- a/src/main/java/org/plazmamc/plazma/configurations/GlobalConfiguration.java
 +++ b/src/main/java/org/plazmamc/plazma/configurations/GlobalConfiguration.java
-@@ -68,4 +68,13 @@ public class GlobalConfiguration extends ConfigurationPart {
+@@ -63,4 +63,13 @@ public class GlobalConfiguration extends ConfigurationPart {
  
      }
  

@@ -112,10 +112,10 @@ index c03608fec96b51e1867f43d8f42e5aefb1520e46..93180066224345c0332fb33744f84204
                  throw new IllegalStateException("Ticking retired scheduler");
              }
 diff --git a/src/main/java/net/minecraft/server/MinecraftServer.java b/src/main/java/net/minecraft/server/MinecraftServer.java
-index ccfeda1ba3f89112eccf29f382b5526934db1d91..cdeb57a799a50807f4b562d6cb49741fda994933 100644
+index 6e7ac081889e5da49ebbe0c75f929de1aea9043c..68dce6a72f3305d91a5571fd3527f0df43fb5d8b 100644
 --- a/src/main/java/net/minecraft/server/MinecraftServer.java
 +++ b/src/main/java/net/minecraft/server/MinecraftServer.java
-@@ -327,6 +327,7 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
+@@ -328,6 +328,7 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
      public volatile boolean abnormalExit = false; // Paper
      public static final long SERVER_INIT = System.nanoTime(); // Paper - Lag compensation
      public gg.pufferfish.pufferfish.util.AsyncExecutor mobSpawnExecutor = new gg.pufferfish.pufferfish.util.AsyncExecutor("MobSpawning"); // Pufferfish - optimize mob spawning
@@ -123,7 +123,7 @@ index ccfeda1ba3f89112eccf29f382b5526934db1d91..cdeb57a799a50807f4b562d6cb49741f
  
      public static <S extends MinecraftServer> S spin(Function<Thread, S> serverFactory) {
          AtomicReference<S> atomicreference = new AtomicReference();
-@@ -1773,17 +1774,12 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
+@@ -1777,17 +1778,12 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
          //MinecraftTimings.bukkitSchedulerTimer.stopTiming(); // Spigot // Paper // Purpur
          // Paper start - Folia scheduler API
          ((io.papermc.paper.threadedregions.scheduler.FoliaGlobalRegionScheduler) Bukkit.getGlobalRegionScheduler()).tick();
@@ -147,7 +147,7 @@ index ccfeda1ba3f89112eccf29f382b5526934db1d91..cdeb57a799a50807f4b562d6cb49741f
          // Paper end - Folia scheduler API
          io.papermc.paper.adventure.providers.ClickCallbackProviderImpl.CALLBACK_MANAGER.handleQueue(this.tickCount); // Paper
          //this.profiler.push("commandFunctions"); // Purpur
-@@ -1849,8 +1845,15 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
+@@ -1853,8 +1849,15 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
              //this.profiler.push("tick"); // Purpur
  
              try {
@@ -166,17 +166,17 @@ index ccfeda1ba3f89112eccf29f382b5526934db1d91..cdeb57a799a50807f4b562d6cb49741f
              } catch (Throwable throwable) {
                  CrashReport crashreport = CrashReport.forThrowable(throwable, "Exception ticking world");
 diff --git a/src/main/java/net/minecraft/server/dedicated/DedicatedServer.java b/src/main/java/net/minecraft/server/dedicated/DedicatedServer.java
-index 1bc42bcb5ecbf800684484530260192cc0ed0c5f..f6afc085b903fe0a71109792593da21b665a5300 100644
+index 260a5fafac081011b394b5c677962b41eeee32a6..6c43b022946e5c7260012802200cd64da4992b86 100644
 --- a/src/main/java/net/minecraft/server/dedicated/DedicatedServer.java
 +++ b/src/main/java/net/minecraft/server/dedicated/DedicatedServer.java
-@@ -237,6 +237,7 @@ public class DedicatedServer extends MinecraftServer implements ServerInterface
+@@ -227,6 +227,7 @@ public class DedicatedServer extends MinecraftServer implements ServerInterface
          this.paperConfigurations.initializeWorldDefaultsConfiguration(this.registryAccess());
          this.plazmaConfigurations.initializeGlobalConfiguration(this.registryAccess()); // Plazma - Configurable Plazma
          this.plazmaConfigurations.initializeWorldDefaultsConfiguration(this.registryAccess()); // Plazma - Configurable Plazma
 +        net.sparklypower.sparklypaper.HalloweenManager.startSyncEpochTask(); // Plazma - Port SparklyPaper patches; Optimize Spooky Season
          // Paper end - initialize global and world-defaults configuration
-         this.server.spark.enableEarlyIfRequested(); // Paper - spark
-         // Paper start - fix converting txt to json file; convert old users earlier after PlayerList creation but before file load/save
+         // Paper start - detect running as root // Plazma - Tweak console logging (moved down)
+         if (io.papermc.paper.util.ServerEnvironment.userIsRootOrAdmin()) {
 diff --git a/src/main/java/net/minecraft/server/level/ChunkMap.java b/src/main/java/net/minecraft/server/level/ChunkMap.java
 index 1883abec14e05f8eb2e865446b4d81091b1aa5e0..adfc891ae8868bb562910ad169c116e5d30348c7 100644
 --- a/src/main/java/net/minecraft/server/level/ChunkMap.java
@@ -349,7 +349,7 @@ index 608390ed36710a419de1542b80340dd3fcc7299c..043f068345ca3c50209c1c3cc1feb627
                      mapItemSavedData.tickCarriedBy(player, stack);
                  }
 diff --git a/src/main/java/net/minecraft/world/level/Level.java b/src/main/java/net/minecraft/world/level/Level.java
-index 253d47418b4e9cbce74584c2461d12e17effd7bb..f3c44a2ddc52661984cc07b2ee23b3a3431a4b0a 100644
+index 77000f1f73a180c7171b5d9e66e62538cf629243..9ab004fa35687ca3274f7b937e5c379e93353c35 100644
 --- a/src/main/java/net/minecraft/world/level/Level.java
 +++ b/src/main/java/net/minecraft/world/level/Level.java
 @@ -1456,6 +1456,8 @@ public abstract class Level implements LevelAccessor, AutoCloseable, ca.spottedl
@@ -847,15 +847,19 @@ index 8149b9c51b78eb5c689b7218a2ca3aab60e73bcf..b9a303f6280a2f6ad3616da152922a4f
      }
  
 diff --git a/src/main/java/org/plazmamc/plazma/configurations/GlobalConfiguration.java b/src/main/java/org/plazmamc/plazma/configurations/GlobalConfiguration.java
-index 57d29f8f3bc89529db9ee8f6dc3fffdbd4a03ceb..73dd69941a004b4a2ec244f28d8683e9bdb0a445 100644
+index 3ac55c0b156bb1b0fca7092aa047007c5a878c6e..d781a7ba785789c9657c94fb0d164e532daccc96 100644
 --- a/src/main/java/org/plazmamc/plazma/configurations/GlobalConfiguration.java
 +++ b/src/main/java/org/plazmamc/plazma/configurations/GlobalConfiguration.java
-@@ -40,9 +40,12 @@ public class GlobalConfiguration extends ConfigurationPart {
+@@ -68,6 +68,8 @@ public class GlobalConfiguration extends ConfigurationPart {
      public Entity entity;
      public class Entity extends ConfigurationPart {
  
 +        boolean skipSqrWhenNoDeltaChanges = OPTIMIZE;
 +        public boolean spookyOptimize = OPTIMIZE;
+ 
+         public AsyncPathProcess asyncPathProcess;
+         public class AsyncPathProcess extends ConfigurationPart {
+@@ -91,6 +93,7 @@ public class GlobalConfiguration extends ConfigurationPart {
  
          @PostProcess
          public void post() {
@@ -863,7 +867,7 @@ index 57d29f8f3bc89529db9ee8f6dc3fffdbd4a03ceb..73dd69941a004b4a2ec244f28d8683e9
          }
  
      }
-@@ -50,9 +53,11 @@ public class GlobalConfiguration extends ConfigurationPart {
+@@ -98,9 +101,11 @@ public class GlobalConfiguration extends ConfigurationPart {
      public World world;
      public class World extends ConfigurationPart {
  
@@ -876,10 +880,10 @@ index 57d29f8f3bc89529db9ee8f6dc3fffdbd4a03ceb..73dd69941a004b4a2ec244f28d8683e9
  
      }
 diff --git a/src/main/java/org/plazmamc/plazma/configurations/WorldConfigurations.java b/src/main/java/org/plazmamc/plazma/configurations/WorldConfigurations.java
-index 8dce68cf7769fcd5ea03be32621ccb6bab174697..069a9f8504c74d939b1df569f082cc7bd33d9cfc 100644
+index 03508680792bbf2a197aa2b310425a78f70bf491..5978970f80b1b4672298426dcd8026e453025a52 100644
 --- a/src/main/java/org/plazmamc/plazma/configurations/WorldConfigurations.java
 +++ b/src/main/java/org/plazmamc/plazma/configurations/WorldConfigurations.java
-@@ -49,7 +49,22 @@ public class WorldConfigurations extends ConfigurationPart {
+@@ -90,7 +90,22 @@ public class WorldConfigurations extends ConfigurationPart {
  
      public Block block;
      public class Block extends ConfigurationPart {
