@@ -5,7 +5,7 @@ Subject: [PATCH] Use Plazma logo instead if server favicon doesn't exist
 
 
 diff --git a/src/main/java/net/minecraft/server/MinecraftServer.java b/src/main/java/net/minecraft/server/MinecraftServer.java
-index 565d601f16f054cc5aa7eb4040e1bd6586f62b7d..6db6ba1adde3cd2d76055de12d780251623cb896 100644
+index 3db4711c19d17856e9235bf4568c63d932f57d00..01c31f49010e8b9b2f0fc047731bf3f42c618435 100644
 --- a/src/main/java/net/minecraft/server/MinecraftServer.java
 +++ b/src/main/java/net/minecraft/server/MinecraftServer.java
 @@ -1588,29 +1588,32 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
@@ -36,7 +36,7 @@ index 565d601f16f054cc5aa7eb4040e1bd6586f62b7d..6db6ba1adde3cd2d76055de12d780251
 -            }
 -        });
 +        // Plazma start - Use Plazma logo instead if server favicon doesn't exist
-+        @Nullable File file = Optional.of(this.getFile("server-icon.png").toPath()).filter(Files::isRegularFile)
++        @Nullable File file = Optional.of(this.getFile("server-icon.png").toAbsolutePath()).filter(Files::isRegularFile)
 +            .or(() -> this.storageSource.getIconFile().filter(Files::isRegularFile)).map(Path::toFile).orElse(null);
 +        try (
 +            java.io.InputStream stream = (file != null)
@@ -65,10 +65,10 @@ index 565d601f16f054cc5aa7eb4040e1bd6586f62b7d..6db6ba1adde3cd2d76055de12d780251
  
      public Optional<Path> getWorldScreenshotFile() {
 diff --git a/src/main/java/org/plazmamc/plazma/Options.java b/src/main/java/org/plazmamc/plazma/Options.java
-index 3e0e67c089e269d0bccd4a0d2de5ac1ac515997e..2e75ca5d2b7d8f35814fe9a0814b19a9135d80cb 100644
+index 1fe9af0ffc91626c712847df94ea31e19bb3c8a0..f446d1a793514ab19a4428294540d16c2f160a77 100644
 --- a/src/main/java/org/plazmamc/plazma/Options.java
 +++ b/src/main/java/org/plazmamc/plazma/Options.java
-@@ -8,5 +8,6 @@ public interface Options {
+@@ -9,5 +9,6 @@ public interface Options {
      boolean AGGRESSIVE = Boolean.getBoolean("Plazma.aggressiveOptimize") && !NO_OPTIMIZE;
      boolean VANILLAIZE = Boolean.getBoolean("Plazma.vanillaize") && !AGGRESSIVE;
      boolean USE_VANILLA = Boolean.getBoolean("Plazma.useVanillaConfiguration") && !AGGRESSIVE && NO_OPTIMIZE;

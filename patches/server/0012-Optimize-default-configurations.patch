@@ -9,7 +9,7 @@ Subject: [PATCH] Optimize default configurations
 - YouHaveTrouble/minecraft-exploits-and-how-to-fix-them
 
 diff --git a/src/main/java/gg/pufferfish/pufferfish/PufferfishConfig.java b/src/main/java/gg/pufferfish/pufferfish/PufferfishConfig.java
-index 8f1645573..8e35f7fbe 100644
+index 8f1645573780d12bf29d441d31eab1b76cd9e70f..8e35f7fbe3629ab05c16f52d72a3cd7343cf835f 100644
 --- a/src/main/java/gg/pufferfish/pufferfish/PufferfishConfig.java
 +++ b/src/main/java/gg/pufferfish/pufferfish/PufferfishConfig.java
 @@ -64,7 +64,7 @@ public class PufferfishConfig {
@@ -67,7 +67,7 @@ index 8f1645573..8e35f7fbe 100644
  				"These values define a entity's maximum lifespan. If an",
  				"entity is in this list and it has survived for longer than",
 diff --git a/src/main/java/io/papermc/paper/configuration/GlobalConfiguration.java b/src/main/java/io/papermc/paper/configuration/GlobalConfiguration.java
-index a9dd0e521..d417b773d 100644
+index a9dd0e5216e95afd98fd2200d110e2cc0b1b0dca..d417b773dec5f2c4a8e115864338612d8e4b9f6c 100644
 --- a/src/main/java/io/papermc/paper/configuration/GlobalConfiguration.java
 +++ b/src/main/java/io/papermc/paper/configuration/GlobalConfiguration.java
 @@ -172,7 +172,7 @@ public class GlobalConfiguration extends ConfigurationPart {
@@ -124,7 +124,7 @@ index a9dd0e521..d417b773d 100644
          public boolean loadPermissionsYmlBeforePlugins = true;
          @Constraints.Min(4)
 diff --git a/src/main/java/io/papermc/paper/configuration/WorldConfiguration.java b/src/main/java/io/papermc/paper/configuration/WorldConfiguration.java
-index c867796f6..ecced2072 100644
+index c867796f625813797f167610ad443c4be5a7561e..ecced20724bc7f6136ff023ca37ae8368bec410b 100644
 --- a/src/main/java/io/papermc/paper/configuration/WorldConfiguration.java
 +++ b/src/main/java/io/papermc/paper/configuration/WorldConfiguration.java
 @@ -100,12 +100,32 @@ public class WorldConfiguration extends ConfigurationPart {
@@ -328,10 +328,10 @@ index 24763d3d270c29c95e0b3e85111145234f660a62..80ddc627e02e3c749e6b074afa93d357
      }
  
 diff --git a/src/main/java/net/minecraft/server/Main.java b/src/main/java/net/minecraft/server/Main.java
-index 639a0624f..e4b42f745 100644
+index d5e908be62f6207b42162c9644c13cbe3c2d3850..efcf937e2163386edac24b347b25ac84d744f975 100644
 --- a/src/main/java/net/minecraft/server/Main.java
 +++ b/src/main/java/net/minecraft/server/Main.java
-@@ -152,7 +152,7 @@ public class Main {
+@@ -164,7 +164,7 @@ public class Main {
                  File configFile = (File) optionset.valueOf("bukkit-settings");
                  YamlConfiguration configuration = YamlConfiguration.loadConfiguration(configFile);
                  configuration.options().copyDefaults(true);
@@ -341,7 +341,7 @@ index 639a0624f..e4b42f745 100644
  
                  File commandFile = (File) optionset.valueOf("commands-settings");
 diff --git a/src/main/java/net/minecraft/server/dedicated/DedicatedServerProperties.java b/src/main/java/net/minecraft/server/dedicated/DedicatedServerProperties.java
-index 5971f99c0..ef0f1598f 100644
+index 5971f99c047139d911e7f53937a193a6b5683bbb..ef0f1598f67ac1d305f116ef3a38c92c1eb0ab25 100644
 --- a/src/main/java/net/minecraft/server/dedicated/DedicatedServerProperties.java
 +++ b/src/main/java/net/minecraft/server/dedicated/DedicatedServerProperties.java
 @@ -132,14 +132,14 @@ public class DedicatedServerProperties extends Settings<DedicatedServerPropertie
@@ -373,7 +373,7 @@ index 5971f99c0..ef0f1598f 100644
          this.enableJmxMonitoring = this.get("enable-jmx-monitoring", false);
          this.enableStatus = this.get("enable-status", true);
 diff --git a/src/main/java/org/bukkit/craftbukkit/CraftServer.java b/src/main/java/org/bukkit/craftbukkit/CraftServer.java
-index 0bd9f4dc2..52d9b6253 100644
+index 0bd9f4dc28bb67def4af402f88b05a257262c0a4..52d9b6253e05cae57d44f340b33316eff113db2e 100644
 --- a/src/main/java/org/bukkit/craftbukkit/CraftServer.java
 +++ b/src/main/java/org/bukkit/craftbukkit/CraftServer.java
 @@ -434,7 +434,7 @@ public final class CraftServer implements Server {
@@ -386,13 +386,13 @@ index 0bd9f4dc2..52d9b6253 100644
          if (!this.configuration.isString("aliases")) {
              legacyAlias = this.configuration.getConfigurationSection("aliases");
 diff --git a/src/main/java/org/plazmamc/plazma/Options.java b/src/main/java/org/plazmamc/plazma/Options.java
-index 5942d0997f07bd51d934dac32cd349792a10643e..40a6ef72b4d495140c486c0880fdc5fc1a32931c 100644
+index b02a0dddd99df1691c125660828a61cc4a5a4d02..d6ead6b1bc73df85a8e8938acd2e8465dd82df97 100644
 --- a/src/main/java/org/plazmamc/plazma/Options.java
 +++ b/src/main/java/org/plazmamc/plazma/Options.java
-@@ -5,5 +5,6 @@ import static java.lang.Boolean.getBoolean;
- public interface Options {
+@@ -6,5 +6,6 @@ public interface Options {
  
      boolean NO_OPTIMIZE = getBoolean("Plazma.disableConfigOptimization");
+     boolean NO_WARN = getBoolean("Plazma.iKnowWhatIAmDoing");
 +    boolean AGGRESSIVE = Boolean.getBoolean("Plazma.aggressiveOptimize") && !NO_OPTIMIZE;
  
  }
@@ -417,7 +417,7 @@ index 09053b4ccf268fd204c81dbb8d4f10fa9edcad5f..93f67f125b3674e645cfdae27e579e12
              #### ENGLISH ####
              This is the %s configuration file for Plazma.
 diff --git a/src/main/java/org/purpurmc/purpur/PurpurConfig.java b/src/main/java/org/purpurmc/purpur/PurpurConfig.java
-index 546d92019..97fc4fb79 100644
+index 546d920198acc2a7aea6e251a34d92d33cbaaee7..97fc4fb795fa2dc859b0ea02dc132b41300d56ed 100644
 --- a/src/main/java/org/purpurmc/purpur/PurpurConfig.java
 +++ b/src/main/java/org/purpurmc/purpur/PurpurConfig.java
 @@ -243,7 +243,7 @@ public class PurpurConfig {
@@ -439,7 +439,7 @@ index 546d92019..97fc4fb79 100644
      private static void networkSettings() {
          useUPnP = getBoolean("settings.network.upnp-port-forwarding", useUPnP);
 diff --git a/src/main/java/org/purpurmc/purpur/PurpurWorldConfig.java b/src/main/java/org/purpurmc/purpur/PurpurWorldConfig.java
-index 3bcbf5e2d..1ff95cced 100644
+index 3bcbf5e2dbb991a8416d827ddfe59e04f701ebf7..1ff95cced54e8230eb5b4b4314f8f3716e264264 100644
 --- a/src/main/java/org/purpurmc/purpur/PurpurWorldConfig.java
 +++ b/src/main/java/org/purpurmc/purpur/PurpurWorldConfig.java
 @@ -424,7 +424,7 @@ public class PurpurWorldConfig {
@@ -461,7 +461,7 @@ index 3bcbf5e2d..1ff95cced 100644
      public boolean zombieTakeDamageFromWater = false;
      public boolean zombieAlwaysDropExp = false;
 diff --git a/src/main/java/org/spigotmc/SpigotWorldConfig.java b/src/main/java/org/spigotmc/SpigotWorldConfig.java
-index 2c408fa4a..aadad0a1e 100644
+index 2c408fa4abcbe1171c58aee8799c8cf7867d0f0a..aadad0a1e3c7e20b0ab97095ee6e6fb7dbfbd234 100644
 --- a/src/main/java/org/spigotmc/SpigotWorldConfig.java
 +++ b/src/main/java/org/spigotmc/SpigotWorldConfig.java
 @@ -150,14 +150,14 @@ public class SpigotWorldConfig

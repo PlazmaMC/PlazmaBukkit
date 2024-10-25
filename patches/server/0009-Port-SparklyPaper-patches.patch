@@ -112,7 +112,7 @@ index c03608fec96b51e1867f43d8f42e5aefb1520e46..93180066224345c0332fb33744f84204
                  throw new IllegalStateException("Ticking retired scheduler");
              }
 diff --git a/src/main/java/net/minecraft/server/MinecraftServer.java b/src/main/java/net/minecraft/server/MinecraftServer.java
-index ccfeda1ba3f89112eccf29f382b5526934db1d91..c63910d9215875e91968c509932b9f5393bb6457 100644
+index ccfeda1ba3f89112eccf29f382b5526934db1d91..cdeb57a799a50807f4b562d6cb49741fda994933 100644
 --- a/src/main/java/net/minecraft/server/MinecraftServer.java
 +++ b/src/main/java/net/minecraft/server/MinecraftServer.java
 @@ -327,6 +327,7 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
@@ -141,7 +141,7 @@ index ccfeda1ba3f89112eccf29f382b5526934db1d91..c63910d9215875e91968c509932b9f53
 +        // Plazma start - Port SparklyPaper patches; Skip EntityScheduler's executeTick checks if there isn't any tasks to be run
 +        for (final Entity entity : entitiesWithScheduledTasks) {
 +            if (entity.isRemoved() || entity.getBukkitEntityRaw() == null) continue;
-+            bukkit.taskScheduler.executeTick();
++            entity.getBukkitEntityRaw().taskScheduler.executeTick();
 +        }
 +        // Plazma end - Port SparklyPaper patches; Skip EntityScheduler's executeTick checks if there isn't any tasks to be run
          // Paper end - Folia scheduler API
@@ -191,7 +191,7 @@ index 1883abec14e05f8eb2e865446b4d81091b1aa5e0..adfc891ae8868bb562910ad169c116e5
                  }
                  // CraftBukkit end
 diff --git a/src/main/java/net/minecraft/server/level/ServerEntity.java b/src/main/java/net/minecraft/server/level/ServerEntity.java
-index dfd09004063a8d8d93357633c8d23b6acff67b73..a0ddb5eb48448f869855d2b613c667b2d42066f3 100644
+index dfd09004063a8d8d93357633c8d23b6acff67b73..7458cd657e809bba7483da31ddeb8f77aab1203d 100644
 --- a/src/main/java/net/minecraft/server/level/ServerEntity.java
 +++ b/src/main/java/net/minecraft/server/level/ServerEntity.java
 @@ -78,6 +78,7 @@ public class ServerEntity {
@@ -221,7 +221,7 @@ index dfd09004063a8d8d93357633c8d23b6acff67b73..a0ddb5eb48448f869855d2b613c667b2
 -                        }
 -                    }
 +                    // Plazma start - SparklyPaper port; Skip distanceToSqr if the delta movement hasn't changed
-+                    if (!skipSqrWhenNoDeltaChanges && vec3d1 != this.ap) {
++                    if (!skipSqrWhenNoDeltaChanges && vec3d1 != this.lastSentMovement) {
 +                        double d0 = vec3d1.distanceToSqr(this.lastSentMovement);
 +                        if (d0 > 1.0E-7D || d0 > 0.0D && vec3d1.lengthSqr() == 0.0D) {
 +                            this.lastSentMovement = vec3d1;
@@ -647,7 +647,7 @@ index 28e3b73507b988f7234cbf29c4024c88180d0aef..6239c171ca996f3f5c23060f728a6223
 +    long getChunkCoordinateKey(); // Plazma - Port SparklyPaper patches; Optimize tickingBlockEntities
  }
 diff --git a/src/main/java/net/minecraft/world/level/chunk/ChunkAccess.java b/src/main/java/net/minecraft/world/level/chunk/ChunkAccess.java
-index 75c8125e20b70433fe9d143a3193d821043327c3..d6005f01057c9d14fe4a019df67967db71c908ef 100644
+index 75c8125e20b70433fe9d143a3193d821043327c3..80511433c184c6918c8d2e7cff6ca257e8fbf676 100644
 --- a/src/main/java/net/minecraft/world/level/chunk/ChunkAccess.java
 +++ b/src/main/java/net/minecraft/world/level/chunk/ChunkAccess.java
 @@ -66,6 +66,7 @@ public abstract class ChunkAccess implements BlockGetter, BiomeManager.NoiseBiom
@@ -662,12 +662,12 @@ index 75c8125e20b70433fe9d143a3193d821043327c3..d6005f01057c9d14fe4a019df67967db
      public ChunkAccess(ChunkPos pos, UpgradeData upgradeData, LevelHeightAccessor heightLimitView, Registry<Biome> biomeRegistry, long inhabitedTime, @Nullable LevelChunkSection[] sectionArray, @Nullable BlendingData blendingData) {
          this.locX = pos.x; this.locZ = pos.z; // Paper - reduce need for field lookups
          this.chunkPos = pos; this.coordinateKey = ChunkPos.asLong(locX, locZ); // Paper - cache long key
-+        this.nearbyPlayersCoordinateKey = io.papermc.paper.util.CoordinateUtils.getChunkKey(locX, locZ); // Plazma - Port SparklyPaper patches; Cache coordinate key used for nearby players when ticking chunks
++        this.nearbyPlayersCoordinateKey = ca.spottedleaf.moonrise.common.util.CoordinateUtils.getChunkKey(locX, locZ); // Plazma - Port SparklyPaper patches; Cache coordinate key used for nearby players when ticking chunks
          this.upgradeData = upgradeData;
          this.levelHeightAccessor = heightLimitView;
          this.sections = new LevelChunkSection[heightLimitView.getSectionsCount()];
 diff --git a/src/main/java/net/minecraft/world/level/chunk/LevelChunk.java b/src/main/java/net/minecraft/world/level/chunk/LevelChunk.java
-index a4578ae22409edb686d0bcbac8cbc1a2e1d7b988..87f781e94c9a99a7592cc44507fc7ab8d465c5b6 100644
+index a4578ae22409edb686d0bcbac8cbc1a2e1d7b988..9cc1a79dd25c63af6986e721ceff5560cf56b7d1 100644
 --- a/src/main/java/net/minecraft/world/level/chunk/LevelChunk.java
 +++ b/src/main/java/net/minecraft/world/level/chunk/LevelChunk.java
 @@ -74,6 +74,8 @@ public class LevelChunk extends ChunkAccess implements ca.spottedleaf.moonrise.p
@@ -697,16 +697,21 @@ index a4578ae22409edb686d0bcbac8cbc1a2e1d7b988..87f781e94c9a99a7592cc44507fc7ab8
      }
  
      private class BoundTickingBlockEntity<T extends BlockEntity> implements TickingBlockEntity {
-@@ -1025,7 +1029,7 @@ public class LevelChunk extends ChunkAccess implements ca.spottedleaf.moonrise.p
+@@ -1024,10 +1028,12 @@ public class LevelChunk extends ChunkAccess implements ca.spottedleaf.moonrise.p
+         private final T blockEntity;
          private final BlockEntityTicker<T> ticker;
          private boolean loggedInvalidBlockState;
++        private final long chunkCoordinateKey; // Plazma - Port SparklyPaper patches; Optimize TickingBlockEntity
  
 -        BoundTickingBlockEntity(final BlockEntity tileentity, final BlockEntityTicker blockentityticker) {
 +        BoundTickingBlockEntity(final BlockEntity tileentity, final BlockEntityTicker blockentityticker, long chunkCoordinateKey) { // Plazma - Port SparklyPaper patches; Optimize TickingBlockEntity
              this.blockEntity = (T) tileentity; // CraftBukkit - decompile error
              this.ticker = blockentityticker;
++            this.chunkCoordinateKey = chunkCoordinateKey; // Plazma - Port SparklyPaper patches; Optimize TickingBlockEntity
          }
-@@ -1095,5 +1099,7 @@ public class LevelChunk extends ChunkAccess implements ca.spottedleaf.moonrise.p
+ 
+         @Override
+@@ -1095,5 +1101,7 @@ public class LevelChunk extends ChunkAccess implements ca.spottedleaf.moonrise.p
  
              return "Level ticker for " + s + "@" + String.valueOf(this.getPos());
          }
