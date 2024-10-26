@@ -5,7 +5,7 @@ Subject: [PATCH] Fork-friendly Rebranding
 
 
 diff --git a/src/main/java/com/destroystokyo/paper/Metrics.java b/src/main/java/com/destroystokyo/paper/Metrics.java
-index 8cde30544e14f8fc2dac32966ae3c21f8cf3a551..81b204c03b3c9a997f00fd423daa963757cb0daf 100644
+index 8cde30544e14f8fc2dac32966ae3c21f8cf3a551..8d5a52c5762c3d9b44dcdf00ae312e0bdc01fa1f 100644
 --- a/src/main/java/com/destroystokyo/paper/Metrics.java
 +++ b/src/main/java/com/destroystokyo/paper/Metrics.java
 @@ -593,7 +593,7 @@ public class Metrics {
@@ -13,7 +13,7 @@ index 8cde30544e14f8fc2dac32966ae3c21f8cf3a551..81b204c03b3c9a997f00fd423daa9637
              // Only start Metrics, if it's enabled in the config
              if (config.getBoolean("enabled", true)) {
 -                Metrics metrics = new Metrics("Purpur", serverUUID, logFailedRequests, Bukkit.getLogger()); // Pufferfish // Purpur
-+                Metrics metrics = new Metrics(io.papermc.paper.ServerBuildInfo.buildInfo().brandName(), serverUUID, logFailedRequests, Bukkit.getLogger()); // Pufferfish // Purpur // Plazma - Fork-friendly Rebranding
++                Metrics metrics = new Metrics(io.papermc.paper.ServerBrandConstants.BRAND_NAME, serverUUID, logFailedRequests, Bukkit.getLogger()); // Pufferfish // Purpur // Plazma - Fork-friendly Rebranding
  
                  metrics.addCustomChart(new Metrics.SimplePie("minecraft_version", () -> {
                      String minecraftVersion = Bukkit.getVersion();
@@ -79,7 +79,7 @@ index 6d36fc6d8e22d9b68dea3830f6ecc8763184c343..6995627310de4911d87a2f93a723d6b9
      // Contributed by Techcable <Techcable@outlook.com> in GH-65
      private static int fetchDistanceFromGitHub(final String repo, final String branch, final String hash) {
 diff --git a/src/main/java/com/destroystokyo/paper/console/PaperConsole.java b/src/main/java/com/destroystokyo/paper/console/PaperConsole.java
-index 90b352647..02f6a4947 100644
+index 90b3526479320064378f2cde6c2f2b8e48a59ba6..21658c61ad091647d5421d1dbf892d03ca175c74 100644
 --- a/src/main/java/com/destroystokyo/paper/console/PaperConsole.java
 +++ b/src/main/java/com/destroystokyo/paper/console/PaperConsole.java
 @@ -20,7 +20,7 @@ public final class PaperConsole extends SimpleTerminalConsole {
@@ -87,28 +87,28 @@ index 90b352647..02f6a4947 100644
      protected LineReader buildReader(LineReaderBuilder builder) {
          builder
 -                .appName("Purpur") // Purpur
-+                .appName(io.papermc.paper.ServerBuildInfo.buildInfo().brandName()) // Purpur // Plazma - Fork-friendly Rebranding
++                .appName(io.papermc.paper.ServerBrandConstants.BRAND_NAME) // Purpur // Plazma - Fork-friendly Rebranding
                  .variable(LineReader.HISTORY_FILE, java.nio.file.Paths.get(".console_history"))
                  .completer(new ConsoleCommandCompleter(this.server))
                  .option(LineReader.Option.COMPLETE_IN_WORD, true);
 diff --git a/src/main/java/io/papermc/paper/ServerBrandConstants.java b/src/main/java/io/papermc/paper/ServerBrandConstants.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..af534fb15be2be3e5b4258c522e0e6c967c2bb1c
+index 0000000000000000000000000000000000000000..3af005ce2bbd30601917987d8c831db23c733ab8
 --- /dev/null
 +++ b/src/main/java/io/papermc/paper/ServerBrandConstants.java
-@@ -0,0 +1,33 @@
+@@ -0,0 +1,29 @@
 +package io.papermc.paper;
 +
 +import org.jetbrains.annotations.Nullable;
 +
-+public enum ServerBrandConstants {;
++public interface ServerBrandConstants {
 +
 +    // Basic brand informations
-+    public static final String BRAND_NAME = "Plazma";
-+    public static final String RESOURCE_PATH = "META-INF/maven/org.plazmamc.plazma/plazma-api/pom.properties";
++    String BRAND_NAME = "Plazma";
++    String RESOURCE_PATH = "META-INF/maven/org.plazmamc.plazma/plazma-api/pom.properties";
 +
 +    @Nullable
-+    public static final String ASCII_LOGO = """
++    String ASCII_LOGO = """
 +        
 +        \033[38;2;215;23;133m█\033[38;2;212;24;134m█\033[38;2;209;26;134m█\033[38;2;205;27;135m█\033[38;2;202;28;136m█\033[38;2;199;30;136m█\033[38;2;196;31;137m╗\033[38;2;193;33;138m  \033[38;2;190;34;138m█\033[38;2;186;35;139m█\033[38;2;183;37;140m╗\033[38;2;180;38;140m \033[38;2;177;39;141m \033[38;2;174;41;142m \033[38;2;170;42;142m \033[38;2;167;43;143m  \033[38;2;164;45;144m \033[38;2;161;46;144m█\033[38;2;158;47;145m█\033[38;2;155;49;146m█\033[38;2;151;50;146m█\033[38;2;148;52;147m█\033[38;2;145;53;148m╗\033[38;2;142;54;148m  \033[38;2;139;56;149m█\033[38;2;135;57;149m█\033[38;2;132;58;150m█\033[38;2;129;60;151m█\033[38;2;126;61;151m█\033[38;2;123;62;152m█\033[38;2;120;64;153m█\033[38;2;116;65;153m╗ \033[38;2;113;67;154m█\033[38;2;110;68;155m█\033[38;2;107;69;155m█\033[38;2;104;71;156m╗\033[38;2;101;72;157m \033[38;2;97;73;157m \033[38;2;94;75;158m \033[38;2;91;76;159m█\033[38;2;88;77;159m█\033[38;2;85;79;160m█\033[38;2;81;80;161m╗ \033[38;2;78;81;161m \033[38;2;75;83;162m█\033[38;2;72;84;163m█\033[38;2;69;86;163m█\033[38;2;66;87;164m█\033[38;2;62;88;165m█\033[38;2;59;90;165m╗\033[38;2;56;91;166m\s
 +        \033[38;2;215;23;133m█\033[38;2;212;24;134m█\033[38;2;209;26;134m╔\033[38;2;205;27;135m═\033[38;2;202;28;136m═\033[38;2;199;30;136m█\033[38;2;196;31;137m█\033[38;2;193;33;138m╗ \033[38;2;190;34;138m█\033[38;2;186;35;139m█\033[38;2;183;37;140m║\033[38;2;180;38;140m \033[38;2;177;39;141m \033[38;2;174;41;142m \033[38;2;170;42;142m \033[38;2;167;43;143m  \033[38;2;164;45;144m█\033[38;2;161;46;144m█\033[38;2;158;47;145m╔\033[38;2;155;49;146m═\033[38;2;151;50;146m═\033[38;2;148;52;147m█\033[38;2;145;53;148m█\033[38;2;142;54;148m╗ \033[38;2;139;56;149m╚\033[38;2;135;57;149m═\033[38;2;132;58;150m═\033[38;2;129;60;151m█\033[38;2;126;61;151m█\033[38;2;123;62;152m█\033[38;2;120;64;153m╔\033[38;2;116;65;153m╝ \033[38;2;113;67;154m█\033[38;2;110;68;155m█\033[38;2;107;69;155m█\033[38;2;104;71;156m█\033[38;2;101;72;157m╗\033[38;2;97;73;157m \033[38;2;94;75;158m█\033[38;2;91;76;159m█\033[38;2;88;77;159m█\033[38;2;85;79;160m█\033[38;2;81;80;161m║ \033[38;2;78;81;161m█\033[38;2;75;83;162m█\033[38;2;72;84;163m╔\033[38;2;69;86;163m═\033[38;2;66;87;164m═\033[38;2;62;88;165m█\033[38;2;59;90;165m█\033[38;2;56;91;166m╗
@@ -119,19 +119,15 @@ index 0000000000000000000000000000000000000000..af534fb15be2be3e5b4258c522e0e6c9
 +        """;
 +
 +    // Support URLs
-+    public static final String DOWNLOAD_PAGE = "https://plazmamc.org/downloads";
-+    public static final String CONFIG_REFERENCE = "https://docs.plazmamc.org/plazma/administration/reference/configurations";
-+    public static final String START_GUIDE = "https://docs.plazmamc.org/plazma/administration/getting-started";
-+    public static final String USAGE_GUIDE = "https://docs.plazmamc.org/plazma/administration/getting-started/next-step";
-+    public static final String SUPPORT_PAGE = "https://github.com/PlazmaMC/Plazma/issues";
-+
-+    // DO NOT MODIFY BELOW
-+    public static final String BRAND_LCASE = BRAND_NAME.toLowerCase();
-+    public static final String BRAND_UCASE = BRAND_NAME.toUpperCase();
++    String DOWNLOAD_PAGE = "https://plazmamc.org/downloads";
++    String CONFIG_REFERENCE = "https://docs.plazmamc.org/plazma/administration/reference/configurations";
++    String START_GUIDE = "https://docs.plazmamc.org/plazma/administration/getting-started";
++    String USAGE_GUIDE = "https://docs.plazmamc.org/plazma/administration/getting-started/next-step";
++    String SUPPORT_PAGE = "https://github.com/PlazmaMC/Plazma/issues";
 +
 +}
 diff --git a/src/main/java/io/papermc/paper/ServerBuildInfoImpl.java b/src/main/java/io/papermc/paper/ServerBuildInfoImpl.java
-index 3099c21ee..a337e2c95 100644
+index 3099c21ee589acf6edff5903a23673adf489024f..a337e2c9576fb70a8ee9082e9b69719c804b286e 100644
 --- a/src/main/java/io/papermc/paper/ServerBuildInfoImpl.java
 +++ b/src/main/java/io/papermc/paper/ServerBuildInfoImpl.java
 @@ -30,10 +30,6 @@ public record ServerBuildInfoImpl(
@@ -167,7 +163,7 @@ index 3099c21ee..a337e2c95 100644
  
      @Override
 diff --git a/src/main/java/io/papermc/paper/configuration/Configurations.java b/src/main/java/io/papermc/paper/configuration/Configurations.java
-index 87e5f614b..17e52f4b6 100644
+index 87e5f614ba988547a827486740db217e28585773..f5aac6cde46ca08a4d4792e38f514bb3d8188ae8 100644
 --- a/src/main/java/io/papermc/paper/configuration/Configurations.java
 +++ b/src/main/java/io/papermc/paper/configuration/Configurations.java
 @@ -113,9 +113,7 @@ public abstract class Configurations<G, W> {
@@ -177,12 +173,12 @@ index 87e5f614b..17e52f4b6 100644
 -            if (ex.getCause() instanceof AccessDeniedException) {
 -                LOGGER.warn("Could not save {}: Paper could not persist the full set of configuration settings in the configuration file. Any setting missing from the configuration file will be set with its default value in memory. Admins should make sure to review the configuration documentation at https://docs.papermc.io/paper/configuration for more details.", filename, ex);
 -            } else throw ex;
-+            if (ex.getCause() instanceof AccessDeniedException) LOGGER.warn("Could not save {}: {} could not persist the full set of configuration settings in the configuration file. Any setting missing from the configuration file will be set with its default value in memory. Admins should make sure to review the configuration documentation at {} for more details.", filename, io.papermc.paper.ServerBuildInfo.buildInfo().brandName(), io.papermc.paper.ServerBrandConstants.CONFIG_REFERENCE, ex) else throw ex; // Plazma - Fork-friendly Rebranding
++            if (ex.getCause() instanceof AccessDeniedException) LOGGER.warn("Could not save {}: {} could not persist the full set of configuration settings in the configuration file. Any setting missing from the configuration file will be set with its default value in memory. Admins should make sure to review the configuration documentation at {} for more details.", filename, io.papermc.paper.ServerBrandConstants.BRAND_NAME, io.papermc.paper.ServerBrandConstants.CONFIG_REFERENCE, ex); else throw ex; // Plazma - Fork-friendly Rebranding
          }
      }
  
 diff --git a/src/main/java/net/minecraft/CrashReport.java b/src/main/java/net/minecraft/CrashReport.java
-index 710477ae2..318780240 100644
+index 710477ae27ebc5afdf0012ef0867d05efd293c24..3a5e7546c5cc1fcec880cece3f0d0b04ec23cc18 100644
 --- a/src/main/java/net/minecraft/CrashReport.java
 +++ b/src/main/java/net/minecraft/CrashReport.java
 @@ -32,13 +32,13 @@ public class CrashReport {
@@ -190,19 +186,19 @@ index 710477ae2..318780240 100644
      private StackTraceElement[] uncategorizedStackTrace = new StackTraceElement[0];
      private final SystemReport systemReport = new SystemReport();
 -    private List<String> extraInfo = List.of("", "DO NOT REPORT THIS TO PAPER! REPORT TO PURPUR INSTEAD!", ""); // Purpur - Rebrand
-+    private List<String> extraInfo = List.of("", "DO NOT REPORT THIS TO PAPER OR PURPUR! REPORT TO " + io.papermc.paper.ServerBrandConstants.BRAND_UCASE + " INSTEAD!", ""); // Purpur - Rebrand // Plazma - Fork-friendly Rebranding
++    private List<String> extraInfo = List.of("", "DO NOT REPORT THIS TO PAPER OR PURPUR! REPORT TO " + io.papermc.paper.ServerBrandConstants.BRAND_NAME.toUpperCase() + " INSTEAD!", ""); // Purpur - Rebrand // Plazma - Fork-friendly Rebranding
  
      public CrashReport(String message, Throwable cause) {
          io.papermc.paper.util.StacktraceDeobfuscator.INSTANCE.deobfuscateThrowable(cause); // Paper
          this.title = message;
          this.exception = cause;
 -        this.systemReport.setDetail("CraftBukkit Information", new org.bukkit.craftbukkit.CraftCrashReport()); // CraftBukkit
-+        this.systemReport.setDetail(io.papermc.paper.ServerBuildInfo.buildInfo().brandName() + " CraftBukkit Information", new org.bukkit.craftbukkit.CraftCrashReport()); // CraftBukkit // Plazma - Fork-friendly Rebranding
++        this.systemReport.setDetail(io.papermc.paper.ServerBrandConstants.BRAND_NAME + " CraftBukkit Information", new org.bukkit.craftbukkit.CraftCrashReport()); // CraftBukkit // Plazma - Fork-friendly Rebranding
      }
  
      public String getTitle() {
 diff --git a/src/main/java/net/minecraft/server/Main.java b/src/main/java/net/minecraft/server/Main.java
-index aad2cdf4c..ac2f6591d 100644
+index aad2cdf4c2237caf2c99695d0cbb01f56c0074e2..e9842bf7e43a4fdfc4a23d6ee13d56a8cf4fb77a 100644
 --- a/src/main/java/net/minecraft/server/Main.java
 +++ b/src/main/java/net/minecraft/server/Main.java
 @@ -108,6 +108,11 @@ public class Main {
@@ -217,17 +213,8 @@ index aad2cdf4c..ac2f6591d 100644
  
              Path path = (Path) optionset.valueOf("pidFile"); // CraftBukkit
  
-@@ -179,7 +184,7 @@ public class Main {
-             if (awtException != null) {
-                 Main.LOGGER.error("You are using a headless JRE distribution.");
-                 Main.LOGGER.error("This distribution is missing certain graphic libraries that the Minecraft server needs to function.");
--                Main.LOGGER.error("For instructions on how to install the non-headless JRE, see https://docs.papermc.io/misc/java-install");
-+                Main.LOGGER.error("For instructions on how to install the non-headless JRE, see {}", io.papermc.paper.ServerBrandConstants.START_GUIDE); // Plazma - Fork-friendly Rebranding
-                 Main.LOGGER.error("");
-                 Main.LOGGER.error(awtException);
-                 return;
 diff --git a/src/main/java/net/minecraft/server/MinecraftServer.java b/src/main/java/net/minecraft/server/MinecraftServer.java
-index d78cb68c3..e36b99645 100644
+index d78cb68c3a53b277aa26186062efc716c8f80f36..e36b9964569c8476ca25386c783fb8323f637476 100644
 --- a/src/main/java/net/minecraft/server/MinecraftServer.java
 +++ b/src/main/java/net/minecraft/server/MinecraftServer.java
 @@ -1259,7 +1259,7 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
@@ -240,7 +227,7 @@ index d78cb68c3..e36b99645 100644
              }
              // Paper end - Add onboarding message for initial server start
 diff --git a/src/main/java/net/minecraft/server/dedicated/DedicatedServer.java b/src/main/java/net/minecraft/server/dedicated/DedicatedServer.java
-index 6e6f4dffc..68780b0ae 100644
+index 6e6f4dffceb0032153c5be119303c5809629cfcc..dae03900ee8b73448e216891fa8e9a7b5c41ddc2 100644
 --- a/src/main/java/net/minecraft/server/dedicated/DedicatedServer.java
 +++ b/src/main/java/net/minecraft/server/dedicated/DedicatedServer.java
 @@ -801,7 +801,7 @@ public class DedicatedServer extends MinecraftServer implements ServerInterface
@@ -248,12 +235,12 @@ index 6e6f4dffc..68780b0ae 100644
  
          result.append(this.server.getName());
 -        result.append(" on Bukkit ");
-+        result.append(" on ").append(io.papermc.paper.ServerBuildInfo.buildInfo().brandName()).append(" "); // Plazma - Fork-friendly Rebranding
++        result.append(" on ").append(io.papermc.paper.ServerBrandConstants.BRAND_NAME).append(" "); // Plazma - Fork-friendly Rebranding
          result.append(this.server.getBukkitVersion());
  
          if (plugins.length > 0 && this.server.getQueryPlugins()) {
 diff --git a/src/main/java/net/minecraft/server/dedicated/DedicatedServerProperties.java b/src/main/java/net/minecraft/server/dedicated/DedicatedServerProperties.java
-index 9ebe1f179..5971f99c0 100644
+index 9ebe1f1797b5be562bc4f6d92b9a4d6022ca2151..e0a09827db002b87e738091d820f05a9a97f3edb 100644
 --- a/src/main/java/net/minecraft/server/dedicated/DedicatedServerProperties.java
 +++ b/src/main/java/net/minecraft/server/dedicated/DedicatedServerProperties.java
 @@ -56,12 +56,12 @@ public class DedicatedServerProperties extends Settings<DedicatedServerPropertie
@@ -261,18 +248,18 @@ index 9ebe1f179..5971f99c0 100644
      public final boolean preventProxyConnections = this.get("prevent-proxy-connections", false);
      public final String serverIp = this.get("server-ip", "");
 -    public final String serverName = this.get("server-name", "Unknown Server"); // Purpur
-+    public final String serverName = this.get("server-name", "A " + io.papermc.paper.ServerBuildInfo.buildInfo().brandName() + " Server"); // Purpur // Plazma - Fork-friendly Rebranding
++    public final String serverName = this.get("server-name", "A " + io.papermc.paper.ServerBrandConstants.BRAND_NAME + " Server"); // Purpur // Plazma - Fork-friendly Rebranding
      public final boolean spawnAnimals = this.get("spawn-animals", true);
      public final boolean spawnNpcs = this.get("spawn-npcs", true);
      public final boolean pvp = this.get("pvp", true);
      public final boolean allowFlight = this.get("allow-flight", false);
 -    public final String motd = this.get("motd", "A Minecraft Server");
-+    public final String motd = this.get("motd", "A " + io.papermc.paper.ServerBuildInfo.buildInfo().brandName() + " Server"); // Plazma - Fork-friendly Rebranding
++    public final String motd = this.get("motd", "A " + io.papermc.paper.ServerBrandConstants.BRAND_NAME + " Server"); // Plazma - Fork-friendly Rebranding
      public final String bugReportLink = this.get("bug-report-link", "");
      public final boolean forceGameMode = this.get("force-gamemode", false);
      public final boolean enforceWhitelist = this.get("enforce-whitelist", false);
 diff --git a/src/main/java/net/minecraft/server/gui/MinecraftServerGui.java b/src/main/java/net/minecraft/server/gui/MinecraftServerGui.java
-index 8f74c2ec5252b6265549589310d742337c91cb2c..f8e8966fe8909f209969637e7ed708e689c41f1d 100644
+index 8f74c2ec5252b6265549589310d742337c91cb2c..ecb5a046514e3cd448cbf633c728831b1eb5d30b 100644
 --- a/src/main/java/net/minecraft/server/gui/MinecraftServerGui.java
 +++ b/src/main/java/net/minecraft/server/gui/MinecraftServerGui.java
 @@ -56,7 +56,7 @@ public class MinecraftServerGui extends JComponent {
@@ -280,7 +267,7 @@ index 8f74c2ec5252b6265549589310d742337c91cb2c..f8e8966fe8909f209969637e7ed708e6
          }
  
 -        final JFrame jframe = new JFrame("Purpur Minecraft server"); // Purpur
-+        final JFrame jframe = new JFrame(io.papermc.paper.ServerBuildInfo.buildInfo().brandName() + " Minecraft server"); // Purpur // Plazma - Fork-friendly Rebranding
++        final JFrame jframe = new JFrame(io.papermc.paper.ServerBrandConstants.BRAND_NAME + " Minecraft server"); // Purpur // Plazma - Fork-friendly Rebranding
          final MinecraftServerGui servergui = new MinecraftServerGui(server);
  
          jframe.setDefaultCloseOperation(2);
@@ -289,7 +276,7 @@ index 8f74c2ec5252b6265549589310d742337c91cb2c..f8e8966fe8909f209969637e7ed708e6
          jframe.setLocationRelativeTo((Component) null);
          jframe.setVisible(true);
 -        jframe.setName("Purpur Minecraft server"); // Paper - Improve ServerGUI // Purpur
-+        jframe.setName(io.papermc.paper.ServerBuildInfo.buildInfo().brandName() + " Minecraft server"); // Paper - Improve ServerGUI // Purpur // Plazma - Fork-friendly Rebranding
++        jframe.setName(io.papermc.paper.ServerBrandConstants.BRAND_NAME + " Minecraft server"); // Paper - Improve ServerGUI // Purpur // Plazma - Fork-friendly Rebranding
  
          // Paper start - Improve ServerGUI
          try {
@@ -298,7 +285,7 @@ index 8f74c2ec5252b6265549589310d742337c91cb2c..f8e8966fe8909f209969637e7ed708e6
              public void windowClosing(WindowEvent windowevent) {
                  if (!servergui.isClosing.getAndSet(true)) {
 -                    jframe.setTitle("Purpur Minecraft server - shutting down!"); // Purpur
-+                    jframe.setTitle(io.papermc.paper.ServerBuildInfo.buildInfo().brandName() + " Minecraft server - shutting down!"); // Purpur // Plazma - Fork-friendly Rebranding
++                    jframe.setTitle(io.papermc.paper.ServerBrandConstants.BRAND_NAME + " Minecraft server - shutting down!"); // Purpur // Plazma - Fork-friendly Rebranding
                      server.halt(true);
                      servergui.runFinalizers();
                  }
@@ -312,7 +299,7 @@ index 8f74c2ec5252b6265549589310d742337c91cb2c..f8e8966fe8909f209969637e7ed708e6
  
          javax.swing.JLabel jLabel = new javax.swing.JLabel("If you need help setting up your server you can visit:");
 diff --git a/src/main/java/net/minecraft/world/damagesource/DamageSource.java b/src/main/java/net/minecraft/world/damagesource/DamageSource.java
-index 4a96d914f..0e786cf02 100644
+index 4a96d914f8aa6f0c5f13fc85369a311f25835ac2..5b4285d6b37346bcea3bf072c6f00bd50c62e703 100644
 --- a/src/main/java/net/minecraft/world/damagesource/DamageSource.java
 +++ b/src/main/java/net/minecraft/world/damagesource/DamageSource.java
 @@ -89,7 +89,7 @@ public class DamageSource {
@@ -320,12 +307,12 @@ index 4a96d914f..0e786cf02 100644
      public DamageSource customEventDamager(Entity entity) {
          if (this.directEntity != null) {
 -            throw new IllegalStateException("Cannot set custom event damager when direct entity is already set (report a bug to Paper)");
-+            throw new IllegalStateException("Cannot set custom event damager when direct entity is already set (report a bug to " + io.papermc.paper.ServerBuildInfo.buildInfo().brandName() + ")"); // Plazma - Fork-friendly Rebranding
++            throw new IllegalStateException("Cannot set custom event damager when direct entity is already set (report a bug to " + io.papermc.paper.ServerBrandConstants.BRAND_NAME + ")"); // Plazma - Fork-friendly Rebranding
          }
          DamageSource damageSource = this.cloneInstance();
          damageSource.customEventDamager = entity;
 diff --git a/src/main/java/net/minecraft/world/level/chunk/storage/RegionFileStorage.java b/src/main/java/net/minecraft/world/level/chunk/storage/RegionFileStorage.java
-index 4c178b234..28b1374e2 100644
+index 4c178b234bc1118a577d0e016f4b986e9197e99d..f1dab663eebbbdf67c5b8e8f05bf60ce7d6f1650 100644
 --- a/src/main/java/net/minecraft/world/level/chunk/storage/RegionFileStorage.java
 +++ b/src/main/java/net/minecraft/world/level/chunk/storage/RegionFileStorage.java
 @@ -177,7 +177,7 @@ public class RegionFileStorage implements AutoCloseable, ca.spottedleaf.moonrise
@@ -333,12 +320,12 @@ index 4c178b234..28b1374e2 100644
      // Paper start
      private static void printOversizedLog(String msg, Path file, int x, int z) {
 -        org.apache.logging.log4j.LogManager.getLogger().fatal(msg + " (" + file.toString().replaceAll(".+[\\\\/]", "") + " - " + x + "," + z + ") Go clean it up to remove this message. /minecraft:tp " + (x<<4)+" 128 "+(z<<4) + " - DO NOT REPORT THIS TO PURPUR - You may ask for help on Discord, but do not file an issue. These error messages can not be removed."); // Purpur
-+        org.apache.logging.log4j.LogManager.getLogger().fatal(msg + " (" + file.toString().replaceAll(".+[\\\\/]", "") + " - " + x + "," + z + ") Go clean it up to remove this message. /minecraft:tp " + (x<<4)+" 128 "+(z<<4) + " - DO NOT REPORT THIS TO " + io.papermc.paper.ServerBuildInfo.buildInfo().brandName() + " - You may ask for help on Discord, but do not file an issue. These error messages can not be removed."); // Purpur // Plazma - Fork-friendly Rebranding
++        org.apache.logging.log4j.LogManager.getLogger().fatal(msg + " (" + file.toString().replaceAll(".+[\\\\/]", "") + " - " + x + "," + z + ") Go clean it up to remove this message. /minecraft:tp " + (x<<4)+" 128 "+(z<<4) + " - DO NOT REPORT THIS TO " + io.papermc.paper.ServerBrandConstants.BRAND_NAME + " - You may ask for help on Discord, but do not file an issue. These error messages can not be removed."); // Purpur // Plazma - Fork-friendly Rebranding
      }
  
      private static CompoundTag readOversizedChunk(RegionFile regionfile, ChunkPos chunkCoordinate) throws IOException {
 diff --git a/src/main/java/org/bukkit/craftbukkit/Main.java b/src/main/java/org/bukkit/craftbukkit/Main.java
-index 068aa459b..8d67bf7aa 100644
+index 068aa459b4d1dfbbbd80dc0ae5c43b8202474477..8d67bf7aaed07a3438f29347bd3b1fd6c9efac2e 100644
 --- a/src/main/java/org/bukkit/craftbukkit/Main.java
 +++ b/src/main/java/org/bukkit/craftbukkit/Main.java
 @@ -143,7 +143,7 @@ public class Main {
@@ -360,7 +347,7 @@ index 068aa459b..8d67bf7aa 100644
                  // Paper end
              }
 diff --git a/src/main/java/org/bukkit/craftbukkit/scheduler/CraftScheduler.java b/src/main/java/org/bukkit/craftbukkit/scheduler/CraftScheduler.java
-index 48999a860..4004699d0 100644
+index 48999a860a3b9ed691691c355beaf3e0674acb95..8a34f8481031db9cd5f05944f37ee5284c99c6fe 100644
 --- a/src/main/java/org/bukkit/craftbukkit/scheduler/CraftScheduler.java
 +++ b/src/main/java/org/bukkit/craftbukkit/scheduler/CraftScheduler.java
 @@ -492,7 +492,7 @@ public class CraftScheduler implements BukkitScheduler {
@@ -368,12 +355,12 @@ index 48999a860..4004699d0 100644
              } else {
                  // this.debugTail = this.debugTail.setNext(new CraftAsyncDebugger(currentTick + CraftScheduler.RECENT_TICKS, task.getOwner(), task.getTaskClass())); // Paper
 -                task.getOwner().getLogger().log(Level.SEVERE, "Unexpected Async Task in the Sync Scheduler. Report this to Purpur"); // Paper // Purpur
-+                task.getOwner().getLogger().log(Level.SEVERE, "Unexpected Async Task in the Sync Scheduler. Report this to " + io.papermc.paper.ServerBuildInfo.buildInfo().brandName()); // Paper // Purpur // Plazma - Fork-friendly Rebranding
++                task.getOwner().getLogger().log(Level.SEVERE, "Unexpected Async Task in the Sync Scheduler. Report this to " + io.papermc.paper.ServerBrandConstants.BRAND_NAME); // Paper // Purpur // Plazma - Fork-friendly Rebranding
                  // We don't need to parse pending
                  // (async tasks must live with race-conditions if they attempt to cancel between these few lines of code)
              }
 diff --git a/src/main/java/org/bukkit/craftbukkit/util/Versioning.java b/src/main/java/org/bukkit/craftbukkit/util/Versioning.java
-index 99597258e8e88cd9e2c901c4ac3ff7faeeabee2b..e8f7250f366bf9407ffd6d2ce53fd68a3753f97c 100644
+index 99597258e8e88cd9e2c901c4ac3ff7faeeabee2b..e0414f59b7c5ef149d8e52ebf76dc3e46d9de4d3 100644
 --- a/src/main/java/org/bukkit/craftbukkit/util/Versioning.java
 +++ b/src/main/java/org/bukkit/craftbukkit/util/Versioning.java
 @@ -11,7 +11,7 @@ public final class Versioning {
@@ -390,12 +377,12 @@ index 99597258e8e88cd9e2c901c4ac3ff7faeeabee2b..e8f7250f366bf9407ffd6d2ce53fd68a
                  result = properties.getProperty("version");
              } catch (IOException ex) {
 -                Logger.getLogger(Versioning.class.getName()).log(Level.SEVERE, "Could not get Bukkit version!", ex);
-+                Logger.getLogger(Versioning.class.getName()).log(Level.SEVERE, "Could not get " + io.papermc.paper.ServerBuildInfo.buildInfo().brandName() + " version!", ex); // Plazma - Fork-friendly Rebranding
++                Logger.getLogger(Versioning.class.getName()).log(Level.SEVERE, "Could not get " + io.papermc.paper.ServerBrandConstants.BRAND_NAME + " version!", ex); // Plazma - Fork-friendly Rebranding
              }
          }
  
 diff --git a/src/main/java/org/spigotmc/WatchdogThread.java b/src/main/java/org/spigotmc/WatchdogThread.java
-index f51cc3de3..4910b3fb5 100644
+index f51cc3de3ca935ef90f7f0e9dd0506b856fc55f3..d889d964067058762fcffab9945fe586ce8d2a07 100644
 --- a/src/main/java/org/spigotmc/WatchdogThread.java
 +++ b/src/main/java/org/spigotmc/WatchdogThread.java
 @@ -155,14 +155,14 @@ public class WatchdogThread extends ca.spottedleaf.moonrise.common.util.TickThre
@@ -403,16 +390,16 @@ index f51cc3de3..4910b3fb5 100644
                  // Paper end
                  log.log( Level.SEVERE, "------------------------------" );
 -                log.log( Level.SEVERE, "The server has stopped responding! This is (probably) not a Purpur bug." ); // Paper // Purpur
-+                log.log( Level.SEVERE, "The server has stopped responding! This is (probably) not a " + io.papermc.paper.ServerBuildInfo.buildInfo().brandName() + " bug." ); // Paper // Purpur // Plazma - Fork-friendly Rebranding
++                log.log( Level.SEVERE, "The server has stopped responding! This is (probably) not a " + io.papermc.paper.ServerBrandConstants.BRAND_NAME + " bug." ); // Paper // Purpur // Plazma - Fork-friendly Rebranding
                  log.log( Level.SEVERE, "If you see a plugin in the Server thread dump below, then please report it to that author" );
                  log.log( Level.SEVERE, "\t *Especially* if it looks like HTTP or MySQL operations are occurring" );
                  log.log( Level.SEVERE, "If you see a world save or edit, then it means you did far more than your server can handle at once" );
                  log.log( Level.SEVERE, "\t If this is the case, consider increasing timeout-time in spigot.yml but note that this will replace the crash with LARGE lag spikes" );
 -                log.log( Level.SEVERE, "If you are unsure or still think this is a Purpur bug, please report this to https://github.com/PurpurMC/Purpur/issues" ); // Purpur
-+                log.log( Level.SEVERE, "If you are unsure or still think this is a " + io.papermc.paper.ServerBuildInfo.buildInfo().brandName() + " bug, please report this to " + io.papermc.paper.ServerBrandConstants.SUPPORT_PAGE ); // Purpur // Plazma - Fork-friendly Rebranding
++                log.log( Level.SEVERE, "If you are unsure or still think this is a " + io.papermc.paper.ServerBrandConstants.BRAND_NAME + " bug, please report this to " + io.papermc.paper.ServerBrandConstants.SUPPORT_PAGE ); // Purpur // Plazma - Fork-friendly Rebranding
                  log.log( Level.SEVERE, "Be sure to include ALL relevant console errors and Minecraft crash reports" );
 -                log.log( Level.SEVERE, "Purpur version: " + Bukkit.getServer().getVersion() ); // Purpur
-+                log.log( Level.SEVERE,  io.papermc.paper.ServerBuildInfo.buildInfo().brandName() + " version: " + Bukkit.getServer().getVersion() ); // Purpur // Plazma - Fork-friendly Rebranding
++                log.log( Level.SEVERE,  io.papermc.paper.ServerBrandConstants.BRAND_NAME + " version: " + Bukkit.getServer().getVersion() ); // Purpur // Plazma - Fork-friendly Rebranding
                  //
                  if ( net.minecraft.world.level.Level.lastPhysicsProblem != null )
                  {
@@ -421,13 +408,13 @@ index f51cc3de3..4910b3fb5 100644
                  } else
                  {
 -                    log.log(Level.SEVERE, "--- DO NOT REPORT THIS TO PURPUR - THIS IS NOT A BUG OR A CRASH  - " + Bukkit.getServer().getVersion() + " ---"); // Purpur
-+                    log.log(Level.SEVERE, "--- DO NOT REPORT THIS TO " + io.papermc.paper.ServerBrandConstants.BRAND_UCASE + " - THIS IS NOT A BUG OR A CRASH  - " + Bukkit.getServer().getVersion() + " ---"); // Purpur // Plazma - Fork-friendly Rebranding
++                    log.log(Level.SEVERE, "--- DO NOT REPORT THIS TO " + io.papermc.paper.ServerBrandConstants.BRAND_NAME.toUpperCase() + " - THIS IS NOT A BUG OR A CRASH  - " + Bukkit.getServer().getVersion() + " ---"); // Purpur // Plazma - Fork-friendly Rebranding
                      log.log(Level.SEVERE, "The server has not responded for " + (currentTime - lastTick) / 1000 + " seconds! Creating thread dump");
                  }
                  // Paper end - Different message for short timeout
                  log.log( Level.SEVERE, "------------------------------" );
 -                log.log( Level.SEVERE, "Server thread dump (Look for plugins here before reporting to Purpur!):" ); // Paper // Purpur
-+                log.log( Level.SEVERE, "Server thread dump (Look for plugins here before reporting to " + io.papermc.paper.ServerBuildInfo.buildInfo().brandName() + "!):" ); // Paper // Purpur // Plazma - Fork-friendly Rebranding
++                log.log( Level.SEVERE, "Server thread dump (Look for plugins here before reporting to " + io.papermc.paper.ServerBrandConstants.BRAND_NAME + "!):" ); // Paper // Purpur // Plazma - Fork-friendly Rebranding
                  ca.spottedleaf.moonrise.patches.chunk_system.scheduling.ChunkTaskScheduler.dumpAllChunkLoadInfo(MinecraftServer.getServer(), isLongTimeout); // Paper - rewrite chunk system
                  this.dumpTickingInfo(); // Paper - log detailed tick information
                  WatchdogThread.dumpThread( ManagementFactory.getThreadMXBean().getThreadInfo( MinecraftServer.getServer().serverThread.getId(), Integer.MAX_VALUE ), log );
@@ -436,7 +423,7 @@ index f51cc3de3..4910b3fb5 100644
                  }
                  } else {
 -                    log.log(Level.SEVERE, "--- DO NOT REPORT THIS TO PURPUR - THIS IS NOT A BUG OR A CRASH ---"); // Purpur
-+                    log.log(Level.SEVERE, "--- DO NOT REPORT THIS TO " + io.papermc.paper.ServerBuildInfo.buildInfo().brandName() + " - THIS IS NOT A BUG OR A CRASH ---"); // Purpur // Plazma - Fork-friendly Rebranding
++                    log.log(Level.SEVERE, "--- DO NOT REPORT THIS TO " + io.papermc.paper.ServerBrandConstants.BRAND_NAME + " - THIS IS NOT A BUG OR A CRASH ---"); // Purpur // Plazma - Fork-friendly Rebranding
                  }
  
                  log.log( Level.SEVERE, "------------------------------" );

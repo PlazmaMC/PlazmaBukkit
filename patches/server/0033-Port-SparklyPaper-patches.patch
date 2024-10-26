@@ -112,10 +112,10 @@ index c03608fec96b51e1867f43d8f42e5aefb1520e46..93180066224345c0332fb33744f84204
                  throw new IllegalStateException("Ticking retired scheduler");
              }
 diff --git a/src/main/java/net/minecraft/server/MinecraftServer.java b/src/main/java/net/minecraft/server/MinecraftServer.java
-index 6e7ac081889e5da49ebbe0c75f929de1aea9043c..68dce6a72f3305d91a5571fd3527f0df43fb5d8b 100644
+index 94eb4e0686d8235f06ea7950c178cdec8bd6e037..118832d94f96d7624f9faee35b9da0aeb9d9ded8 100644
 --- a/src/main/java/net/minecraft/server/MinecraftServer.java
 +++ b/src/main/java/net/minecraft/server/MinecraftServer.java
-@@ -328,6 +328,7 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
+@@ -327,6 +327,7 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
      public volatile boolean abnormalExit = false; // Paper
      public static final long SERVER_INIT = System.nanoTime(); // Paper - Lag compensation
      public gg.pufferfish.pufferfish.util.AsyncExecutor mobSpawnExecutor = new gg.pufferfish.pufferfish.util.AsyncExecutor("MobSpawning"); // Pufferfish - optimize mob spawning
@@ -123,7 +123,7 @@ index 6e7ac081889e5da49ebbe0c75f929de1aea9043c..68dce6a72f3305d91a5571fd3527f0df
  
      public static <S extends MinecraftServer> S spin(Function<Thread, S> serverFactory) {
          AtomicReference<S> atomicreference = new AtomicReference();
-@@ -1777,17 +1778,12 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
+@@ -1776,17 +1777,12 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
          //MinecraftTimings.bukkitSchedulerTimer.stopTiming(); // Spigot // Paper // Purpur
          // Paper start - Folia scheduler API
          ((io.papermc.paper.threadedregions.scheduler.FoliaGlobalRegionScheduler) Bukkit.getGlobalRegionScheduler()).tick();
@@ -147,7 +147,7 @@ index 6e7ac081889e5da49ebbe0c75f929de1aea9043c..68dce6a72f3305d91a5571fd3527f0df
          // Paper end - Folia scheduler API
          io.papermc.paper.adventure.providers.ClickCallbackProviderImpl.CALLBACK_MANAGER.handleQueue(this.tickCount); // Paper
          //this.profiler.push("commandFunctions"); // Purpur
-@@ -1853,8 +1849,15 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
+@@ -1852,8 +1848,15 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
              //this.profiler.push("tick"); // Purpur
  
              try {
@@ -166,7 +166,7 @@ index 6e7ac081889e5da49ebbe0c75f929de1aea9043c..68dce6a72f3305d91a5571fd3527f0df
              } catch (Throwable throwable) {
                  CrashReport crashreport = CrashReport.forThrowable(throwable, "Exception ticking world");
 diff --git a/src/main/java/net/minecraft/server/dedicated/DedicatedServer.java b/src/main/java/net/minecraft/server/dedicated/DedicatedServer.java
-index 260a5fafac081011b394b5c677962b41eeee32a6..6c43b022946e5c7260012802200cd64da4992b86 100644
+index 97df4706150dd198dc9bbdd3bdcecea9094d3b62..d31fabbca11b1f619bfa62487eed2cd5f19844ce 100644
 --- a/src/main/java/net/minecraft/server/dedicated/DedicatedServer.java
 +++ b/src/main/java/net/minecraft/server/dedicated/DedicatedServer.java
 @@ -227,6 +227,7 @@ public class DedicatedServer extends MinecraftServer implements ServerInterface
@@ -349,7 +349,7 @@ index 608390ed36710a419de1542b80340dd3fcc7299c..043f068345ca3c50209c1c3cc1feb627
                      mapItemSavedData.tickCarriedBy(player, stack);
                  }
 diff --git a/src/main/java/net/minecraft/world/level/Level.java b/src/main/java/net/minecraft/world/level/Level.java
-index 77000f1f73a180c7171b5d9e66e62538cf629243..9ab004fa35687ca3274f7b937e5c379e93353c35 100644
+index 253d47418b4e9cbce74584c2461d12e17effd7bb..f3c44a2ddc52661984cc07b2ee23b3a3431a4b0a 100644
 --- a/src/main/java/net/minecraft/world/level/Level.java
 +++ b/src/main/java/net/minecraft/world/level/Level.java
 @@ -1456,6 +1456,8 @@ public abstract class Level implements LevelAccessor, AutoCloseable, ca.spottedl
@@ -847,7 +847,7 @@ index 8149b9c51b78eb5c689b7218a2ca3aab60e73bcf..b9a303f6280a2f6ad3616da152922a4f
      }
  
 diff --git a/src/main/java/org/plazmamc/plazma/configurations/GlobalConfiguration.java b/src/main/java/org/plazmamc/plazma/configurations/GlobalConfiguration.java
-index 3ac55c0b156bb1b0fca7092aa047007c5a878c6e..d781a7ba785789c9657c94fb0d164e532daccc96 100644
+index 451723377d505f1fe15ddd4ac535ca61fa253f17..7ccf554610bd00b602eb7be11df7028d2f6a7008 100644
 --- a/src/main/java/org/plazmamc/plazma/configurations/GlobalConfiguration.java
 +++ b/src/main/java/org/plazmamc/plazma/configurations/GlobalConfiguration.java
 @@ -68,6 +68,8 @@ public class GlobalConfiguration extends ConfigurationPart {
@@ -880,10 +880,10 @@ index 3ac55c0b156bb1b0fca7092aa047007c5a878c6e..d781a7ba785789c9657c94fb0d164e53
  
      }
 diff --git a/src/main/java/org/plazmamc/plazma/configurations/WorldConfigurations.java b/src/main/java/org/plazmamc/plazma/configurations/WorldConfigurations.java
-index 03508680792bbf2a197aa2b310425a78f70bf491..5978970f80b1b4672298426dcd8026e453025a52 100644
+index e5989010aa752c23eda58a6df87aa6925f45671a..00ab417a8b7da0457b6f8e18e4f877373774672e 100644
 --- a/src/main/java/org/plazmamc/plazma/configurations/WorldConfigurations.java
 +++ b/src/main/java/org/plazmamc/plazma/configurations/WorldConfigurations.java
-@@ -90,7 +90,22 @@ public class WorldConfigurations extends ConfigurationPart {
+@@ -89,7 +89,22 @@ public class WorldConfigurations extends ConfigurationPart {
  
      public Block block;
      public class Block extends ConfigurationPart {

@@ -5,7 +5,7 @@ Subject: [PATCH] Plazma Configurations
 
 
 diff --git a/src/main/java/io/papermc/paper/configuration/Configurations.java b/src/main/java/io/papermc/paper/configuration/Configurations.java
-index 17e52f4b6b698c1f8148fc3c1038b3b142eb390b..dd4e77e106afdc3ce153dd9abb3ca997d3bc0163 100644
+index f5aac6cde46ca08a4d4792e38f514bb3d8188ae8..4ab13053dec8f05f84981b1bbb6ed06beff65045 100644
 --- a/src/main/java/io/papermc/paper/configuration/Configurations.java
 +++ b/src/main/java/io/papermc/paper/configuration/Configurations.java
 @@ -39,27 +39,94 @@ public abstract class Configurations<G, W> {
@@ -157,7 +157,7 @@ index 17e52f4b6b698c1f8148fc3c1038b3b142eb390b..dd4e77e106afdc3ce153dd9abb3ca997
          return node -> {
              ObjectMapper.Factory factory = (ObjectMapper.Factory) Objects.requireNonNull(node.options().serializers().get(type));
              ObjectMapper.Mutable<T> mutable = (ObjectMapper.Mutable<T>) factory.get(type);
-@@ -106,19 +177,19 @@ public abstract class Configurations<G, W> {
+@@ -106,7 +177,7 @@ public abstract class Configurations<G, W> {
      }
  
      public G initializeGlobalConfiguration(final RegistryAccess registryAccess) throws ConfigurateException {
@@ -166,12 +166,7 @@ index 17e52f4b6b698c1f8148fc3c1038b3b142eb390b..dd4e77e106afdc3ce153dd9abb3ca997
      }
  
      private void trySaveFileNode(YamlConfigurationLoader loader, ConfigurationNode node, String filename) throws ConfigurateException {
-         try {
-             loader.save(node);
-         } catch (ConfigurateException ex) {
--            if (ex.getCause() instanceof AccessDeniedException) LOGGER.warn("Could not save {}: {} could not persist the full set of configuration settings in the configuration file. Any setting missing from the configuration file will be set with its default value in memory. Admins should make sure to review the configuration documentation at {} for more details.", filename, io.papermc.paper.ServerBuildInfo.buildInfo().brandName(), io.papermc.paper.ServerBrandConstants.CONFIG_REFERENCE, ex) else throw ex; // Plazma - Fork-friendly Rebranding
-+            if (ex.getCause() instanceof AccessDeniedException) LOGGER.warn("Could not save {}: {} could not persist the full set of configuration settings in the configuration file. Any setting missing from the configuration file will be set with its default value in memory. Admins should make sure to review the configuration documentation at {} for more details.", filename, io.papermc.paper.ServerBuildInfo.buildInfo().brandName(), io.papermc.paper.ServerBrandConstants.CONFIG_REFERENCE, ex); else throw ex; // Plazma - Fork-friendly Rebranding
-         }
+@@ -118,7 +189,7 @@ public abstract class Configurations<G, W> {
      }
  
      protected G initializeGlobalConfiguration(final CheckedFunction<ConfigurationNode, G, SerializationException> creator) throws ConfigurateException {
@@ -610,7 +605,7 @@ index 33e3815a0c979609d4c7ab83ad91e87ac07a556d..4f1071c48fec78036d6759cdff179df3
      }
  
 diff --git a/src/main/java/net/minecraft/server/dedicated/DedicatedServer.java b/src/main/java/net/minecraft/server/dedicated/DedicatedServer.java
-index 68780b0aea06ff171725deedda746a164b778a01..1bc42bcb5ecbf800684484530260192cc0ed0c5f 100644
+index dae03900ee8b73448e216891fa8e9a7b5c41ddc2..65594336920c8999c2e2847ebcc80577381de6f3 100644
 --- a/src/main/java/net/minecraft/server/dedicated/DedicatedServer.java
 +++ b/src/main/java/net/minecraft/server/dedicated/DedicatedServer.java
 @@ -235,6 +235,8 @@ public class DedicatedServer extends MinecraftServer implements ServerInterface
@@ -755,13 +750,14 @@ index 8d67bf7aaed07a3438f29347bd3b1fd6c9efac2e..f12a0a44c31de3983f207678bbd7fe23
  
 diff --git a/src/main/java/org/plazmamc/plazma/Options.java b/src/main/java/org/plazmamc/plazma/Options.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..5942d0997f07bd51d934dac32cd349792a10643e
+index 0000000000000000000000000000000000000000..ca11bd22a65c8b9f4fffb1832ada8c519ab75b98
 --- /dev/null
 +++ b/src/main/java/org/plazmamc/plazma/Options.java
-@@ -0,0 +1,9 @@
+@@ -0,0 +1,10 @@
 +package org.plazmamc.plazma;
 +
 +import static java.lang.Boolean.getBoolean;
++import static java.lang.System.getProperty;
 +
 +public interface Options {
 +

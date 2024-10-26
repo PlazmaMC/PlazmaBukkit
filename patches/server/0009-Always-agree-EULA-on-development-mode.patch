@@ -4,15 +4,39 @@ Date: Sun, 5 Nov 2023 10:13:14 +0900
 Subject: [PATCH] Always agree EULA on development mode
 
 
+diff --git a/build.gradle.kts b/build.gradle.kts
+index 3bb91f4d0447fc283c56ffab24cb8e203925ebad..95df5b7c437f95849b193345640e6001aed71a3d 100644
+--- a/build.gradle.kts
++++ b/build.gradle.kts
+@@ -141,7 +141,7 @@ fun TaskContainer.registerRunTask(
+         languageVersion.set(JavaLanguageVersion.of(21))
+         vendor.set(JvmVendorSpec.JETBRAINS)
+     })
+-    jvmArgs("-XX:+AllowEnhancedClassRedefinition", "-XX:+AllowRedefinitionToAddDeleteMethods")
++    jvmArgs("-DPlazma.DevelopmentEnvironment", "-XX:+AllowEnhancedClassRedefinition", "-XX:+AllowRedefinitionToAddDeleteMethods") // Plazma - Always agree EULA on development mode
+ 
+     if (rootProject.childProjects["test-plugin"] != null) {
+         val testPluginJar = rootProject.project(":test-plugin").tasks.jar.flatMap { it.archiveFile }
 diff --git a/src/main/java/net/minecraft/server/Main.java b/src/main/java/net/minecraft/server/Main.java
-index 6fa07e7b0dd8d9d9788d6325622a39270fc30117..d5e908be62f6207b42162c9644c13cbe3c2d3850 100644
+index 5aea9b3cc84bcfba940e13e8f680899f5df67856..2807a67ad42b35045ef9f607062403c376e0c4ef 100644
 --- a/src/main/java/net/minecraft/server/Main.java
 +++ b/src/main/java/net/minecraft/server/Main.java
 @@ -179,6 +179,7 @@ public class Main {
  
              // Spigot Start
              boolean eulaAgreed = Boolean.getBoolean( "com.mojang.eula.agree" );
-+            eulaAgreed = eulaAgreed || Boolean.getBoolean("Paper.pushPaperAssetsRoot"); // Plazma - Always agree EULA on development mode
++            eulaAgreed = eulaAgreed || org.plazmamc.plazma.Options.DEVELOPMENT; // Plazma - Always agree EULA on development mode
              if ( eulaAgreed )
              {
                  System.err.println( "You have used the Spigot command line EULA agreement flag." );
+diff --git a/src/main/java/org/plazmamc/plazma/Options.java b/src/main/java/org/plazmamc/plazma/Options.java
+index 5d41bd4d4b86ca0c7c03d3ac6e75b3f1f1abe73b..b891735728e14c40c67e21897b5043efc7077b7f 100644
+--- a/src/main/java/org/plazmamc/plazma/Options.java
++++ b/src/main/java/org/plazmamc/plazma/Options.java
+@@ -7,5 +7,6 @@ public interface Options {
+ 
+     boolean NO_OPTIMIZE = getBoolean("Plazma.disableConfigOptimization");
+     boolean NO_WARN = getBoolean("Plazma.iKnowWhatIAmDoing");
++    boolean DEVELOPMENT = getBoolean("Plazma.DevelopmentEnvironment");
+ 
+ }
