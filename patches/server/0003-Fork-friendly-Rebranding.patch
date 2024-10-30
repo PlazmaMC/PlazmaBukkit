@@ -127,21 +127,20 @@ index 0000000000000000000000000000000000000000..3af005ce2bbd30601917987d8c831db2
 +
 +}
 diff --git a/src/main/java/io/papermc/paper/ServerBuildInfoImpl.java b/src/main/java/io/papermc/paper/ServerBuildInfoImpl.java
-index 3099c21ee589acf6edff5903a23673adf489024f..a337e2c9576fb70a8ee9082e9b69719c804b286e 100644
+index a6e5950b5875cafd734300cdfbf58f5d3736f3c8..a337e2c9576fb70a8ee9082e9b69719c804b286e 100644
 --- a/src/main/java/io/papermc/paper/ServerBuildInfoImpl.java
 +++ b/src/main/java/io/papermc/paper/ServerBuildInfoImpl.java
-@@ -30,10 +30,6 @@ public record ServerBuildInfoImpl(
+@@ -30,9 +30,6 @@ public record ServerBuildInfoImpl(
      private static final String ATTRIBUTE_GIT_BRANCH = "Git-Branch";
      private static final String ATTRIBUTE_GIT_COMMIT = "Git-Commit";
  
 -    private static final String BRAND_PAPER_NAME = "Paper";
--    private static final String BRAND_PUFFERFISH_NAME = "Pufferfish"; // Purpur
 -    private static final String BRAND_PURPUR_NAME = "Purpur"; // Purpur
 -
      private static final String BUILD_DEV = "DEV";
  
      public ServerBuildInfoImpl() {
-@@ -44,9 +40,9 @@ public record ServerBuildInfoImpl(
+@@ -43,9 +40,9 @@ public record ServerBuildInfoImpl(
          this(
              getManifestAttribute(manifest, ATTRIBUTE_BRAND_ID)
                  .map(Key::key)
@@ -153,11 +152,11 @@ index 3099c21ee589acf6edff5903a23673adf489024f..a337e2c9576fb70a8ee9082e9b69719c
              SharedConstants.getCurrentVersion().getId(),
              SharedConstants.getCurrentVersion().getName(),
              getManifestAttribute(manifest, ATTRIBUTE_BUILD_NUMBER)
-@@ -63,7 +59,7 @@ public record ServerBuildInfoImpl(
+@@ -62,7 +59,7 @@ public record ServerBuildInfoImpl(
  
      @Override
      public boolean isBrandCompatible(final @NotNull Key brandId) {
--        return brandId.equals(this.brandId) || brandId.equals(BRAND_PAPER_ID) || brandId.equals(BRAND_PUFFERFISH_ID); // Purpur
+-        return brandId.equals(this.brandId) || brandId.equals(BRAND_PAPER_ID); // Purpur
 +        return brandId.equals(this.brandId) || SUPPORTED_BRANDS.contains(brandId); // Purpur // Plazma - Fork-friendly Rebranding
      }
  
@@ -198,7 +197,7 @@ index 710477ae27ebc5afdf0012ef0867d05efd293c24..3a5e7546c5cc1fcec880cece3f0d0b04
  
      public String getTitle() {
 diff --git a/src/main/java/net/minecraft/server/Main.java b/src/main/java/net/minecraft/server/Main.java
-index aad2cdf4c2237caf2c99695d0cbb01f56c0074e2..e9842bf7e43a4fdfc4a23d6ee13d56a8cf4fb77a 100644
+index f0d762bd140fad27ae73bcf3e61b640b9e3f2592..3a9f7143505ba1a70bcd224ee8fef5c844a94ed1 100644
 --- a/src/main/java/net/minecraft/server/Main.java
 +++ b/src/main/java/net/minecraft/server/Main.java
 @@ -108,6 +108,11 @@ public class Main {
@@ -214,10 +213,10 @@ index aad2cdf4c2237caf2c99695d0cbb01f56c0074e2..e9842bf7e43a4fdfc4a23d6ee13d56a8
              Path path = (Path) optionset.valueOf("pidFile"); // CraftBukkit
  
 diff --git a/src/main/java/net/minecraft/server/MinecraftServer.java b/src/main/java/net/minecraft/server/MinecraftServer.java
-index d78cb68c3a53b277aa26186062efc716c8f80f36..e36b9964569c8476ca25386c783fb8323f637476 100644
+index 6acffd0d74f35ea9ec7e9937b65c3fc81c7769e5..e11c65bd47875d6c7a4e9927cd772afeb0e51da9 100644
 --- a/src/main/java/net/minecraft/server/MinecraftServer.java
 +++ b/src/main/java/net/minecraft/server/MinecraftServer.java
-@@ -1259,7 +1259,7 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
+@@ -1278,7 +1278,7 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
                  LOGGER.info("*************************************************************************************");
                  LOGGER.info("This is the first time you're starting this server.");
                  LOGGER.info("It's recommended you read our 'Getting Started' documentation for guidance.");
@@ -227,10 +226,10 @@ index d78cb68c3a53b277aa26186062efc716c8f80f36..e36b9964569c8476ca25386c783fb832
              }
              // Paper end - Add onboarding message for initial server start
 diff --git a/src/main/java/net/minecraft/server/dedicated/DedicatedServer.java b/src/main/java/net/minecraft/server/dedicated/DedicatedServer.java
-index 6e6f4dffceb0032153c5be119303c5809629cfcc..dae03900ee8b73448e216891fa8e9a7b5c41ddc2 100644
+index e9ad8e2ac267c46df80e884308df8bb12d0deeff..4aaeb0521a5e48a7d74a7968c952fcca7b6c0433 100644
 --- a/src/main/java/net/minecraft/server/dedicated/DedicatedServer.java
 +++ b/src/main/java/net/minecraft/server/dedicated/DedicatedServer.java
-@@ -801,7 +801,7 @@ public class DedicatedServer extends MinecraftServer implements ServerInterface
+@@ -775,7 +775,7 @@ public class DedicatedServer extends MinecraftServer implements ServerInterface
          org.bukkit.plugin.Plugin[] plugins = this.server.getPluginManager().getPlugins();
  
          result.append(this.server.getName());
@@ -240,17 +239,15 @@ index 6e6f4dffceb0032153c5be119303c5809629cfcc..dae03900ee8b73448e216891fa8e9a7b
  
          if (plugins.length > 0 && this.server.getQueryPlugins()) {
 diff --git a/src/main/java/net/minecraft/server/dedicated/DedicatedServerProperties.java b/src/main/java/net/minecraft/server/dedicated/DedicatedServerProperties.java
-index 9ebe1f1797b5be562bc4f6d92b9a4d6022ca2151..e0a09827db002b87e738091d820f05a9a97f3edb 100644
+index b97d8f43f24baf36eca9064b2b48bf6c092f848c..9dce68d9d3f5dc0bb3cc7c11859d3082b73347cb 100644
 --- a/src/main/java/net/minecraft/server/dedicated/DedicatedServerProperties.java
 +++ b/src/main/java/net/minecraft/server/dedicated/DedicatedServerProperties.java
-@@ -56,12 +56,12 @@ public class DedicatedServerProperties extends Settings<DedicatedServerPropertie
+@@ -56,10 +56,10 @@ public class DedicatedServerProperties extends Settings<DedicatedServerPropertie
      public final boolean onlineMode = this.get("online-mode", true);
      public final boolean preventProxyConnections = this.get("prevent-proxy-connections", false);
      public final String serverIp = this.get("server-ip", "");
 -    public final String serverName = this.get("server-name", "Unknown Server"); // Purpur
 +    public final String serverName = this.get("server-name", "A " + io.papermc.paper.ServerBrandConstants.BRAND_NAME + " Server"); // Purpur // Plazma - Fork-friendly Rebranding
-     public final boolean spawnAnimals = this.get("spawn-animals", true);
-     public final boolean spawnNpcs = this.get("spawn-npcs", true);
      public final boolean pvp = this.get("pvp", true);
      public final boolean allowFlight = this.get("allow-flight", false);
 -    public final String motd = this.get("motd", "A Minecraft Server");
@@ -312,10 +309,10 @@ index 4a96d914f8aa6f0c5f13fc85369a311f25835ac2..5b4285d6b37346bcea3bf072c6f00bd5
          DamageSource damageSource = this.cloneInstance();
          damageSource.customEventDamager = entity;
 diff --git a/src/main/java/net/minecraft/world/level/chunk/storage/RegionFileStorage.java b/src/main/java/net/minecraft/world/level/chunk/storage/RegionFileStorage.java
-index 4c178b234bc1118a577d0e016f4b986e9197e99d..f1dab663eebbbdf67c5b8e8f05bf60ce7d6f1650 100644
+index 0dde7cd71a32e6c0cde6cbbaef585896a3d7dae7..9b4afcd708270225da272ba5278397ffe1f91403 100644
 --- a/src/main/java/net/minecraft/world/level/chunk/storage/RegionFileStorage.java
 +++ b/src/main/java/net/minecraft/world/level/chunk/storage/RegionFileStorage.java
-@@ -177,7 +177,7 @@ public class RegionFileStorage implements AutoCloseable, ca.spottedleaf.moonrise
+@@ -274,7 +274,7 @@ public class RegionFileStorage implements AutoCloseable, ca.spottedleaf.moonrise
  
      // Paper start
      private static void printOversizedLog(String msg, Path file, int x, int z) {
@@ -325,7 +322,7 @@ index 4c178b234bc1118a577d0e016f4b986e9197e99d..f1dab663eebbbdf67c5b8e8f05bf60ce
  
      private static CompoundTag readOversizedChunk(RegionFile regionfile, ChunkPos chunkCoordinate) throws IOException {
 diff --git a/src/main/java/org/bukkit/craftbukkit/Main.java b/src/main/java/org/bukkit/craftbukkit/Main.java
-index 068aa459b4d1dfbbbd80dc0ae5c43b8202474477..8d67bf7aaed07a3438f29347bd3b1fd6c9efac2e 100644
+index b2d60b214b58d9a5fadf3629e5ebc358c904d1c6..f9ee08eae4a1e1c6490e4682901609c0e4d52579 100644
 --- a/src/main/java/org/bukkit/craftbukkit/Main.java
 +++ b/src/main/java/org/bukkit/craftbukkit/Main.java
 @@ -143,7 +143,7 @@ public class Main {
@@ -337,7 +334,7 @@ index 068aa459b4d1dfbbbd80dc0ae5c43b8202474477..8d67bf7aaed07a3438f29347bd3b1fd6
  
                  this.acceptsAll(Main.asList("demo"), "Demo mode");
  
-@@ -194,7 +194,7 @@ public class Main {
+@@ -188,7 +188,7 @@ public class Main {
                  acceptsAll(asList("server-name"), "Name of the server")
                          .withRequiredArg()
                          .ofType(String.class)
@@ -347,13 +344,13 @@ index 068aa459b4d1dfbbbd80dc0ae5c43b8202474477..8d67bf7aaed07a3438f29347bd3b1fd6
                  // Paper end
              }
 diff --git a/src/main/java/org/bukkit/craftbukkit/scheduler/CraftScheduler.java b/src/main/java/org/bukkit/craftbukkit/scheduler/CraftScheduler.java
-index 48999a860a3b9ed691691c355beaf3e0674acb95..8a34f8481031db9cd5f05944f37ee5284c99c6fe 100644
+index c914e1e13c4f64f24efa5f825e58efb69632bfa6..c558a2621381cf54661fd3926a00982af2037365 100644
 --- a/src/main/java/org/bukkit/craftbukkit/scheduler/CraftScheduler.java
 +++ b/src/main/java/org/bukkit/craftbukkit/scheduler/CraftScheduler.java
-@@ -492,7 +492,7 @@ public class CraftScheduler implements BukkitScheduler {
+@@ -491,7 +491,7 @@ public class CraftScheduler implements BukkitScheduler {
                  this.parsePending();
              } else {
-                 // this.debugTail = this.debugTail.setNext(new CraftAsyncDebugger(currentTick + CraftScheduler.RECENT_TICKS, task.getOwner(), task.getTaskClass())); // Paper
+                 // this.debugTail = this.debugTail.setNext(new CraftAsyncDebugger(this.currentTick + CraftScheduler.RECENT_TICKS, task.getOwner(), task.getTaskClass())); // Paper
 -                task.getOwner().getLogger().log(Level.SEVERE, "Unexpected Async Task in the Sync Scheduler. Report this to Purpur"); // Paper // Purpur
 +                task.getOwner().getLogger().log(Level.SEVERE, "Unexpected Async Task in the Sync Scheduler. Report this to " + io.papermc.paper.ServerBrandConstants.BRAND_NAME); // Paper // Purpur // Plazma - Fork-friendly Rebranding
                  // We don't need to parse pending

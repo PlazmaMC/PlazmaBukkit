@@ -5,10 +5,10 @@ Subject: [PATCH] Build System Changes
 
 
 diff --git a/build.gradle.kts b/build.gradle.kts
-index 535b0c6a750cc77fb9340d6e080932f3eb3bde17..3bb91f4d0447fc283c56ffab24cb8e203925ebad 100644
+index ccb31eb5993db028d0cbf104261205c9462f8734..44ebd149b18cf002cb9ffc9073c95ab1bd9bd356 100644
 --- a/build.gradle.kts
 +++ b/build.gradle.kts
-@@ -13,70 +13,29 @@ configurations.named(log4jPlugins.compileClasspathConfigurationName) {
+@@ -13,63 +13,29 @@ configurations.named(log4jPlugins.compileClasspathConfigurationName) {
  val alsoShade: Configuration by configurations.creating
  
  dependencies {
@@ -33,8 +33,8 @@ index 535b0c6a750cc77fb9340d6e080932f3eb3bde17..3bb91f4d0447fc283c56ffab24cb8e20
 -    implementation("org.ow2.asm:asm-commons:9.7.1")
 -    implementation("org.spongepowered:configurate-yaml:4.2.0-SNAPSHOT") // Paper - config files
 -    implementation("commons-lang:commons-lang:2.6")
--    runtimeOnly("org.xerial:sqlite-jdbc:3.46.0.0")
--    runtimeOnly("com.mysql:mysql-connector-j:8.4.0")
+-    runtimeOnly("org.xerial:sqlite-jdbc:3.46.1.3")
+-    runtimeOnly("com.mysql:mysql-connector-j:9.1.0")
 -    runtimeOnly("com.lmax:disruptor:3.4.4") // Paper
 -    // Paper start - Use Velocity cipher
 -    implementation("com.velocitypowered:velocity-native:3.3.0-SNAPSHOT") {
@@ -45,13 +45,6 @@ index 535b0c6a750cc77fb9340d6e080932f3eb3bde17..3bb91f4d0447fc283c56ffab24cb8e20
 -    runtimeOnly("org.apache.maven:maven-resolver-provider:3.9.6")
 -    runtimeOnly("org.apache.maven.resolver:maven-resolver-connector-basic:1.9.18")
 -    runtimeOnly("org.apache.maven.resolver:maven-resolver-transport-http:1.9.18")
--
--    // Pufferfish start
--    implementation("org.yaml:snakeyaml:1.32")
--    implementation ("com.github.carleslc.Simple-YAML:Simple-Yaml:1.8.4") { // Purpur
--        exclude(group="org.yaml", module="snakeyaml")
--    }
--    // Pufferfish end
 -
 -    implementation("org.mozilla:rhino-runtime:1.7.14") // Purpur
 -    implementation("org.mozilla:rhino-engine:1.7.14") // Purpur
@@ -89,8 +82,8 @@ index 535b0c6a750cc77fb9340d6e080932f3eb3bde17..3bb91f4d0447fc283c56ffab24cb8e20
 +    implementation(server.bundles.implementation)
 +
 +    log4jPlugins.annotationProcessorConfigurationName(common.log4j.core)
-+    alsoShade(log4jPlugins.output) // Plazma - Diff on patch
-+    runtimeOnly(log4jPlugins.output) // Plazma - Diff on patch
++    alsoShade(log4jPlugins.output) // diff on changes
++    runtimeOnly(log4jPlugins.output) // diff on changes
 +
 +    runtimeOnly(common.maven.provider)
 +    runtimeOnly(common.bundles.maven)
@@ -102,7 +95,7 @@ index 535b0c6a750cc77fb9340d6e080932f3eb3bde17..3bb91f4d0447fc283c56ffab24cb8e20
  }
  
  paperweight {
-@@ -104,14 +63,14 @@ tasks.jar {
+@@ -89,14 +55,14 @@ tasks.jar {
          val gitBranch = git("rev-parse", "--abbrev-ref", "HEAD").getText().trim() // Paper
          attributes(
              "Main-Class" to "org.bukkit.craftbukkit.Main",

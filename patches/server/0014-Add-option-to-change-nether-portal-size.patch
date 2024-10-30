@@ -1,0 +1,63 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: AlphaKR93 <dev@alpha93.kr>
+Date: Sun, 5 Nov 2023 11:27:51 +0900
+Subject: [PATCH] Add option to change nether portal size
+
+
+diff --git a/src/main/java/net/minecraft/world/level/portal/PortalShape.java b/src/main/java/net/minecraft/world/level/portal/PortalShape.java
+index acdff7b4a00d563739fd301c3633a266875296fa..1d361880f80462c1eedad3936b895ec06cf8f505 100644
+--- a/src/main/java/net/minecraft/world/level/portal/PortalShape.java
++++ b/src/main/java/net/minecraft/world/level/portal/PortalShape.java
+@@ -113,7 +113,7 @@ public class PortalShape {
+     private static int calculateWidth(BlockGetter iblockaccess, BlockPos blockposition, Direction enumdirection, BlockStateListPopulator blocks) { // CraftBukkit
+         int i = PortalShape.getDistanceUntilEdgeAboveFrame(iblockaccess, blockposition, enumdirection, blocks); // CraftBukkit
+ 
+-        return i >= 2 && i <= 21 ? i : 0;
++        return i >= this.level.getMinecraftWorld().plazmaConfig().structure.netherPortal.width.min() && i <= this.level.getMinecraftWorld().plazmaConfig().structure.netherPortal.width.max() ? i : 0; // Plazma - Configurable nether portal size
+     }
+ 
+     private static int getDistanceUntilEdgeAboveFrame(BlockGetter iblockaccess, BlockPos blockposition, Direction enumdirection, BlockStateListPopulator blocks) { // CraftBukkit
+@@ -146,7 +146,7 @@ public class PortalShape {
+         BlockPos.MutableBlockPos blockposition_mutableblockposition = new BlockPos.MutableBlockPos();
+         int j = PortalShape.getDistanceUntilTop(iblockaccess, blockposition, enumdirection, blockposition_mutableblockposition, i, mutableint, blocks); // CraftBukkit
+ 
+-        return j >= 3 && j <= 21 && PortalShape.hasTopFrame(iblockaccess, blockposition, enumdirection, blockposition_mutableblockposition, i, j, blocks) ? j : 0; // CraftBukkit
++        return j >= this.level.getMinecraftWorld().plazmaConfig().structure.netherPortal.height.min() && j <= this.level.getMinecraftWorld().plazmaConfig().structure.netherPortal.height.max() && PortalShape.hasTopFrame(iblockaccess, blockposition, enumdirection, blockposition_mutableblockposition, i, j, blocks) ? j : 0; // Craftbukkit // Plazma - Configurable nether portal size
+     }
+ 
+     private static boolean hasTopFrame(BlockGetter iblockaccess, BlockPos blockposition, Direction enumdirection, BlockPos.MutableBlockPos blockposition_mutableblockposition, int i, int j, BlockStateListPopulator blocks) { // CraftBukkit
+@@ -200,7 +200,7 @@ public class PortalShape {
+     }
+ 
+     public boolean isValid() {
+-        return this.width >= 2 && this.width <= 21 && this.height >= 3 && this.height <= 21;
++        return this.width >= this.level.getMinecraftWorld().plazmaConfig().structure.netherPortal.width.min() && this.width <= this.level.getMinecraftWorld().plazmaConfig().structure.netherPortal.width.max() && this.height >= this.level.getMinecraftWorld().plazmaConfig().structure.netherPortal.height.min() && this.height <= this.level.getMinecraftWorld().plazmaConfig().structure.netherPortal.height.max(); // Plazma - Configurable nether portal size
+     }
+ 
+     // CraftBukkit start - return boolean, add entity
+diff --git a/src/main/java/org/plazmamc/plazma/configurations/WorldConfigurations.java b/src/main/java/org/plazmamc/plazma/configurations/WorldConfigurations.java
+index 8dce68cf7769fcd5ea03be32621ccb6bab174697..7bd566d6e15385850930a6c0b44d1d495a671e81 100644
+--- a/src/main/java/org/plazmamc/plazma/configurations/WorldConfigurations.java
++++ b/src/main/java/org/plazmamc/plazma/configurations/WorldConfigurations.java
+@@ -42,6 +42,21 @@ public class WorldConfigurations extends ConfigurationPart {
+         public NetherPortal netherPortal;
+         public class NetherPortal extends ConfigurationPart {
+ 
++            public Width width;
++            public class Width extends ConfigurationPart {
++
++                int min = 2; public int min() { return Math.max(this.min, 1); }
++                int max = 21; public int max() { return Math.max(this.min, this.max); }
++
++            }
++
++            public Height height;
++            public class Height extends ConfigurationPart {
++
++                int min = 3; public int min() { return Math.max(this.min, 2); }
++                int max = 21; public int max() { return Math.max(this.min, this.max); }
++
++            }
+ 
+         }
+ 

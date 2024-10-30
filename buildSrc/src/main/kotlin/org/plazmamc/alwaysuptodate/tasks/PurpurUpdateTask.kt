@@ -97,7 +97,7 @@ abstract class PurpurUpdateTask : Task() {
 
         fun checkout(
             name: String, repo: Provider<String>, ref: Provider<String>, regex: String, block: CheckoutRepo.() -> Unit
-        ): Pair<TaskProvider<out Task>, Directory> {
+        ): Pair<TaskProvider<CheckoutRepo>, Directory> {
             val updatePaper = configureTask<SimpleUpstreamUpdateTask>("update${name}Paper", "Update $name's Paper") {
                 this.repo.convention(extension.paperRepo)
                 this.ref.convention(extension.paperRef)
@@ -113,10 +113,10 @@ abstract class PurpurUpdateTask : Task() {
                 this.workDir.set(wd)
 
                 this.block()
-                this.finalizedBy(updatePaper)
+                // this.finalizedBy(updatePaper)
             }
 
-            return updatePaper to checkout.flatMap { it.outputDir }.get()
+            return checkout to checkout.flatMap { it.outputDir }.get()
         }
 
         val (checkoutPufferfish, pufferfish) =
@@ -124,9 +124,7 @@ abstract class PurpurUpdateTask : Task() {
                 onlyIf { extension { usePufferfish } }
             }
         val (checkoutPurpur, purpur) =
-            checkout("Purpur", extension.purpurRepo, extension.purpurRef, "paperCommit = ") {
-                dependsOn(checkoutPufferfish)
-            }
+            checkout("Purpur", extension.purpurRepo, extension.purpurRef, "paperCommit = ") {}
 
         pufferfishDir.set(pufferfish)
         purpurDir.set(purpur)
@@ -245,7 +243,7 @@ abstract class PurpurUpdateTask : Task() {
 
 @OptIn(ExperimentalPathApi::class)
 private fun Path.copyPatch(to: Path, vararg name: String) = walk().sorted()
-    .filter { entry -> name.any { entry.name.endsWith("$it.patch") } }.map(Path::toFile)
+    .filter { entry -> name.filter { it != "" }.any { entry.name.endsWith("$it.patch") } }.map(Path::toFile)
     .forEachIndexed { count, patch ->
         patch.copyTo(
             to.resolve("${count + 1}".padStart(4, '0') + "-" + name.first { patch.name.substring(5) == "$it.patch" } + ".patch").toFile(),
