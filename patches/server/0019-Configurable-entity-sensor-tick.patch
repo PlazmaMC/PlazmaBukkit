@@ -5,24 +5,24 @@ Subject: [PATCH] Configurable entity sensor tick
 
 
 diff --git a/src/main/java/net/minecraft/world/entity/Mob.java b/src/main/java/net/minecraft/world/entity/Mob.java
-index 4b4bdaf8c43e15ba953c160a003a719aaf730318..35f150d348c3bd27416c60840988d381b85f9ccf 100644
+index ff9d23aef4658922692b43a859bd83632fe23612..8e5ad4cd6c8f61661b87dc96ba914c0bcd199879 100644
 --- a/src/main/java/net/minecraft/world/entity/Mob.java
 +++ b/src/main/java/net/minecraft/world/entity/Mob.java
-@@ -953,10 +953,11 @@ public abstract class Mob extends LivingEntity implements EquipmentUser, Leashab
-         //ProfilerFiller gameprofilerfiller = this.level().getProfiler(); // Purpur
+@@ -949,10 +949,11 @@ public abstract class Mob extends LivingEntity implements EquipmentUser, Leashab
+         //ProfilerFiller gameprofilerfiller = Profiler.get(); // Purpur
  
          //gameprofilerfiller.push("sensing"); // Purpur
 -        this.sensing.tick();
-+        //this.sensing.tick(); // Plazma - Moved down
++        //this.sensing.tick(); // Plazma - moved down
          //gameprofilerfiller.pop(); // Purpur
          int i = this.tickCount + this.getId();
  
 +        if (i % this.level().plazmaConfig().entity.sensorTick == 0) this.sensing.tick(); // Plazma - Configurable entity sensor tick
          if (i % 2 != 0 && this.tickCount > 1) {
              //gameprofilerfiller.push("targetSelector"); // Purpur
-             if (this.targetSelector.inactiveTick(this.activatedPriority, false)) // Pufferfish - use this to alternate ticking
+             this.targetSelector.tickRunningGoals(false);
 diff --git a/src/main/java/org/plazmamc/plazma/configurations/WorldConfigurations.java b/src/main/java/org/plazmamc/plazma/configurations/WorldConfigurations.java
-index d5e7d74b0e203c9f2c03c9b4f8d1b9c57168e61f..eff241544ba009f62179fb1668bd9d78795e7002 100644
+index 4d204a0dc976d96c98764092c8461b0e2b920fc1..33bcfec86f83ce6e0ec17436ad38da8aeced48be 100644
 --- a/src/main/java/org/plazmamc/plazma/configurations/WorldConfigurations.java
 +++ b/src/main/java/org/plazmamc/plazma/configurations/WorldConfigurations.java
 @@ -28,6 +28,8 @@ public class WorldConfigurations extends ConfigurationPart {
