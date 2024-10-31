@@ -21,10 +21,10 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 diff --git a/src/main/java/ca/fxco/railoptimization/RailLogic.java b/src/main/java/ca/fxco/railoptimization/RailLogic.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..3a0a3fe0c216414142134086e82cffaf041fa4ed
+index 0000000000000000000000000000000000000000..6c0a70c8902623991977c19a1c649488c9ad4afa
 --- /dev/null
 +++ b/src/main/java/ca/fxco/railoptimization/RailLogic.java
-@@ -0,0 +1,301 @@
+@@ -0,0 +1,302 @@
 +package ca.fxco.railoptimization;
 +
 +import net.minecraft.core.BlockPos;
@@ -39,6 +39,7 @@ index 0000000000000000000000000000000000000000..3a0a3fe0c216414142134086e82cffaf
 +
 +import static net.minecraft.world.level.block.PoweredRailBlock.POWERED;
 +import static net.minecraft.world.level.block.PoweredRailBlock.SHAPE;
++import static net.minecraft.world.level.redstone.ExperimentalRedstoneUtils.initialOrientation;
 +
 +public class RailLogic {
 +
@@ -54,10 +55,10 @@ index 0000000000000000000000000000000000000000..3a0a3fe0c216414142134086e82cffaf
 +        if (shouldBePowered == state.getValue(POWERED)) return;
 +
 +        RailShape railShape = state.getValue(SHAPE);
-+        if (railShape.isAscending()) {
++        if (railShape.isSlope()) {
 +            level.setBlock(pos, state.setValue(POWERED, shouldBePowered), 3);
-+            level.updateNeighborsAtExceptFromFacing(pos.below(), self, Direction.UP);
-+            level.updateNeighborsAtExceptFromFacing(pos.above(), self, Direction.DOWN); //isAscending
++            level.updateNeighborsAtExceptFromFacing(pos.below(), self, Direction.UP, initialOrientation(level, Direction.DOWN, Direction.UP));
++            level.updateNeighborsAtExceptFromFacing(pos.above(), self, Direction.DOWN, initialOrientation(level, Direction.UP, Direction.DOWN)); //isAscending
 +            return;
 +        }
 +
@@ -69,7 +70,7 @@ index 0000000000000000000000000000000000000000..3a0a3fe0c216414142134086e82cffaf
 +        BlockState oldState = level.getBlockState(pos);
 +        Block.updateOrDestroy(
 +            oldState,
-+            oldState.updateShape(direction.getOpposite(), state, level, pos, fromPos),
++            oldState.updateShape(level, level, pos, direction.getOpposite(), fromPos, state, level.getRandom()),
 +            level,
 +            pos,
 +            Block.UPDATE_CLIENTS & -34,
@@ -238,33 +239,33 @@ index 0000000000000000000000000000000000000000..3a0a3fe0c216414142134086e82cffaf
 +        giveShapeUpdate(level, state, newPos, pos, direction);
 +
 +        BlockState blockState = level.getBlockState(blockPos);
-+        if (blockState.is(self) && blockState.getValue(SHAPE).isAscending()) giveShapeUpdate(level, state, newPos.above(), pos, direction);
++        if (blockState.is(self) && blockState.getValue(SHAPE).isSlope()) giveShapeUpdate(level, state, newPos.above(), pos, direction);
 +    }
 +
 +    private static void neighborUpdateEnd(PoweredRailBlock self, Level level, BlockPos pos, int endPos, Direction dir, Block block, int currentPos, BlockPos blockPos) {
 +        if (currentPos != endPos) return;
 +
 +        BlockPos newPos = pos.relative(dir, currentPos+1);
-+        level.neighborChanged(newPos, block, pos);
++        level.neighborChanged(newPos, block, null); // TODO: Orientation
 +
 +        BlockState blockState = level.getBlockState(blockPos);
-+        if (blockState.is(self) && blockState.getValue(SHAPE).isAscending()) level.neighborChanged(newPos.above(), block, blockPos);
++        if (blockState.is(self) && blockState.getValue(SHAPE).isSlope()) level.neighborChanged(newPos.above(), block, null); // TODO: Orientation
 +    }
 +
 +    private static void updateRailsNeighborEW(PoweredRailBlock self, Level level, BlockPos pos, int c, Block block, Direction dir, int[] count, int countAmt) {
 +        BlockPos pos1 = pos.relative(dir, c);
-+        if (c == 0 && count[1] == 0) level.neighborChanged(pos1.relative(dir.getOpposite()), block, pos);
++        if (c == 0 && count[1] == 0) level.neighborChanged(pos1.relative(dir.getOpposite()), block, null); // TODO: Orientation
 +        neighborUpdateEnd(self, level, pos, countAmt, dir, block, c, pos1);
-+        level.neighborChanged(pos1.below(), block, pos);
-+        level.neighborChanged(pos1.above(), block, pos);
-+        level.neighborChanged(pos1.north(), block, pos);
-+        level.neighborChanged(pos1.south(), block, pos);
++        level.neighborChanged(pos1.below(), block, null); // TODO: Orientation
++        level.neighborChanged(pos1.above(), block, null); // TODO: Orientation
++        level.neighborChanged(pos1.north(), block, null); // TODO: Orientation
++        level.neighborChanged(pos1.south(), block, null); // TODO: Orientation
 +        BlockPos pos2 = pos.relative(dir, c).below();
-+        level.neighborChanged(pos2.below(), block, pos);
-+        level.neighborChanged(pos2.north(), block, pos);
-+        level.neighborChanged(pos2.south(), block, pos);
-+        if (c == countAmt) level.neighborChanged(pos.relative(dir, c + 1).below(), block, pos);
-+        if (c == 0 && count[1] == 0) level.neighborChanged(pos1.relative(dir.getOpposite()).below(), block, pos);
++        level.neighborChanged(pos2.below(), block, null); // TODO: Orientation
++        level.neighborChanged(pos2.north(), block, null); // TODO: Orientation
++        level.neighborChanged(pos2.south(), block, null); // TODO: Orientation
++        if (c == countAmt) level.neighborChanged(pos.relative(dir, c + 1).below(), block, null); // TODO: Orientation
++        if (c == 0 && count[1] == 0) level.neighborChanged(pos1.relative(dir.getOpposite()).below(), block, null); // TODO: Orientation
 +    }
 +
 +    private static void updateRailsSectionEW(PoweredRailBlock self, Level level, BlockPos pos, int c, BlockState mainState, Direction dir, int[] count, int countAmt) {
@@ -279,18 +280,18 @@ index 0000000000000000000000000000000000000000..3a0a3fe0c216414142134086e82cffaf
 +
 +    private static void updateRailsNeighborNS(PoweredRailBlock self, Level level, BlockPos pos, int c, Block block, Direction dir, int[] count, int countAmt) {
 +        BlockPos pos1 = pos.relative(dir,c);
-+        level.neighborChanged(pos1.west(), block, pos);
-+        level.neighborChanged(pos1.east(), block, pos);
-+        level.neighborChanged(pos1.below(), block, pos);
-+        level.neighborChanged(pos1.above(), block, pos);
++        level.neighborChanged(pos1.west(), block, null); // TODO: Orientation
++        level.neighborChanged(pos1.east(), block, null); // TODO: Orientation
++        level.neighborChanged(pos1.below(), block, null); // TODO: Orientation
++        level.neighborChanged(pos1.above(), block, null); // TODO: Orientation
 +        neighborUpdateEnd(self, level, pos, countAmt, dir, block, c, pos1);
-+        if (c == 0 && count[1] == 0) level.neighborChanged(pos1.relative(dir.getOpposite()), block, pos);
++        if (c == 0 && count[1] == 0) level.neighborChanged(pos1.relative(dir.getOpposite()), block, null); // TODO: Orientation
 +        BlockPos pos2 = pos.relative(dir,c).below();
-+        level.neighborChanged(pos2.west(), block, pos);
-+        level.neighborChanged(pos2.east(), block, pos);
-+        level.neighborChanged(pos2.below(), block, pos);
-+        if (c == countAmt) level.neighborChanged(pos.relative(dir,c + 1).below(), block, pos);
-+        if (c == 0 && count[1] == 0) level.neighborChanged(pos1.relative(dir.getOpposite()).below(), block, pos);
++        level.neighborChanged(pos2.west(), block, null); // TODO: Orientation
++        level.neighborChanged(pos2.east(), block, null); // TODO: Orientation
++        level.neighborChanged(pos2.below(), block, null); // TODO: Orientation
++        if (c == countAmt) level.neighborChanged(pos.relative(dir,c + 1).below(), block, null); // TODO: Orientation
++        if (c == 0 && count[1] == 0) level.neighborChanged(pos1.relative(dir.getOpposite()).below(), block, null); // TODO: Orientation
 +    }
 +
 +    private static void updateRailsSectionNS(PoweredRailBlock self, Level level, BlockPos pos, int c, BlockState state, Direction dir, int[] count, int countAmt) {
