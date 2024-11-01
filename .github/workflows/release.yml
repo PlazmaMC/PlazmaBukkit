@@ -52,7 +52,7 @@ jobs:
           path: jdmain
 
       - name: Validate Gradle Wrapper
-        uses: gradle/wrapper-validation-action@v1
+        uses: gradle/wrapper-validation-action@v3
 
       - name: Set up GraalVM ${{ matrix.base_jdk }}
         uses: graalvm/setup-graalvm@v1
@@ -72,9 +72,8 @@ jobs:
       - name: Apply Patches
         run: ./gradlew applyPatches --stacktrace
 
-      # TODO: fix tests
-      # - name: Build
-      #   run: ./gradlew build --stacktrace
+      - name: Build
+        run: ./gradlew build --stacktrace
 
       - name: Create Reobf Jar
         run: ./gradlew createReobfPaperclipJar --stacktrace
@@ -115,7 +114,7 @@ jobs:
 
       - name: Release Artifacts
         if: startsWith(github.ref_name, 'ver/')
-        uses: softprops/action-gh-release@v0.1.15
+        uses: softprops/action-gh-release@v2
         with:
           name: "Build #${{ env.BUILD_NUMBER }} for ${{ env.VERSION }}"
           tag_name: "build/${{ env.VERSION }}/${{ env.BUILD_NUMBER }}"
@@ -126,7 +125,7 @@ jobs:
 
       - name: Release Artifacts (Latest/Stable)
         if: startsWith(github.ref_name, 'ver/')
-        uses: softprops/action-gh-release@v0.1.15
+        uses: softprops/action-gh-release@v2
         with:
           name: "Build #${{ env.BUILD_NUMBER }} for ${{ env.VERSION }}"
           tag_name: "build/${{ github.ref_name }}/latest"
@@ -137,7 +136,7 @@ jobs:
 
       - name: Release Artifacts (Latest/Development)
         if: startsWith(github.ref_name, 'dev/')
-        uses: softprops/action-gh-release@v0.1.15
+        uses: softprops/action-gh-release@v2
         with:
           name: "Development Build for ${{ env.VERSION }}"
           tag_name: build/${{ env.VERSION }}/latest
