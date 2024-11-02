@@ -97,7 +97,6 @@ jobs:
           cd ..
           
           if [ ! -d "javadoc" ]; then
-            echo "SUBMODULE_ADD=true" >> $GITHUB_ENV
             mkdir javadoc && cd javadoc
             git init && git branch -m ${{ env.VERSION }}
             cd ..
@@ -141,7 +140,7 @@ jobs:
         if: startsWith(github.ref_name, 'ver/') || startsWith(github.ref_name, 'dev/')
         run: |
           cd jdmain
-          if [ "${{ env.SUBMODULE_ADD }}" = "true" ]; then
+          if [ ! -d "${{ env.VERSION }}" ]; then
             git submodule add -b ${{ env.VERSION }} https://github.com/PlazmaMC/Javadocs ${{ env.VERSION }}
           fi
           git submodule update
