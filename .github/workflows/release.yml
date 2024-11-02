@@ -3,11 +3,6 @@ name: Release Plazma (1.21.3)
 on:
   push:
     branches: [ "ver/*", "dev/*", "feat/**/*" ]
-    paths:
-      - "patches/server/**.patch"
-      - "patches/api/**.patch"
-      - "gradle.properties"
-      - "release.yml"
   workflow_dispatch:
 
 env:
@@ -80,6 +75,13 @@ jobs:
 
       - name: Create Mojmap Jar
         run: ./gradlew createMojmapPaperclipJar --stacktrace
+
+      - name: Publish Packages
+        if: startsWith(github.ref_name, 'ver/') || startsWith(github.ref_name, 'dev/')
+        run: |
+          export GITHUB_USERNAME=${{ env.ORG_NAME }}
+          export GITHUB_TOKEN=${{ secrets.GITHUB_TOKEN }}
+          ./gradlew publish --stacktrace
 
       - name: Update Sources
         if: startsWith(github.ref_name, 'ver/') || startsWith(github.ref_name, 'dev/')
@@ -159,13 +161,6 @@ jobs:
           repository: PlazmaMC/Javadocs
           directory: ./jdmain
           github_token: ${{ secrets.GH_PAT }}
-
-      - name: Publish Packages
-        if: startsWith(github.ref_name, 'ver/') || startsWith(github.ref_name, 'dev/')
-        run: |
-          export GITHUB_USERNAME=${{ env.ORG_NAME }}
-          export GITHUB_TOKEN=${{ secrets.GITHUB_TOKEN }}
-          ./gradlew publish --stacktrace
 
       - name: Release Artifacts
         if: startsWith(github.ref_name, 'ver/')
