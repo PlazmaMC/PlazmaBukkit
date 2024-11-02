@@ -81,6 +81,28 @@ jobs:
       - name: Create Mojmap Jar
         run: ./gradlew createMojmapPaperclipJar --stacktrace
 
+      - name: Update sources
+        if: startsWith(github.ref_name, 'ver/') || startsWith(github.ref_name, 'dev/')
+        run: |
+          cd Plazma-API
+          git checkout -b plazma/${{ env.VERSION }}
+          git remote add sources https://github.com/PlazmaMC/sources-api
+          git push -f sources plazma/${{ env.VERSION }}
+          
+          cd ../Plazma-Server
+          git checkout -b plazma/${{ env.VERSION }}
+          cp -r ./.gradle/caches/paperweight/mc-dev-sources/com ./src/main/java/
+          cp -r ./.gradle/caches/paperweight/mc-dev-sources/net ./src/main/java/
+          cp -r ./.gradle/caches/paperweight/mc-dev-sources/data ./src/main/resources/
+          cp -r ./.gradle/caches/paperweight/mc-dev-sources/assets ./src/main/resources/
+          cp -r ./.gradle/caches/paperweight/mc-dev-sources/META-INF ./src/main/resources/
+          cp -r ./.gradle/caches/paperweight/mc-dev-sources/*.* ./src/main/resources/
+          git add .
+          git commit --fixup $(git rev-list -n 1 base)
+          git rebase --autosquash upstream/master
+          git remote add sources https://github.com/PlazmaMC/sources-server
+          git push -f sources plazma/${{ env.VERSION }}
+
       - name: Update Javadoc
         if: startsWith(github.ref_name, 'ver/') || startsWith(github.ref_name, 'dev/')
         continue-on-error: true
@@ -90,6 +112,7 @@ jobs:
             mkdir javadoc && cd javadoc
             git init && git branch -m ${{ env.VERSION }}
             git remote add origin https://github.com/PlazmaMC/Javadocs
+            cd ..
           fi
           
           cp -rf Plazma-API/build/docs/javadoc/* javadoc/

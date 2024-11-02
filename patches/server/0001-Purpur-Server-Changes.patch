@@ -952,10 +952,18 @@ index 90ca25c4aaf92a5639839a7cdaee2ffcdb75efa7..f0d762bd140fad27ae73bcf3e61b640b
              Bootstrap.bootStrap();
              Bootstrap.validate();
 diff --git a/src/main/java/net/minecraft/server/MinecraftServer.java b/src/main/java/net/minecraft/server/MinecraftServer.java
-index 64b56abf8900d0424100da460fc68ac964394793..1ad565ad881cb7efd4a3919c164f275006b4b789 100644
+index 64b56abf8900d0424100da460fc68ac964394793..fa1c48a1f861b06e970bdc3499c14f19eea04772 100644
 --- a/src/main/java/net/minecraft/server/MinecraftServer.java
 +++ b/src/main/java/net/minecraft/server/MinecraftServer.java
-@@ -324,10 +324,12 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
+@@ -314,6 +314,7 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
+     public OptionSet options;
+     public org.bukkit.command.ConsoleCommandSender console;
+     public static int currentTick; // Paper - improve tick loop
++    public static final long startTimeMillis = System.currentTimeMillis();
+     public java.util.Queue<Runnable> processQueue = new java.util.concurrent.ConcurrentLinkedQueue<Runnable>();
+     public int autosavePeriod;
+     // Paper - don't store the vanilla dispatcher
+@@ -324,10 +325,12 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
      public static final int TICK_TIME = 1000000000 / MinecraftServer.TPS;
      private static final int SAMPLE_INTERVAL = 20; // Paper - improve server tick loop
      @Deprecated(forRemoval = true) // Paper
@@ -969,7 +977,7 @@ index 64b56abf8900d0424100da460fc68ac964394793..1ad565ad881cb7efd4a3919c164f2750
  
      public volatile Thread shutdownThread; // Paper
      public volatile boolean abnormalExit = false; // Paper
-@@ -428,12 +430,12 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
+@@ -428,12 +431,12 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
      public MinecraftServer(OptionSet options, WorldLoader.DataLoadContext worldLoader, Thread thread, LevelStorageSource.LevelStorageAccess convertable_conversionsession, PackRepository resourcepackrepository, WorldStem worldstem, Proxy proxy, DataFixer datafixer, Services services, ChunkProgressListenerFactory worldloadlistenerfactory) {
          super("Server");
          SERVER = this; // Paper - better singleton
@@ -987,7 +995,7 @@ index 64b56abf8900d0424100da460fc68ac964394793..1ad565ad881cb7efd4a3919c164f2750
          this.random = RandomSource.create();
          this.port = -1;
          this.levels = Maps.newLinkedHashMap();
-@@ -1046,12 +1048,22 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
+@@ -1046,15 +1049,24 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
          org.spigotmc.WatchdogThread.doStop(); // Paper
          // Paper end
          // CraftBukkit end
@@ -1011,7 +1019,10 @@ index 64b56abf8900d0424100da460fc68ac964394793..1ad565ad881cb7efd4a3919c164f2750
 +        // Purpur end
          // CraftBukkit start
          if (this.server != null) {
-             this.server.spark.disable(); // Paper - spark
+-            this.server.spark.disable(); // Paper - spark
+             this.server.disablePlugins();
+             this.server.waitForAsyncTasksShutdown(); // Paper - Wait for Async Tasks during shutdown
+         }
 @@ -1154,6 +1166,8 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
          this.safeShutdown(waitForShutdown, false);
      }
