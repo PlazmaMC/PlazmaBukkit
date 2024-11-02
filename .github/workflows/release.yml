@@ -95,16 +95,6 @@ jobs:
           git commit --fixup $(git rev-list -n 1 base)
           git rebase --autosquash upstream/master
           cd ..
-          
-          if [ ! -d "javadoc" ]; then
-            mkdir javadoc && cd javadoc
-            git init && git branch -m ${{ env.VERSION }}
-            cd ..
-          fi
-          
-          cp -rf Plazma-API/build/docs/javadoc/* javadoc/
-          cd javadoc
-          git add . && git commit -m "Update Javadocs"
 
       - name: Push source changes (API)
         if: startsWith(github.ref_name, 'ver/') || startsWith(github.ref_name, 'dev/')
@@ -126,6 +116,19 @@ jobs:
           github_token: ${{ secrets.GH_PAT }}
           force: true
 
+      - name: Update Javadoc
+        if: startsWith(github.ref_name, 'ver/') || startsWith(github.ref_name, 'dev/')
+        run: |
+          if [ ! -d "javadoc" ]; then
+            mkdir javadoc && cd javadoc
+            git init && git branch -m ${{ env.VERSION }}
+            cd ..
+          fi
+          
+          cp -rf Plazma-API/build/docs/javadoc/* javadoc/
+          cd javadoc
+          git add . && git commit -m "Update Javadocs"
+
       - name: Push source changes (javadoc)
         if: startsWith(github.ref_name, 'ver/') || startsWith(github.ref_name, 'dev/')
         uses: ad-m/github-push-action@master
@@ -136,7 +139,7 @@ jobs:
           github_token: ${{ secrets.GH_PAT }}
           force: true
 
-      - name: Update Javadocs
+      - name: Sync Javadocs Portal
         if: startsWith(github.ref_name, 'ver/') || startsWith(github.ref_name, 'dev/')
         run: |
           cd jdmain
