@@ -52,7 +52,7 @@ jobs:
           path: jdmain
 
       - name: Validate Gradle Wrapper
-        uses: gradle/wrapper-validation-action@v3
+        uses: gradle/actions/wrapper-validation@v4
 
       - name: Set up GraalVM ${{ matrix.base_jdk }}
         uses: graalvm/setup-graalvm@v1
@@ -84,13 +84,7 @@ jobs:
       - name: Update sources
         if: startsWith(github.ref_name, 'ver/') || startsWith(github.ref_name, 'dev/')
         run: |
-          cd Plazma-API
-          git checkout -b plazma/${{ env.VERSION }}
-          git remote add sources https://github.com/PlazmaMC/sources-api
-          git push -f sources plazma/${{ env.VERSION }}
-          
           cd ../Plazma-Server
-          git checkout -b plazma/${{ env.VERSION }}
           cp -r ./.gradle/caches/paperweight/mc-dev-sources/com ./src/main/java/
           cp -r ./.gradle/caches/paperweight/mc-dev-sources/net ./src/main/java/
           cp -r ./.gradle/caches/paperweight/mc-dev-sources/data ./src/main/resources/
@@ -100,25 +94,17 @@ jobs:
           git add .
           git commit --fixup $(git rev-list -n 1 base)
           git rebase --autosquash upstream/master
-          git remote add sources https://github.com/PlazmaMC/sources-server
-          git push -f sources plazma/${{ env.VERSION }}
-
-      - name: Update Javadoc
-        if: startsWith(github.ref_name, 'ver/') || startsWith(github.ref_name, 'dev/')
-        continue-on-error: true
-        run: |
+          
           if [ ! -d "javadoc" ]; then
             SUBMODULE_ADD=true
             mkdir javadoc && cd javadoc
             git init && git branch -m ${{ env.VERSION }}
-            git remote add origin https://github.com/PlazmaMC/Javadocs
             cd ..
           fi
           
           cp -rf Plazma-API/build/docs/javadoc/* javadoc/
           cd javadoc
           git add . && git commit -m "Update Javadocs"
-          git push -f origin ${{ env.VERSION }}
 
           cd ../jdmain
           if [ $SUBMODULE_ADD = true ]; then
@@ -126,7 +112,44 @@ jobs:
           fi
           git submodule update
           git add . && git commit -m "Update Javadocs"
-          git push
+
+      - name: Push source changes (API)
+        if: startsWith(github.ref_name, 'ver/') || startsWith(github.ref_name, 'dev/')
+        uses: ad-m/github-push-action@master
+        with:
+          repository: https://github.com/PlazmaMC/sources-api
+          directory: ./Plazma-API
+          branch: plazma/${{ env.version }}
+          github_token: ${{ secrets.GH_PAT }}
+          force: true
+
+      - name: Push source changes (server)
+        if: startsWith(github.ref_name, 'ver/') || startsWith(github.ref_name, 'dev/')
+        uses: ad-m/github-push-action@master
+        with:
+          repository: https://github.com/PlazmaMC/sources-server
+          directory: ./Plazma-Server
+          branch: plazma/${{ env.version }}
+          github_token: ${{ secrets.GH_PAT }}
+          force: true
+
+      - name: Push source changes (javadoc)
+        if: startsWith(github.ref_name, 'ver/') || startsWith(github.ref_name, 'dev/')
+        uses: ad-m/github-push-action@master
+        with:
+          repository: https://github.com/PlazmaMC/Javadocs
+          directory: ./javadoc
+          branch: ${{ env.version }}
+          github_token: ${{ secrets.GH_PAT }}
+          force: true
+
+      - name: Push source changes (jd portal)
+        if: startsWith(github.ref_name, 'ver/') || startsWith(github.ref_name, 'dev/')
+        uses: ad-m/github-push-action@master
+        with:
+          repository: https://github.com/PlazmaMC/Javadocs
+          directory: ./jdmain
+          github_token: ${{ secrets.GH_PAT }}
 
       - name: Publish Packages
         if: startsWith(github.ref_name, 'ver/') || startsWith(github.ref_name, 'dev/')
