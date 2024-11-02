@@ -3,11 +3,6 @@ name: Release
 on:
   push:
     branches: [ "ver/*", "dev/*", "feat/**/*" ]
-    paths:
-      - "patches/server/**.patch"
-      - "patches/api/**.patch"
-      - "gradle.properties"
-      - "release.yml"
   workflow_dispatch:
 
 env:
@@ -81,6 +76,13 @@ jobs:
       - name: Create Mojmap Jar
         run: ./gradlew createMojmapPaperclipJar --stacktrace
 
+      - name: Publish Packages
+        if: startsWith(github.ref_name, 'ver/') || startsWith(github.ref_name, 'dev/')
+        run: |
+          export GITHUB_USERNAME=${{ env.ORG_NAME }}
+          export GITHUB_TOKEN=${{ secrets.GITHUB_TOKEN }}
+          ./gradlew publish --stacktrace
+
       - name: Update Javadoc
         if: startsWith(github.ref_name, 'ver/') || startsWith(github.ref_name, 'dev/')
         continue-on-error: true
@@ -104,13 +106,6 @@ jobs:
           git submodule update
           git add . && git commit -m "Update Javadocs"
           git push
-
-      - name: Publish Packages
-        if: startsWith(github.ref_name, 'ver/') || startsWith(github.ref_name, 'dev/')
-        run: |
-          export GITHUB_USERNAME=${{ env.ORG_NAME }}
-          export GITHUB_TOKEN=${{ secrets.GITHUB_TOKEN }}
-          ./gradlew publish --stacktrace
 
       - name: Release Artifacts
         if: startsWith(github.ref_name, 'ver/')
