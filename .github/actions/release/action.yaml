@@ -38,7 +38,7 @@ runs:
         make_latest: false
         generate_release_notes: true
         tag_name: build/${{ inputs.version }}/${{ inputs.build_number }}
-        target_commitish: dev/${{ inputs.branch }}
+        target_commitish: dev/${{ inputs.version }}
         files: build/libs/*.jar
         fail_on_unmatched_files: true
         token: ${{ inputs.github_token }}
@@ -51,7 +51,7 @@ runs:
         make_latest: false
         generate_release_notes: true
         tag_name: build/${{ inputs.version }}/latest
-        target_commitish: dev/${{ inputs.branch }}
+        target_commitish: dev/${{ inputs.version }}
         files: build/libs/*.jar
         fail_on_unmatched_files: true
         token: ${{ inputs.github_token }}
@@ -73,7 +73,7 @@ runs:
         embed-description: |
           *No information provided.*
 
-    - if: ${{ inputs.development != 'true' }}
+    - if: ${{ inputs.development == 'false' }}
       uses: softprops/action-gh-release@v2
       with:
         name: "Plazma ${{ inputs.version }} (Build #${{ inputs.build_number }})"
@@ -81,12 +81,12 @@ runs:
         make_latest: false
         generate_release_notes: true
         tag_name: build/${{ inputs.version }}/${{ inputs.build_number }}
-        target_commitish: ver/${{ inputs.branch }}
+        target_commitish: ver/${{ inputs.version }}
         files: build/libs/*.jar
         fail_on_unmatched_files: true
         token: ${{ inputs.github_token }}
 
-    - if: ${{ inputs.development != 'true' }}
+    - if: ${{ inputs.development == 'false' }}
       uses: softprops/action-gh-release@v2
       with:
         name: "Plazma ${{ inputs.version }} (Build #${{ inputs.build_number }})"
@@ -94,12 +94,12 @@ runs:
         make_latest: true
         generate_release_notes: true
         tag_name: build/${{ inputs.version }}/latest
-        target_commitish: ver/${{ inputs.branch }}
+        target_commitish: ver/${{ inputs.version }}
         files: build/libs/*.jar
         fail_on_unmatched_files: true
         token: ${{ inputs.github_token }}
 
-    - if: ${{ inputs.development != 'true' }}
+    - if: ${{ inputs.development == 'false' }}
       uses: tsickert/discord-webhook@v6.0.0
       with:
         wait: true
