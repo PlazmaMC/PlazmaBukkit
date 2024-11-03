@@ -6,10 +6,10 @@
 
 [![Discord](https://api.plazmamc.org/internal/cdn/discord)](https://plazmamc.org/discord)
 [![License](https://api.plazmamc.org/internal/cdn/license)](LICENSE.md)
-[![Version](https://badge.plazmamc.org/1/MC/1.20.6/Webpack)](https://plazmamc.org/downloads)
+[![Version](https://badge.plazmamc.org/1/MC/1.21.3/Webpack)](https://plazmamc.org/downloads)
 
-[![Downloads](https://api.plazmamc.org/internal/cdn/downloads-mini)](https://plazmamc.org/downloads)
-[![Stargazers](https://api.plazmamc.org/internal/cdn/stars-mini)](https://github.com/PlazmaMC/Plazma/stargazers)
+[![Downloads](https://api.plazmamc.org/internal/cdn/downloads)](https://plazmamc.org/downloads)
+[![Stargazers](https://api.plazmamc.org/internal/cdn/stars)](https://github.com/PlazmaMC/Plazma/stargazers)
 [![Forks](https://api.plazmamc.org/internal/cdn/forks)](https://github.com/PlazmaMC/Plazma/forks)
 [![Watchers](https://api.plazmamc.org/internal/cdn/watches)](https://github.com/PlazmaMC/Plazma/watchers)
 
