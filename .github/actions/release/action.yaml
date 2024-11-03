@@ -1,0 +1,117 @@
+name: 'Release artifacts'
+description: 'Release artifacts to GitHub Releases.'
+inputs:
+  version:
+    type: string
+    required: true
+    description: 'The version of the source'
+  development:
+    type: boolean
+    required: true
+    description: 'Whether artifacts are in development'
+  build_number:
+    type: number
+    required: false
+    description: 'The build number of the artifact'
+  github_token:
+    type: string
+    required: true
+    description: 'The GitHub Personal Access Token to use to push changes'
+  discord_webhook:
+    type: string
+    required: true
+    description: 'The Discord WebHook URL to send the notification'
+defaults:
+  run:
+    shell: bash
+runs:
+  using: "composite"
+  steps:
+    - run: echo "NOW=$(date --iso-8601=seconds)" >> $GITHUB_ENV
+      shell: bash
+
+    - if: ${{ inputs.development == 'true' }}
+      uses: softprops/action-gh-release@v2
+      with:
+        name: "Development Build for ${{ inputs.version }} (Build #${{ inputs.build_number }})"
+        prerelease: true
+        make_latest: false
+        generate_release_notes: true
+        tag_name: build/${{ inputs.version }}/${{ inputs.build_number }}
+        target_commitish: dev/${{ inputs.branch }}
+        files: build/libs/*.jar
+        fail_on_unmatched_files: true
+        token: ${{ inputs.github_token }}
+
+    - if: ${{ inputs.development == 'true' }}
+      uses: softprops/action-gh-release@v2
+      with:
+        name: "Development Build for ${{ inputs.version }} (Build #${{ inputs.build_number }})"
+        prerelease: true
+        make_latest: false
+        generate_release_notes: true
+        tag_name: build/${{ inputs.version }}/latest
+        target_commitish: dev/${{ inputs.branch }}
+        files: build/libs/*.jar
+        fail_on_unmatched_files: true
+        token: ${{ inputs.github_token }}
+
+    - if: ${{ inputs.development == 'true' }}
+      uses: tsickert/discord-webhook@v6.0.0
+      with:
+        wait: true
+        webhook-url: ${{ inputs.discord_webhook }}
+        thread-id: 1302596978496114728
+        username: "Release Announcements"
+        avatar-url: "https://cdn.discordapp.com/icons/1083716853928558652/d6b797c80696da4b413fe6d3c1b1f73e.webp"
+        content: "<@&1302613464946053222>"
+        embed-timestamp: ${{ env.NOW }}
+        embed-author-name: "Development Build for ${{ inputs.version }}"
+        embed-author-url: "https://github.com/PlazmaMC/PlazmaBukkit/releases/tag/build/${{ inputs.version }}/${{ inputs.build_number }}"
+        embed-title: "The new Plazma ${{ inputs.version }} development build is available!"
+        embed-color: 15424410
+        embed-description: |
+          *No information provided.*
+
+    - if: ${{ inputs.development != 'true' }}
+      uses: softprops/action-gh-release@v2
+      with:
+        name: "Plazma ${{ inputs.version }} (Build #${{ inputs.build_number }})"
+        prerelease: false
+        make_latest: false
+        generate_release_notes: true
+        tag_name: build/${{ inputs.version }}/${{ inputs.build_number }}
+        target_commitish: ver/${{ inputs.branch }}
+        files: build/libs/*.jar
+        fail_on_unmatched_files: true
+        token: ${{ inputs.github_token }}
+
+    - if: ${{ inputs.development != 'true' }}
+      uses: softprops/action-gh-release@v2
+      with:
+        name: "Plazma ${{ inputs.version }} (Build #${{ inputs.build_number }})"
+        prerelease: false
+        make_latest: true
+        generate_release_notes: true
+        tag_name: build/${{ inputs.version }}/latest
+        target_commitish: ver/${{ inputs.branch }}
+        files: build/libs/*.jar
+        fail_on_unmatched_files: true
+        token: ${{ inputs.github_token }}
+
+    - if: ${{ inputs.development != 'true' }}
+      uses: tsickert/discord-webhook@v6.0.0
+      with:
+        wait: true
+        webhook-url: ${{ inputs.discord_webhook }}
+        thread-id: 1302596978496114728
+        username: "Release Announcements"
+        avatar-url: "https://cdn.discordapp.com/icons/1083716853928558652/d6b797c80696da4b413fe6d3c1b1f73e.webp"
+        content: "<@&1302613464946053222>"
+        embed-timestamp: ${{ env.NOW }}
+        embed-author-name: "Plazma ${{ inputs.version }} (Build #${{ inputs.build_number }})"
+        embed-author-url: "https://github.com/PlazmaMC/PlazmaBukkit/releases/tag/build/${{ inputs.version }}/${{ inputs.build_number }}"
+        embed-title: "The new Plazma ${{ inputs.version }} build is available!"
+        embed-color: 15424410
+        embed-description: |
+          *No information provided.*
