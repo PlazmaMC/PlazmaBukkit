@@ -1,0 +1,70 @@
+name: 'Update Javadocs'
+description: 'Update the Javadocs.'
+inputs:
+  version:
+    type: string
+    required: true
+    description: 'The version of the source'
+  github_token:
+    type: string
+    required: true
+    description: 'The GitHub Personal Access Token to use to push changes'
+runs:
+  using: "composite"
+  steps:
+
+    - name: Checkout javadocs
+      uses: actions/checkout@v4
+      with:
+        repository: PlazmaMC/Javadocs
+        ref: ${{ inputs.version }}
+        token: ${{ inputs.github_token }}
+        path: javadoc
+      continue-on-error: true
+
+    - name: Checkout jdportal
+      uses: actions/checkout@v4
+      with:
+        repository: PlazmaMC/Javadocs
+        token: ${{ inputs.github_token }}
+        path: jdmain
+
+    - name: Update Javadoc
+      run: |
+        if [ ! -d "javadoc" ]; then
+          mkdir javadoc && cd javadoc
+          git init && git branch -m ${{ inputs.version }}
+          cd ..
+        fi
+        
+        cp -rf Plazma-API/build/docs/javadoc/* javadoc/
+        cd javadoc
+        git add . && git commit -m "Update Javadocs"
+      continue-on-error: true
+
+    - name: Push source changes (javadoc)
+      uses: ad-m/github-push-action@master
+      with:
+        repository: PlazmaMC/Javadocs
+        directory: ./javadoc
+        branch: ${{ inputs.version }}
+        github_token: ${{ inputs.github_token }}
+        force: true
+
+    - name: Sync Javadocs Portal
+      run: |
+        cd jdmain
+        if [ ! -d "${{ inputs.version }}" ]; then
+          git submodule add -b ${{ inputs.version }} https://github.com/PlazmaMC/Javadocs ${{ inputs.version }}
+        fi
+        git submodule update
+        git add . && git commit -m "Update Javadocs"
+      continue-on-error: true
+
+    - name: Push source changes (jd portal)
+      uses: ad-m/github-push-action@master
+      with:
+        repository: PlazmaMC/Javadocs
+        directory: ./jdmain
+        github_token: ${{ inputs.github_token }}
+      continue-on-error: true
