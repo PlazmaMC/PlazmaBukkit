@@ -35,7 +35,7 @@ allprojects {
 
     java.toolchain.languageVersion.set(JavaLanguageVersion.of(jdkVersion))
 
-    publishing.repositories.maven("https://maven.pkg.github.com/PlazmaMC/Plazmaclip") {
+    publishing.repositories.maven("https://maven.pkg.github.com/$providerRepo") {
         name = "githubPackage"
 
         credentials {
