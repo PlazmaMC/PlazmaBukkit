@@ -70,17 +70,24 @@ jobs:
       - name: Build
         run: ./gradlew build --stacktrace
 
-      - name: Create Reobf Jar
+      - name: Create Re-obfuscated Jar
         run: ./gradlew createReobfPaperclipJar --stacktrace
 
-      - name: Create Mojmap Jar
+      - name: Create Mojang mapped Jar
         run: ./gradlew createMojmapPaperclipJar --stacktrace
 
       - name: Publish Packages
         if: startsWith(github.ref_name, 'ver/') || startsWith(github.ref_name, 'dev/')
+        env:
+          ORG_GRADLE_PROJECT_ghName: ${{ github.repository_owner }}
+          ORG_GRADLE_PROJECT_ghToken: ${{ secrets.GITHUB_TOKEN }}
+          ORG_GRADLE_PROJECT_signingKey: ${{ secrets.SIGN_KEY }}
+          ORG_GRADLE_PROJECT_signingPassword: ${{ secrets.SIGN_PASSWORD }}
+          SIGN_KEY_ALIAS: ${{ secrets.SIGN_KEY_ALIAS }}
+          SIGN_KEY_PASSWORD: ${{ secrets.SIGN_KEY_PASSWORD }}
+          SIGN_KEYSTORE_DATA: ${{ secrets.SIGN_KEYSTORE_DATA }}
+          SIGN_KEYSTORE_PASSWORD: ${{ secrets.SIGN_KEYSTORE_PASSWORD }}
         run: |
-          export GITHUB_USERNAME=${{ env.ORG_NAME }}
-          export GITHUB_TOKEN=${{ secrets.GITHUB_TOKEN }}
           ./gradlew publish --stacktrace
 
       - name: Update Sources
