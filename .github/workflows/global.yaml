@@ -1,0 +1,111 @@
+name: Release Plazma
+
+on:
+  workflow_call:
+    secrets:
+      GITHUB_TOKEN:
+        required: true
+      SIGN_KEY:
+        required: true
+      SIGN_PASSWORD:
+        required: true
+      SIGN_KEY_ALIAS:
+        required: true
+      SIGN_KEY_PASSWORD:
+        required: true
+      SIGN_KEYSTORE_DATA:
+        required: true
+      SIGN_KEYSTORE_PASSWORD:
+        required: true
+
+env:
+  ORG_GRADLE_PROJECT_ghName: ${{ github.repository_owner }}
+  ORG_GRADLE_PROJECT_ghToken: ${{ secrets.GITHUB_TOKEN }}
+  ORG_GRADLE_PROJECT_signingKey: ${{ secrets.SIGN_KEY }}
+  ORG_GRADLE_PROJECT_signingPassword: ${{ secrets.SIGN_PASSWORD }}
+  SIGN_KEY_ALIAS: ${{ secrets.SIGN_KEY_ALIAS }}
+  SIGN_KEY_PASSWORD: ${{ secrets.SIGN_KEY_PASSWORD }}
+  SIGN_KEYSTORE_DATA: ${{ secrets.SIGN_KEYSTORE_DATA }}
+  SIGN_KEYSTORE_PASSWORD: ${{ secrets.SIGN_KEYSTORE_PASSWORD }}
+
+jobs:
+  release:
+    name: Release Plazma
+    strategy:
+      matrix:
+        base_jdk: [21]
+        os: [ubuntu-22.04]
+
+    if: "!startsWith(github.event.commits[0].message, '[CI-Skip]')"
+    runs-on: ${{ matrix.os }}
+    steps:
+      - name: Setup workflow
+        env:
+          BRANCH: ${{ github.ref_name }}
+        run: |
+          VERSION="${BRANCH##*/}"
+          echo "VERSION=$VERSION" >> $GITHUB_ENV
+          echo "BUILDID=$(git ls-remote --tags ${{ github.repositoryUrl }} | grep "build/$VERSION" | wc -l)" >> $GITHUB_ENV
+          git config --global user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git config --global user.name "github-actions[bot]"
+
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Validate Gradle Wrapper
+        uses: gradle/actions/wrapper-validation@v4
+
+      - name: Set up GraalVM ${{ matrix.base_jdk }}
+        uses: graalvm/setup-graalvm@v1
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          java-version: ${{ matrix.base_jdk }}
+          version: latest
+          cache: 'gradle'
+
+      - name: Apply Patches
+        run: ./gradlew applyPatches --info --stacktrace
+
+      - name: Build Sources
+        run: ./gradlew build --info --stacktrace
+
+      - name: Create Re-obfuscated Server Jar
+        run: ./gradlew createReobfPaperclipJar --info --stacktrace
+
+      - name: Create Mojang-mapped Server Jar
+        run: ./gradlew createMojmapPaperclipJar --info --stacktrace
+
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          path: build/libs/*.jar
+          if-no-files-found: error
+          compression-level: 9
+
+      - name: Publish Packages
+        run: ./gradlew publish --info --stacktrace
+        if: startsWith(github.ref_name, 'ver/') || startsWith(github.ref_name, 'dev/')
+
+      - name: Update internal sources
+        uses: ./.github/actions/sources
+        with:
+          version: ${{ env.VERSION }}
+          github_token: ${{ secrets.GH_PAT }}
+        if: startsWith(github.ref_name, 'ver/') || startsWith(github.ref_name, 'dev/')
+
+      - name: Update Javadocs
+        uses: ./.github/actions/javadocs
+        with:
+          version: ${{ env.VERSION }}
+          github_token: ${{ secrets.GH_PAT }}
+        if: startsWith(github.ref_name, 'ver/') || startsWith(github.ref_name, 'dev/')
+
+      - name: Release artifacts
+        uses: ./.github/actions/release
+        with:
+          version: ${{ env.VERSION }}
+          development: startsWith(github.ref_name, 'dev/')
+          build_number: ${{ env.BUILDID }}
+          github_token: ${{ secrets.GH_PAT }}
+          discord_webhook: ${{ secrets.WEBHOOK }}
+        if: startsWith(github.ref_name, 'ver/') || startsWith(github.ref_name, 'dev/')
