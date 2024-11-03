@@ -35,13 +35,12 @@ allprojects {
 
     java.toolchain.languageVersion.set(JavaLanguageVersion.of(jdkVersion))
 
-    publishing.repositories.maven("https://maven.pkg.github.com/$providerRepo") {
+    publishing.repositories.maven("https://maven.pkg.github.com/PlazmaMC/Plazmaclip") {
         name = "githubPackage"
-        url = uri("https://maven.pkg.github.com/$providerRepo")
 
         credentials {
-            username = System.getenv("GITHUB_USERNAME")
-            password = System.getenv("GITHUB_TOKEN")
+            username = property("ghName").toString()
+            password = property("ghToken").toString()
         }
     }
 }
