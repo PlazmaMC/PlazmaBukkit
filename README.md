@@ -8,8 +8,8 @@
 [![License](https://api.plazmamc.org/internal/cdn/license)](LICENSE.md)
 [![Version](https://badge.plazmamc.org/1/MC/1.21.3/Webpack)](https://plazmamc.org/downloads)
 
-[![Downloads](https://api.plazmamc.org/internal/cdn/downloads)](https://plazmamc.org/downloads)
-[![Stargazers](https://api.plazmamc.org/internal/cdn/stars)](https://github.com/PlazmaMC/Plazma/stargazers)
+[![Downloads](https://api.plazmamc.org/internal/cdn/dlcountmini)](https://plazmamc.org/downloads)
+[![Stargazers](https://api.plazmamc.org/internal/cdn/starsmini)](https://github.com/PlazmaMC/Plazma/stargazers)
 [![Forks](https://api.plazmamc.org/internal/cdn/forks)](https://github.com/PlazmaMC/Plazma/forks)
 [![Watchers](https://api.plazmamc.org/internal/cdn/watches)](https://github.com/PlazmaMC/Plazma/watchers)
 
@@ -17,7 +17,7 @@
 
 </div>
 
-[main]: https://github.com/PlazmaMC/Plazma
+[main]: https://github.com/PlazmaMC/PlazmaBukkit/blob/main/README.md
 
 > [!IMPORTANT]
 This is the branch for Plazma 1.21.2/3. If you want to know more about Plazma, please check the **[main branch][main]**.<br>
