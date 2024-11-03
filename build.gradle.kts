@@ -3,10 +3,12 @@ import org.gradle.api.tasks.testing.logging.TestLogEvent
 
 plugins {
     java
-    `maven-publish`
+    signing
     `kotlin-dsl`
+    `maven-publish`
     `always-up-to-date`
     alias(libs.plugins.shadow) apply false
+    alias(libs.plugins.jarsigner)
     alias(libs.plugins.paperweight)
 }
 
@@ -21,12 +23,20 @@ repositories {
     maven("https://repo.papermc.io/repository/maven-public/") {
         content { onlyForConfigurations(configurations.paperclip.name) }
     }
+    maven("https://maven.pkg.github.com/PlazmaMC/Plazmaclip") {
+        name = "githubPackage"
+
+        credentials {
+            username = property("ghName").toString()
+            password = property("ghToken").toString()
+        }
+    }
 }
 
 dependencies {
     remapper(libs.remapper)
+    paperclip(libs.plazmaclip)
     decompiler(libs.decompiler)
-    paperclip(libs.paperclip)
 }
 
 allprojects {
@@ -37,11 +47,10 @@ allprojects {
 
     publishing.repositories.maven("https://maven.pkg.github.com/$providerRepo") {
         name = "githubPackage"
-        url = uri("https://maven.pkg.github.com/$providerRepo")
 
         credentials {
-            username = System.getenv("GITHUB_USERNAME")
-            password = System.getenv("GITHUB_TOKEN")
+            username = property("ghName").toString()
+            password = property("ghToken").toString()
         }
     }
 }
@@ -51,10 +60,7 @@ subprojects {
         withType<JavaCompile>().configureEach {
             options.encoding = Charsets.UTF_8.name()
             options.release = jdkVersion
-            options.compilerArgs.addAll(listOf(
-                "--add-modules=jdk.incubator.vector",
-                "-Xmaxwarns", "1"
-            ))
+            options.compilerArgs.addAll(listOf("--add-modules=jdk.incubator.vector"))
         }
 
         withType<Javadoc> {
@@ -170,4 +176,15 @@ publishing {
     publications.create<MavenPublication>("devBundle") {
         artifact(tasks.generateDevelopmentBundle) {  artifactId = "dev-bundle" }
     }
+}
+
+signing {
+    val signingKey: String? by project
+    val signingPassword: String? by project
+    useInMemoryPgpKeys(signingKey, signingPassword)
+    sign(publishing.publications["devBundle"])
+}
+
+jarSigner {
+    autoDetect("")
 }
