@@ -1,16 +1,14 @@
 plugins {
     java
     `kotlin-dsl`
-    id("com.github.johnrengelman.shadow") version "8.1.1"
+    id("com.gradleup.shadow") version "8.3.5"
 }
+
+kotlin.jvmToolchain(21)
 
 repositories {
     mavenCentral()
     maven("https://papermc.io/repo/repository/maven-public/")
-}
-
-kotlin.jvmToolchain {
-    languageVersion = JavaLanguageVersion.of(17)
 }
 
 dependencies {

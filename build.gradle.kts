@@ -39,8 +39,8 @@ allprojects {
         name = "githubPackage"
 
         credentials {
-            username = property("ghName").toString()
-            password = property("ghToken").toString()
+            username = providers.systemProperty("ghName").get()
+            password = providers.systemProperty("ghToken").get()
         }
     }
 }

@@ -1,0 +1,92 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: AlphaKR93 <dev@alpha93.kr>
+Date: Mon, 4 Nov 2024 15:20:40 +0900
+Subject: [PATCH] Option to use better RNG
+
+
+diff --git a/src/main/java/net/minecraft/world/level/Level.java b/src/main/java/net/minecraft/world/level/Level.java
+index e94ab488b4d7ef26021be3b97c71831eeef505f4..82ed63aa458b6b628be7163a6b1f1f47d1a69ce4 100644
+--- a/src/main/java/net/minecraft/world/level/Level.java
++++ b/src/main/java/net/minecraft/world/level/Level.java
+@@ -125,7 +125,7 @@ public abstract class Level implements LevelAccessor, AutoCloseable, ca.spottedl
+     public final Thread thread;
+     private final boolean isDebug;
+     private int skyDarken;
+-    protected int randValue = RandomSource.create().nextInt();
++    protected long randValue;
+     protected final int addend = 1013904223;
+     protected float oRainLevel;
+     public float rainLevel;
+@@ -134,7 +134,7 @@ public abstract class Level implements LevelAccessor, AutoCloseable, ca.spottedl
+     public final RandomSource random = RandomSource.create();
+     /** @deprecated */
+     @Deprecated
+-    private final RandomSource threadSafeRandom = RandomSource.createThreadSafe();
++    private final @Nullable RandomSource threadSafeRandom;
+     private final Holder<DimensionType> dimensionTypeRegistration;
+     public final WritableLevelData levelData;
+     //public final boolean isClientSide; // Plazma - Remove persist flag
+@@ -909,6 +909,8 @@ public abstract class Level implements LevelAccessor, AutoCloseable, ca.spottedl
+         this.spigotConfig = new org.spigotmc.SpigotWorldConfig(((net.minecraft.world.level.storage.PrimaryLevelData) worlddatamutable).getLevelName()); // Spigot
+         this.paperConfig = paperWorldConfigCreator.apply(this.spigotConfig); // Paper - create paper world config
+         this.plazmaConfig = plazmaWorldConfigurationCreator.apply(this.spigotConfig); // Plazma - Configurable Plazma
++        this.randValue = plazmaConfig.misc.useBetterRandomAlgorithm ? RandomSource.create().nextLong() : RandomSource.create().nextInt(); // Plazma - Option to use better RNG
++        this.threadSafeRandom = plazmaConfig.misc.useBetterRandomAlgorithm ? null : RandomSource.createThreadSafe(); // Plazma - Option to use better RNG
+         this.purpurConfig = new org.purpurmc.purpur.PurpurWorldConfig(((net.minecraft.world.level.storage.PrimaryLevelData) worlddatamutable).getLevelName(), env); // Purpur
+         this.playerBreedingCooldowns = this.getNewBreedingCooldownCache(); // Purpur
+         this.generator = gen;
+@@ -1472,15 +1474,18 @@ public abstract class Level implements LevelAccessor, AutoCloseable, ca.spottedl
+     }
+ 
+     public void playSound(@Nullable Player source, double x, double y, double z, SoundEvent sound, SoundSource category, float volume, float pitch) {
+-        this.playSeededSound(source, x, y, z, sound, category, volume, pitch, this.threadSafeRandom.nextLong());
++        long seed = this.threadSafeRandom == null ? this.randValue++ : this.threadSafeRandom.nextLong();
++        this.playSeededSound(source, x, y, z, sound, category, volume, pitch, seed);
+     }
+ 
+     public void playSound(@Nullable Player source, double x, double y, double z, Holder<SoundEvent> sound, SoundSource category, float volume, float pitch) {
+-        this.playSeededSound(source, x, y, z, sound, category, volume, pitch, this.threadSafeRandom.nextLong());
++        long seed = this.threadSafeRandom == null ? this.randValue++ : this.threadSafeRandom.nextLong();
++        this.playSeededSound(source, x, y, z, sound, category, volume, pitch, seed);
+     }
+ 
+     public void playSound(@Nullable Player source, Entity entity, SoundEvent sound, SoundSource category, float volume, float pitch) {
+-        this.playSeededSound(source, entity, BuiltInRegistries.SOUND_EVENT.wrapAsHolder(sound), category, volume, pitch, this.threadSafeRandom.nextLong());
++        long seed = this.threadSafeRandom == null ? this.randValue++ : this.threadSafeRandom.nextLong();
++        this.playSeededSound(source, entity, BuiltInRegistries.SOUND_EVENT.wrapAsHolder(sound), category, volume, pitch, seed);
+     }
+ 
+     public void playLocalSound(BlockPos pos, SoundEvent sound, SoundSource category, float volume, float pitch, boolean useDistance) {
+@@ -2047,8 +2052,19 @@ public abstract class Level implements LevelAccessor, AutoCloseable, ca.spottedl
+     public abstract RecipeAccess recipeAccess();
+ 
+     public BlockPos getBlockRandomPos(int x, int y, int z, int l) {
++        // Plazma start - Option to use better RNG
++        if (this.threadSafeRandom == null) {
++            this.randValue = (((long)(x ^ 16691) << 32 | ((z ^ 19391) & (1L << 32) - 1)) << 8 | ((this.randValue + 2319389831L) * 11 & 0xFF));
++            long i1 = Long.reverse(randValue * randValue << 39);
++            long i2 = Long.reverse(randValue * randValue << 41);
++            long i3 = Long.reverse(randValue * randValue << 23);
++
++            return new BlockPos(x + ((int) i1 & 15), y + ((int) i2 & l), z + ((int) i3 & 15));
++        }
++        // Plazma end - Option to use better RNG
++
+         this.randValue = this.randValue * 3 + 1013904223;
+-        int i1 = this.randValue >> 2;
++        int i1 = (int) (this.randValue >> 2); // Plazma - Option to use better RNG
+ 
+         return new BlockPos(x + (i1 & 15), y + (i1 >> 16 & l), z + (i1 >> 8 & 15));
+     }
+diff --git a/src/main/java/org/plazmamc/plazma/configurations/WorldConfigurations.java b/src/main/java/org/plazmamc/plazma/configurations/WorldConfigurations.java
+index ef3dc8477b5547efa08a7fb60704f246e57fedfe..6b68ce9b5961cd298eaf2fca478cb8197f2128ee 100644
+--- a/src/main/java/org/plazmamc/plazma/configurations/WorldConfigurations.java
++++ b/src/main/java/org/plazmamc/plazma/configurations/WorldConfigurations.java
+@@ -22,6 +22,7 @@ public class WorldConfigurations extends ConfigurationPart {
+     public Miscellaneous misc;
+     public class Miscellaneous extends ConfigurationPart {
+ 
++        public boolean useBetterRandomAlgorithm = false;
+ 
+     }
+ 

@@ -1,0 +1,342 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: AlphaKR93 <dev@alpha93.kr>
+Date: Mon, 4 Nov 2024 16:04:55 +0900
+Subject: [PATCH] Reduce allocations
+
+
+diff --git a/src/main/java/io/papermc/paper/command/brigadier/BasicCommand.java b/src/main/java/io/papermc/paper/command/brigadier/BasicCommand.java
+index c89d6c4c38e2390cb11ffba182f8741d3726cfd1..2451f466ae6f953b01ad2cbaeac7d163f09f1c5c 100644
+--- a/src/main/java/io/papermc/paper/command/brigadier/BasicCommand.java
++++ b/src/main/java/io/papermc/paper/command/brigadier/BasicCommand.java
+@@ -16,6 +16,17 @@ import org.jspecify.annotations.Nullable;
+ @FunctionalInterface
+ public interface BasicCommand {
+ 
++    // Plazma start - Reduce allocations
++    /**
++     * Executes the command with the given {@link CommandSourceStack} and arguments.
++     *
++     * @param commandSourceStack the commandSourceStack of the command
++     */
++    default void execute(CommandSourceStack commandSourceStack) {
++        this.execute(commandSourceStack, org.plazmamc.plazma.constants.Null.STRING);
++    }
++    // Plazma end - Reduce allocations
++
+     /**
+      * Executes the command with the given {@link CommandSourceStack} and arguments.
+      *
+diff --git a/src/main/java/org/bukkit/Fluid.java b/src/main/java/org/bukkit/Fluid.java
+index a3ff4fefaf50f3e99a69ba68cbe8e30c95dac5df..284b351e3628bf278afb43cc6f6bdf1e6b295366 100644
+--- a/src/main/java/org/bukkit/Fluid.java
++++ b/src/main/java/org/bukkit/Fluid.java
+@@ -10,6 +10,7 @@ import org.jetbrains.annotations.NotNull;
+  * Represents a fluid type.
+  */
+ public interface Fluid extends OldEnum<Fluid>, Keyed {
++    Fluid[] EMPTY_ARRAY = new Fluid[0]; // Plazma - Reduce allocations
+ 
+     /**
+      * No fluid.
+@@ -57,6 +58,6 @@ public interface Fluid extends OldEnum<Fluid>, Keyed {
+     @NotNull
+     @Deprecated(since = "1.21.3", forRemoval = true) @org.jetbrains.annotations.ApiStatus.ScheduledForRemoval(inVersion = "1.22") // Paper - will be removed via asm-utils
+     static Fluid[] values() {
+-        return Lists.newArrayList(Registry.FLUID).toArray(new Fluid[0]);
++        return Lists.newArrayList(Registry.FLUID).toArray(EMPTY_ARRAY); // Plazma - Reduce allocations
+     }
+ }
+diff --git a/src/main/java/org/bukkit/attribute/Attribute.java b/src/main/java/org/bukkit/attribute/Attribute.java
+index 521f035409ee61a9ad73d39bec938f2938892570..4ca383b167326a2ccc21b2435eb96ff41c49cc31 100644
+--- a/src/main/java/org/bukkit/attribute/Attribute.java
++++ b/src/main/java/org/bukkit/attribute/Attribute.java
+@@ -15,6 +15,7 @@ import org.jetbrains.annotations.NotNull;
+  * Types of attributes which may be present on an {@link Attributable}.
+  */
+ public interface Attribute extends OldEnum<Attribute>, Keyed, Translatable, net.kyori.adventure.translation.Translatable { // Paper - Adventure translations
++    Attribute[] EMPTY_ARRAY = new Attribute[0]; // Plazma - Reduce allocations
+ 
+     /**
+      * Maximum health of an Entity.
+@@ -170,6 +171,6 @@ public interface Attribute extends OldEnum<Attribute>, Keyed, Translatable, net.
+     @NotNull
+     @Deprecated(since = "1.21.3", forRemoval = true) @org.jetbrains.annotations.ApiStatus.ScheduledForRemoval(inVersion = "1.22") // Paper - will be removed via asm-utils
+     static Attribute[] values() {
+-        return Lists.newArrayList(Registry.ATTRIBUTE).toArray(new Attribute[0]);
++        return Lists.newArrayList(Registry.ATTRIBUTE).toArray(EMPTY_ARRAY); // Plazma - Reduce allocations
+     }
+ }
+diff --git a/src/main/java/org/bukkit/block/Biome.java b/src/main/java/org/bukkit/block/Biome.java
+index 464f8f81ba907a61588e4ab869e4f8269830195a..c5f1cc1660c69dfd827344cbafee08005121fb62 100644
+--- a/src/main/java/org/bukkit/block/Biome.java
++++ b/src/main/java/org/bukkit/block/Biome.java
+@@ -23,6 +23,7 @@ import org.jetbrains.annotations.NotNull;
+  * which can be accessed via {@link Registry#BIOME}.
+  */
+ public interface Biome extends OldEnum<Biome>, Keyed, net.kyori.adventure.translation.Translatable { // Paper - Adventure translations
++    Biome[] EMPTY_ARRAY = new Biome[0]; // Plazma - Reduce allocations
+ 
+     Biome OCEAN = getBiome("ocean");
+     Biome PLAINS = getBiome("plains");
+@@ -129,7 +130,7 @@ public interface Biome extends OldEnum<Biome>, Keyed, net.kyori.adventure.transl
+     @NotNull
+     @Deprecated(since = "1.21.3", forRemoval = true) @org.jetbrains.annotations.ApiStatus.ScheduledForRemoval(inVersion = "1.22") // Paper - will be removed via asm-utils
+     static Biome[] values() {
+-        return Lists.newArrayList(Registry.BIOME).toArray(new Biome[0]);
++        return Lists.newArrayList(Registry.BIOME).toArray(EMPTY_ARRAY); // Plazma - Reduce allocations
+     }
+ 
+     // Paper start
+diff --git a/src/main/java/org/bukkit/block/banner/PatternType.java b/src/main/java/org/bukkit/block/banner/PatternType.java
+index 70904d6c43b93cb7b9d74d20666fac93a6b4996c..ce88fc3594a6b5e85009707e1319f7f87524dd5f 100644
+--- a/src/main/java/org/bukkit/block/banner/PatternType.java
++++ b/src/main/java/org/bukkit/block/banner/PatternType.java
+@@ -12,6 +12,8 @@ import org.jetbrains.annotations.NotNull;
+ import org.jetbrains.annotations.Nullable;
+ 
+ public interface PatternType extends OldEnum<PatternType>, Keyed {
++    PatternType[] EMPTY_ARRAY = new PatternType[0]; // Plazma - Reduce allocations
++
+     PatternType BASE = getType("base");
+     PatternType SQUARE_BOTTOM_LEFT = getType("square_bottom_left");
+     PatternType SQUARE_BOTTOM_RIGHT = getType("square_bottom_right");
+@@ -130,6 +132,6 @@ public interface PatternType extends OldEnum<PatternType>, Keyed {
+     @NotNull
+     @Deprecated(since = "1.21", forRemoval = true) @org.jetbrains.annotations.ApiStatus.ScheduledForRemoval(inVersion = "1.22") // Paper - will be removed via asm-utils
+     static PatternType[] values() {
+-        return Lists.newArrayList(Registry.BANNER_PATTERN).toArray(new PatternType[0]);
++        return Lists.newArrayList(Registry.BANNER_PATTERN).toArray(EMPTY_ARRAY); // Plazma - Reduce allocations
+     }
+ }
+diff --git a/src/main/java/org/bukkit/command/Command.java b/src/main/java/org/bukkit/command/Command.java
+index 0a26fffe9b1e5080b5639767a03af11006108b4a..bcd12e352d8846826a678ff72742fc7038daf812 100644
+--- a/src/main/java/org/bukkit/command/Command.java
++++ b/src/main/java/org/bukkit/command/Command.java
+@@ -58,6 +58,19 @@ public abstract class Command {
+         this.activeAliases = new ArrayList<String>(aliases);
+     }
+ 
++    // Plazma start - Reduce allocations
++    /**
++     * Executes the command, returning its success
++     *
++     * @param sender Source object which is executing this command
++     * @param commandLabel The alias of the command used
++     * @return true if the command was successful, otherwise false
++     */
++    public boolean execute(@NotNull CommandSender sender, @NotNull String commandLabel) {
++        return this.execute(sender, commandLabel, org.plazmamc.plazma.constants.Null.STRING);
++    }
++    // Plazma end - Reduce allocations
++
+     /**
+      * Executes the command, returning its success
+      *
+diff --git a/src/main/java/org/bukkit/enchantments/Enchantment.java b/src/main/java/org/bukkit/enchantments/Enchantment.java
+index 43e306584988e39a6daca78c621a937acdce48a1..ec6dc4747c8bcdca1cf866ba135fb772e79a73d1 100644
+--- a/src/main/java/org/bukkit/enchantments/Enchantment.java
++++ b/src/main/java/org/bukkit/enchantments/Enchantment.java
+@@ -15,6 +15,8 @@ import org.jetbrains.annotations.Nullable;
+  * The various type of enchantments that may be added to armour or weapons
+  */
+ public abstract class Enchantment implements Keyed, Translatable, net.kyori.adventure.translation.Translatable { // Paper - Adventure translations
++    private static final Enchantment[] EMPTY_ARRAY = new Enchantment[0]; // Plazma - Reduce allocations
++
+     /**
+      * Provides protection against environmental damage
+      */
+@@ -536,6 +538,6 @@ public abstract class Enchantment implements Keyed, Translatable, net.kyori.adve
+     @NotNull
+     @Deprecated
+     public static Enchantment[] values() {
+-        return Lists.newArrayList(Registry.ENCHANTMENT).toArray(new Enchantment[0]);
++        return Lists.newArrayList(Registry.ENCHANTMENT).toArray(EMPTY_ARRAY); // Plazma - Reduce allocations
+     }
+ }
+diff --git a/src/main/java/org/bukkit/entity/Cat.java b/src/main/java/org/bukkit/entity/Cat.java
+index fca4671c6976aee9e981ef344244f9322651d0c9..ef53ca228492434b1b8bc615a33690bb93dec72b 100644
+--- a/src/main/java/org/bukkit/entity/Cat.java
++++ b/src/main/java/org/bukkit/entity/Cat.java
+@@ -51,6 +51,7 @@ public interface Cat extends Tameable, Sittable, io.papermc.paper.entity.CollarC
+      * Represents the various different cat types there are.
+      */
+     interface Type extends OldEnum<Type>, Keyed {
++        Type[] EMPTY_ARRAY = new Type[0]; // Plazma - Reduce allocations
+ 
+         Type TABBY = getType("tabby");
+         Type BLACK = getType("black");
+@@ -89,7 +90,7 @@ public interface Cat extends Tameable, Sittable, io.papermc.paper.entity.CollarC
+         @NotNull
+         @Deprecated(since = "1.21", forRemoval = true) @org.jetbrains.annotations.ApiStatus.ScheduledForRemoval(inVersion = "1.22") // Paper - will be removed via asm-utils
+         static Type[] values() {
+-            return Lists.newArrayList(Registry.CAT_VARIANT).toArray(new Type[0]);
++            return Lists.newArrayList(Registry.CAT_VARIANT).toArray(EMPTY_ARRAY); // Plazma - Reduce allocations
+         }
+     }
+ 
+diff --git a/src/main/java/org/bukkit/entity/Frog.java b/src/main/java/org/bukkit/entity/Frog.java
+index f661a6b4797dd814a197e9245bcb2ddf2fca773f..6b3c10d378e9e80805d8cd2d8671b313bddd23e9 100644
+--- a/src/main/java/org/bukkit/entity/Frog.java
++++ b/src/main/java/org/bukkit/entity/Frog.java
+@@ -49,6 +49,7 @@ public interface Frog extends Animals {
+      * Represents the variant of a frog - ie its color.
+      */
+     interface Variant extends OldEnum<Variant>, Keyed {
++        Variant[] EMPTY_ARRAY = new Variant[0]; // Plazma - Reduce allocations
+ 
+         /**
+          * Temperate (brown-orange) frog.
+@@ -88,7 +89,7 @@ public interface Frog extends Animals {
+         @NotNull
+         @Deprecated(since = "1.21", forRemoval = true) @org.jetbrains.annotations.ApiStatus.ScheduledForRemoval(inVersion = "1.22") // Paper - will be removed via asm-utils
+         static Variant[] values() {
+-            return Lists.newArrayList(Registry.FROG_VARIANT).toArray(new Variant[0]);
++            return Lists.newArrayList(Registry.FROG_VARIANT).toArray(EMPTY_ARRAY); // Plazma - Reduce allocations
+         }
+     }
+ }
+diff --git a/src/main/java/org/bukkit/entity/Villager.java b/src/main/java/org/bukkit/entity/Villager.java
+index 9c722a762c88a88bb5ef18c3b9eab8b371360dac..87c3e94a2b5e9205a9ad13a920ed7b9dfba03340 100644
+--- a/src/main/java/org/bukkit/entity/Villager.java
++++ b/src/main/java/org/bukkit/entity/Villager.java
+@@ -170,6 +170,7 @@ public interface Villager extends AbstractVillager {
+      * in.
+      */
+     interface Type extends OldEnum<Type>, Keyed {
++        Type[] EMPTY_ARRAY = new Type[0]; // Plazma - Reduce allocations
+ 
+         Type DESERT = getType("desert");
+         Type JUNGLE = getType("jungle");
+@@ -204,7 +205,7 @@ public interface Villager extends AbstractVillager {
+         @NotNull
+         @Deprecated(since = "1.21", forRemoval = true) @org.jetbrains.annotations.ApiStatus.ScheduledForRemoval(inVersion = "1.22") // Paper - will be removed via asm-utils
+         static Type[] values() {
+-            return Lists.newArrayList(Registry.VILLAGER_TYPE).toArray(new Type[0]);
++            return Lists.newArrayList(Registry.VILLAGER_TYPE).toArray(EMPTY_ARRAY); // Plazma - Reduce allocations
+         }
+     }
+ 
+@@ -213,6 +214,7 @@ public interface Villager extends AbstractVillager {
+      * Villagers have different trading options depending on their profession,
+      */
+     interface Profession extends OldEnum<Profession>, Keyed, net.kyori.adventure.translation.Translatable {
++        Profession[] EMPTY_ARRAY = new Profession[0]; // Plazma - Reduce allocations
+ 
+         Profession NONE = getProfession("none");
+         /**
+@@ -311,7 +313,7 @@ public interface Villager extends AbstractVillager {
+         @NotNull
+         @Deprecated(since = "1.21", forRemoval = true) @org.jetbrains.annotations.ApiStatus.ScheduledForRemoval(inVersion = "1.22") // Paper - will be removed via asm-utils
+         static Profession[] values() {
+-            return Lists.newArrayList(Registry.VILLAGER_PROFESSION).toArray(new Profession[0]);
++            return Lists.newArrayList(Registry.VILLAGER_PROFESSION).toArray(EMPTY_ARRAY); // Plazma - Reduce allocations
+         }
+ 
+         // Paper start
+diff --git a/src/main/java/org/bukkit/map/MapCursor.java b/src/main/java/org/bukkit/map/MapCursor.java
+index eb73f3224e7d2314c4209a3743a37bdae2395670..1b660fd1334847d8f8cd7eeff3d5ebd085fdfcfd 100644
+--- a/src/main/java/org/bukkit/map/MapCursor.java
++++ b/src/main/java/org/bukkit/map/MapCursor.java
+@@ -286,6 +286,7 @@ public final class MapCursor {
+      * resource pack.
+      */
+     public interface Type extends OldEnum<Type>, Keyed {
++        Type[] EMPTY_ARRAY = new Type[0]; // Plazma - Reduce allocations
+ 
+         Type PLAYER = getType("player");
+         Type FRAME = getType("frame");
+@@ -387,7 +388,7 @@ public final class MapCursor {
+         @NotNull
+         @Deprecated(since = "1.21", forRemoval = true) @org.jetbrains.annotations.ApiStatus.ScheduledForRemoval(inVersion = "1.22") // Paper - will be removed via asm-utils
+         static Type[] values() {
+-            return Lists.newArrayList(Registry.MAP_DECORATION_TYPE).toArray(new Type[0]);
++            return Lists.newArrayList(Registry.MAP_DECORATION_TYPE).toArray(EMPTY_ARRAY); // Plazma - Reduce allocations
+         }
+     }
+ 
+diff --git a/src/main/java/org/bukkit/plugin/SimplePluginManager.java b/src/main/java/org/bukkit/plugin/SimplePluginManager.java
+index 11b973b70ce62a6e227d343bdef6dcb9ece3f97d..ccb4245b214444153cbca487ca98cb2ad65ccbae 100644
+--- a/src/main/java/org/bukkit/plugin/SimplePluginManager.java
++++ b/src/main/java/org/bukkit/plugin/SimplePluginManager.java
+@@ -47,6 +47,7 @@ import org.jetbrains.annotations.Nullable;
+ @Deprecated(forRemoval = true) // Paper - This implementation may be replaced in a future version of Paper.
+ // Plugins may still reflect into this class to modify permission logic for the time being.
+ public final class SimplePluginManager implements PluginManager {
++    public static final Plugin[] EMPTY_PLUGIN = new Plugin[0]; // Plazma - Reduce allocations
+     private final Server server;
+     private final Map<Pattern, PluginLoader> fileAssociations = new HashMap<Pattern, PluginLoader>();
+     private final List<Plugin> plugins = new ArrayList<Plugin>();
+@@ -133,7 +134,7 @@ public final class SimplePluginManager implements PluginManager {
+                     this.server.getLogger().log(Level.SEVERE, "Plugin loading error!", e);
+                 }
+             }
+-            return pluginList.toArray(new Plugin[0]);
++            return pluginList.toArray(EMPTY_PLUGIN); // Plazma - Reduce allocations
+         }
+         Preconditions.checkArgument(directory != null, "Directory cannot be null");
+         Preconditions.checkArgument(directory.isDirectory(), "Directory must be a directory");
+diff --git a/src/main/java/org/bukkit/potion/PotionEffectType.java b/src/main/java/org/bukkit/potion/PotionEffectType.java
+index 294ba70f1e446ec8d502e5c14f82ae52547aeb21..beb22bb6ca719ef11814e7cc80cc1aef7cb6f0ec 100644
+--- a/src/main/java/org/bukkit/potion/PotionEffectType.java
++++ b/src/main/java/org/bukkit/potion/PotionEffectType.java
+@@ -19,6 +19,7 @@ import org.jetbrains.annotations.Nullable;
+  */
+ public abstract class PotionEffectType implements Keyed, Translatable, net.kyori.adventure.translation.Translatable, io.papermc.paper.world.flag.FeatureDependant { // Paper - implement Translatable & feature flag API
+     private static final BiMap<Integer, PotionEffectType> ID_MAP = HashBiMap.create();
++    private static final PotionEffectType[] EMPTY_ARRAY = new PotionEffectType[0]; // Plazma - Reduce allocations
+ 
+     /**
+      * Increases movement speed.
+@@ -358,7 +359,7 @@ public abstract class PotionEffectType implements Keyed, Translatable, net.kyori
+     @NotNull
+     @Deprecated
+     public static PotionEffectType[] values() {
+-        return Lists.newArrayList(Registry.EFFECT).toArray(new PotionEffectType[0]);
++        return Lists.newArrayList(Registry.EFFECT).toArray(EMPTY_ARRAY); // Plazma - Reduce allocations
+     }
+ 
+     // Paper start
+diff --git a/src/main/java/org/plazmamc/plazma/Constants.java b/src/main/java/org/plazmamc/plazma/Constants.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..137f4f511998828476c2ac408a9a76289a44d071
+--- /dev/null
++++ b/src/main/java/org/plazmamc/plazma/Constants.java
+@@ -0,0 +1,7 @@
++package org.plazmamc.plazma;
++
++public interface Constants {
++
++    int[] ZERO_INT_ARRAY = new int[]{0};
++
++}
+diff --git a/src/main/java/org/plazmamc/plazma/constants/Null.java b/src/main/java/org/plazmamc/plazma/constants/Null.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..6018a9230d0d92e23f09cc5b5cc042446bed9962
+--- /dev/null
++++ b/src/main/java/org/plazmamc/plazma/constants/Null.java
+@@ -0,0 +1,25 @@
++package org.plazmamc.plazma.constants;
++
++import net.md_5.bungee.api.chat.BaseComponent;
++import java.net.URL;
++import java.util.concurrent.CompletableFuture;
++import java.util.regex.Pattern;
++
++public interface Null {
++
++    byte[] BYTE = new byte[0];
++    short[] SHORT = new short[0];
++    int[] INT = new int[0];
++    long[] LONG = new long[0];
++
++    Object[] OBJECT = new Object[0];
++    String[] STRING = new String[0];
++    URL[] URL = new URL[0];
++    Pattern[] REGEX = new Pattern[0];
++
++    BaseComponent[] COMPONENT = new BaseComponent[0];
++
++    @SuppressWarnings("rawtypes")
++    CompletableFuture[] FUTURE = new CompletableFuture[0];
++
++}
