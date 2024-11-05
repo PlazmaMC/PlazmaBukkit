@@ -39,8 +39,8 @@ allprojects {
         name = "githubPackage"
 
         credentials {
-            username = providers.systemProperty("ghName").get()
-            password = providers.systemProperty("ghToken").get()
+            username = providers.systemProperty("ghName").orElse(providers.gradleProperty("ghName")).getOrElse(System.getenv("GITHUB_NAME"))
+            password = providers.systemProperty("ghToken").orElse(providers.gradleProperty("ghToken")).getOrElse(System.getenv("GITHUB_TOKEN"))
         }
     }
 }
