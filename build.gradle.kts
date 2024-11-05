@@ -50,10 +50,6 @@ subprojects {
         withType<JavaCompile>().configureEach {
             options.encoding = Charsets.UTF_8.name()
             options.release = jdkVersion
-            options.compilerArgs.addAll(listOf(
-                "--add-modules=jdk.incubator.vector",
-                "-Xmaxwarns", "1"
-            ))
         }
 
         withType<Javadoc> {
