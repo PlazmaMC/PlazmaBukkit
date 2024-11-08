@@ -74,7 +74,7 @@ index f626a2f28f2aebb3237cebb6afef3c4fa1a6cb37..467e17bfce31d0919d603698c9d88a04
      public int forkLimit() {
          return this.forkLimit;
 diff --git a/src/main/java/net/minecraft/server/MinecraftServer.java b/src/main/java/net/minecraft/server/MinecraftServer.java
-index 056c84c13020d6229f27b4123de494dc28a31e65..b9e78222ca77f1a1ab1fd5191a14f5623f844f17 100644
+index b62be89b9b3705a29b6c42a794d653c66b73f7eb..0cd6da6f5d37113ea642b2a7f6e9807c7e46ae2c 100644
 --- a/src/main/java/net/minecraft/server/MinecraftServer.java
 +++ b/src/main/java/net/minecraft/server/MinecraftServer.java
 @@ -111,19 +111,19 @@ import net.minecraft.util.datafix.DataFixers;
@@ -108,26 +108,27 @@ index 056c84c13020d6229f27b4123de494dc28a31e65..b9e78222ca77f1a1ab1fd5191a14f562
  import net.minecraft.util.thread.ReentrantBlockableEventLoop;
  import net.minecraft.world.Difficulty;
  import net.minecraft.world.RandomSequences;
-@@ -229,12 +229,12 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
-     public LevelStorageSource.LevelStorageAccess storageSource;
+@@ -230,12 +230,13 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
      public final PlayerDataStorage playerDataStorage;
      private final List<Runnable> tickables = Lists.newArrayList();
--    private MetricsRecorder metricsRecorder;
+     private MetricsRecorder metricsRecorder;
 -    private Consumer<ProfileResults> onMetricsRecordingStopped;
 -    private Consumer<Path> onMetricsRecordingFinished;
 -    private boolean willStartRecordingMetrics;
 -    @Nullable
 -    private MinecraftServer.TimeProfiler debugCommandProfiler;
+-    private boolean debugCommandProfilerDelayStart;
 +    //private MetricsRecorder metricsRecorder; // Plazma - Completely remove Mojang's Profiler
 +    //private Consumer<ProfileResults> onMetricsRecordingStopped; // Plazma - Completely remove Mojang's Profiler
 +    //private Consumer<Path> onMetricsRecordingFinished; // Plazma - Completely remove Mojang's Profiler
 +    //private boolean willStartRecordingMetrics; // Plazma - Completely remove Mojang's Profiler
 +    //@Nullable // Plazma - Completely remove Mojang's Profiler
 +    //private MinecraftServer.TimeProfiler debugCommandProfiler; // Plazma - Completely remove Mojang's Profiler
-     private boolean debugCommandProfilerDelayStart;
++    //private boolean debugCommandProfilerDelayStart;
      private ServerConnectionListener connection;
      public final ChunkProgressListenerFactory progressListenerFactory;
-@@ -1409,7 +1409,7 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
+     @Nullable
+@@ -1409,7 +1410,7 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
                          profiler_a.close();
                      }*/ // Purpur
                  } finally {
@@ -136,7 +137,7 @@ index 056c84c13020d6229f27b4123de494dc28a31e65..b9e78222ca77f1a1ab1fd5191a14f562
                  }
  
                  this.isReady = true;
-@@ -1715,12 +1715,12 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
+@@ -1715,12 +1716,12 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
  
          --this.ticksUntilAutosave;
          // Paper start - Incremental chunk and player saving
@@ -151,7 +152,7 @@ index 056c84c13020d6229f27b4123de494dc28a31e65..b9e78222ca77f1a1ab1fd5191a14f562
          final boolean fullSave = autosavePeriod > 0 && this.tickCount % autosavePeriod == 0;
          try {
              this.isSaving = true;
-@@ -1735,7 +1735,7 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
+@@ -1735,7 +1736,7 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
          } finally {
              this.isSaving = false;
          }
@@ -160,7 +161,7 @@ index 056c84c13020d6229f27b4123de494dc28a31e65..b9e78222ca77f1a1ab1fd5191a14f562
          // Paper end - Incremental chunk and player saving
  
          //ProfilerFiller gameprofilerfiller = Profiler.get(); // Purpur
-@@ -1768,11 +1768,11 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
+@@ -1768,11 +1769,11 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
      private void autoSave() {
          this.ticksUntilAutosave = this.autosavePeriod; // CraftBukkit
          MinecraftServer.LOGGER.debug("Autosave started");
@@ -175,7 +176,7 @@ index 056c84c13020d6229f27b4123de494dc28a31e65..b9e78222ca77f1a1ab1fd5191a14f562
          MinecraftServer.LOGGER.debug("Autosave finished");
      }
  
-@@ -1841,7 +1841,7 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
+@@ -1841,7 +1842,7 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
      }
  
      protected void tickChildren(BooleanSupplier shouldKeepTicking) {
@@ -184,7 +185,7 @@ index 056c84c13020d6229f27b4123de494dc28a31e65..b9e78222ca77f1a1ab1fd5191a14f562
  
          this.getPlayerList().getPlayers().forEach((entityplayer) -> {
              entityplayer.connection.suspendFlushing();
-@@ -2932,6 +2932,7 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
+@@ -2932,6 +2933,7 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
      }
      // CraftBukkit end
  
@@ -192,7 +193,7 @@ index 056c84c13020d6229f27b4123de494dc28a31e65..b9e78222ca77f1a1ab1fd5191a14f562
      private ProfilerFiller createProfiler() {
          if (false && this.willStartRecordingMetrics) { // Purpur
              this.metricsRecorder = ActiveMetricsRecorder.createStarted(new ServerMetricsSamplersProvider(Util.timeSource, this.isDedicatedServer()), Util.timeSource, Util.ioPool(), new MetricsPersister("server"), this.onMetricsRecordingStopped, (path) -> {
-@@ -2957,12 +2958,12 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
+@@ -2957,12 +2959,12 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
      }
  
      public void startRecordingMetrics(Consumer<ProfileResults> resultConsumer, Consumer<Path> dumpConsumer) {
@@ -207,15 +208,15 @@ index 056c84c13020d6229f27b4123de494dc28a31e65..b9e78222ca77f1a1ab1fd5191a14f562
      }
  
      public void stopRecordingMetrics() {
-@@ -2976,6 +2977,7 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
+@@ -2976,6 +2978,7 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
      public void cancelRecordingMetrics() {
          //this.metricsRecorder.cancel(); // Purpur
      }
-+     */
++     */ // Plazma - Completely remove Mojang's Profiler
  
      public Path getWorldPath(LevelResource worldSavePath) {
          return this.storageSource.getLevelPath(worldSavePath);
-@@ -3026,6 +3028,7 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
+@@ -3026,6 +3029,7 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
          return this.isSaving;
      }
  
@@ -223,7 +224,7 @@ index 056c84c13020d6229f27b4123de494dc28a31e65..b9e78222ca77f1a1ab1fd5191a14f562
      public boolean isTimeProfilerRunning() {
          return false; //this.debugCommandProfilerDelayStart || this.debugCommandProfiler != null; // Purpur
      }
-@@ -3044,6 +3047,7 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
+@@ -3044,6 +3048,7 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
              return methodprofilerresults;
          }
      }
@@ -231,15 +232,15 @@ index 056c84c13020d6229f27b4123de494dc28a31e65..b9e78222ca77f1a1ab1fd5191a14f562
  
      public int getMaxChainedNeighborUpdates() {
          return 1000000;
-@@ -3157,6 +3161,7 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
+@@ -3157,6 +3162,7 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
          }
      }
  
-+    /* // Plazma - Completely remove Mojang's Profiler
++    /*
      private static class TimeProfiler {
  
          final long startNanos;
-@@ -3206,6 +3211,7 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
+@@ -3206,6 +3212,7 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
              };
          }
      }
@@ -805,7 +806,7 @@ index c67846e4d5583d79c6e9760c10d2581f0d54f45c..61f704fc25c45367185633708852ee4b
  
      @Override
 diff --git a/src/main/java/net/minecraft/world/entity/Entity.java b/src/main/java/net/minecraft/world/entity/Entity.java
-index 8c724698d57caf5ca65b8cb0bb21d12250258743..a27d7545c36a32378084646b750ad91a3c954c29 100644
+index ae264484f99227f5535c428ebda4860fc8abcc72..07b4f09fcc47bdb3fe96b759ff42d6179bf71060 100644
 --- a/src/main/java/net/minecraft/world/entity/Entity.java
 +++ b/src/main/java/net/minecraft/world/entity/Entity.java
 @@ -84,8 +84,8 @@ import net.minecraft.tags.FluidTags;
@@ -819,7 +820,7 @@ index 8c724698d57caf5ca65b8cb0bb21d12250258743..a27d7545c36a32378084646b750ad91a
  import net.minecraft.world.InteractionHand;
  import net.minecraft.world.InteractionResult;
  import net.minecraft.world.Nameable;
-@@ -4060,16 +4060,16 @@ public abstract class Entity implements SyncedDataHolder, Nameable, EntityAccess
+@@ -4061,16 +4061,16 @@ public abstract class Entity implements SyncedDataHolder, Nameable, EntityAccess
              entity.teleport(this.calculatePassengerTransition(teleportTarget, entity));
          }
  
@@ -840,7 +841,7 @@ index 8c724698d57caf5ca65b8cb0bb21d12250258743..a27d7545c36a32378084646b750ad91a
      }
  
 diff --git a/src/main/java/net/minecraft/world/entity/LivingEntity.java b/src/main/java/net/minecraft/world/entity/LivingEntity.java
-index d4f6c8732f4e304c690999c0cbd7636a90162504..5144a761577c2a2448aaaa35cf41328a53659a50 100644
+index e1e4ebb3cf5903c59c82d9d270fe03c747c57e26..6ba2e04325b3da59801563f66a557ec217495a23 100644
 --- a/src/main/java/net/minecraft/world/entity/LivingEntity.java
 +++ b/src/main/java/net/minecraft/world/entity/LivingEntity.java
 @@ -73,8 +73,8 @@ import net.minecraft.tags.FluidTags;
@@ -1178,19 +1179,19 @@ index b4ffad429ace965f16ebf47119c880b709b27f2e..50bed3677f7e38d19ceda0dff0c49995
  import net.minecraft.world.DifficultyInstance;
  import net.minecraft.world.InteractionHand;
 diff --git a/src/main/java/net/minecraft/world/item/crafting/RecipeManager.java b/src/main/java/net/minecraft/world/item/crafting/RecipeManager.java
-index 26814c13559d82e44546f8b2834a90cc58941a49..22ecef07399ab9d9bde3cd9a3024d070f129c6bd 100644
+index d376d89b479a4d5cc9ac568d23c7603a9355d580..b9ecf38cec076b8d41684919c06feea6f9a9950f 100644
 --- a/src/main/java/net/minecraft/world/item/crafting/RecipeManager.java
 +++ b/src/main/java/net/minecraft/world/item/crafting/RecipeManager.java
-@@ -29,7 +29,7 @@ import net.minecraft.server.level.ServerLevel;
+@@ -41,7 +41,7 @@ import net.minecraft.server.level.ServerLevel;
  import net.minecraft.server.packs.resources.ResourceManager;
  import net.minecraft.server.packs.resources.SimpleJsonResourceReloadListener;
  import net.minecraft.server.packs.resources.SimplePreparableReloadListener;
 -import net.minecraft.util.profiling.ProfilerFiller;
 +//import net.minecraft.util.profiling.ProfilerFiller; // Plazma - Completely remove Mojang's Profiler
- import net.minecraft.world.flag.FeatureFlagSet;
- import net.minecraft.world.item.Item;
- import net.minecraft.world.item.crafting.display.RecipeDisplay;
-@@ -93,7 +93,7 @@ public class RecipeManager extends SimplePreparableReloadListener<RecipeMap> imp
+ 
+ public class RecipeManager extends SimplePreparableReloadListener<RecipeMap> implements RecipeAccess {
+ 
+@@ -94,7 +94,7 @@ public class RecipeManager extends SimplePreparableReloadListener<RecipeMap> imp
      }
  
      @Override
@@ -1199,7 +1200,7 @@ index 26814c13559d82e44546f8b2834a90cc58941a49..22ecef07399ab9d9bde3cd9a3024d070
          SortedMap<ResourceLocation, Recipe<?>> sortedmap = new TreeMap();
  
          SimpleJsonResourceReloadListener.scanDirectory(manager, Registries.elementsDirPath(Registries.RECIPE), this.registries.createSerializationContext(JsonOps.INSTANCE), Recipe.CODEC, sortedmap);
-@@ -108,7 +108,7 @@ public class RecipeManager extends SimplePreparableReloadListener<RecipeMap> imp
+@@ -109,7 +109,7 @@ public class RecipeManager extends SimplePreparableReloadListener<RecipeMap> imp
          return RecipeMap.create(list);
      }
  
