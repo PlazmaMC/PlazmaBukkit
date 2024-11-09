@@ -74,7 +74,7 @@ index f626a2f28f2aebb3237cebb6afef3c4fa1a6cb37..467e17bfce31d0919d603698c9d88a04
      public int forkLimit() {
          return this.forkLimit;
 diff --git a/src/main/java/net/minecraft/server/MinecraftServer.java b/src/main/java/net/minecraft/server/MinecraftServer.java
-index b62be89b9b3705a29b6c42a794d653c66b73f7eb..0cd6da6f5d37113ea642b2a7f6e9807c7e46ae2c 100644
+index b62be89b9b3705a29b6c42a794d653c66b73f7eb..f53b15be673f788ecb0a3bd0fd59834de6c1ceb9 100644
 --- a/src/main/java/net/minecraft/server/MinecraftServer.java
 +++ b/src/main/java/net/minecraft/server/MinecraftServer.java
 @@ -111,19 +111,19 @@ import net.minecraft.util.datafix.DataFixers;
@@ -108,10 +108,11 @@ index b62be89b9b3705a29b6c42a794d653c66b73f7eb..0cd6da6f5d37113ea642b2a7f6e9807c
  import net.minecraft.util.thread.ReentrantBlockableEventLoop;
  import net.minecraft.world.Difficulty;
  import net.minecraft.world.RandomSequences;
-@@ -230,12 +230,13 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
+@@ -229,13 +229,13 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
+     public LevelStorageSource.LevelStorageAccess storageSource;
      public final PlayerDataStorage playerDataStorage;
      private final List<Runnable> tickables = Lists.newArrayList();
-     private MetricsRecorder metricsRecorder;
+-    private MetricsRecorder metricsRecorder;
 -    private Consumer<ProfileResults> onMetricsRecordingStopped;
 -    private Consumer<Path> onMetricsRecordingFinished;
 -    private boolean willStartRecordingMetrics;
@@ -128,7 +129,7 @@ index b62be89b9b3705a29b6c42a794d653c66b73f7eb..0cd6da6f5d37113ea642b2a7f6e9807c
      private ServerConnectionListener connection;
      public final ChunkProgressListenerFactory progressListenerFactory;
      @Nullable
-@@ -1409,7 +1410,7 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
+@@ -1409,7 +1409,7 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
                          profiler_a.close();
                      }*/ // Purpur
                  } finally {
@@ -137,7 +138,7 @@ index b62be89b9b3705a29b6c42a794d653c66b73f7eb..0cd6da6f5d37113ea642b2a7f6e9807c
                  }
  
                  this.isReady = true;
-@@ -1715,12 +1716,12 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
+@@ -1715,12 +1715,12 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
  
          --this.ticksUntilAutosave;
          // Paper start - Incremental chunk and player saving
@@ -152,7 +153,7 @@ index b62be89b9b3705a29b6c42a794d653c66b73f7eb..0cd6da6f5d37113ea642b2a7f6e9807c
          final boolean fullSave = autosavePeriod > 0 && this.tickCount % autosavePeriod == 0;
          try {
              this.isSaving = true;
-@@ -1735,7 +1736,7 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
+@@ -1735,7 +1735,7 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
          } finally {
              this.isSaving = false;
          }
@@ -161,7 +162,7 @@ index b62be89b9b3705a29b6c42a794d653c66b73f7eb..0cd6da6f5d37113ea642b2a7f6e9807c
          // Paper end - Incremental chunk and player saving
  
          //ProfilerFiller gameprofilerfiller = Profiler.get(); // Purpur
-@@ -1768,11 +1769,11 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
+@@ -1768,11 +1768,11 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
      private void autoSave() {
          this.ticksUntilAutosave = this.autosavePeriod; // CraftBukkit
          MinecraftServer.LOGGER.debug("Autosave started");
@@ -176,7 +177,7 @@ index b62be89b9b3705a29b6c42a794d653c66b73f7eb..0cd6da6f5d37113ea642b2a7f6e9807c
          MinecraftServer.LOGGER.debug("Autosave finished");
      }
  
-@@ -1841,7 +1842,7 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
+@@ -1841,7 +1841,7 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
      }
  
      protected void tickChildren(BooleanSupplier shouldKeepTicking) {
@@ -185,7 +186,7 @@ index b62be89b9b3705a29b6c42a794d653c66b73f7eb..0cd6da6f5d37113ea642b2a7f6e9807c
  
          this.getPlayerList().getPlayers().forEach((entityplayer) -> {
              entityplayer.connection.suspendFlushing();
-@@ -2932,6 +2933,7 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
+@@ -2932,6 +2932,7 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
      }
      // CraftBukkit end
  
@@ -193,7 +194,7 @@ index b62be89b9b3705a29b6c42a794d653c66b73f7eb..0cd6da6f5d37113ea642b2a7f6e9807c
      private ProfilerFiller createProfiler() {
          if (false && this.willStartRecordingMetrics) { // Purpur
              this.metricsRecorder = ActiveMetricsRecorder.createStarted(new ServerMetricsSamplersProvider(Util.timeSource, this.isDedicatedServer()), Util.timeSource, Util.ioPool(), new MetricsPersister("server"), this.onMetricsRecordingStopped, (path) -> {
-@@ -2957,12 +2959,12 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
+@@ -2957,12 +2958,12 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
      }
  
      public void startRecordingMetrics(Consumer<ProfileResults> resultConsumer, Consumer<Path> dumpConsumer) {
@@ -208,7 +209,7 @@ index b62be89b9b3705a29b6c42a794d653c66b73f7eb..0cd6da6f5d37113ea642b2a7f6e9807c
      }
  
      public void stopRecordingMetrics() {
-@@ -2976,6 +2978,7 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
+@@ -2976,6 +2977,7 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
      public void cancelRecordingMetrics() {
          //this.metricsRecorder.cancel(); // Purpur
      }
@@ -216,7 +217,7 @@ index b62be89b9b3705a29b6c42a794d653c66b73f7eb..0cd6da6f5d37113ea642b2a7f6e9807c
  
      public Path getWorldPath(LevelResource worldSavePath) {
          return this.storageSource.getLevelPath(worldSavePath);
-@@ -3026,6 +3029,7 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
+@@ -3026,6 +3028,7 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
          return this.isSaving;
      }
  
@@ -224,7 +225,7 @@ index b62be89b9b3705a29b6c42a794d653c66b73f7eb..0cd6da6f5d37113ea642b2a7f6e9807c
      public boolean isTimeProfilerRunning() {
          return false; //this.debugCommandProfilerDelayStart || this.debugCommandProfiler != null; // Purpur
      }
-@@ -3044,6 +3048,7 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
+@@ -3044,6 +3047,7 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
              return methodprofilerresults;
          }
      }
@@ -232,7 +233,7 @@ index b62be89b9b3705a29b6c42a794d653c66b73f7eb..0cd6da6f5d37113ea642b2a7f6e9807c
  
      public int getMaxChainedNeighborUpdates() {
          return 1000000;
-@@ -3157,6 +3162,7 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
+@@ -3157,6 +3161,7 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
          }
      }
  
@@ -240,7 +241,7 @@ index b62be89b9b3705a29b6c42a794d653c66b73f7eb..0cd6da6f5d37113ea642b2a7f6e9807c
      private static class TimeProfiler {
  
          final long startNanos;
-@@ -3206,6 +3212,7 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
+@@ -3206,6 +3211,7 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
              };
          }
      }
