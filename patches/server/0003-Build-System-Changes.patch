@@ -5,11 +5,11 @@ Subject: [PATCH] Build System Changes
 
 
 diff --git a/build.gradle.kts b/build.gradle.kts
-index ccb31eb5993db028d0cbf104261205c9462f8734..44ebd149b18cf002cb9ffc9073c95ab1bd9bd356 100644
+index b4579fb919d8cc981edc4863b82abca531349f1e..6734821658e7679f328336038587390a262f2b64 100644
 --- a/build.gradle.kts
 +++ b/build.gradle.kts
-@@ -13,63 +13,29 @@ configurations.named(log4jPlugins.compileClasspathConfigurationName) {
- val alsoShade: Configuration by configurations.creating
+@@ -25,64 +25,30 @@ abstract class MockitoAgentProvider : CommandLineArgumentProvider {
+ // Paper end - configure mockito agent that is needed in newer java versions
  
  dependencies {
 -    implementation(project(":purpur-api")) // Pufferfish // Paper // Purpur
@@ -55,20 +55,6 @@ index ccb31eb5993db028d0cbf104261205c9462f8734..44ebd149b18cf002cb9ffc9073c95ab1
 -    testImplementation("org.junit.platform:junit-platform-suite-engine:1.10.0")
 -    testImplementation("org.hamcrest:hamcrest:2.2")
 -    testImplementation("org.mockito:mockito-core:5.14.1")
--    testImplementation("org.ow2.asm:asm-tree:9.7.1")
--    testImplementation("org.junit-pioneer:junit-pioneer:2.2.0") // Paper - CartesianTest
--    implementation("net.neoforged:srgutils:1.0.9") // Paper - mappings handling
--    implementation("net.neoforged:AutoRenamingTool:2.0.3") // Paper - remap plugins
--    // Paper start - Remap reflection
--    val reflectionRewriterVersion = "0.0.3"
--    implementation("io.papermc:reflection-rewriter:$reflectionRewriterVersion")
--    implementation("io.papermc:reflection-rewriter-runtime:$reflectionRewriterVersion")
--    implementation("io.papermc:reflection-rewriter-proxy-generator:$reflectionRewriterVersion")
--    // Paper end - Remap reflection
--    // Paper start - spark
--    implementation("me.lucko:spark-api:0.1-20240720.200737-2")
--    implementation("me.lucko:spark-paper:1.10.105-SNAPSHOT")
--    // Paper end - spark
 +    // Plazma start - Build System Changes
 +    implementation(project(":${rootProject.providers.gradleProperty("brandName").get().lowercase()}-api"))
 +    implementation(common.snakeyaml)
@@ -92,10 +78,25 @@ index ccb31eb5993db028d0cbf104261205c9462f8734..44ebd149b18cf002cb9ffc9073c95ab1
 +    testImplementation(common.bundles.test)
 +    testImplementation(server.bundles.test)
 +    // Plazma end - Build System Changes
+     mockitoAgent("org.mockito:mockito-core:5.14.1") { isTransitive = false } // Paper - configure mockito agent that is needed in newer java versions
+-    testImplementation("org.ow2.asm:asm-tree:9.7.1")
+-    testImplementation("org.junit-pioneer:junit-pioneer:2.2.0") // Paper - CartesianTest
+-    implementation("net.neoforged:srgutils:1.0.9") // Paper - mappings handling
+-    implementation("net.neoforged:AutoRenamingTool:2.0.3") // Paper - remap plugins
+-    // Paper start - Remap reflection
+-    val reflectionRewriterVersion = "0.0.3"
+-    implementation("io.papermc:reflection-rewriter:$reflectionRewriterVersion")
+-    implementation("io.papermc:reflection-rewriter-runtime:$reflectionRewriterVersion")
+-    implementation("io.papermc:reflection-rewriter-proxy-generator:$reflectionRewriterVersion")
+-    // Paper end - Remap reflection
+-    // Paper start - spark
+-    implementation("me.lucko:spark-api:0.1-20240720.200737-2")
+-    implementation("me.lucko:spark-paper:1.10.105-SNAPSHOT")
+-    // Paper end - spark
  }
  
  paperweight {
-@@ -89,14 +55,14 @@ tasks.jar {
+@@ -102,14 +68,14 @@ tasks.jar {
          val gitBranch = git("rev-parse", "--abbrev-ref", "HEAD").getText().trim() // Paper
          attributes(
              "Main-Class" to "org.bukkit.craftbukkit.Main",

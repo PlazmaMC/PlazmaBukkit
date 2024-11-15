@@ -527,7 +527,7 @@ index e6cbf4506c75046a89fad778e138b448fb4a29a9..a2dcbcc705d4219f9077e4011990e8a2
  
      protected abstract void updateRenderSubState(boolean shouldLerp, float lerpProgress);
 diff --git a/src/main/java/net/minecraft/world/entity/Entity.java b/src/main/java/net/minecraft/world/entity/Entity.java
-index 07b4f09fcc47bdb3fe96b759ff42d6179bf71060..ce047789ed21e50914a85c87ea3464ad6f5461b9 100644
+index 45b754bfbc5dc37a0c10dcb44125715d0d6606f8..50f3830209b3657bb340338387927a2ebb32e9a7 100644
 --- a/src/main/java/net/minecraft/world/entity/Entity.java
 +++ b/src/main/java/net/minecraft/world/entity/Entity.java
 @@ -621,7 +621,7 @@ public abstract class Entity implements SyncedDataHolder, Nameable, EntityAccess
@@ -579,18 +579,15 @@ index 07b4f09fcc47bdb3fe96b759ff42d6179bf71060..ce047789ed21e50914a85c87ea3464ad
  
                  float f = this.getBlockSpeedFactor();
  
-@@ -1475,9 +1475,9 @@ public abstract class Entity implements SyncedDataHolder, Nameable, EntityAccess
+@@ -1475,7 +1475,7 @@ public abstract class Entity implements SyncedDataHolder, Nameable, EntityAccess
      }
  
      public void extinguishFire() {
 -        if (!this.level().isClientSide && this.wasOnFire) {
-+        //if (!this.level().isClientSide && this.wasOnFire) { // Plazma - Remove persist flag
++        if (/*!this.level().isClientSide &&*/ this.wasOnFire) { // Plazma - Remove persist flag
              this.playEntityOnFireExtinguishedSound();
--        }
-+        //} // Plazma - Remove persist flag
+         }
  
-         this.clearFire();
-     }
 @@ -3158,7 +3158,7 @@ public abstract class Entity implements SyncedDataHolder, Nameable, EntityAccess
      public InteractionResult interact(Player player, InteractionHand hand) {
          if (this.isAlive() && this instanceof Leashable leashable) {
@@ -631,8 +628,8 @@ index 07b4f09fcc47bdb3fe96b759ff42d6179bf71060..ce047789ed21e50914a85c87ea3464ad
              return false;
          } else if (!entity.couldAcceptPassenger()) {
              return false;
--        } else if (!this.level().isClientSide() && !entity.type.canSerialize()) {
-+        } else if (/*!this.level().isClientSide() &&*/ !entity.type.canSerialize()) { // Plazma - Remove persist flag
+-        } else if (!force && !this.level().isClientSide() && !entity.type.canSerialize()) { // SPIGOT-7947: Allow force riding all entities
++        } else if (!force && /*!this.level().isClientSide() &&*/ !entity.type.canSerialize()) { // SPIGOT-7947: Allow force riding all entities // Plazma - Remove persist flag
              return false;
          } else {
              for (Entity entity1 = entity; entity1.vehicle != null; entity1 = entity1.vehicle) {
@@ -761,7 +758,7 @@ index 12127b14babf646711d3a118416453c4f1ac1460..49f1d70616ab757580dd99b76a68c2d2
  
          --this.life;
 diff --git a/src/main/java/net/minecraft/world/entity/LivingEntity.java b/src/main/java/net/minecraft/world/entity/LivingEntity.java
-index 6ba2e04325b3da59801563f66a557ec217495a23..fecf2cdd3736b9c59ee3d4af5ac19d3de6e5cfc8 100644
+index ab9f9953733531fa59f8992071d62850ad8506f6..11a04ffe9bf0b82d4ecee64c885e4166f6e51313 100644
 --- a/src/main/java/net/minecraft/world/entity/LivingEntity.java
 +++ b/src/main/java/net/minecraft/world/entity/LivingEntity.java
 @@ -460,7 +460,7 @@ public abstract class LivingEntity extends Entity implements Attackable {
@@ -3839,7 +3836,7 @@ index f888f1dd2e3c228b0a370fe920b63d547bbba571..fa97779d631caaabd7ba7b74f9b620e7
          }
  
 diff --git a/src/main/java/net/minecraft/world/entity/vehicle/AbstractMinecart.java b/src/main/java/net/minecraft/world/entity/vehicle/AbstractMinecart.java
-index bd4e4f03c4b70247c7fc887854e0aa01a8af81c6..4485a46d2344969e99287a34b73ce361dd9ec7e8 100644
+index b0e13160b185151e08f2e5430aa7e96977965a04..34ab7b50c0510268aee5e24599ebb04a8d958b33 100644
 --- a/src/main/java/net/minecraft/world/entity/vehicle/AbstractMinecart.java
 +++ b/src/main/java/net/minecraft/world/entity/vehicle/AbstractMinecart.java
 @@ -639,7 +639,7 @@ public abstract class AbstractMinecart extends VehicleEntity {
@@ -6137,19 +6134,19 @@ index e9c7f5d2c7072568e0d451f43125816e27138872..2fc7bdc0362f2f5a21e3459375d8d06b
          return (InteractionResult) (stack.getItem() instanceof BlockItem && (new BlockPlaceContext(player, hand, stack, hit)).canPlace() ? InteractionResult.PASS : InteractionResult.SUCCESS);
      }
 diff --git a/src/main/java/net/minecraft/world/level/block/RedStoneWireBlock.java b/src/main/java/net/minecraft/world/level/block/RedStoneWireBlock.java
-index 6561e24087dc2b9975f2ee7a3737d453354e4fcc..fd6002c0cb2f243a5d66c89dd2e731f896f55faf 100644
+index 09b8f5335cb7651d90f4d1ca61b2ec5aa324e443..c8994f476b06e52e56f668d1af77b28d9275233d 100644
 --- a/src/main/java/net/minecraft/world/level/block/RedStoneWireBlock.java
 +++ b/src/main/java/net/minecraft/world/level/block/RedStoneWireBlock.java
-@@ -317,7 +317,7 @@ public class RedStoneWireBlock extends Block {
+@@ -371,7 +371,7 @@ public class RedStoneWireBlock extends Block {
  
      @Override
      protected void onPlace(BlockState state, Level world, BlockPos pos, BlockState oldState, boolean notify) {
 -        if (!oldState.is(state.getBlock()) && !world.isClientSide) {
 +        if (!oldState.is(state.getBlock()) /*&& !world.isClientSide*/) { // Plazma - Remove persist 'isClientSide' flag
-             this.updatePowerStrength(world, pos, state, null, true);
+             this.updateSurroundingRedstone(world, pos, state, null, true); // Paper - Optimize redstone
  
              for (Direction direction : Direction.Plane.VERTICAL) {
-@@ -332,14 +332,14 @@ public class RedStoneWireBlock extends Block {
+@@ -386,14 +386,14 @@ public class RedStoneWireBlock extends Block {
      protected void onRemove(BlockState state, Level world, BlockPos pos, BlockState newState, boolean moved) {
          if (!moved && !state.is(newState.getBlock())) {
              super.onRemove(state, world, pos, newState, moved);
@@ -6159,14 +6156,14 @@ index 6561e24087dc2b9975f2ee7a3737d453354e4fcc..fd6002c0cb2f243a5d66c89dd2e731f8
                      world.updateNeighborsAt(pos.relative(direction), this);
                  }
  
-                 this.updatePowerStrength(world, pos, state, null, false);
+                 this.updateSurroundingRedstone(world, pos, state, null, false); // Paper - Optimize redstone
                  this.updateNeighborsOfNeighboringWires(world, pos);
 -            }
 +            //} // Plazma - Remove persist 'isClientSide' flag
          }
      }
  
-@@ -360,7 +360,7 @@ public class RedStoneWireBlock extends Block {
+@@ -414,7 +414,7 @@ public class RedStoneWireBlock extends Block {
  
      @Override
      protected void neighborChanged(BlockState state, Level world, BlockPos pos, Block sourceBlock, @Nullable Orientation wireOrientation, boolean notify) {
@@ -6174,8 +6171,8 @@ index 6561e24087dc2b9975f2ee7a3737d453354e4fcc..fd6002c0cb2f243a5d66c89dd2e731f8
 +        //if (!world.isClientSide) { // Plazma - Remove persist 'isClientSide' flag
              if (sourceBlock != this || !useExperimentalEvaluator(world)) {
                  if (state.canSurvive(world, pos)) {
-                     this.updatePowerStrength(world, pos, state, wireOrientation, false);
-@@ -369,7 +369,7 @@ public class RedStoneWireBlock extends Block {
+                     this.updateSurroundingRedstone(world, pos, state, wireOrientation, false); // Paper - Optimize redstone
+@@ -423,7 +423,7 @@ public class RedStoneWireBlock extends Block {
                      world.removeBlock(pos, false);
                  }
              }
