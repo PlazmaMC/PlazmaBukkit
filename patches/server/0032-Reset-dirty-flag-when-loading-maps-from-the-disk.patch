@@ -1,0 +1,32 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: AlphaKR93 <dev@alpha93.kr>
+Date: Fri, 25 Oct 2024 19:11:40 +0900
+Subject: [PATCH] Reset dirty flag when loading maps from the disk
+
+Based on SparklyPaper, Copyright (C) 2024 SparklyPower
+commit: c023b928439b9c71277f27cc9b5bd36ca32624ea
+
+diff --git a/src/main/java/net/minecraft/world/level/saveddata/maps/MapItemSavedData.java b/src/main/java/net/minecraft/world/level/saveddata/maps/MapItemSavedData.java
+index 26da9e7c25ef6a89482838010d8ed6bcf8c87511..71aa3b9c5604f832e764e0d7a93da467ffe7dee1 100644
+--- a/src/main/java/net/minecraft/world/level/saveddata/maps/MapItemSavedData.java
++++ b/src/main/java/net/minecraft/world/level/saveddata/maps/MapItemSavedData.java
+@@ -209,6 +209,7 @@ public class MapItemSavedData extends SavedData {
+             }
+         }
+ 
++        if (org.plazmamc.plazma.configurations.GlobalConfiguration.get().misc.resetDirtyWhenLoadingMapsFromDisk) worldmap.setDirty(false); // Plazma - Reset dirty flag when loading maps from the disk
+         return worldmap;
+     }
+ 
+diff --git a/src/main/java/org/plazmamc/plazma/configurations/GlobalConfiguration.java b/src/main/java/org/plazmamc/plazma/configurations/GlobalConfiguration.java
+index 9e61505b8c34a3be20bcbe91ac98941729f5b64f..d1d6ac9e3ad200228dc0ee08fd0152ccec38b397 100644
+--- a/src/main/java/org/plazmamc/plazma/configurations/GlobalConfiguration.java
++++ b/src/main/java/org/plazmamc/plazma/configurations/GlobalConfiguration.java
+@@ -114,6 +114,7 @@ public class GlobalConfiguration extends ConfigurationPart {
+     public Miscellaneous misc;
+     public class Miscellaneous extends ConfigurationPart {
+ 
++        public boolean resetDirtyWhenLoadingMapsFromDisk = false;
+ 
+     }
+ 

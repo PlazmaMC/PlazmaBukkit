@@ -1,0 +1,317 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: AlphaKR93 <dev@alpha93.kr>
+Date: Fri, 13 Dec 2024 21:00:07 +0900
+Subject: [PATCH] SparklyPaper - Optimize framed map tracker ticking
+
+
+diff --git a/src/main/java/net/minecraft/server/level/ServerEntity.java b/src/main/java/net/minecraft/server/level/ServerEntity.java
+index 3b11cc112e98cea1067ecdfe20d894f8ba753b93..f33e7f7fdee160b7397b1156c179a5c95816307a 100644
+--- a/src/main/java/net/minecraft/server/level/ServerEntity.java
++++ b/src/main/java/net/minecraft/server/level/ServerEntity.java
+@@ -129,33 +129,31 @@ public class ServerEntity {
+ 
+         Entity entity = this.entity;
+ 
+-        if (!this.trackedPlayers.isEmpty() && entity instanceof ItemFrame entityitemframe) { // Paper - Perf: Only tick item frames if players can see it
+-            if (true || this.tickCount % 10 == 0) { // CraftBukkit - Moved below, should always enter this block
+-                ItemStack itemstack = entityitemframe.getItem();
+-
+-                if (this.level.paperConfig().maps.itemFrameCursorUpdateInterval > 0 && this.tickCount % this.level.paperConfig().maps.itemFrameCursorUpdateInterval == 0 && itemstack.getItem() instanceof MapItem) { // CraftBukkit - Moved this.tickCounter % 10 logic here so item frames do not enter the other blocks // Paper - Make item frame map cursor update interval configurable
+-                    MapId mapid = entityitemframe.cachedMapId; // Paper - Perf: Cache map ids on item frames
+-                    MapItemSavedData worldmap = MapItem.getSavedData(mapid, this.level);
+-
+-                    if (worldmap != null) {
+-                        Iterator<ServerPlayerConnection> iterator = this.trackedPlayers.iterator(); // CraftBukkit
+-
+-                        while (iterator.hasNext()) {
+-                            ServerPlayer entityplayer = iterator.next().getPlayer(); // CraftBukkit
+-
+-                            worldmap.tickCarriedBy(entityplayer, itemstack);
+-                            Packet<?> packet = worldmap.getUpdatePacket(mapid, entityplayer);
++        // Plazma start - Optimize framed map tracker ticking
++        if (!this.trackedPlayers.isEmpty() && entity instanceof ItemFrame frame && frame.cachedMapId != null) { // Paper - Perf: Only tick item frames if players can see it
++            if (this.level.paperConfig().maps.itemFrameCursorUpdateInterval > 0 && this.tickCount % this.level.paperConfig().maps.itemFrameCursorUpdateInterval == 0) { // CraftBukkit - Moved this.tickCounter % 10 logic here so item frames do not enter the other blocks // Paper - Make item frame map cursor update interval configurable
++                MapId id = frame.cachedMapId; // Paper - Perf: Cache map ids on item frames
++                MapItemSavedData data = MapItem.getSavedData(id, this.level);
++
++                if (data != null) for (final ServerPlayerConnection trackedPlayer : this.trackedPlayers) {
++                    if (!data.hasContextualRenderer) {
++                        // Pass in a "random" player when a non-contextual plugin renderer is added to make sure it is called
++                        final Packet<?> updatePacket = data.framedUpdatePacket(id, data.hasPluginRenderer ? com.google.common.collect.Iterables.getFirst(this.trackedPlayers, null).getPlayer() : null);
++
++                        if (updatePacket != null)
++                            for (ServerPlayerConnection connection : this.trackedPlayers) connection.send(updatePacket);
++                    } else {
++                        ServerPlayer player = trackedPlayer.getPlayer(); // CraftBukkit
++                        Packet<?> packet = data.getUpdatePacket(id, player);
+ 
+-                            if (packet != null) {
+-                                entityplayer.connection.send(packet);
+-                            }
+-                        }
++                        if (packet != null) player.connection.send(packet);
+                     }
+                 }
+-
+-                this.sendDirtyEntityData();
+             }
++
++            this.sendDirtyEntityData();
+         }
++        // Plazma end - Optimize framed map tracker ticking
+ 
+         if (this.forceStateResync || this.tickCount % this.updateInterval == 0 || this.entity.hasImpulse || this.entity.getEntityData().isDirty()) { // Paper - fix desync when a player is added to the tracker
+             byte b0 = Mth.packDegrees(this.entity.getYRot());
+@@ -426,6 +424,16 @@ public class ServerEntity {
+             }
+         }
+ 
++        // Plazma start - Optimize framed map tracker adding
++        if (this.entity instanceof ItemFrame frame && frame.cachedMapId != null) {
++            MapItemSavedData mapData = MapItem.getSavedData(frame.cachedMapId, this.level);
++            if (mapData == null) return;
++
++            mapData.addFrameDecoration(frame);
++            final Packet<?> mapPacket = mapData.fullUpdatePacket(frame.cachedMapId, mapData.hasPluginRenderer ? player : null);
++            if (mapPacket != null) sender.accept((Packet<ClientGamePacketListener>) mapPacket);
++        }
++        // Plazma end - Optimize framed map tracker adding
+     }
+ 
+     public Vec3 getPositionBase() {
+diff --git a/src/main/java/net/minecraft/world/entity/decoration/ItemFrame.java b/src/main/java/net/minecraft/world/entity/decoration/ItemFrame.java
+index 27f7a0abf77e94f15ff5f42e54e979377c94e63c..d1b8edccf3d7418a4aceba8491491b3a339b645a 100644
+--- a/src/main/java/net/minecraft/world/entity/decoration/ItemFrame.java
++++ b/src/main/java/net/minecraft/world/entity/decoration/ItemFrame.java
+@@ -175,6 +175,16 @@ public class ItemFrame extends HangingEntity {
+                     this.setItem(ItemStack.fromBukkitCopy(event.getItemStack()), false);
+                 }
+                 // Paper end - Add PlayerItemFrameChangeEvent
++                // Plazma start - Optimize framed map tracker ticking
++                final ItemStack item = this.getItem();
++                if (item.is(Items.FILLED_MAP)) {
++                    final MapItemSavedData data = MapItem.getSavedData(item, this.level());
++                    if (data != null) {
++                        data.addFrameDecoration(this);
++                        data.markAllDirty();
++                    }
++                }
++                // Plazma end - Optimize framed map tracker ticking
+                 this.dropItem(world, source.getEntity(), false);
+                 this.gameEvent(GameEvent.BLOCK_CHANGE, source.getEntity());
+                 this.playSound(this.getRemoveItemSound(), 1.0F, 1.0F);
+diff --git a/src/main/java/net/minecraft/world/level/saveddata/maps/MapItemSavedData.java b/src/main/java/net/minecraft/world/level/saveddata/maps/MapItemSavedData.java
+index 71aa3b9c5604f832e764e0d7a93da467ffe7dee1..e1440d1fc32229867e1f1543961fdfcec99a36fd 100644
+--- a/src/main/java/net/minecraft/world/level/saveddata/maps/MapItemSavedData.java
++++ b/src/main/java/net/minecraft/world/level/saveddata/maps/MapItemSavedData.java
+@@ -80,12 +80,22 @@ public class MapItemSavedData extends SavedData {
+     public final Map<String, MapDecoration> decorations = Maps.newLinkedHashMap();
+     private final Map<String, MapFrame> frameMarkers = Maps.newHashMap();
+     private int trackedDecorationCount;
+-    private org.bukkit.craftbukkit.map.RenderData vanillaRender = new org.bukkit.craftbukkit.map.RenderData(); // Paper
++    private final org.bukkit.craftbukkit.map.RenderData vanillaRender = new org.bukkit.craftbukkit.map.RenderData(); // Paper // Plazma - Improve code styling
+     public boolean isExplorerMap; // Purpur
++    // Plazma start - Optimize framed map tracker ticking; Shared between all players tracking this map inside an item frame
++    public boolean dirtyColorData;
++    public int minDirtyX;
++    public int minDirtyY;
++    public int maxDirtyX;
++    public int maxDirtyY;
++    public boolean dirtyFrameDecorations;
++    public boolean hasPluginRenderer;
++    public boolean hasContextualRenderer;
++    // Plazma end - Optimize framed map tracker ticking; Shared between all players tracking this map inside an item frame
+ 
+     // CraftBukkit start
+     public final CraftMapView mapView;
+-    private CraftServer server;
++    private final CraftServer server; // Plazma - Improve code styling
+     public UUID uniqueId = null;
+     public MapId id;
+     // CraftBukkit end
+@@ -372,7 +382,7 @@ public class MapItemSavedData extends SavedData {
+             --this.trackedDecorationCount;
+         }
+ 
+-        if (mapicon != null) this.setDecorationsDirty(); // Paper - only mark dirty if a change occurs
++        if (mapicon != null && mapicon.renderOnFrame()) this.dirtyFrameDecorations = true; // Plazma - Optimize framed map tracker ticking
+     }
+ 
+     public static void addTargetDecoration(ItemStack stack, BlockPos pos, String id, Holder<MapDecorationType> decorationType) {
+@@ -409,6 +419,7 @@ public class MapItemSavedData extends SavedData {
+                 }
+ 
+                 this.setDecorationsDirty();
++                if (mapicon.renderOnFrame()) this.dirtyFrameDecorations = true; // Plazma - Optimize framed map tracker ticking
+             }
+ 
+         }
+@@ -480,14 +491,23 @@ public class MapItemSavedData extends SavedData {
+ 
+     public void setColorsDirty(int x, int z) {
+         this.setDirty();
+-        Iterator iterator = this.carriedBy.iterator();
+-
+-        while (iterator.hasNext()) {
+-            MapItemSavedData.HoldingPlayer worldmap_worldmaphumantracker = (MapItemSavedData.HoldingPlayer) iterator.next();
+-
+-            worldmap_worldmaphumantracker.markColorsDirty(x, z);
+-        }
+-
++        // Plazma start - Optimize framed map tracker ticking
++        if (this.dirtyColorData) {
++            this.minDirtyX = Math.min(this.minDirtyX, x);
++            this.minDirtyY = Math.min(this.minDirtyY, z);
++            this.maxDirtyX = Math.max(this.maxDirtyX, x);
++            this.maxDirtyY = Math.max(this.maxDirtyY, z);
++        } else {
++            this.dirtyColorData = true;
++            this.minDirtyX = x;
++            this.minDirtyY = z;
++            this.maxDirtyX = x;
++            this.maxDirtyY = z;
++        } // diff on change
++        for (final HoldingPlayer tracker : this.carriedBy) {
++            tracker.markColorsDirty(x, z);
++        } // diff on change
++        // Plazma end - Optimize framed map tracker ticking
+     }
+ 
+     public void setDecorationsDirty() {
+@@ -563,6 +583,7 @@ public class MapItemSavedData extends SavedData {
+         this.removeDecoration(MapItemSavedData.getFrameKey(id));
+         this.frameMarkers.remove(MapFrame.frameId(pos));
+         this.setDirty();
++        this.dirtyFrameDecorations = true; // Plazma - Optimize framed map tracker ticking
+     }
+ 
+     public boolean updateColor(int x, int z, byte color) {
+@@ -776,4 +797,86 @@ public class MapItemSavedData extends SavedData {
+ 
+         }
+     }
++
++    // Plazma start - Optimize framed map tracker ticking
++    public final @Nullable Packet<?> framedUpdatePacket(MapId id, @Nullable Player player) {
++        return createUpdatePacket(id, player, false);
++    }
++
++    public final @Nullable Packet<?> fullUpdatePacket(MapId id, @Nullable Player player) {
++        return createUpdatePacket(id, player, true);
++    }
++
++    public final @Nullable Packet<?> createUpdatePacket(MapId id, @Nullable Player player, boolean full) {
++        if (!dirtyColorData && !dirtyFrameDecorations && (player == null || server.getCurrentTick() % 5 != 0) && !full)
++            // Periodically send update packets if a renderer is added
++            return null;
++
++        final org.bukkit.craftbukkit.map.RenderData render = player != null
++            ? this.mapView.render((org.bukkit.craftbukkit.entity.CraftPlayer) player.getBukkitEntity())
++            : this.vanillaRender;
++
++        final MapPatch patch;
++        if (full) {
++            patch = createPatch(render.buffer, 0, 0, 127, 127);
++        } else if (dirtyColorData) {
++            dirtyColorData = false;
++            patch = createPatch(render.buffer, this.minDirtyX, this.minDirtyY, this.maxDirtyX, this.maxDirtyY);
++        } else {
++            patch = null;
++        }
++
++        Collection<MapDecoration> decorations = null;
++        if (dirtyFrameDecorations || full || hasPluginRenderer) { // Always add decorations when a plugin renderer is added
++            dirtyFrameDecorations = false;
++            decorations = new java.util.ArrayList<>();
++
++            if (player == null) {
++                // Using the vanilla renderer, add in vanilla decorations
++                for (MapDecoration decoration : this.decorations.values()) {
++                    // Skip sending decorations that are not rendered, i.e., player decorations.
++                    // Skipping player decorations also allows sending the same update packet to all tracking players, the only issue
++                    // being that it causes a slight flicker of the player decoration for anyone holding and looking at the map.
++                    if (decoration.renderOnFrame()) decorations.add(decoration);
++                }
++            }
++
++            for (final org.bukkit.map.MapCursor cursor : render.cursors) {
++                if (cursor.isVisible()) continue;
++                decorations.add(new MapDecoration(CraftMapCursor.CraftType.bukkitToMinecraftHolder(cursor.getType()), cursor.getX(), cursor.getY(), cursor.getDirection(), Optional.ofNullable(PaperAdventure.asVanilla(cursor.caption()))));
++            }
++        }
++
++        return new ClientboundMapItemDataPacket(id, this.scale, this.locked, decorations, patch);
++    }
++
++    private MapPatch createPatch(byte[] buffer, int minDirtyX, int minDirtyY, int maxDirtyX, int maxDirtyY) {
++        int xL = maxDirtyX + 1 - minDirtyX;
++        int yL = maxDirtyY + 1 - minDirtyY;
++        byte[] bytes = new byte[xL * yL];
++
++        for (int i = 0; i < xL; ++i) for (int j = 0; j < yL; ++j)
++            bytes[i + j * xL] = buffer[minDirtyX + i + (minDirtyY + j) * 128];
++
++        return new MapItemSavedData.MapPatch(minDirtyX, minDirtyY, xL, yL, bytes);
++    }
++
++    public void addFrameDecoration(net.minecraft.world.entity.decoration.ItemFrame frame) {
++        if (this.trackedDecorationCount >= frame.level().paperConfig().maps.itemFrameCursorLimit || this.frameMarkers.containsKey(MapFrame.frameId(frame.getPos())))
++            return;
++
++        MapFrame mapFrame = new MapFrame(frame.getPos(), frame.getDirection().get2DDataValue() * 90, frame.getId());
++        this.addDecoration(MapDecorationTypes.FRAME, frame.level(), "frame-" + frame.getId(), frame.getPos().getX(), frame.getPos().getZ(), mapFrame.getRotation(), null);
++        this.frameMarkers.put(mapFrame.getId(), mapFrame);
++    }
++
++    public void markAllDirty() {
++        this.dirtyColorData = true;
++        this.minDirtyX = 0;
++        this.minDirtyY = 0;
++        this.maxDirtyX = 127;
++        this.maxDirtyY = 127;
++        this.dirtyFrameDecorations = true;
++    }
++    // Plazma end - Optimize framed map tracker ticking
+ }
+diff --git a/src/main/java/org/bukkit/craftbukkit/map/CraftMapView.java b/src/main/java/org/bukkit/craftbukkit/map/CraftMapView.java
+index a15cdf64575841edfe30f2b2c522f8fdfe2caae3..d8e8faf38a2fc6ae9846a6a0d2868d0a1418afef 100644
+--- a/src/main/java/org/bukkit/craftbukkit/map/CraftMapView.java
++++ b/src/main/java/org/bukkit/craftbukkit/map/CraftMapView.java
+@@ -97,11 +97,15 @@ public final class CraftMapView implements MapView {
+ 
+     @Override
+     public void addRenderer(MapRenderer renderer) {
+-        if (!this.renderers.contains(renderer)) {
+-            this.renderers.add(renderer);
+-            this.canvases.put(renderer, new HashMap<CraftPlayer, CraftMapCanvas>());
+-            renderer.initialize(this);
+-        }
++        // Plazma start - Optimize framed map tracker ticking
++        if (this.renderers.contains(renderer)) return;
++
++        this.renderers.add(renderer);
++        this.canvases.put(renderer, new HashMap<>());
++        this.worldMap.hasPluginRenderer |= !(renderer instanceof CraftMapRenderer);
++        this.worldMap.hasContextualRenderer |= renderer.isContextual();
++        renderer.initialize(this);
++        // Plazma end - Optimize framed map tracker ticking
+     }
+ 
+     @Override
+@@ -116,6 +120,16 @@ public final class CraftMapView implements MapView {
+                 }
+             }
+             this.canvases.remove(renderer);
++            // Plazma start - Optimize framed map tracker ticking
++            this.worldMap.hasPluginRenderer = !(this.renderers.size() == 1 && this.renderers.getFirst() instanceof CraftMapRenderer);
++            if (!renderer.isContextual()) return true;
++
++            // Re-check all renderers
++            boolean contextualFound = false;
++            for (final MapRenderer mapRenderer : this.renderers) contextualFound |= mapRenderer.isContextual();
++
++            this.worldMap.hasContextualRenderer = contextualFound;
++            // Plazma end - Optimize framed map tracker ticking
+             return true;
+         } else {
+             return false;

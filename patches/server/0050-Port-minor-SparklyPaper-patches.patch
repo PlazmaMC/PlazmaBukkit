@@ -1,0 +1,116 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: AlphaKR93 <dev@alpha93.kr>
+Date: Fri, 13 Dec 2024 21:10:27 +0900
+Subject: [PATCH] Port minor SparklyPaper patches
+
+
+diff --git a/src/main/java/net/minecraft/server/level/ServerEntity.java b/src/main/java/net/minecraft/server/level/ServerEntity.java
+index c14ce846afb7364e541bfe01b73a06a94e48f55b..3b11cc112e98cea1067ecdfe20d894f8ba753b93 100644
+--- a/src/main/java/net/minecraft/server/level/ServerEntity.java
++++ b/src/main/java/net/minecraft/server/level/ServerEntity.java
+@@ -58,6 +58,7 @@ import org.bukkit.event.player.PlayerVelocityEvent;
+ 
+ public class ServerEntity {
+ 
++    public static boolean PLAZMA_DISTANCE_SQR = false; // Plazma - Port Minor SparklyPaper patches; Skip distanceToSqr if the delta is the same
+     private static final Logger LOGGER = LogUtils.getLogger();
+     private static final int TOLERANCE_LEVEL_ROTATION = 1;
+     private static final double TOLERANCE_LEVEL_POSITION = 7.62939453125E-6D;
+@@ -232,6 +233,7 @@ public class ServerEntity {
+ 
+                     if ((this.trackDelta || this.entity.hasImpulse || this.entity instanceof LivingEntity && ((LivingEntity) this.entity).isFallFlying()) && this.tickCount > 0) {
+                         Vec3 vec3d1 = this.entity.getDeltaMovement();
++                        if (PLAZMA_DISTANCE_SQR || vec3d1 != this.lastSentMovement) { // Plazma - Port Minor SparklyPaper patches; Skip distanceToSqr if the delta is the same
+                         double d0 = vec3d1.distanceToSqr(this.lastSentMovement);
+ 
+                         if (d0 > 1.0E-7D || d0 > 0.0D && vec3d1.lengthSqr() == 0.0D) {
+@@ -246,6 +248,7 @@ public class ServerEntity {
+                                 this.broadcast.accept(new ClientboundSetEntityMotionPacket(this.entity.getId(), this.lastSentMovement));
+                             }
+                         }
++                        } // Plazma - Port Minor SparklyPaper patches; Skip distanceToSqr if the delta is the same
+                     }
+ 
+                     if (packet1 != null) {
+diff --git a/src/main/java/net/minecraft/stats/ServerStatsCounter.java b/src/main/java/net/minecraft/stats/ServerStatsCounter.java
+index da7e1a69ecb4e6b3be2d8544ac406aa519bd196e..ce56fdd0bbe1c95146c88594c68a6a399f01218e 100644
+--- a/src/main/java/net/minecraft/stats/ServerStatsCounter.java
++++ b/src/main/java/net/minecraft/stats/ServerStatsCounter.java
+@@ -90,12 +90,14 @@ public class ServerStatsCounter extends StatsCounter {
+         this.dirty.add(stat);
+     }
+ 
++    /* // Plazma - Port Minor SparklyPaper patches; Skip dirty stats copy when requesting player stats
+     private Set<Stat<?>> getDirty() {
+         Set<Stat<?>> set = Sets.newHashSet(this.dirty);
+ 
+         this.dirty.clear();
+         return set;
+     }
++     */ // Plazma - Port Minor SparklyPaper patches; Skip dirty stats copy when requesting player stats
+ 
+     public void parseLocal(DataFixer dataFixer, String json) {
+         try {
+@@ -242,14 +244,12 @@ public class ServerStatsCounter extends StatsCounter {
+     }
+ 
+     public void sendStats(ServerPlayer player) {
+-        Object2IntMap<Stat<?>> object2intmap = new Object2IntOpenHashMap();
+-        Iterator iterator = this.getDirty().iterator();
++        // Plazma start - Port Minor SparklyPaper patches; Skip dirty stats copy when requesting player stats
++        Object2IntMap<Stat<?>> object2intmap = new Object2IntOpenHashMap<>();
++        for (final Stat<?> stat : this.dirty) object2intmap.put(stat, this.getValue(stat));
+ 
+-        while (iterator.hasNext()) {
+-            Stat<?> statistic = (Stat) iterator.next();
+-
+-            object2intmap.put(statistic, this.getValue(statistic));
+-        }
++        this.dirty.clear();
++        // Plazma end - Port Minor SparklyPaper patches; Skip dirty stats copy when requesting player stats
+ 
+         player.connection.send(new ClientboundAwardStatsPacket(object2intmap));
+     }
+diff --git a/src/main/java/net/minecraft/world/item/MapItem.java b/src/main/java/net/minecraft/world/item/MapItem.java
+index 8c455ac7dcb126e2b2932eba980454513947fac2..ecf9153b0eadb264d79fe9a809918bb13cd6d4b8 100644
+--- a/src/main/java/net/minecraft/world/item/MapItem.java
++++ b/src/main/java/net/minecraft/world/item/MapItem.java
+@@ -276,7 +276,12 @@ public class MapItem extends Item {
+                     mapItemSavedData.tickCarriedBy(player, stack);
+                 }
+ 
+-                if (!mapItemSavedData.locked && (selected || entity instanceof Player && ((Player)entity).getOffhandItem() == stack)) {
++                // Plazma start - Port Minor SparklyPaper patches; Skip map update if the craft renderer is null
++                if (!mapItemSavedData.locked
++                    && (!world.plazmaConfig().item.skipMapUpdateIfCraftRenderIsNull || mapItemSavedData.mapView.getRenderers().stream().anyMatch(renderer -> renderer instanceof org.bukkit.craftbukkit.map.CraftMapRenderer))
++                    && (selected || entity instanceof Player player && player.getOffhandItem() == stack)
++                ) {
++                // Plazma end - Port Minor SparklyPaper patches; Skip map update if the craft renderer is null
+                     this.update(world, entity, mapItemSavedData);
+                 }
+             }
+diff --git a/src/main/java/org/bukkit/craftbukkit/map/CraftMapColorCache.java b/src/main/java/org/bukkit/craftbukkit/map/CraftMapColorCache.java
+index 8149b9c51b78eb5c689b7218a2ca3aab60e73bcf..125a4f13dbe98976c4cf94bb523463a51bd4f8dd 100644
+--- a/src/main/java/org/bukkit/craftbukkit/map/CraftMapColorCache.java
++++ b/src/main/java/org/bukkit/craftbukkit/map/CraftMapColorCache.java
+@@ -145,7 +145,7 @@ public class CraftMapColorCache implements MapPalette.MapColorCache {
+     }
+ 
+     @Override
+-    public boolean isCached() {
++    public synchronized boolean isCached() { // Plazma - Port Minor SparklyPaper patches; Fix concurrency issues when using "imageToBytes" in multiple threads
+         return this.cached || (!this.running.get() && this.initCache().isDone());
+     }
+ 
+diff --git a/src/main/java/org/plazmamc/plazma/configurations/WorldConfigurations.java b/src/main/java/org/plazmamc/plazma/configurations/WorldConfigurations.java
+index 7591e21bfd90edff05639bb6a027c3fe8c1c36c3..bab5f682b8aeaa6dfcda7f07499ae297cbcbe23e 100644
+--- a/src/main/java/org/plazmamc/plazma/configurations/WorldConfigurations.java
++++ b/src/main/java/org/plazmamc/plazma/configurations/WorldConfigurations.java
+@@ -87,6 +87,7 @@ public class WorldConfigurations extends ConfigurationPart {
+     public class Item extends ConfigurationPart {
+ 
+         public boolean allowShootFireballs = false;
++        public boolean skipMapUpdateIfCraftRenderIsNull = true;
+ 
+     }
+ 

@@ -1,0 +1,227 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: AlphaKR93 <dev@alpha93.kr>
+Date: Sat, 14 Dec 2024 00:29:15 +0900
+Subject: [PATCH] Implement CarpetFixes
+
+
+diff --git a/src/main/java/net/minecraft/world/entity/animal/Sheep.java b/src/main/java/net/minecraft/world/entity/animal/Sheep.java
+index 0503f936d0d7194f110069adabff984f51af0a3a..0ca88636cca9b8f93cddf8bc58038e626e171df8 100644
+--- a/src/main/java/net/minecraft/world/entity/animal/Sheep.java
++++ b/src/main/java/net/minecraft/world/entity/animal/Sheep.java
+@@ -379,19 +379,22 @@ public class Sheep extends Animal implements Shearable {
+     }
+ 
+     private DyeColor getOffspringColor(ServerLevel world, Sheep firstParent, Sheep secondParent) {
+-        DyeColor enumcolor = firstParent.getColor();
+-        DyeColor enumcolor1 = secondParent.getColor();
+-        CraftingInput craftinginput = Sheep.makeCraftInput(enumcolor, enumcolor1);
+-        Optional<Item> optional = world.recipeAccess().getRecipeFor(RecipeType.CRAFTING, craftinginput, world).map((recipeholder) -> { // CraftBukkit - decompile error
+-            return ((CraftingRecipe) recipeholder.value()).assemble(craftinginput, world.registryAccess());
+-        }).map(ItemStack::getItem);
+-
+-        Objects.requireNonNull(DyeItem.class);
+-        optional = optional.filter(DyeItem.class::isInstance);
+-        Objects.requireNonNull(DyeItem.class);
+-        return (DyeColor) optional.map(DyeItem.class::cast).map(DyeItem::getDyeColor).orElseGet(() -> {
+-            return world.random.nextBoolean() ? enumcolor : enumcolor1;
+-        });
++        // Plazma start - Implement CarpetFixes
++        final DyeColor firstColor = firstParent.getColor();
++        final DyeColor secondColor = secondParent.getColor();
++// PLAZMA - REMOVE THIS
++        if (world.plazmaConfig().carpetFixes.preparedSheepChildColor) {
++            final DyeColor color = org.plazmamc.plazma.util.CarpetFixes.properDyeMixin(firstColor, secondColor);
++            if (color != null) return color;
++            return world.random.nextBoolean() ? firstColor : secondColor;
++        }
++// PLAZMA - REMOVE THIS
++        final CraftingInput input = Sheep.makeCraftInput(firstColor, secondColor);
++// PLAZMA - REMOVE THIS
++        Optional<Item> result = world.recipeAccess().getRecipeFor(RecipeType.CRAFTING, input, world).map((recipeholder) -> recipeholder.value().assemble(input, world.registryAccess())).map(ItemStack::getItem);
++        result = result.filter(DyeItem.class::isInstance);
++        return result.map(DyeItem.class::cast).map(DyeItem::getDyeColor).orElseGet(() -> world.random.nextBoolean() ? firstColor : secondColor);
++        // Plazma end - Implement CarpetFixes
+     }
+ 
+     private static CraftingInput makeCraftInput(DyeColor firstColor, DyeColor secondColor) {
+diff --git a/src/main/java/net/minecraft/world/level/biome/BiomeManager.java b/src/main/java/net/minecraft/world/level/biome/BiomeManager.java
+index 90f8360f547ce709fd13ee34f8e67d8bfa94b498..4e5fb377696c0a98a56f9ea11d0116b28399c8f6 100644
+--- a/src/main/java/net/minecraft/world/level/biome/BiomeManager.java
++++ b/src/main/java/net/minecraft/world/level/biome/BiomeManager.java
+@@ -9,6 +9,8 @@ import net.minecraft.util.Mth;
+ 
+ public class BiomeManager {
+     public static final int CHUNK_CENTER_QUART = QuartPos.fromBlock(8);
++    public static boolean PLAZMA_CARPET_FIXES = false; // Plazma - Implement CarpetFixes
++    private static final double MAX_OFFSET = 0.450_000_000_1; // Plazma - Implement CarpetFixes
+     private static final int ZOOM_BITS = 2;
+     private static final int ZOOM = 4;
+     private static final int ZOOM_MASK = 3;
+@@ -29,6 +31,79 @@ public class BiomeManager {
+     }
+ 
+     public Holder<Biome> getBiome(BlockPos pos) {
++        // Plazma start - Implement CarpetFixes
++        if (PLAZMA_CARPET_FIXES) {
++            final int x2 = pos.getX() - 2;
++            final int y2 = pos.getY() - 2;
++            final int z2 = pos.getZ() - 2;
++
++            final int x = x2 >> 2;
++            final int y = y2 >> 2;
++            final int z = z2 >> 2;
++
++            final double qX = (x2 & 3) / 4.0D;
++            final double qY = (y2 & 3) / 4.0D;
++            final double qZ = (z2 & 3) / 4.0D;
++
++            int minX = 0;
++            double minD = Double.POSITIVE_INFINITY;
++            for (int bX = 0; bX < 8; ++bX) {
++                final boolean x0 = (bX & 4) == 0;
++                final boolean y0 = (bX & 2) == 0;
++                final boolean z0 = (bX & 1) == 0;
++
++                final double x1 = x0 ? qX : qX - 1.0D;
++                final double y1 = y0 ? qY : qY - 1.0D;
++                final double z1 = z0 ? qZ : qZ - 1.0D;
++
++                double maxQY = 0.0D;
++                double maxQZ = 0.0D;
++                if (bX != 0) {
++                    final double maxQX = Mth.square(Math.max(x1 + MAX_OFFSET, Math.abs(x1 - MAX_OFFSET)));
++                    maxQY = Mth.square(Math.max(y1 + MAX_OFFSET, Math.abs(y1 - MAX_OFFSET)));
++                    maxQZ = Mth.square(Math.max(z1 + MAX_OFFSET, Math.abs(z1 - MAX_OFFSET)));
++
++                    if (minD < maxQY + maxQZ + maxQX) continue;
++                }
++
++                int pX = x0 ? x : x + 1;
++                int pY = y0 ? y : y + 1;
++                int pZ = z0 ? z : z + 1;
++
++                long seed = this.biomeZoomSeed;
++                seed = LinearCongruentialGenerator.next(seed, pX);
++                seed = LinearCongruentialGenerator.next(seed, pY);
++                seed = LinearCongruentialGenerator.next(seed, pZ);
++                seed = LinearCongruentialGenerator.next(seed, pX);
++                seed = LinearCongruentialGenerator.next(seed, pY);
++                seed = LinearCongruentialGenerator.next(seed, pZ);
++
++                double dX = getFiddle(seed);
++                double sX = Mth.square(x1 + dX);
++                if (bX != 0 && minD < sX + maxQY + maxQZ) continue;
++
++                seed = LinearCongruentialGenerator.next(seed, this.biomeZoomSeed);
++                double dY = getFiddle(seed);
++                double sY = Mth.square(y1 + dY);
++                if (bX != 0 && minD < sX + sY + maxQZ) continue;
++
++                seed = LinearCongruentialGenerator.next(seed, this.biomeZoomSeed);
++                double dZ = getFiddle(seed);
++                double bD = sX + sY + Mth.square(z1 + dZ);
++
++                if (minD <= bD) continue;
++                minX = bX;
++                minD = bD;
++            }
++
++            return this.noiseBiomeSource.getNoiseBiome(
++                (minX & 4) == 0 ? x : x + 1,
++                (minX & 2) == 0 ? y : y + 1,
++                (minX & 1) == 0 ? z : z + 1
++            );
++        }
++        // Plazma end - Implement CarpetFixes
++
+         int i = pos.getX() - 2;
+         int j = pos.getY() - 2;
+         int k = pos.getZ() - 2;
+diff --git a/src/main/java/org/plazmamc/plazma/configurations/GlobalConfiguration.java b/src/main/java/org/plazmamc/plazma/configurations/GlobalConfiguration.java
+index b5b252c79b9508200d9d0bd15f0469b0cb0fd3b3..3bc5d3f1ed3d46ae1dc8f4b3207b78bf94911fdd 100644
+--- a/src/main/java/org/plazmamc/plazma/configurations/GlobalConfiguration.java
++++ b/src/main/java/org/plazmamc/plazma/configurations/GlobalConfiguration.java
+@@ -178,4 +178,16 @@ public class GlobalConfiguration extends ConfigurationPart {
+ 
+     }
+ 
++    public CarpetFixes carpetFixes;
++    public class CarpetFixes extends ConfigurationPart {
++
++        boolean optimizeBiomeAccess = OPTIMIZE;
++
++        @PostProcess
++        void post() {
++            net.minecraft.world.level.biome.BiomeManager.PLAZMA_CARPET_FIXES = this.optimizeBiomeAccess;
++        }
++
++    }
++
+ }
+diff --git a/src/main/java/org/plazmamc/plazma/configurations/WorldConfigurations.java b/src/main/java/org/plazmamc/plazma/configurations/WorldConfigurations.java
+index f822b544d98602be85bf0c54a6040a5907b1906e..ee7655924358642d4fc58c261decd808ff7f8019 100644
+--- a/src/main/java/org/plazmamc/plazma/configurations/WorldConfigurations.java
++++ b/src/main/java/org/plazmamc/plazma/configurations/WorldConfigurations.java
+@@ -107,4 +107,11 @@ public class WorldConfigurations extends ConfigurationPart {
+ 
+     }
+ 
++    public CarpetFixes carpetFixes;
++    public class CarpetFixes extends ConfigurationPart {
++
++        public boolean preparedSheepChildColor = OPTIMIZE;
++
++    }
++
+ }
+diff --git a/src/main/java/org/plazmamc/plazma/util/CarpetFixes.java b/src/main/java/org/plazmamc/plazma/util/CarpetFixes.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..a5b0ce75a0ffa65e357cde2d55b7a0f116a2afad
+--- /dev/null
++++ b/src/main/java/org/plazmamc/plazma/util/CarpetFixes.java
+@@ -0,0 +1,45 @@
++package org.plazmamc.plazma.util;
++
++import net.minecraft.world.item.DyeColor;
++
++public interface CarpetFixes {
++
++    static DyeColor properDyeMixin(DyeColor firstColor, DyeColor secondColor) {
++        if (firstColor.equals(secondColor)) return firstColor;
++
++        return switch (firstColor) {
++            case WHITE -> switch (secondColor) {
++                case BLUE -> DyeColor.LIGHT_BLUE;
++                case GRAY -> DyeColor.LIGHT_GRAY;
++                case BLACK -> DyeColor.GRAY;
++                case GREEN -> DyeColor.LIME;
++                case RED -> DyeColor.PINK;
++                default -> null;
++            };
++            case BLUE -> switch (secondColor) {
++                case WHITE -> DyeColor.LIGHT_BLUE;
++                case GREEN -> DyeColor.CYAN;
++                case RED -> DyeColor.PURPLE;
++                default -> null;
++            };
++            case RED -> switch (secondColor) {
++                case YELLOW -> DyeColor.ORANGE;
++                case WHITE -> DyeColor.PINK;
++                case BLUE -> DyeColor.PURPLE;
++                default -> null;
++            };
++            case GREEN -> switch (secondColor) {
++                case BLUE -> DyeColor.CYAN;
++                case WHITE -> DyeColor.LIME;
++                default -> null;
++            };
++            case YELLOW -> secondColor.equals(DyeColor.RED) ? DyeColor.ORANGE : null;
++            case PURPLE -> secondColor.equals(DyeColor.PINK) ? DyeColor.MAGENTA : null;
++            case PINK -> secondColor.equals(DyeColor.PURPLE) ? DyeColor.MAGENTA : null;
++            case GRAY -> secondColor.equals(DyeColor.WHITE) ? DyeColor.LIGHT_GRAY : null;
++            case BLACK -> secondColor.equals(DyeColor.WHITE) ? DyeColor.GRAY : null;
++            default -> null;
++        };
++    }
++
++}

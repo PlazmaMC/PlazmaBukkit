@@ -1,0 +1,218 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: AlphaKR93 <dev@alpha93.kr>
+Date: Fri, 13 Dec 2024 23:52:46 +0900
+Subject: [PATCH] SparklyPaper - Optimize tickingBlockEntity
+
+
+diff --git a/src/main/java/net/minecraft/world/level/Level.java b/src/main/java/net/minecraft/world/level/Level.java
+index 332c1d890eefb0c705200a61b8bc7369457bc3af..ca7d4efd7b813c58169d251b23cf6a6fa71c9cee 100644
+--- a/src/main/java/net/minecraft/world/level/Level.java
++++ b/src/main/java/net/minecraft/world/level/Level.java
+@@ -1526,28 +1526,42 @@ public abstract class Level implements LevelAccessor, AutoCloseable, ca.spottedl
+ 
+         int tickedEntities = 0; // Paper - rewrite chunk system
+ 
+-        int tilesThisCycle = 0;
+-        var toRemove = new it.unimi.dsi.fastutil.objects.ReferenceOpenHashSet<TickingBlockEntity>(); // Paper - Fix MC-117075; use removeAll
++        // Plazma start - Optimize tickingBlockEntity
++        int shouldTickBlocksAtLastResult = -1;
++        long shouldTickBlocksAtChunkPos = 0L;
++        final it.unimi.dsi.fastutil.objects.ReferenceOpenHashSet<TickingBlockEntity> toRemove =
++            new it.unimi.dsi.fastutil.objects.ReferenceOpenHashSet<>(); // Paper - Fix MC-117075; use removeAll
++
+         toRemove.add(null); // Paper - Fix MC-117075
+         for (tileTickPosition = 0; tileTickPosition < this.blockEntityTickers.size(); tileTickPosition++) { // Paper - Disable tick limiters
+-            this.tileTickPosition = (this.tileTickPosition < this.blockEntityTickers.size()) ? this.tileTickPosition : 0;
+-            TickingBlockEntity tickingblockentity = (TickingBlockEntity) this.blockEntityTickers.get(this.tileTickPosition);
+-            // Spigot end
+-
+-            if (tickingblockentity.isRemoved()) {
+-                // Spigot start
+-                tilesThisCycle--;
+-                toRemove.add(tickingblockentity); // Paper - Fix MC-117075; use removeAll
+-                // Spigot end
+-            } else if (flag && this.shouldTickBlocksAt(tickingblockentity.getPos())) {
+-                tickingblockentity.tick();
+-                // Paper start - rewrite chunk system
+-                if ((++tickedEntities & 7) == 0) {
+-                    ((ca.spottedleaf.moonrise.patches.chunk_system.level.ChunkSystemLevel)(Level)(Object)this).moonrise$midTickTasks();
++            TickingBlockEntity tickingEntity = this.blockEntityTickers.get(this.tileTickPosition);
++
++            if (tickingEntity.isRemoved()) {
++                toRemove.add(tickingEntity); // Paper - Fix MC-117075; use removeAll
++                continue;
++            }
++
++            if (flag) {
++                long pos = tickingEntity.getChunkCoordinateKey();
++
++                boolean shouldTick;
++                if (shouldTickBlocksAtChunkPos == pos && shouldTickBlocksAtLastResult != -1) {
++                    shouldTick = shouldTickBlocksAtLastResult == 1;
++                } else {
++                    shouldTick = this.shouldTickBlocksAt(pos);
++                    shouldTickBlocksAtLastResult = shouldTick ? 1 : 0;
++                    shouldTickBlocksAtChunkPos = pos;
+                 }
+-                // Paper end - rewrite chunk system
++
++                if (!shouldTick) continue;
++
++                tickingEntity.tick();
++                if ((++tickedEntities & 7) != 0) continue;
++
++                this.moonrise$midTickTasks();
+             }
+         }
++        // Plazma end - Optimize tickingBlockEntity
+         this.blockEntityTickers.removeAll(toRemove); // Paper - Fix MC-117075
+ 
+         this.tickingBlockEntities = false;
+diff --git a/src/main/java/net/minecraft/world/level/block/entity/TickingBlockEntity.java b/src/main/java/net/minecraft/world/level/block/entity/TickingBlockEntity.java
+index 28e3b73507b988f7234cbf29c4024c88180d0aef..de15cbda0c180e0d071ce7ac41d2fd1aeca60985 100644
+--- a/src/main/java/net/minecraft/world/level/block/entity/TickingBlockEntity.java
++++ b/src/main/java/net/minecraft/world/level/block/entity/TickingBlockEntity.java
+@@ -10,4 +10,6 @@ public interface TickingBlockEntity {
+     BlockPos getPos();
+ 
+     String getType();
++
++    long getChunkCoordinateKey(); // Plazma - Optimize tickingBlockEntity
+ }
+diff --git a/src/main/java/net/minecraft/world/level/chunk/LevelChunk.java b/src/main/java/net/minecraft/world/level/chunk/LevelChunk.java
+index 3c92e6b52394eed3ac66d44973288e4de2c133cc..2966caede97e01b5ad15a0d56232a0f5526685e2 100644
+--- a/src/main/java/net/minecraft/world/level/chunk/LevelChunk.java
++++ b/src/main/java/net/minecraft/world/level/chunk/LevelChunk.java
+@@ -75,6 +75,8 @@ public class LevelChunk extends ChunkAccess implements ca.spottedleaf.moonrise.p
+         public String getType() {
+             return "<null>";
+         }
++
++        @Override public long getChunkCoordinateKey() { return 0; } // Plazma - Optimize tickingBlockEntity;
+     };
+     private final Map<BlockPos, LevelChunk.RebindableTickingBlockEntityWrapper> tickersInLevel;
+     public boolean loaded;
+@@ -995,7 +997,7 @@ public class LevelChunk extends ChunkAccess implements ca.spottedleaf.moonrise.p
+     }
+ 
+     private <T extends BlockEntity> TickingBlockEntity createTicker(T blockEntity, BlockEntityTicker<T> blockEntityTicker) {
+-        return new LevelChunk.BoundTickingBlockEntity<>(blockEntity, blockEntityTicker);
++        return new LevelChunk.BoundTickingBlockEntity<>(blockEntity, blockEntityTicker, this.coordinateKey); // Plazma - Optimize tickingBlockEntity
+     }
+ 
+     @FunctionalInterface
+@@ -1049,8 +1051,15 @@ public class LevelChunk extends ChunkAccess implements ca.spottedleaf.moonrise.p
+             return this.ticker.getType();
+         }
+ 
++        @Override // Plazma - minor code improvement
+         public String toString() {
+-            return String.valueOf(this.ticker) + " <wrapped>";
++            return this.ticker + " <wrapped>"; // Plazma - minor code improvement
++        }
++
++        // Plazma start - Optimize tickingBlockEntity
++        @Override
++        public long getChunkCoordinateKey() {
++            return this.ticker.getChunkCoordinateKey();
+         }
+     }
+ 
+@@ -1059,51 +1068,45 @@ public class LevelChunk extends ChunkAccess implements ca.spottedleaf.moonrise.p
+         private final T blockEntity;
+         private final BlockEntityTicker<T> ticker;
+         private boolean loggedInvalidBlockState;
++        private final long chunkCoordinateKey;
+ 
+-        BoundTickingBlockEntity(final BlockEntity tileentity, final BlockEntityTicker blockentityticker) {
+-            this.blockEntity = (T) tileentity; // CraftBukkit - decompile error
+-            this.ticker = blockentityticker;
++        BoundTickingBlockEntity(final T blockEntity, final BlockEntityTicker<T> ticker, final long chunkCoordinateKey) {
++            this.blockEntity = blockEntity;
++            this.ticker = ticker;
++            this.chunkCoordinateKey = chunkCoordinateKey;
+         }
+ 
+         @Override
+         public void tick() {
+-            if (!this.blockEntity.isRemoved() && this.blockEntity.hasLevel()) {
+-                BlockPos blockposition = this.blockEntity.getBlockPos();
++            if (this.blockEntity.isRemoved() || !this.blockEntity.hasLevel()) return;
+ 
+-                if (LevelChunk.this.isTicking(blockposition)) {
+-                    try {
+-                        //ProfilerFiller gameprofilerfiller = Profiler.get(); // Plazma - Completely remove Mojang profiler
+-
+-                        //gameprofilerfiller.push(this::getType); // Plazma - Completely remove Mojang profiler
+-                        BlockState iblockdata = LevelChunk.this.getBlockState(blockposition);
++            BlockPos pos = this.blockEntity.getBlockPos();
++            if (!LevelChunk.this.isTicking(pos)) return;
+ 
+-                        if (this.blockEntity.getType().isValid(iblockdata)) {
+-                            this.ticker.tick(LevelChunk.this.level, this.blockEntity.getBlockPos(), iblockdata, this.blockEntity);
+-                            this.loggedInvalidBlockState = false;
+-                        // Paper start - Remove the Block Entity if it's invalid
+-                        } else {
+-                            LevelChunk.this.removeBlockEntity(this.getPos());
+-                            if (!this.loggedInvalidBlockState) {
+-                                this.loggedInvalidBlockState = true;
+-                                LevelChunk.LOGGER.warn("Block entity {} @ {} state {} invalid for ticking:", new Object[]{LogUtils.defer(this::getType), LogUtils.defer(this::getPos), iblockdata});
+-                            }
+-                            // Paper end - Remove the Block Entity if it's invalid
+-                        }
++            try {
++                BlockState state = LevelChunk.this.getBlockState(pos);
+ 
+-                        //gameprofilerfiller.pop(); // Plazma - Completely remove Mojang profiler
+-                    } catch (Throwable throwable) {
+-                        if (throwable instanceof ThreadDeath) throw throwable; // Paper
+-                        // Paper start - Prevent block entity and entity crashes
+-                        final String msg = String.format("BlockEntity threw exception at %s:%s,%s,%s", LevelChunk.this.getLevel().getWorld().getName(), this.getPos().getX(), this.getPos().getY(), this.getPos().getZ());
+-                        net.minecraft.server.MinecraftServer.LOGGER.error(msg, throwable);
+-                        net.minecraft.world.level.chunk.LevelChunk.this.level.getCraftServer().getPluginManager().callEvent(new com.destroystokyo.paper.event.server.ServerExceptionEvent(new com.destroystokyo.paper.exception.ServerInternalException(msg, throwable))); // Paper - ServerExceptionEvent
+-                        LevelChunk.this.removeBlockEntity(this.getPos());
+-                        // Paper end - Prevent block entity and entity crashes
+-                        // Spigot start
++                if (this.blockEntity.getType().isValid(state)) {
++                    this.ticker.tick(LevelChunk.this.level, this.blockEntity.getBlockPos(), state, this.blockEntity);
++                    this.loggedInvalidBlockState = false;
++                    // Paper start - Remove the Block Entity if it's invalid
++                } else {
++                    LevelChunk.this.removeBlockEntity(this.getPos());
++                    if (!this.loggedInvalidBlockState) {
++                        this.loggedInvalidBlockState = true;
++                        LevelChunk.LOGGER.warn("Block entity {} @ {} state {} invalid for ticking:", LogUtils.defer(this::getType), LogUtils.defer(this::getPos), state);
+                     }
++                    // Paper end - Remove the Block Entity if it's invalid
+                 }
++            } catch (Throwable throwable) {
++                if (throwable instanceof ThreadDeath) throw throwable; // Paper
++                // Paper start - Prevent block entity and entity crashes
++                final String msg = String.format("BlockEntity threw exception at %s:%s,%s,%s", LevelChunk.this.getLevel().getWorld().getName(), this.getPos().getX(), this.getPos().getY(), this.getPos().getZ());
++                net.minecraft.server.MinecraftServer.LOGGER.error(msg, throwable);
++                LevelChunk.this.level.getCraftServer().getPluginManager().callEvent(new com.destroystokyo.paper.event.server.ServerExceptionEvent(new com.destroystokyo.paper.exception.ServerInternalException(msg, throwable))); // Paper - ServerExceptionEvent
++                LevelChunk.this.removeBlockEntity(this.getPos());
++                // Paper end - Prevent block entity and entity crashes
+             }
+-
+         }
+ 
+         @Override
+@@ -1121,10 +1124,15 @@ public class LevelChunk extends ChunkAccess implements ca.spottedleaf.moonrise.p
+             return BlockEntityType.getKey(this.blockEntity.getType()).toString();
+         }
+ 
++        @Override
+         public String toString() {
+-            String s = this.getType();
++            return "Level ticker for " + this.getType() + "@" + this.getPos();
++        }
+ 
+-            return "Level ticker for " + s + "@" + String.valueOf(this.getPos());
++        @Override
++        public long getChunkCoordinateKey() {
++            return this.chunkCoordinateKey;
+         }
++        // Plazma end - Optimize tickingBlockEntity
+     }
+ }

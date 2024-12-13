@@ -1,0 +1,77 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: AlphaKR93 <dev@alpha93.kr>
+Date: Mon, 6 May 2024 13:40:48 +0900
+Subject: [PATCH] Use Plazma logo instead if server favicon doesn't exist
+
+
+diff --git a/src/main/java/net/minecraft/server/MinecraftServer.java b/src/main/java/net/minecraft/server/MinecraftServer.java
+index 20266ef8f0974f47581e71175de4b01ea1a27bf0..54ef910938efb537a689dd5dbda119455bbf2a0e 100644
+--- a/src/main/java/net/minecraft/server/MinecraftServer.java
++++ b/src/main/java/net/minecraft/server/MinecraftServer.java
+@@ -1627,29 +1627,32 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
+     }
+ 
+     private Optional<ServerStatus.Favicon> loadStatusIcon() {
+-        Optional<Path> optional = Optional.of(this.getFile("server-icon.png")).filter((path) -> {
+-            return Files.isRegularFile(path, new LinkOption[0]);
+-        }).or(() -> {
+-            return this.storageSource.getIconFile().filter((path) -> {
+-                return Files.isRegularFile(path, new LinkOption[0]);
+-            });
+-        });
+-
+-        return optional.flatMap((path) -> {
+-            try {
+-                BufferedImage bufferedimage = ImageIO.read(path.toFile());
+-
+-                Preconditions.checkState(bufferedimage.getWidth() == 64, "Must be 64 pixels wide");
+-                Preconditions.checkState(bufferedimage.getHeight() == 64, "Must be 64 pixels high");
+-                ByteArrayOutputStream bytearrayoutputstream = new ByteArrayOutputStream();
+-
+-                ImageIO.write(bufferedimage, "PNG", bytearrayoutputstream);
+-                return Optional.of(new ServerStatus.Favicon(bytearrayoutputstream.toByteArray()));
+-            } catch (Exception exception) {
+-                MinecraftServer.LOGGER.error("Couldn't load server icon", exception);
+-                return Optional.empty();
+-            }
+-        });
++        // Plazma start - Use Plazma logo instead if server favicon doesn't exist
++        @Nullable File file = Optional.of(this.getFile("server-icon.png").toAbsolutePath()).filter(Files::isRegularFile)
++            .or(() -> this.storageSource.getIconFile().filter(Files::isRegularFile)).map(Path::toFile).orElse(null);
++        try (
++            java.io.InputStream stream = (file != null)
++                ? new java.io.FileInputStream(file)
++                : (
++                    org.plazmamc.plazma.Options.VANILLA_ICO
++                        ? null
++                        : MinecraftServer.class.getResourceAsStream("logo.png")
++                )
++        ) {
++            if (stream == null) return Optional.empty();
++            if (file == null && !org.plazmamc.plazma.Options.VANILLA_ICO)
++                LOGGER.info("No server icon found, using the logo instead.");
++            BufferedImage bufferedimage = ImageIO.read(stream);
++            Preconditions.checkState(bufferedimage.getWidth() == 64, "Must be 64 pixels wide");
++            Preconditions.checkState(bufferedimage.getHeight() == 64, "Must be 64 pixels high");
++            ByteArrayOutputStream bytearrayoutputstream = new ByteArrayOutputStream();
++            ImageIO.write(bufferedimage, "PNG", bytearrayoutputstream);
++            return Optional.of(new ServerStatus.Favicon(bytearrayoutputstream.toByteArray()));
++        } catch (Exception exception) {
++            MinecraftServer.LOGGER.error("Couldn't load server icon", exception);
++            return Optional.empty();
++        }
++        // Plazma end - Use Plazma logo instead if server favicon doesn't exist
+     }
+ 
+     public Optional<Path> getWorldScreenshotFile() {
+diff --git a/src/main/java/org/plazmamc/plazma/Options.java b/src/main/java/org/plazmamc/plazma/Options.java
+index 063b71b3043a69a90130a81686b6a5f1e5f22fd1..e7092aeb5abce5aa5f9bd434adc6acd4e43dec13 100644
+--- a/src/main/java/org/plazmamc/plazma/Options.java
++++ b/src/main/java/org/plazmamc/plazma/Options.java
+@@ -10,5 +10,6 @@ public interface Options {
+     boolean AGGRESSIVE = getBoolean("Plazma.aggressiveOptimize") && !NO_OPTIMIZE;
+     boolean VANILLAIZE = getBoolean("Plazma.vanillaize") && !AGGRESSIVE;
+     boolean USE_VANILLA = getBoolean("Plazma.useVanillaConfiguration") && !AGGRESSIVE && NO_OPTIMIZE;
++    boolean VANILLA_ICO = getBoolean("Plazma.useVanillaFavicon");
+ 
+ }

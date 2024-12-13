@@ -1,0 +1,75 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: AlphaKR93 <dev@alpha93.kr>
+Date: Fri, 13 Dec 2024 11:14:49 +0900
+Subject: [PATCH] Add option to allow shoot fireball
+
+
+diff --git a/src/main/java/net/minecraft/world/item/FireChargeItem.java b/src/main/java/net/minecraft/world/item/FireChargeItem.java
+index 641eb27097740219199ce61ed3e6aa5f42a51b1c..c5973b9182d25d7eb03ba3d91ec7a325cae5fa00 100644
+--- a/src/main/java/net/minecraft/world/item/FireChargeItem.java
++++ b/src/main/java/net/minecraft/world/item/FireChargeItem.java
+@@ -30,6 +30,27 @@ public class FireChargeItem extends Item implements ProjectileItem {
+         super(settings);
+     }
+ 
++    // Plazma start - Option to shoot fireballs
++    @Override
++    public InteractionResult use(Level world, Player user, net.minecraft.world.InteractionHand hand) {
++        if (!world.plazmaConfig().item.allowShootFireballs) {
++            super.use(world, user, hand);
++            return InteractionResult.PASS;
++        }
++
++        ItemStack itemStack = user.getItemInHand(hand);
++        Vec3 vec = user.getDirection().getUnitVec3().multiply(10, 10, 10);
++
++        SmallFireball fireball = new SmallFireball(world, user, vec);
++        fireball.setItem(itemStack);
++        fireball.shootFromRotation(user, user.getXRot(), user.getYRot(), 0.0F, 1.5F, 1.0F);
++        world.addFreshEntity(fireball);
++
++        itemStack.shrink(1);
++        return InteractionResult.SUCCESS;
++    }
++    // Plazma end - Option to shoot fireballs
++
+     @Override
+     public InteractionResult useOn(UseOnContext context) {
+         Level world = context.getLevel();
+diff --git a/src/main/java/net/minecraft/world/item/Items.java b/src/main/java/net/minecraft/world/item/Items.java
+index 580bd63fdbf9555f867362d3c1f39f41fd750089..bfde7c2d386d94913bde5452b903f2f2ee7ac672 100644
+--- a/src/main/java/net/minecraft/world/item/Items.java
++++ b/src/main/java/net/minecraft/world/item/Items.java
+@@ -1698,7 +1698,7 @@ public class Items {
+         ExperienceBottleItem::new,
+         new Item.Properties().rarity(Rarity.UNCOMMON).component(DataComponents.ENCHANTMENT_GLINT_OVERRIDE, true)
+     );
+-    public static final Item FIRE_CHARGE = registerItem("fire_charge", FireChargeItem::new);
++    public static final Item FIRE_CHARGE = registerItem("fire_charge", FireChargeItem::new, new Item.Properties().useCooldown(org.plazmamc.plazma.configurations.GlobalConfiguration.get().item.fireCharge.cooldown()));
+     public static final Item WIND_CHARGE = registerItem("wind_charge", WindChargeItem::new, new Item.Properties().useCooldown(0.5F));
+     public static final Item WRITABLE_BOOK = registerItem(
+         "writable_book", WritableBookItem::new, new Item.Properties().stacksTo(1).component(DataComponents.WRITABLE_BOOK_CONTENT, WritableBookContent.EMPTY)
+diff --git a/src/main/java/org/plazmamc/plazma/configurations/GlobalConfiguration.java b/src/main/java/org/plazmamc/plazma/configurations/GlobalConfiguration.java
+index dc300e14e1bd03b4e855a360f1deda1cd7d6f7f0..2e1cf5f79556250aa22df3ade66393fe6a947659 100644
+--- a/src/main/java/org/plazmamc/plazma/configurations/GlobalConfiguration.java
++++ b/src/main/java/org/plazmamc/plazma/configurations/GlobalConfiguration.java
+@@ -146,7 +146,6 @@ public class GlobalConfiguration extends ConfigurationPart {
+ 
+     }
+ 
+-
+     public ConsoleLogs consoleLogs;
+     public class ConsoleLogs extends ConfigurationPart {
+ 
+diff --git a/src/main/java/org/plazmamc/plazma/configurations/WorldConfigurations.java b/src/main/java/org/plazmamc/plazma/configurations/WorldConfigurations.java
+index c1d4a96cf5be77f4460c54ed19622f527d42ca06..7591e21bfd90edff05639bb6a027c3fe8c1c36c3 100644
+--- a/src/main/java/org/plazmamc/plazma/configurations/WorldConfigurations.java
++++ b/src/main/java/org/plazmamc/plazma/configurations/WorldConfigurations.java
+@@ -86,6 +86,7 @@ public class WorldConfigurations extends ConfigurationPart {
+     public Item item;
+     public class Item extends ConfigurationPart {
+ 
++        public boolean allowShootFireballs = false;
+ 
+     }
+ 

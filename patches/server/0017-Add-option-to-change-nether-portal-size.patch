@@ -1,0 +1,90 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: AlphaKR93 <dev@alpha93.kr>
+Date: Sun, 5 Nov 2023 11:27:51 +0900
+Subject: [PATCH] Add option to change nether portal size
+
+
+diff --git a/src/main/java/net/minecraft/world/level/portal/PortalShape.java b/src/main/java/net/minecraft/world/level/portal/PortalShape.java
+index acdff7b4a00d563739fd301c3633a266875296fa..1266aaf4bfcf53aa16d7b9bd697a0c483d3218a9 100644
+--- a/src/main/java/net/minecraft/world/level/portal/PortalShape.java
++++ b/src/main/java/net/minecraft/world/level/portal/PortalShape.java
+@@ -113,7 +113,7 @@ public class PortalShape {
+     private static int calculateWidth(BlockGetter iblockaccess, BlockPos blockposition, Direction enumdirection, BlockStateListPopulator blocks) { // CraftBukkit
+         int i = PortalShape.getDistanceUntilEdgeAboveFrame(iblockaccess, blockposition, enumdirection, blocks); // CraftBukkit
+ 
+-        return i >= 2 && i <= 21 ? i : 0;
++        return i >= org.plazmamc.plazma.configurations.GlobalConfiguration.get().structure.netherPortal.width.min() && i <= org.plazmamc.plazma.configurations.GlobalConfiguration.get().structure.netherPortal.width.max() ? i : 0; // Plazma - Configurable nether portal size
+     }
+ 
+     private static int getDistanceUntilEdgeAboveFrame(BlockGetter iblockaccess, BlockPos blockposition, Direction enumdirection, BlockStateListPopulator blocks) { // CraftBukkit
+@@ -146,7 +146,7 @@ public class PortalShape {
+         BlockPos.MutableBlockPos blockposition_mutableblockposition = new BlockPos.MutableBlockPos();
+         int j = PortalShape.getDistanceUntilTop(iblockaccess, blockposition, enumdirection, blockposition_mutableblockposition, i, mutableint, blocks); // CraftBukkit
+ 
+-        return j >= 3 && j <= 21 && PortalShape.hasTopFrame(iblockaccess, blockposition, enumdirection, blockposition_mutableblockposition, i, j, blocks) ? j : 0; // CraftBukkit
++        return j >= org.plazmamc.plazma.configurations.GlobalConfiguration.get().structure.netherPortal.height.min() && j <= org.plazmamc.plazma.configurations.GlobalConfiguration.get().structure.netherPortal.height.max() && PortalShape.hasTopFrame(iblockaccess, blockposition, enumdirection, blockposition_mutableblockposition, i, j, blocks) ? j : 0; // Craftbukkit // Plazma - Configurable nether portal size
+     }
+ 
+     private static boolean hasTopFrame(BlockGetter iblockaccess, BlockPos blockposition, Direction enumdirection, BlockPos.MutableBlockPos blockposition_mutableblockposition, int i, int j, BlockStateListPopulator blocks) { // CraftBukkit
+@@ -200,7 +200,7 @@ public class PortalShape {
+     }
+ 
+     public boolean isValid() {
+-        return this.width >= 2 && this.width <= 21 && this.height >= 3 && this.height <= 21;
++        return this.width >= org.plazmamc.plazma.configurations.GlobalConfiguration.get().structure.netherPortal.width.min() && this.width <= org.plazmamc.plazma.configurations.GlobalConfiguration.get().structure.netherPortal.width.max() && this.height >= org.plazmamc.plazma.configurations.GlobalConfiguration.get().structure.netherPortal.height.min() && this.height <= org.plazmamc.plazma.configurations.GlobalConfiguration.get().structure.netherPortal.height.max(); // Plazma - Configurable nether portal size
+     }
+ 
+     // CraftBukkit start - return boolean, add entity
+diff --git a/src/main/java/org/plazmamc/plazma/configurations/GlobalConfiguration.java b/src/main/java/org/plazmamc/plazma/configurations/GlobalConfiguration.java
+index 779cdc523aab3afc529685f7e913bd6bb7336c51..665b77d5cdf81a73d28f93294ee590af746bdfbc 100644
+--- a/src/main/java/org/plazmamc/plazma/configurations/GlobalConfiguration.java
++++ b/src/main/java/org/plazmamc/plazma/configurations/GlobalConfiguration.java
+@@ -60,6 +60,26 @@ public class GlobalConfiguration extends ConfigurationPart {
+     public Structure structure;
+     public class Structure extends ConfigurationPart {
+ 
++        public NetherPortal netherPortal;
++        public class NetherPortal extends ConfigurationPart {
++
++            public Width width;
++            public class Width extends ConfigurationPart {
++
++                int min = 2; public int min() { return Math.max(this.min, 1); }
++                int max = 21; public int max() { return Math.max(this.min, this.max); }
++
++            }
++
++            public Height height;
++            public class Height extends ConfigurationPart {
++
++                int min = 3; public int min() { return Math.max(this.min, 2); }
++                int max = 21; public int max() { return Math.max(this.min, this.max); }
++
++            }
++
++        }
+ 
+     }
+ 
+diff --git a/src/main/java/org/plazmamc/plazma/configurations/WorldConfigurations.java b/src/main/java/org/plazmamc/plazma/configurations/WorldConfigurations.java
+index c222d58520b655b54b8975ec226a4ba948691cd4..c703237d46b114227cf0d5cdff2e033839bc5f57 100644
+--- a/src/main/java/org/plazmamc/plazma/configurations/WorldConfigurations.java
++++ b/src/main/java/org/plazmamc/plazma/configurations/WorldConfigurations.java
+@@ -36,17 +36,6 @@ public class WorldConfigurations extends ConfigurationPart {
+ 
+     }
+ 
+-    public Structure structure;
+-    public class Structure extends ConfigurationPart {
+-
+-        public NetherPortal netherPortal;
+-        public class NetherPortal extends ConfigurationPart {
+-
+-
+-        }
+-
+-    }
+-
+     public Block block;
+     public class Block extends ConfigurationPart {
+         

@@ -5,24 +5,24 @@ Subject: [PATCH] Use Gradle Version Catalogs
 
 
 diff --git a/build.gradle.kts b/build.gradle.kts
-index b0fd6c1804844f09428051952e3ac4e58f8c859c..51a3639e5d1c3fec24af53f1e829532adeb6a1fa 100644
+index b0fd6c1804844f09428051952e3ac4e58f8c859c..2b668f8a5c245d024e03c94b7d8872448f1929cf 100644
 --- a/build.gradle.kts
 +++ b/build.gradle.kts
 @@ -9,11 +9,13 @@ java {
      withJavadocJar()
  }
  
-+/* // Plazma - Use Gradle Versuib Catalogs
++/* // Plazma - Use Gradle Version Catalogs
  val annotationsVersion = "24.1.0"
  val bungeeCordChatVersion = "1.20-R0.2"
  val adventureVersion = "4.17.0"
  val slf4jVersion = "2.0.9"
  val log4jVersion = "2.17.1"
-+ */
++ */ // Plazma - Use Gradle Version Catalogs
  val apiAndDocs: Configuration by configurations.creating {
      attributes {
          attribute(Category.CATEGORY_ATTRIBUTE, objects.named(Category.DOCUMENTATION))
-@@ -39,57 +41,29 @@ abstract class MockitoAgentProvider : CommandLineArgumentProvider {
+@@ -39,58 +41,30 @@ abstract class MockitoAgentProvider : CommandLineArgumentProvider {
  // Paper end - configure mockito agent that is needed in newer java versions
  
  dependencies {
@@ -77,33 +77,35 @@ index b0fd6c1804844f09428051952e3ac4e58f8c859c..51a3639e5d1c3fec24af53f1e829532a
 -    testImplementation("org.hamcrest:hamcrest:2.2")
 -    testImplementation("org.mockito:mockito-core:5.14.1")
 -    testImplementation("org.ow2.asm:asm-tree:9.7.1")
+-    mockitoAgent("org.mockito:mockito-core:5.14.1") { isTransitive = false } // Paper - configure mockito agent that is needed in newer java versions
 +    // Plazma start - Use Gradle Version Catalogs
-+    implementation(common.bundles.asm)
-+
 +    api(api.bundles.api)
-+    api(common.snakeyaml)
-+    api(common.log4j.api)
-+    api(common.maven.provider)
-+    api(api.jsonsimple) { isTransitive = false }
 +    api(api.bungeechat) { exclude("com.google.guava", "guava") }
++    api(common.snakeyaml)
++    api(api.jsonsimple) { isTransitive = false }
 +    apiAndDocs(platform(common.adventure.bom))
 +    apiAndDocs(common.bundles.adventure)
-+
-+    compileOnly(common.bundles.maven)
++    api(common.log4j.api)
++ 
++    implementation(common.bundles.asm)
++ 
++    api(common.mvn)
++    compileOnly(common.bundles.mvn)
++ 
 +    compileOnly(api.annotations)
++    testCompileOnly(api.annotations)
++ 
 +    compileOnlyApi(api.checkerqual)
-+
-+    testImplementation(common.asm.tree)
++    testCompileOnly(api.checkerqual)
++ 
 +    testImplementation(common.commons.lang3)
 +    testImplementation(common.bundles.test)
-+
-+    testCompileOnly(api.annotations)
-+    testCompileOnly(api.checkerqual)
++    mockitoAgent(common.mockito) { isTransitive = false }
 +    // Plazma end
-     mockitoAgent("org.mockito:mockito-core:5.14.1") { isTransitive = false } // Paper - configure mockito agent that is needed in newer java versions
  }
  
-@@ -175,27 +149,24 @@ tasks.withType<Javadoc> {
+ // Paper start
+@@ -175,27 +149,25 @@ tasks.withType<Javadoc> {
      options.use()
      options.isDocFilesSubDirs = true
      options.links(
@@ -114,7 +116,7 @@ index b0fd6c1804844f09428051952e3ac4e58f8c859c..51a3639e5d1c3fec24af53f1e829532a
 -        // Paper start - add missing javadoc links
 -        "https://javadoc.io/doc/org.joml/joml/1.10.5/index.html",
 -        "https://www.javadoc.io/doc/com.google.code.gson/gson/2.10.1",
-         "https://jspecify.dev/docs/api/",
+-        "https://jspecify.dev/docs/api/",
 -        // Paper end
 -        // Paper start
 -        "https://jd.advntr.dev/api/$adventureVersion/",
@@ -129,6 +131,12 @@ index b0fd6c1804844f09428051952e3ac4e58f8c859c..51a3639e5d1c3fec24af53f1e829532a
 -        // Paper end
 -        "https://javadoc.io/doc/org.apache.maven.resolver/maven-resolver-api/1.7.3", // Paper
 +        // Plazma start - Use Gradle Version Catalogs
++        "https://guava.dev/releases/${api.guava.orNull?.version}/api/docs/",
++        "https://javadoc.io/doc/org.yaml/snakeyaml/${common.snakeyaml.orNull?.version}/",
++        "https://javadoc.io/doc/org.jetbrains/annotations/${api.annotations.orNull?.version}/",
++        "https://javadoc.io/doc/org.joml/joml/${api.joml.orNull?.version}/index.html",
++        "https://www.javadoc.io/doc/com.google.code.gson/gson/${api.gson.orNull?.version}",
++        "https://jspecify.dev/docs/api/", //diff on change
 +        "https://jd.advntr.dev/api/${common.adventure.api.orNull?.version}/",
 +        "https://jd.advntr.dev/key/${common.adventure.api.orNull?.version}/",
 +        "https://jd.advntr.dev/text-minimessage/${common.adventure.api.orNull?.version}/",
@@ -136,14 +144,10 @@ index b0fd6c1804844f09428051952e3ac4e58f8c859c..51a3639e5d1c3fec24af53f1e829532a
 +        "https://jd.advntr.dev/text-serializer-legacy/${common.adventure.api.orNull?.version}/",
 +        "https://jd.advntr.dev/text-serializer-plain/${common.adventure.api.orNull?.version}/",
 +        "https://jd.advntr.dev/text-logger-slf4j/${common.adventure.api.orNull?.version}/",
-+        "https://guava.dev/releases/${api.guava.orNull?.version}/api/docs/",
 +        "https://javadoc.io/doc/org.yaml/snakeyaml/${common.snakeyaml.orNull?.version}/",
-+        "https://javadoc.io/doc/org.jetbrains/annotations/${api.annotations.orNull?.version}/",
-+        "https://javadoc.io/doc/org.joml/joml/${api.joml.orNull?.version}/index.html",
-+        "https://www.javadoc.io/doc/com.google.code.gson/gson/${api.gson.orNull?.version}",
-+        "https://javadoc.io/doc/org.slf4j/slf4j-api/${api.slf4j.api.orNull?.version}/",
++        "https://javadoc.io/doc/org.slf4j/slf4j-api/${api.slf4j.orNull?.version}/",
 +        "https://javadoc.io/doc/org.apache.logging.log4j/log4j-api/${common.log4j.api.orNull?.version}/",
-+        "https://javadoc.io/doc/org.apache.maven.resolver/maven-resolver-api/${common.maven.connector.orNull?.version}",
++        "https://javadoc.io/doc/org.apache.maven.resolver/maven-resolver-api/${common.mvn.connector.orNull?.version}",
 +        // Plazma end
      )
      options.tags("apiNote:a:API Note:")

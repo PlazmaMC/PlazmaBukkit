@@ -1,0 +1,77 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: AlphaKR93 <dev@alpha93.kr>
+Date: Mon, 4 Dec 2023 23:01:32 +0900
+Subject: [PATCH] Variable entity wakeup duration
+
+
+diff --git a/src/main/java/org/plazmamc/plazma/configurations/WorldConfigurations.java b/src/main/java/org/plazmamc/plazma/configurations/WorldConfigurations.java
+index 9e408d6c1826d36a935b3e382e8eb0283f3d1580..a371893777a2c2d1de22e7d52f2fd3f55b82d74d 100644
+--- a/src/main/java/org/plazmamc/plazma/configurations/WorldConfigurations.java
++++ b/src/main/java/org/plazmamc/plazma/configurations/WorldConfigurations.java
+@@ -37,6 +37,20 @@ public class WorldConfigurations extends ConfigurationPart {
+ 
+         }
+ 
++        public WakeUpDurationVariance wakeUpDurationVariance;
++        public class WakeUpDurationVariance extends ConfigurationPart {
++
++            private double defaultValue() {
++                return OPTIMIZE ? 0.2 : 0.0;
++            }
++
++            double animal = defaultValue(); public double animal() { return Math.max(this.animal, 0.0); }
++            double monster = defaultValue(); public double monster() { return Math.max(this.monster, 0.0); }
++            double flying = defaultValue(); public double flying() { return Math.max(this.flying, 0.0); }
++            double villager = defaultValue(); public double villager() { return Math.max(this.villager, 0.0); }
++
++        }
++
+     }
+ 
+     public Block block;
+diff --git a/src/main/java/org/spigotmc/ActivationRange.java b/src/main/java/org/spigotmc/ActivationRange.java
+index 9b1a16747aa23b18e4cff986efaac6ce64b6ddb9..6a45bafaa1d7ddc0f80c0945e15c3d6c67f9f2b3 100644
+--- a/src/main/java/org/spigotmc/ActivationRange.java
++++ b/src/main/java/org/spigotmc/ActivationRange.java
+@@ -66,29 +66,37 @@ public class ActivationRange
+         net.minecraft.world.entity.schedule.Activity.PANIC
+     };
+ 
++    // Plazma start - Variable entity wakeup duration
++    private static int getWakeUpDuration(net.minecraft.util.RandomSource random, int duration, double deviation) {
++        if (deviation == 0) return duration;
++        return (int) Math.min(Integer.MAX_VALUE, Math.max(1, Math.round(duration * (1 + deviation * random.nextGaussian()))));
++    }
++    // Plazma end - Variable entity wakeup duration
++
+     private static int checkInactiveWakeup(Entity entity) {
+         Level world = entity.level();
+         SpigotWorldConfig config = world.spigotConfig;
++        org.plazmamc.plazma.configurations.WorldConfigurations plazmaConfig = world.plazmaConfig(); // Plazma - Variable entity wakeup duration
+         long inactiveFor = MinecraftServer.currentTick - entity.activatedTick;
+         if (entity.activationType == ActivationType.VILLAGER) {
+             if (inactiveFor > config.wakeUpInactiveVillagersEvery && world.wakeupInactiveRemainingVillagers > 0) {
+                 world.wakeupInactiveRemainingVillagers--;
+-                return config.wakeUpInactiveVillagersFor;
++                return getWakeUpDuration(world.getRandom(), config.wakeUpInactiveVillagersFor, plazmaConfig.entity.wakeUpDurationVariance.villager()); // Plazma - Variable entity wakeup duration
+             }
+         } else if (entity.activationType == ActivationType.ANIMAL) {
+             if (inactiveFor > config.wakeUpInactiveAnimalsEvery && world.wakeupInactiveRemainingAnimals > 0) {
+                 world.wakeupInactiveRemainingAnimals--;
+-                return config.wakeUpInactiveAnimalsFor;
++                return getWakeUpDuration(world.getRandom(), config.wakeUpInactiveAnimalsFor, plazmaConfig.entity.wakeUpDurationVariance.animal()); // Plazma - Variable entity wakeup duration
+             }
+         } else if (entity.activationType == ActivationType.FLYING_MONSTER) {
+             if (inactiveFor > config.wakeUpInactiveFlyingEvery && world.wakeupInactiveRemainingFlying > 0) {
+                 world.wakeupInactiveRemainingFlying--;
+-                return config.wakeUpInactiveFlyingFor;
++                return getWakeUpDuration(world.getRandom(), config.wakeUpInactiveFlyingFor, plazmaConfig.entity.wakeUpDurationVariance.flying()); // Plazma - Variable entity wakeup duration
+             }
+         } else if (entity.activationType == ActivationType.MONSTER || entity.activationType == ActivationType.RAIDER) {
+             if (inactiveFor > config.wakeUpInactiveMonstersEvery && world.wakeupInactiveRemainingMonsters > 0) {
+                 world.wakeupInactiveRemainingMonsters--;
+-                return config.wakeUpInactiveMonstersFor;
++                return getWakeUpDuration(world.getRandom(), config.wakeUpInactiveMonstersFor, plazmaConfig.entity.wakeUpDurationVariance.monster()); // Plazma - Variable entity wakeup duration
+             }
+         }
+         return -1;

@@ -1,0 +1,304 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: AlphaKR93 <dev@alpha93.kr>
+Date: Sat, 25 Mar 2023 00:52:11 +0900
+Subject: [PATCH] Add missing Purpur configuration options
+
+
+diff --git a/src/main/java/net/minecraft/world/entity/animal/allay/Allay.java b/src/main/java/net/minecraft/world/entity/animal/allay/Allay.java
+index 0a173040c56fea6d8f83998b7c66aa8daaf648f2..16b98cad477d7af2d9534cc189aae43a5adc8d58 100644
+--- a/src/main/java/net/minecraft/world/entity/animal/allay/Allay.java
++++ b/src/main/java/net/minecraft/world/entity/animal/allay/Allay.java
+@@ -160,6 +160,18 @@ public class Allay extends PathfinderMob implements InventoryCarrier, VibrationS
+         this.getAttribute(Attributes.MAX_HEALTH).setBaseValue(this.level().purpurConfig.allayMaxHealth);
+         this.getAttribute(Attributes.SCALE).setBaseValue(this.level().purpurConfig.allayScale);
+     }
++
++    // Plazma start - Add missing purpur configuration options
++    @Override
++    public boolean isSensitiveToWater() {
++        return level().purpurConfig.allayTakeDamageFromWater;
++    }
++
++    @Override
++    public boolean isAlwaysExperienceDropper() {
++        return level().purpurConfig.allayAlwaysDropExp;
++    }
++    // Plazma end - Add missing purpur configuration options
+     // Purpur end
+ 
+     @Override
+diff --git a/src/main/java/net/minecraft/world/entity/animal/camel/Camel.java b/src/main/java/net/minecraft/world/entity/animal/camel/Camel.java
+index d2f0b14a0014802605b601e62d0eebddf06d3737..459a45f82c42b346a66bb1954e155a0970dcc30f 100644
+--- a/src/main/java/net/minecraft/world/entity/animal/camel/Camel.java
++++ b/src/main/java/net/minecraft/world/entity/animal/camel/Camel.java
+@@ -96,6 +96,18 @@ public class Camel extends AbstractHorse {
+     public int getPurpurBreedTime() {
+         return this.level().purpurConfig.camelBreedingTicks;
+     }
++
++    // Plazma start - Add missing purpur configuration options
++    @Override
++    public boolean isSensitiveToWater() {
++        return level().purpurConfig.camelTakeDamageFromWater;
++    }
++
++    @Override
++    public boolean isAlwaysExperienceDropper() {
++        return level().purpurConfig.camelAlwaysDropExp;
++    }
++    // Plazma end - Add missing purpur configuration options
+     // Purpur end
+ 
+     @Override
+diff --git a/src/main/java/net/minecraft/world/entity/animal/frog/Frog.java b/src/main/java/net/minecraft/world/entity/animal/frog/Frog.java
+index 02581f47d1ca58c2b8abffc478adf48343585c8b..bd04af6311ca64d81c8829e731ac39a6486ee789 100644
+--- a/src/main/java/net/minecraft/world/entity/animal/frog/Frog.java
++++ b/src/main/java/net/minecraft/world/entity/animal/frog/Frog.java
+@@ -163,6 +163,23 @@ public class Frog extends Animal implements VariantHolder<Holder<FrogVariant>> {
+     public float getJumpPower() {
+         return (getRider() != null && isControllable()) ? level().purpurConfig.frogRidableJumpHeight * this.getBlockJumpFactor() : super.getJumpPower();
+     }
++
++    // Plazma start - Add missing purpur configuration options
++    @Override
++    public boolean isSensitiveToWater() {
++        return level().purpurConfig.frogTakeDamageFromWater;
++    }
++
++    @Override
++    public boolean isAlwaysExperienceDropper() {
++        return level().purpurConfig.frogAlwaysDropExp;
++    }
++
++    @Override
++    public void initAttributes() {
++        this.getAttribute(Attributes.MAX_HEALTH).setBaseValue(level().purpurConfig.frogMaxHealth);
++    }
++    // Plazma end - Add missing purpur configuration options
+     // Purpur end
+ 
+     public int getPurpurBreedTime() {
+diff --git a/src/main/java/net/minecraft/world/entity/animal/frog/Tadpole.java b/src/main/java/net/minecraft/world/entity/animal/frog/Tadpole.java
+index 7e92e8c4fec36c8838604f17cf366cc80e82b19b..1b0e80ae62b5c5d4e1fcac71b90f83f12fe4878a 100644
+--- a/src/main/java/net/minecraft/world/entity/animal/frog/Tadpole.java
++++ b/src/main/java/net/minecraft/world/entity/animal/frog/Tadpole.java
+@@ -93,6 +93,23 @@ public class Tadpole extends AbstractFish {
+     protected void registerGoals() {
+         this.goalSelector.addGoal(0, new org.purpurmc.purpur.entity.ai.HasRider(this)); // Purpur
+     }
++
++    // Plazma start - Add missing purpur configuration options
++    @Override
++    public boolean isSensitiveToWater() {
++        return level().purpurConfig.tadpoleTakeDamageFromWater;
++    }
++
++    @Override
++    public boolean isAlwaysExperienceDropper() {
++        return level().purpurConfig.tadpoleAlwaysDropExp;
++    }
++
++    @Override
++    public void initAttributes() {
++        this.getAttribute(Attributes.MAX_HEALTH).setBaseValue(level().purpurConfig.tadpoleMaxHealth);
++    }
++    // Plazma end - Add missing purpur configuration options
+     // Purpur end
+ 
+     @Override
+diff --git a/src/main/java/net/minecraft/world/entity/animal/sniffer/Sniffer.java b/src/main/java/net/minecraft/world/entity/animal/sniffer/Sniffer.java
+index 6061cd4fc38fef0895571ab767e495d5755f9fc8..0bc7856065fdc599890f18f5a4e2f6c2b3d94ba7 100644
+--- a/src/main/java/net/minecraft/world/entity/animal/sniffer/Sniffer.java
++++ b/src/main/java/net/minecraft/world/entity/animal/sniffer/Sniffer.java
+@@ -116,6 +116,18 @@ public class Sniffer extends Animal {
+     public int getPurpurBreedTime() {
+         return this.level().purpurConfig.snifferBreedingTicks;
+     }
++
++    // Plazma start - Add missing purpur configuration options
++    @Override
++    public boolean isSensitiveToWater() {
++        return level().purpurConfig.snifferTakeDamageFromWater;
++    }
++
++    @Override
++    public boolean isAlwaysExperienceDropper() {
++        return level().purpurConfig.snifferAlwaysDropExp;
++    }
++    // Plazma end - Add missing purpur configuration options
+     // Purpur end
+ 
+     @Override
+diff --git a/src/main/java/net/minecraft/world/entity/monster/warden/Warden.java b/src/main/java/net/minecraft/world/entity/monster/warden/Warden.java
+index 5a62fe9c4f0cee9e8b4a48564f76afec609335b1..79b090030b716029cc4cfc8bf9d81af0b2202313 100644
+--- a/src/main/java/net/minecraft/world/entity/monster/warden/Warden.java
++++ b/src/main/java/net/minecraft/world/entity/monster/warden/Warden.java
+@@ -151,6 +151,23 @@ public class Warden extends Monster implements VibrationSystem {
+         this.goalSelector.addGoal(0, new org.purpurmc.purpur.entity.ai.HasRider(this)); // Purpur
+         this.targetSelector.addGoal(0, new org.purpurmc.purpur.entity.ai.HasRider(this)); // Purpur
+     }
++
++    // Plazma start - Add missing purpur configuration options
++    @Override
++    public boolean isSensitiveToWater() {
++        return level().purpurConfig.wardenTakeDamageFromWater;
++    }
++
++    @Override
++    public boolean isAlwaysExperienceDropper() {
++        return level().purpurConfig.wardenAlwaysDropExp;
++    }
++
++    @Override
++    public void initAttributes() {
++        this.getAttribute(Attributes.MAX_HEALTH).setBaseValue(level().purpurConfig.wardenMaxHealth);
++    }
++    // Plazma end - Add missing purpur configuration options
+     // Purpur end
+ 
+     @Override
+@@ -305,7 +322,7 @@ public class Warden extends Monster implements VibrationSystem {
+         ProfilerFiller gameprofilerfiller = Profiler.get();
+ 
+         gameprofilerfiller.push("wardenBrain");
+-        if (this.behaviorTick++ % this.activatedPriority == 0) // Pufferfish
++        if ((getRider() == null || !this.isControllable()) && this.behaviorTick++ % this.activatedPriority == 0) // Pufferfish // Plazma - Add missing Purpur configurations
+         this.getBrain().tick(world, this);
+         gameprofilerfiller.pop();
+         super.customServerAiStep(world);
+diff --git a/src/main/java/net/minecraft/world/entity/vehicle/AbstractChestBoat.java b/src/main/java/net/minecraft/world/entity/vehicle/AbstractChestBoat.java
+index 1f4cc08e84a23213bb9786ea09ad77caeec2d336..f888f1dd2e3c228b0a370fe920b63d547bbba571 100644
+--- a/src/main/java/net/minecraft/world/entity/vehicle/AbstractChestBoat.java
++++ b/src/main/java/net/minecraft/world/entity/vehicle/AbstractChestBoat.java
+@@ -46,7 +46,7 @@ public abstract class AbstractChestBoat extends AbstractBoat implements HasCusto
+ 
+     public AbstractChestBoat(EntityType<? extends AbstractChestBoat> type, Level world, Supplier<Item> itemSupplier) {
+         super(type, world, itemSupplier);
+-        this.itemStacks = NonNullList.withSize(27, ItemStack.EMPTY);
++        this.itemStacks = NonNullList.withSize(org.purpurmc.purpur.PurpurConfig.chestBoatRows * 9, ItemStack.EMPTY); // Plazma - Add missing purpur configuration options
+     }
+ 
+     @Override
+@@ -142,7 +142,7 @@ public abstract class AbstractChestBoat extends AbstractBoat implements HasCusto
+ 
+     @Override
+     public int getContainerSize() {
+-        return 27;
++        return org.purpurmc.purpur.PurpurConfig.chestBoatRows * 9; // Plazma - Add missing purpur configuration options
+     }
+ 
+     @Override
+diff --git a/src/main/java/org/purpurmc/purpur/PurpurConfig.java b/src/main/java/org/purpurmc/purpur/PurpurConfig.java
+index 097f3c34d244b89e7dd9f8b6f2a3d8fdc67b36dc..3f4c94aada930e55dfe6a2dd6f3bfb51b2276b0d 100644
+--- a/src/main/java/org/purpurmc/purpur/PurpurConfig.java
++++ b/src/main/java/org/purpurmc/purpur/PurpurConfig.java
+@@ -331,6 +331,7 @@ public class PurpurConfig {
+     }
+ 
+     public static int barrelRows = 3;
++    public static int chestBoatRows = 3; // Plazma - Add missing purpur configuration options
+     public static boolean enderChestSixRows = false;
+     public static boolean enderChestPermissionRows = false;
+     public static boolean cryingObsidianValidForPortalFrame = false;
+@@ -373,6 +374,7 @@ public class PurpurConfig {
+             case 1 -> 9;
+             default -> 27;
+         });
++        chestBoatRows = getInt("settings.blocks.chest_boat.rows", chestBoatRows); // Plazma - Add missing purpur configuration options
+         enderChestSixRows = getBoolean("settings.blocks.ender_chest.six-rows", enderChestSixRows);
+         org.bukkit.event.inventory.InventoryType.ENDER_CHEST.setDefaultSize(enderChestSixRows ? 54 : 27);
+         enderChestPermissionRows = getBoolean("settings.blocks.ender_chest.use-permissions-for-rows", enderChestPermissionRows);
+diff --git a/src/main/java/org/purpurmc/purpur/PurpurWorldConfig.java b/src/main/java/org/purpurmc/purpur/PurpurWorldConfig.java
+index e55993e318b7f7292e22c4539bc2fd1447f67fa8..b67b6147e9175041539b01357dd8b1e94cfd6841 100644
+--- a/src/main/java/org/purpurmc/purpur/PurpurWorldConfig.java
++++ b/src/main/java/org/purpurmc/purpur/PurpurWorldConfig.java
+@@ -1135,7 +1135,13 @@ public class PurpurWorldConfig {
+     public boolean allayControllable = true;
+     public double allayMaxHealth = 20.0D;
+     public double allayScale = 1.0D;
++    // Plazma start - Add missing purpur config options
++    public boolean allayTakeDamageFromWater = false;
++    public boolean allayAlwaysDropExp = false;
+     private void allaySettings() {
++        allayTakeDamageFromWater = getBoolean("mobs.allay.take-damage-from-water", allayTakeDamageFromWater);
++        allayAlwaysDropExp = getBoolean("mobs.allay.always-drop-exp", allayAlwaysDropExp);
++    // Plazma end - Add missing purpur configuration options
+         allayRidable = getBoolean("mobs.allay.ridable", allayRidable);
+         allayRidableInWater = getBoolean("mobs.allay.ridable-in-water", allayRidableInWater);
+         allayControllable = getBoolean("mobs.allay.controllable", allayControllable);
+@@ -1290,7 +1296,13 @@ public class PurpurWorldConfig {
+     public double camelMovementSpeedMin = 0.09D;
+     public double camelMovementSpeedMax = 0.09D;
+     public int camelBreedingTicks = 6000;
++    // Plazma start - Add missing purpur config options
++    public boolean camelTakeDamageFromWater = false;
++    public boolean camelAlwaysDropExp = false;
+     private void camelSettings() {
++        camelTakeDamageFromWater = getBoolean("mobs.camel.takes-damage-from-water", camelTakeDamageFromWater);
++        camelAlwaysDropExp = getBoolean("mobs.camel.always-drop-exp", camelAlwaysDropExp);
++    // Plazma end - Add missing purpur configuration options
+         camelRidableInWater = getBoolean("mobs.camel.ridable-in-water", camelRidableInWater);
+         camelMaxHealthMin = getDouble("mobs.camel.attributes.max_health.min", camelMaxHealthMin);
+         camelMaxHealthMax = getDouble("mobs.camel.attributes.max_health.max", camelMaxHealthMax);
+@@ -1755,7 +1767,15 @@ public class PurpurWorldConfig {
+     public boolean frogControllable = true;
+     public float frogRidableJumpHeight = 0.65F;
+     public int frogBreedingTicks = 6000;
++    // Plazma start - Add missing purpur config options
++    public double frogMaxHealth = 10.0D;
++    public boolean frogTakeDamageFromWater = false;
++    public boolean frogAlwaysDropExp = false;
+     private void frogSettings() {
++        frogMaxHealth = getDouble("mobs.frog.attributes.max_health", frogMaxHealth);
++        frogTakeDamageFromWater = getBoolean("mobs.frog.takes-damage-from-water", frogTakeDamageFromWater);
++        frogAlwaysDropExp = getBoolean("mobs.frog.always-drop-exp", frogAlwaysDropExp);
++    // Plazma end - Add missing purpur configuration options
+         frogRidable = getBoolean("mobs.frog.ridable", frogRidable);
+         frogRidableInWater = getBoolean("mobs.frog.ridable-in-water", frogRidableInWater);
+         frogControllable = getBoolean("mobs.frog.controllable", frogControllable);
+@@ -2767,7 +2787,13 @@ public class PurpurWorldConfig {
+     public double snifferMaxHealth = 14.0D;
+     public double snifferScale = 1.0D;
+     public int snifferBreedingTicks = 6000;
++    // Plazma start - Add missing purpur config options
++    public boolean snifferTakeDamageFromWater = false;
++    public boolean snifferAlwaysDropExp = false;
+     private void snifferSettings() {
++        snifferTakeDamageFromWater = getBoolean("mobs.sniffer.takes-damage-from-water", snifferTakeDamageFromWater);
++        snifferAlwaysDropExp = getBoolean("mobs.sniffer.always-drop-exp", snifferAlwaysDropExp);
++    // Plazma end - Add missing purpur configuration options
+         snifferRidable = getBoolean("mobs.sniffer.ridable", snifferRidable);
+         snifferRidableInWater = getBoolean("mobs.sniffer.ridable-in-water", snifferRidableInWater);
+         snifferControllable = getBoolean("mobs.sniffer.controllable", snifferControllable);
+@@ -2875,7 +2901,15 @@ public class PurpurWorldConfig {
+     public boolean tadpoleRidable = false;
+     public boolean tadpoleRidableInWater = true;
+     public boolean tadpoleControllable = true;
++    // Plazma start - Add missing purpur config options
++    public double tadpoleMaxHealth = 10.0D;
++    public boolean tadpoleTakeDamageFromWater = false;
++    public boolean tadpoleAlwaysDropExp = false;
+     private void tadpoleSettings() {
++        tadpoleMaxHealth = getDouble("mobs.tadpole.attributes.max_health", tadpoleMaxHealth);
++        tadpoleTakeDamageFromWater = getBoolean("mobs.tadpole.takes-damage-from-water", tadpoleTakeDamageFromWater);
++        tadpoleAlwaysDropExp = getBoolean("mobs.tadpole.always-drop-exp", tadpoleAlwaysDropExp);
++    // Plazma end - Add missing purpur configuration options
+         tadpoleRidable = getBoolean("mobs.tadpole.ridable", tadpoleRidable);
+         tadpoleRidableInWater = getBoolean("mobs.tadpole.ridable-in-water", tadpoleRidableInWater);
+         tadpoleControllable = getBoolean("mobs.tadpole.controllable", tadpoleControllable);
+@@ -3107,7 +3141,15 @@ public class PurpurWorldConfig {
+     public boolean wardenRidable = false;
+     public boolean wardenRidableInWater = true;
+     public boolean wardenControllable = true;
++    // Plazma start - Add missing purpur config options
++    public double wardenMaxHealth = 500.0D;
++    public boolean wardenTakeDamageFromWater = false;
++    public boolean wardenAlwaysDropExp = false;
+     private void wardenSettings() {
++        wardenMaxHealth = getDouble("mobs.warden.attributes.max_health", wardenMaxHealth);
++        wardenTakeDamageFromWater = getBoolean("mobs.warden.takes-damage-from-water", wardenTakeDamageFromWater);
++        wardenAlwaysDropExp = getBoolean("mobs.warden.always-drop-exp", wardenAlwaysDropExp);
++    // Plazma end - Add missing purpur configuration options
+         wardenRidable = getBoolean("mobs.warden.ridable", wardenRidable);
+         wardenRidableInWater = getBoolean("mobs.warden.ridable-in-water", wardenRidableInWater);
+         wardenControllable = getBoolean("mobs.warden.controllable", wardenControllable);

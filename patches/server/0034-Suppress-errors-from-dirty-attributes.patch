@@ -1,0 +1,41 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: AlphaKR93 <dev@alpha93.kr>
+Date: Fri, 25 Oct 2024 19:26:15 +0900
+Subject: [PATCH] Suppress errors from dirty attributes
+
+
+diff --git a/src/main/java/net/minecraft/world/entity/LivingEntity.java b/src/main/java/net/minecraft/world/entity/LivingEntity.java
+index f2753cf51634479e501c1a3e7931d6d9882bc801..02288d8f3521756770351c02f623f9db02efd40c 100644
+--- a/src/main/java/net/minecraft/world/entity/LivingEntity.java
++++ b/src/main/java/net/minecraft/world/entity/LivingEntity.java
+@@ -1390,7 +1390,8 @@ public abstract class LivingEntity extends Entity implements Attackable {
+     }
+ 
+     private void refreshDirtyAttributes() {
+-        Set<AttributeInstance> set = this.getAttributes().getAttributesToUpdate();
++        Set<AttributeInstance> attr = this.getAttributes().getAttributesToUpdate(); // Plazma - Suppress errors from dirty attributes
++        final Set<AttributeInstance> set = level().plazmaConfig().entity.suppressErrorsFromDirtyAttributes ? java.util.Collections.synchronizedSet(attr) : attr; // Plazma - Suppress errors from dirty attributes
+         Iterator iterator = set.iterator();
+ 
+         while (iterator.hasNext()) {
+@@ -1399,7 +1400,7 @@ public abstract class LivingEntity extends Entity implements Attackable {
+             this.onAttributeUpdated(attributemodifiable.getAttribute());
+         }
+ 
+-        set.clear();
++        attr.clear(); // Plazma - Suppress errors from dirty attributes
+     }
+ 
+     protected void onAttributeUpdated(Holder<Attribute> attribute) {
+diff --git a/src/main/java/org/plazmamc/plazma/configurations/WorldConfigurations.java b/src/main/java/org/plazmamc/plazma/configurations/WorldConfigurations.java
+index f21ed3431fd8472c78c15578bbd12214c499ceea..9cfab16b9cdf40ccb709c0af66c406954560c0ef 100644
+--- a/src/main/java/org/plazmamc/plazma/configurations/WorldConfigurations.java
++++ b/src/main/java/org/plazmamc/plazma/configurations/WorldConfigurations.java
+@@ -29,6 +29,7 @@ public class WorldConfigurations extends ConfigurationPart {
+     public class Entity extends ConfigurationPart {
+ 
+         public int sensorTick = 1;
++        public boolean suppressErrorsFromDirtyAttributes = OPTIMIZE;
+ 
+         public Phantom phantom;
+         public class Phantom extends ConfigurationPart {

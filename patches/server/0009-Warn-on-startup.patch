@@ -1,0 +1,40 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: AlphaKR93 <dev@alpha93.kr>
+Date: Fri, 3 May 2024 19:50:32 +0900
+Subject: [PATCH] Warn on startup
+
+
+diff --git a/src/main/java/net/minecraft/server/Main.java b/src/main/java/net/minecraft/server/Main.java
+index 8f77566bef4b992013e3b65068cabe7ee1921951..65fd553887ed9eb9c26e036c8009179a7baf5380 100644
+--- a/src/main/java/net/minecraft/server/Main.java
++++ b/src/main/java/net/minecraft/server/Main.java
+@@ -113,6 +113,18 @@ public class Main {
+             if (io.papermc.paper.ServerBrandConstants.ASCII_LOGO != null)
+                 System.out.println(io.papermc.paper.ServerBrandConstants.ASCII_LOGO);
+             // Plazma end - Fork-friendly Rebranding
++            // Plazma start - Warn on startup
++            if (!org.plazmamc.plazma.Options.NO_WARN) {
++                LOGGER.warn("Warning! " + io.papermc.paper.ServerBrandConstants.BRAND_NAME + " may cause unexpected problems, so be sure to test it thoroughly before using it on a public server.");
++                if (io.papermc.paper.ServerBuildInfo.buildInfo().asString(io.papermc.paper.ServerBuildInfo.StringRepresentation.VERSION_FULL).contains("DEV")) {
++                    LOGGER.error("*********************** CAUTION ***********************");
++                    LOGGER.error("This version is a development version of {}.", io.papermc.paper.ServerBrandConstants.BRAND_NAME);
++                    LOGGER.error("Nobody knows what kind of problem you're going to have, and there's always the possibility of unexpected problems.");
++                    LOGGER.error("Never use this version on a public server, and after you've tested it enough before using it!");
++                    LOGGER.error("*******************************************************");
++                }
++            }
++            // Plazma end
+ 
+             Path path = (Path) optionset.valueOf("pidFile"); // CraftBukkit
+ 
+diff --git a/src/main/java/org/plazmamc/plazma/Options.java b/src/main/java/org/plazmamc/plazma/Options.java
+index ca11bd22a65c8b9f4fffb1832ada8c519ab75b98..5d41bd4d4b86ca0c7c03d3ac6e75b3f1f1abe73b 100644
+--- a/src/main/java/org/plazmamc/plazma/Options.java
++++ b/src/main/java/org/plazmamc/plazma/Options.java
+@@ -6,5 +6,6 @@ import static java.lang.System.getProperty;
+ public interface Options {
+ 
+     boolean NO_OPTIMIZE = getBoolean("Plazma.disableConfigOptimization");
++    boolean NO_WARN = getBoolean("Plazma.iKnowWhatIAmDoing");
+ 
+ }

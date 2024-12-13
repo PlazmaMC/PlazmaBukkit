@@ -1,0 +1,275 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: AlphaKR93 <dev@alpha93.kr>
+Date: Fri, 13 Dec 2024 23:36:36 +0900
+Subject: [PATCH] SparklyPaper - Optimize farm check
+
+
+diff --git a/src/main/java/net/minecraft/world/level/block/CropBlock.java b/src/main/java/net/minecraft/world/level/block/CropBlock.java
+index 33c27909290ff3ab483226cf65b1a1bc2e983cbc..df4bb6a77775fe7aab3f47c13c9755a7374d0761 100644
+--- a/src/main/java/net/minecraft/world/level/block/CropBlock.java
++++ b/src/main/java/net/minecraft/world/level/block/CropBlock.java
+@@ -77,35 +77,52 @@ public class CropBlock extends BushBlock implements BonemealableBlock {
+ 
+     @Override
+     protected void randomTick(BlockState state, ServerLevel world, BlockPos pos, RandomSource random) {
+-        if (world.getRawBrightness(pos, 0) >= 9) {
+-            int i = this.getAge(state);
+-
+-            if (i < this.getMaxAge()) {
+-                float f = CropBlock.getGrowthSpeed(this, world, pos);
+-
+-                // Spigot start
+-                int modifier;
+-                if (this == Blocks.BEETROOTS) {
+-                    modifier = world.spigotConfig.beetrootModifier;
+-                } else if (this == Blocks.CARROTS) {
+-                    modifier = world.spigotConfig.carrotModifier;
+-                } else if (this == Blocks.POTATOES) {
+-                    modifier = world.spigotConfig.potatoModifier;
+-                // Paper start - Fix Spigot growth modifiers
+-                } else if (this == Blocks.TORCHFLOWER_CROP) {
+-                    modifier = world.spigotConfig.torchFlowerModifier;
+-                // Paper end - Fix Spigot growth modifiers
+-                } else {
+-                    modifier = world.spigotConfig.wheatModifier;
+-                }
+-
+-                if (random.nextFloat() < (modifier / (100.0f * (Math.floor((25.0F / f) + 1))))) { // Spigot - SPIGOT-7159: Better modifier resolution
+-                    // Spigot end
+-                    CraftEventFactory.handleBlockGrowEvent(world, pos, this.getStateForAge(i + 1), 2); // CraftBukkit
+-                }
++        // Plazma start - Optimize farm check
++        if (world.getRawBrightness(pos, 0) < 9) return;
++// PLAZMA - REMOVE THIS
++        int age = this.getAge(state);
++        if (age >= this.getMaxAge()) return;
++// PLAZMA - REMOVE THIS
++        // Spigot start
++        int modifier = switch (this) {
++            case BeetrootBlock ignored -> world.spigotConfig.beetrootModifier;
++            case CarrotBlock ignored -> world.spigotConfig.carrotModifier;
++            case PotatoBlock ignored -> world.spigotConfig.potatoModifier;
++            case TorchflowerCropBlock ignored -> world.spigotConfig.torchFlowerModifier;
++            default -> world.spigotConfig.wheatModifier;
++        };
++
++        if (world.plazmaConfig().block.optimizedFarmCheck.enabled) {
++            final BlockPos below = pos.below();
++            final BlockState belowState = world.getBlockState(below);
++
++            boolean isMoist = false;
++            float growthSpeed = world.plazmaConfig().block.optimizedFarmCheck.growthSpeed.base;
++            if (belowState.is(Blocks.FARMLAND) && belowState.getValue(FarmBlock.MOISTURE) > 0) {
++                growthSpeed = world.plazmaConfig().block.optimizedFarmCheck.growthSpeed.moist;
++                isMoist = true;
++            }
++// PLAZMA - REMOVE THIS
++            if (world.plazmaConfig().block.optimizedFarmCheck.skipMiddleAges) {
++                growthSpeed /= getMaxAge();
++                age = getMaxAge() - 1;
++            }
++// PLAZMA - REMOVE THIS
++            if (random.nextFloat() < (modifier / (100.0f * (Math.floor((25.0F / growthSpeed) + 1))))) {
++                if (!CraftEventFactory.handleBlockGrowEvent(world, pos, this.getStateForAge(age + 1), 2)) return;
++                if ((age + 1) != getMaxAge() || !isMoist || FarmBlock.isNearWater(world, below)) return;
++// PLAZMA - REMOVE THIS
++                CraftEventFactory.handleMoistureChangeEvent(world, below, state.setValue(FarmBlock.MOISTURE, 0), 2);
+             }
+         }
+-
++// PLAZMA - REMOVE THIS
++        float growthSpeed = CropBlock.getGrowthSpeed(this, world, pos); // Plazma - moved down
++// PLAZMA - REMOVE THIS
++        if (random.nextFloat() < (modifier / (100.0f * (Math.floor((25.0F / growthSpeed) + 1))))) { // Spigot - SPIGOT-7159: Better modifier resolution
++            // Spigot end
++            CraftEventFactory.handleBlockGrowEvent(world, pos, this.getStateForAge(age + 1), 2); // CraftBukkit
++        }
++        // Plazma end - Optimize farm check
+     }
+ 
+     public void growCrops(Level world, BlockPos pos, BlockState state) {
+diff --git a/src/main/java/net/minecraft/world/level/block/FarmBlock.java b/src/main/java/net/minecraft/world/level/block/FarmBlock.java
+index eaac00e2534aca4eab92c7b9f9248e04b35b47df..14f807b6214529d909fd93cc7ce28eb712975f8c 100644
+--- a/src/main/java/net/minecraft/world/level/block/FarmBlock.java
++++ b/src/main/java/net/minecraft/world/level/block/FarmBlock.java
+@@ -92,20 +92,29 @@ public class FarmBlock extends Block {
+ 
+     @Override
+     protected void randomTick(BlockState state, ServerLevel world, BlockPos pos, RandomSource random) {
+-        int i = (Integer) state.getValue(FarmBlock.MOISTURE);
+-        if (i > 0 && world.paperConfig().tickRates.wetFarmland != 1 && (world.paperConfig().tickRates.wetFarmland < 1 || (net.minecraft.server.MinecraftServer.currentTick + pos.hashCode()) % world.paperConfig().tickRates.wetFarmland != 0)) { return; } // Paper - Configurable random tick rates for blocks
+-        if (i == 0 && world.paperConfig().tickRates.dryFarmland != 1 && (world.paperConfig().tickRates.dryFarmland < 1 || (net.minecraft.server.MinecraftServer.currentTick + pos.hashCode()) % world.paperConfig().tickRates.dryFarmland != 0)) { return; } // Paper - Configurable random tick rates for blocks
+-
+-        if (!FarmBlock.isNearWater(world, pos) && !world.isRainingAt(pos.above())) {
+-            if (i > 0) {
+-                org.bukkit.craftbukkit.event.CraftEventFactory.handleMoistureChangeEvent(world, pos, (BlockState) state.setValue(FarmBlock.MOISTURE, i - 1), 2); // CraftBukkit
+-            } else if (!FarmBlock.shouldMaintainFarmland(world, pos)) {
+-                FarmBlock.turnToDirt((Entity) null, state, world, pos);
+-            }
+-        } else if (i < 7) {
+-            org.bukkit.craftbukkit.event.CraftEventFactory.handleMoistureChangeEvent(world, pos, (BlockState) state.setValue(FarmBlock.MOISTURE, 7), 2); // CraftBukkit
+-        }
+-
++        // Plazma start - Optimize farm check
++        int moistLevel = state.getValue(MOISTURE);
++        if (world.plazmaConfig().block.optimizedFarmCheck.enabled) {
++            if (moistLevel != 0) return;
++// PLAZMA - REMOVE THIS
++            if (isNearWater(world, pos))
++                CraftEventFactory.handleMoistureChangeEvent(world, pos, state.setValue(MOISTURE, 7), 2);
++            else
++                turnToDirt(null, state, world, pos);
++            return;
++        } // diff on change
++// PLAZMA - REMOVE THIS
++        if (moistLevel > 0 && world.paperConfig().tickRates.wetFarmland != 1 && (world.paperConfig().tickRates.wetFarmland < 1 || (net.minecraft.server.MinecraftServer.currentTick + pos.hashCode()) % world.paperConfig().tickRates.wetFarmland != 0)) { return; } // Paper - Configurable random tick rates for blocks
++        if (moistLevel == 0 && world.paperConfig().tickRates.dryFarmland != 1 && (world.paperConfig().tickRates.dryFarmland < 1 || (net.minecraft.server.MinecraftServer.currentTick + pos.hashCode()) % world.paperConfig().tickRates.dryFarmland != 0)) { return; } // Paper - Configurable random tick rates for blocks
++// PLAZMA - REMOVE THIS
++        if (!isNearWater(world, pos) && !world.isRainingAt(pos.above())) {
++            if (moistLevel > 0)
++                CraftEventFactory.handleMoistureChangeEvent(world, pos, state.setValue(MOISTURE, moistLevel - 1), 2); // CraftBukkit
++            else if (!shouldMaintainFarmland(world, pos))
++                turnToDirt(null, state, world, pos);
++        } else if (moistLevel < 7)
++            CraftEventFactory.handleMoistureChangeEvent(world, pos, state.setValue(MOISTURE, 7), 2); // CraftBukkit
++        // Plazma end - Optimize farm check
+     }
+ 
+     @Override
+@@ -169,7 +178,7 @@ public class FarmBlock extends Block {
+         return world.getBlockState(pos.above()).is(BlockTags.MAINTAINS_FARMLAND);
+     }
+ 
+-    private static boolean isNearWater(LevelReader world, BlockPos pos) {
++    static boolean isNearWater(LevelReader world, BlockPos pos) { // Plazma - AT (private -> package-private)
+         // Paper start - Perf: remove abstract block iteration
+         int xOff = pos.getX();
+         int yOff = pos.getY();
+diff --git a/src/main/java/net/minecraft/world/level/block/StemBlock.java b/src/main/java/net/minecraft/world/level/block/StemBlock.java
+index 76109aceb24a4719d49c1a55e3621cf2a63bbe16..00b3275305b5f1c2ea2516dcad3c7c62f06db49f 100644
+--- a/src/main/java/net/minecraft/world/level/block/StemBlock.java
++++ b/src/main/java/net/minecraft/world/level/block/StemBlock.java
+@@ -72,38 +72,66 @@ public class StemBlock extends BushBlock implements BonemealableBlock {
+ 
+     @Override
+     protected void randomTick(BlockState state, ServerLevel world, BlockPos pos, RandomSource random) {
+-        if (world.getRawBrightness(pos, 0) >= 9) {
+-            float f = CropBlock.getGrowthSpeed(this, world, pos);
+-
+-            if (random.nextFloat() < ((this == Blocks.PUMPKIN_STEM ? world.spigotConfig.pumpkinModifier : world.spigotConfig.melonModifier) / (100.0f * (Math.floor((25.0F / f) + 1))))) { // Spigot - SPIGOT-7159: Better modifier resolution
+-                int i = (Integer) state.getValue(StemBlock.AGE);
+-
+-                if (i < 7) {
+-                    state = (BlockState) state.setValue(StemBlock.AGE, i + 1);
+-                    CraftEventFactory.handleBlockGrowEvent(world, pos, state, 2); // CraftBukkit
+-                } else {
+-                    Direction enumdirection = Direction.Plane.HORIZONTAL.getRandomDirection(random);
+-                    BlockPos blockposition1 = pos.relative(enumdirection);
+-                    BlockState iblockdata1 = world.getBlockState(blockposition1.below());
+-
+-                    if (world.getBlockState(blockposition1).isAir() && (iblockdata1.is(Blocks.FARMLAND) || iblockdata1.is(BlockTags.DIRT))) {
+-                        Registry<Block> iregistry = world.registryAccess().lookupOrThrow(Registries.BLOCK);
+-                        Optional<Block> optional = iregistry.getOptional(this.fruit);
+-                        Optional<Block> optional1 = iregistry.getOptional(this.attachedStem);
+-
+-                        if (optional.isPresent() && optional1.isPresent()) {
+-                            // CraftBukkit start
+-                            if (!CraftEventFactory.handleBlockGrowEvent(world, blockposition1, ((Block) optional.get()).defaultBlockState())) {
+-                                return;
+-                            }
+-                            // CraftBukkit end
+-                            world.setBlockAndUpdate(pos, (BlockState) ((Block) optional1.get()).defaultBlockState().setValue(HorizontalDirectionalBlock.FACING, enumdirection));
+-                        }
+-                    }
+-                }
++        if (world.getRawBrightness(pos, 0) < 9) return;
++// PLAZMA - REMOVE THIS
++        if (world.plazmaConfig().block.optimizedFarmCheck.enabled) {
++            final BlockPos below = pos.below();
++            final BlockState belowState = world.getBlockState(below);
++// PLAZMA - REMOVE THIS
++            boolean isMoist = false;
++            float growthSpeed = world.plazmaConfig().block.optimizedFarmCheck.growthSpeed.base;
++            if (belowState.is(Blocks.FARMLAND) && belowState.getValue(BlockStateProperties.MOISTURE) > 0) {
++                growthSpeed = world.plazmaConfig().block.optimizedFarmCheck.growthSpeed.moist;
++                isMoist = true;
+             }
+-
++// PLAZMA - REMOVE THIS
++            if (random.nextFloat() >= ((this == Blocks.PUMPKIN_STEM ? world.spigotConfig.pumpkinModifier : world.spigotConfig.melonModifier) / (100.0f * (Math.floor((25.0F / growthSpeed) + 1))))) return;
++// PLAZMA - REMOVE THIS
++            int age = state.getValue(StemBlock.AGE);
++            if (age < 7) {
++                CraftEventFactory.handleBlockGrowEvent(world, pos, state.setValue(StemBlock.AGE, age + 1), 2);
++                return;
++            }
++// PLAZMA - REMOVE THIS
++            final Direction direction = Direction.Plane.HORIZONTAL.getRandomDirection(random);
++            final BlockPos blockPos = pos.relative(direction);
++            final BlockState belowState1 = world.getBlockState(blockPos.below());
++            if (!world.getBlockState(blockPos).isAir() || (!belowState1.is(Blocks.FARMLAND) && !belowState1.is(BlockTags.DIRT))) return;
++// PLAZMA - REMOVE THIS
++            final Registry<Block> registry = world.registryAccess().lookupOrThrow(Registries.BLOCK);
++            final Optional<Block> fruit = registry.getOptional(this.fruit);
++            final Optional<Block> stem = registry.getOptional(this.attachedStem);
++            if (fruit.isEmpty() || stem.isEmpty()) return;
++// PLAZMA - REMOVE THIS
++            if (!CraftEventFactory.handleBlockGrowEvent(world, blockPos, fruit.get().defaultBlockState())) return; // CraftBukkit
++            if (isMoist && !FarmBlock.isNearWater(world, blockPos))
++                CraftEventFactory.handleMoistureChangeEvent(world, blockPos, belowState1.setValue(BlockStateProperties.MOISTURE, 0), 2);
++// PLAZMA - REMOVE THIS
++            world.setBlockAndUpdate(pos, stem.get().defaultBlockState().setValue(HorizontalDirectionalBlock.FACING, direction));
++            return;
++        }
++// PLAZMA - REMOVE THIS
++        if (random.nextFloat() >= ((this == Blocks.PUMPKIN_STEM ? world.spigotConfig.pumpkinModifier : world.spigotConfig.melonModifier) / (100.0f * (Math.floor((25.0F / CropBlock.getGrowthSpeed(this, world, pos)) + 1))))) return; // Spigot - SPIGOT-7159: Better modifier resolution
++// PLAZMA - REMOVE THIS
++        final int age = state.getValue(StemBlock.AGE);
++        if (age < 7) {
++            state = state.setValue(StemBlock.AGE, age + 1);
++            CraftEventFactory.handleBlockGrowEvent(world, pos, state, 2); // CraftBukkit
++            return;
+         }
++// PLAZMA - REMOVE THIS
++        final Direction direction = Direction.Plane.HORIZONTAL.getRandomDirection(random);
++        final BlockPos blockPos = pos.relative(direction);
++        final BlockState belowState = world.getBlockState(blockPos.below());
++        if (!world.getBlockState(blockPos).isAir() || (!belowState.is(Blocks.FARMLAND) && !belowState.is(BlockTags.DIRT))) return;
++// PLAZMA - REMOVE THIS
++        final Registry<Block> registry = world.registryAccess().lookupOrThrow(Registries.BLOCK);
++        final Optional<Block> fruit = registry.getOptional(this.fruit);
++        final Optional<Block> stem = registry.getOptional(this.attachedStem);
++        if (fruit.isEmpty() || stem.isEmpty()) return;
++// PLAZMA - REMOVE THIS
++        if (!CraftEventFactory.handleBlockGrowEvent(world, blockPos, fruit.get().defaultBlockState())) return; // CraftBukkit
++        world.setBlockAndUpdate(pos, stem.get().defaultBlockState().setValue(HorizontalDirectionalBlock.FACING, direction));
+     }
+ 
+     @Override
+diff --git a/src/main/java/org/plazmamc/plazma/configurations/WorldConfigurations.java b/src/main/java/org/plazmamc/plazma/configurations/WorldConfigurations.java
+index bab5f682b8aeaa6dfcda7f07499ae297cbcbe23e..f822b544d98602be85bf0c54a6040a5907b1906e 100644
+--- a/src/main/java/org/plazmamc/plazma/configurations/WorldConfigurations.java
++++ b/src/main/java/org/plazmamc/plazma/configurations/WorldConfigurations.java
+@@ -81,6 +81,22 @@ public class WorldConfigurations extends ConfigurationPart {
+ 
+         }
+ 
++        public OptimizedFarmCheck optimizedFarmCheck;
++        public class OptimizedFarmCheck extends ConfigurationPart {
++
++            public boolean enabled = OPTIMIZE;
++            public boolean skipMiddleAges = false;
++
++            public GrowthSpeed growthSpeed;
++            public class GrowthSpeed extends ConfigurationPart {
++
++                public float base = 1.0f;
++                public float moist = 5.0f;
++
++            }
++
++        }
++
+     }
+ 
+     public Item item;

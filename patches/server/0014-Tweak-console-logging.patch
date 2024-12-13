@@ -1,0 +1,91 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: AlphaKR93 <dev@alpha93.kr>
+Date: Sun, 5 Nov 2023 10:40:49 +0900
+Subject: [PATCH] Tweak console logging
+
+
+diff --git a/src/main/java/net/minecraft/server/dedicated/DedicatedServer.java b/src/main/java/net/minecraft/server/dedicated/DedicatedServer.java
+index d4a9b187b01c63342d9b05b5c29bb1d199deed6c..38752c9ba1726e3c38dd758287a920bc476ef88a 100644
+--- a/src/main/java/net/minecraft/server/dedicated/DedicatedServer.java
++++ b/src/main/java/net/minecraft/server/dedicated/DedicatedServer.java
+@@ -194,16 +194,6 @@ public class DedicatedServer extends MinecraftServer implements ServerInterface
+             DedicatedServer.LOGGER.warn("To start the server with more ram, launch it as \"java -Xmx1024M -Xms1024M -jar minecraft_server.jar\"");
+         }
+ 
+-        // Paper start - detect running as root
+-        if (io.papermc.paper.util.ServerEnvironment.userIsRootOrAdmin()) {
+-            DedicatedServer.LOGGER.warn("****************************");
+-            DedicatedServer.LOGGER.warn("YOU ARE RUNNING THIS SERVER AS AN ADMINISTRATIVE OR ROOT USER. THIS IS NOT ADVISED.");
+-            DedicatedServer.LOGGER.warn("YOU ARE OPENING YOURSELF UP TO POTENTIAL RISKS WHEN DOING THIS.");
+-            DedicatedServer.LOGGER.warn("FOR MORE INFORMATION, SEE https://madelinemiller.dev/blog/root-minecraft-server/");
+-            DedicatedServer.LOGGER.warn("****************************");
+-        }
+-        // Paper end - detect running as root
+-
+         DedicatedServer.LOGGER.info("Loading properties");
+         DedicatedServerProperties dedicatedserverproperties = this.settings.getProperties();
+ 
+@@ -235,6 +225,15 @@ public class DedicatedServer extends MinecraftServer implements ServerInterface
+         this.plazmaConfigurations.initializeGlobalConfiguration(this.registryAccess()); // Plazma - Configurable Plazma
+         this.plazmaConfigurations.initializeWorldDefaultsConfiguration(this.registryAccess()); // Plazma - Configurable Plazma
+         // Paper end - initialize global and world-defaults configuration
++        // Paper start - detect running as root // Plazma - Tweak console logging (moved down)
++        if (io.papermc.paper.util.ServerEnvironment.userIsRootOrAdmin()) {
++            DedicatedServer.LOGGER.warn("****************************");
++            DedicatedServer.LOGGER.warn("YOU ARE RUNNING THIS SERVER AS AN ADMINISTRATIVE OR ROOT USER. THIS IS NOT ADVISED.");
++            DedicatedServer.LOGGER.warn("YOU ARE OPENING YOURSELF UP TO POTENTIAL RISKS WHEN DOING THIS.");
++            DedicatedServer.LOGGER.warn("FOR MORE INFORMATION, SEE https://madelinemiller.dev/blog/root-minecraft-server/");
++            DedicatedServer.LOGGER.warn("****************************");
++        }
++        // Paper end - detect running as root
+         this.server.spark.enableEarlyIfRequested(); // Paper - spark
+         // Paper start - fix converting txt to json file; convert old users earlier after PlayerList creation but before file load/save
+         if (this.convertOldUsers()) {
+@@ -335,6 +334,7 @@ public class DedicatedServer extends MinecraftServer implements ServerInterface
+         String proxyFlavor = (io.papermc.paper.configuration.GlobalConfiguration.get().proxies.velocity.enabled) ? "Velocity" : "BungeeCord";
+         String proxyLink = (io.papermc.paper.configuration.GlobalConfiguration.get().proxies.velocity.enabled) ? "https://docs.papermc.io/velocity/security" : "http://www.spigotmc.org/wiki/firewall-guide/";
+         // Paper end - Add Velocity IP Forwarding Support
++        if (org.plazmamc.plazma.configurations.GlobalConfiguration.get().consoleLogs.offlineWarnings && !(io.papermc.paper.configuration.GlobalConfiguration.get().proxies.velocity.enabled && io.papermc.paper.configuration.GlobalConfiguration.get().proxies.velocity.onlineMode)) // Plazma - Tweak console logging
+         if (!this.usesAuthentication()) {
+             DedicatedServer.LOGGER.warn("**** SERVER IS RUNNING IN OFFLINE/INSECURE MODE!");
+             DedicatedServer.LOGGER.warn("The server will make no attempt to authenticate usernames. Beware.");
+@@ -348,7 +348,7 @@ public class DedicatedServer extends MinecraftServer implements ServerInterface
+                 DedicatedServer.LOGGER.warn("While this makes the game possible to play without internet access, it also opens up the ability for hackers to connect with any username they choose.");
+             }
+             // Spigot end
+-            DedicatedServer.LOGGER.warn("To change this, set \"online-mode\" to \"true\" in the server.properties file.");
++            DedicatedServer.LOGGER.warn("To change this, set \"online-mode\" to \"true\" in the server.properties file or set \"console-logs.offline-warnings\" to \"false\" in the config/plazma-global.yml file."); // Plazma - Tweak console logging
+         }
+ 
+ 
+diff --git a/src/main/java/net/minecraft/server/players/PlayerList.java b/src/main/java/net/minecraft/server/players/PlayerList.java
+index 16999fa20c3621e016d1b0fadfb76f2fe03a2a69..8d7d050f12df83931bbb32f1832d7fcbc06317da 100644
+--- a/src/main/java/net/minecraft/server/players/PlayerList.java
++++ b/src/main/java/net/minecraft/server/players/PlayerList.java
+@@ -1426,6 +1426,7 @@ public abstract class PlayerList {
+     }
+ 
+     public boolean verifyChatTrusted(PlayerChatMessage message) { // Paper - private -> public
++        if (!org.plazmamc.plazma.configurations.GlobalConfiguration.get().consoleLogs.notSecurePrefix) return true; // Plazma - Tweak console logging
+         return message.hasSignature() && !message.hasExpiredServer(Instant.now());
+     }
+ 
+diff --git a/src/main/java/org/plazmamc/plazma/configurations/GlobalConfiguration.java b/src/main/java/org/plazmamc/plazma/configurations/GlobalConfiguration.java
+index aff5c68bc715c6ea9b5b808e5a94cbac9a3725ba..779cdc523aab3afc529685f7e913bd6bb7336c51 100644
+--- a/src/main/java/org/plazmamc/plazma/configurations/GlobalConfiguration.java
++++ b/src/main/java/org/plazmamc/plazma/configurations/GlobalConfiguration.java
+@@ -69,4 +69,14 @@ public class GlobalConfiguration extends ConfigurationPart {
+ 
+     }
+ 
++
++    public ConsoleLogs consoleLogs;
++    public class ConsoleLogs extends ConfigurationPart {
++
++        public boolean offlineWarnings = true;
++        public boolean rootUserWarnings = true;
++        public boolean notSecurePrefix = true;
++
++    }
++
+ }

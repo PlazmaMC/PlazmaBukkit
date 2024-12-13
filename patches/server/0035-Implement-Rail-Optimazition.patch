@@ -1,0 +1,373 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: AlphaKR93 <dev@alpha93.kr>
+Date: Sat, 26 Oct 2024 12:33:57 +0900
+Subject: [PATCH] Implement Rail Optimazition
+
+Based on EasterGhost/RailOptimization, Original by FxMorin.
+Copyright (C) 2024 EasterGhost, Licensed under GPL v3.
+
+This program is free software: you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation, either version 3 of the License, or
+(at your option) any later version.
+
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+diff --git a/src/main/java/ca/fxco/railoptimization/RailLogic.java b/src/main/java/ca/fxco/railoptimization/RailLogic.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..6c0a70c8902623991977c19a1c649488c9ad4afa
+--- /dev/null
++++ b/src/main/java/ca/fxco/railoptimization/RailLogic.java
+@@ -0,0 +1,302 @@
++package ca.fxco.railoptimization;
++
++import net.minecraft.core.BlockPos;
++import net.minecraft.core.Direction;
++import net.minecraft.world.level.Level;
++import net.minecraft.world.level.block.Block;
++import net.minecraft.world.level.block.PoweredRailBlock;
++import net.minecraft.world.level.block.state.BlockState;
++import net.minecraft.world.level.block.state.properties.RailShape;
++
++import java.util.HashMap;
++
++import static net.minecraft.world.level.block.PoweredRailBlock.POWERED;
++import static net.minecraft.world.level.block.PoweredRailBlock.SHAPE;
++import static net.minecraft.world.level.redstone.ExperimentalRedstoneUtils.initialOrientation;
++
++public class RailLogic {
++
++    private static final Direction[] EAST_WEST_DIR = new Direction[]{Direction.WEST, Direction.EAST};
++    private static final Direction[] NORTH_SOUTH_DIR = new Direction[]{Direction.SOUTH, Direction.NORTH};
++
++    private static final int UPDATE_FORCE_PLACE = Block.UPDATE_MOVE_BY_PISTON | Block.UPDATE_KNOWN_SHAPE | Block.UPDATE_CLIENTS;
++
++    public static void customUpdateState(PoweredRailBlock self, BlockState state, Level level, BlockPos pos) {
++        boolean shouldBePowered = level.hasNeighborSignal(pos) ||
++            self.findPoweredRailSignal(level, pos, state, true, 0) ||
++            self.findPoweredRailSignal(level, pos, state, false, 0);
++        if (shouldBePowered == state.getValue(POWERED)) return;
++
++        RailShape railShape = state.getValue(SHAPE);
++        if (railShape.isSlope()) {
++            level.setBlock(pos, state.setValue(POWERED, shouldBePowered), 3);
++            level.updateNeighborsAtExceptFromFacing(pos.below(), self, Direction.UP, initialOrientation(level, Direction.DOWN, Direction.UP));
++            level.updateNeighborsAtExceptFromFacing(pos.above(), self, Direction.DOWN, initialOrientation(level, Direction.UP, Direction.DOWN)); //isAscending
++            return;
++        }
++
++        if (shouldBePowered) powerLane(self, level, pos, state, railShape);
++        else dePowerLane(self, level, pos, state, railShape);
++    }
++
++    private static void giveShapeUpdate(Level level, BlockState state, BlockPos pos, BlockPos fromPos, Direction direction) {
++        BlockState oldState = level.getBlockState(pos);
++        Block.updateOrDestroy(
++            oldState,
++            oldState.updateShape(level, level, pos, direction.getOpposite(), fromPos, state, level.getRandom()),
++            level,
++            pos,
++            Block.UPDATE_CLIENTS & -34,
++            0
++        );
++    }
++
++    private static boolean findPoweredRailSignalFaster(PoweredRailBlock self, Level level, BlockPos pos, boolean bl, int distance, RailShape shape, HashMap<BlockPos,Boolean> checkedPos) {
++        BlockState blockState = level.getBlockState(pos);
++        if (checkedPos.containsKey(pos) && checkedPos.get(pos))
++            return level.hasNeighborSignal(pos) || findPoweredRailSignalFaster(self, level, pos, blockState, bl, distance + 1, checkedPos);
++
++        if (!blockState.is(self)) return false;
++
++        RailShape railShape = blockState.getValue(SHAPE);
++        if (shape == RailShape.EAST_WEST && (railShape == RailShape.NORTH_SOUTH || railShape == RailShape.ASCENDING_NORTH || railShape == RailShape.ASCENDING_SOUTH) ||
++            shape == RailShape.NORTH_SOUTH && (railShape == RailShape.EAST_WEST || railShape == RailShape.ASCENDING_EAST || railShape == RailShape.ASCENDING_WEST)) {
++            return false;
++        }
++
++        if (!blockState.getValue(POWERED)) return false;
++
++        return level.hasNeighborSignal(pos) ||
++            findPoweredRailSignalFaster(self, level, pos, blockState, bl, distance + 1, checkedPos);
++    }
++
++    private static boolean findPoweredRailSignalFaster(PoweredRailBlock self, Level level, BlockPos pos, BlockState state, boolean bl, int distance, HashMap<BlockPos, Boolean> checkedPos) {
++        if (distance >= level.purpurConfig.railActivationRange) return false;
++
++        int x = pos.getX();
++        int y = pos.getY();
++        int z = pos.getZ();
++        boolean bl2 = true;
++        RailShape railShape = state.getValue(SHAPE);
++
++        switch (railShape.ordinal()) {
++            case 0 -> {
++                if (bl) ++z;
++                else --z;
++            }
++            case 1 -> {
++                if (bl) --x;
++                else ++x;
++            }
++            case 2 -> {
++                if (bl) {
++                    --x;
++                } else {
++                    ++x;
++                    ++y;
++                    bl2 = false;
++                }
++                railShape = RailShape.EAST_WEST;
++            }
++            case 3 -> {
++                if (bl) {
++                    --x;
++                    ++y;
++                    bl2 = false;
++                } else {
++                    ++x;
++                }
++                railShape = RailShape.EAST_WEST;
++            }
++            case 4 -> {
++                if (bl) {
++                    ++z;
++                } else {
++                    --z;
++                    ++y;
++                    bl2 = false;
++                }
++                railShape = RailShape.NORTH_SOUTH;
++            }
++            case 5 -> {
++                if (bl) {
++                    ++z;
++                    ++y;
++                    bl2 = false;
++                } else {
++                    --z;
++                }
++                railShape = RailShape.NORTH_SOUTH;
++            }
++        }
++        return findPoweredRailSignalFaster(self, level, new BlockPos(x, y, z), bl, distance, railShape, checkedPos) ||
++            (bl2 && findPoweredRailSignalFaster(self, level, new BlockPos(x, y - 1, z), bl, distance, railShape, checkedPos));
++    }
++
++    private static void powerLane(PoweredRailBlock self, Level level, BlockPos pos, BlockState state, RailShape shape) {
++        level.setBlock(pos, state.setValue(POWERED, true), UPDATE_FORCE_PLACE);
++        HashMap<BlockPos,Boolean> checkedPos = new HashMap<>();
++        checkedPos.put(pos, true);
++        int[] count = new int[2];
++        if (shape == RailShape.NORTH_SOUTH) { //Order: +z, -z
++            for (int i = 0; i < NORTH_SOUTH_DIR.length; ++i) {
++                setRailPositionsPower(self, level, pos, checkedPos, count, i, NORTH_SOUTH_DIR[i]);
++            }
++            updateRailsNS(self, level, pos, state, count);
++        } else if (shape == RailShape.EAST_WEST) { //Order: -x, +x
++            for (int i = 0; i < EAST_WEST_DIR.length; ++i) {
++                setRailPositionsPower(self, level, pos, checkedPos, count, i, EAST_WEST_DIR[i]);
++            }
++            updateRailsEW(self, level, pos, state, count);
++        }
++    }
++
++    private static void dePowerLane(PoweredRailBlock self, Level level, BlockPos pos, BlockState state, RailShape shape) {
++        level.setBlock(pos, state.setValue(POWERED, false), UPDATE_FORCE_PLACE);
++        int[] count = new int[2];
++        if (shape == RailShape.NORTH_SOUTH) { //Order: +z, -z
++            for (int i = 0; i < NORTH_SOUTH_DIR.length; ++i) {
++                setRailPositionsDePower(self, level, pos, count, i, NORTH_SOUTH_DIR[i]);
++            }
++            updateRailsNS(self, level, pos, state, count);
++        } else if (shape == RailShape.EAST_WEST) { //Order: -x, +x
++            for (int i = 0; i < EAST_WEST_DIR.length; ++i) {
++                setRailPositionsDePower(self, level, pos, count, i, EAST_WEST_DIR[i]);
++            }
++            updateRailsEW(self, level, pos, state, count);
++        }
++    }
++
++    private static void setRailPositionsPower(PoweredRailBlock self, Level level, BlockPos pos, HashMap<BlockPos, Boolean> checkedPos, int[] count, int i, Direction dir) {
++        for (int z = 1; z < level.purpurConfig.railActivationRange; z++) {
++            BlockPos newPos = pos.relative(dir, z);
++            BlockState state = level.getBlockState(newPos);
++
++            if (checkedPos.containsKey(newPos)) {
++                if (!checkedPos.get(newPos)) break;
++                count[i]++;
++                continue;
++            }
++
++            if (!state.is(self) || state.getValue(POWERED) || !(
++                level.hasNeighborSignal(newPos) ||
++                    findPoweredRailSignalFaster(self, level, newPos, state, true, 0, checkedPos) ||
++                    findPoweredRailSignalFaster(self, level, newPos, state, false, 0, checkedPos)
++            )) {
++                checkedPos.put(newPos,false);
++                break;
++            }
++
++            checkedPos.put(newPos,true);
++            level.setBlock(newPos, state.setValue(POWERED, true), UPDATE_FORCE_PLACE);
++            count[i]++;
++        }
++    }
++
++    private static void setRailPositionsDePower(PoweredRailBlock self, Level level, BlockPos pos, int[] count, int i, Direction dir) {
++        for (int z = 1; z < level.purpurConfig.railActivationRange; z++) {
++            BlockPos newPos = pos.relative(dir, z);
++            BlockState state = level.getBlockState(newPos);
++            if (!state.is(self) || !state.getValue(POWERED) || level.hasNeighborSignal(newPos) ||
++                self.findPoweredRailSignal(level, newPos, state, true, 0) ||
++                self.findPoweredRailSignal(level, newPos, state, false, 0)) break;
++            level.setBlock(newPos, state.setValue(POWERED, false), UPDATE_FORCE_PLACE);
++            count[i]++;
++        }
++    }
++
++    private static void shapeUpdateEnd(PoweredRailBlock self, Level level, BlockPos pos, BlockState state, int endPos, Direction direction, int currentPos, BlockPos blockPos) {
++        if (currentPos != endPos) return;
++
++        BlockPos newPos = pos.relative(direction, currentPos+1);
++        giveShapeUpdate(level, state, newPos, pos, direction);
++
++        BlockState blockState = level.getBlockState(blockPos);
++        if (blockState.is(self) && blockState.getValue(SHAPE).isSlope()) giveShapeUpdate(level, state, newPos.above(), pos, direction);
++    }
++
++    private static void neighborUpdateEnd(PoweredRailBlock self, Level level, BlockPos pos, int endPos, Direction dir, Block block, int currentPos, BlockPos blockPos) {
++        if (currentPos != endPos) return;
++
++        BlockPos newPos = pos.relative(dir, currentPos+1);
++        level.neighborChanged(newPos, block, null); // TODO: Orientation
++
++        BlockState blockState = level.getBlockState(blockPos);
++        if (blockState.is(self) && blockState.getValue(SHAPE).isSlope()) level.neighborChanged(newPos.above(), block, null); // TODO: Orientation
++    }
++
++    private static void updateRailsNeighborEW(PoweredRailBlock self, Level level, BlockPos pos, int c, Block block, Direction dir, int[] count, int countAmt) {
++        BlockPos pos1 = pos.relative(dir, c);
++        if (c == 0 && count[1] == 0) level.neighborChanged(pos1.relative(dir.getOpposite()), block, null); // TODO: Orientation
++        neighborUpdateEnd(self, level, pos, countAmt, dir, block, c, pos1);
++        level.neighborChanged(pos1.below(), block, null); // TODO: Orientation
++        level.neighborChanged(pos1.above(), block, null); // TODO: Orientation
++        level.neighborChanged(pos1.north(), block, null); // TODO: Orientation
++        level.neighborChanged(pos1.south(), block, null); // TODO: Orientation
++        BlockPos pos2 = pos.relative(dir, c).below();
++        level.neighborChanged(pos2.below(), block, null); // TODO: Orientation
++        level.neighborChanged(pos2.north(), block, null); // TODO: Orientation
++        level.neighborChanged(pos2.south(), block, null); // TODO: Orientation
++        if (c == countAmt) level.neighborChanged(pos.relative(dir, c + 1).below(), block, null); // TODO: Orientation
++        if (c == 0 && count[1] == 0) level.neighborChanged(pos1.relative(dir.getOpposite()).below(), block, null); // TODO: Orientation
++    }
++
++    private static void updateRailsSectionEW(PoweredRailBlock self, Level level, BlockPos pos, int c, BlockState mainState, Direction dir, int[] count, int countAmt) {
++        BlockPos blockPos = pos.relative(dir, c);
++        if (c == 0 && count[1] == 0) giveShapeUpdate(level, mainState, blockPos.relative(dir.getOpposite()), pos, dir.getOpposite());
++        shapeUpdateEnd(self, level, pos, mainState, countAmt, dir, c, blockPos);
++        giveShapeUpdate(level, mainState, blockPos.below(), pos, Direction.DOWN);
++        giveShapeUpdate(level, mainState, blockPos.above(), pos, Direction.UP);
++        giveShapeUpdate(level, mainState, blockPos.north(), pos, Direction.NORTH);
++        giveShapeUpdate(level, mainState, blockPos.south(), pos, Direction.SOUTH);
++    }
++
++    private static void updateRailsNeighborNS(PoweredRailBlock self, Level level, BlockPos pos, int c, Block block, Direction dir, int[] count, int countAmt) {
++        BlockPos pos1 = pos.relative(dir,c);
++        level.neighborChanged(pos1.west(), block, null); // TODO: Orientation
++        level.neighborChanged(pos1.east(), block, null); // TODO: Orientation
++        level.neighborChanged(pos1.below(), block, null); // TODO: Orientation
++        level.neighborChanged(pos1.above(), block, null); // TODO: Orientation
++        neighborUpdateEnd(self, level, pos, countAmt, dir, block, c, pos1);
++        if (c == 0 && count[1] == 0) level.neighborChanged(pos1.relative(dir.getOpposite()), block, null); // TODO: Orientation
++        BlockPos pos2 = pos.relative(dir,c).below();
++        level.neighborChanged(pos2.west(), block, null); // TODO: Orientation
++        level.neighborChanged(pos2.east(), block, null); // TODO: Orientation
++        level.neighborChanged(pos2.below(), block, null); // TODO: Orientation
++        if (c == countAmt) level.neighborChanged(pos.relative(dir,c + 1).below(), block, null); // TODO: Orientation
++        if (c == 0 && count[1] == 0) level.neighborChanged(pos1.relative(dir.getOpposite()).below(), block, null); // TODO: Orientation
++    }
++
++    private static void updateRailsSectionNS(PoweredRailBlock self, Level level, BlockPos pos, int c, BlockState state, Direction dir, int[] count, int countAmt) {
++        BlockPos blockPos = pos.relative(dir, c);
++        giveShapeUpdate(level, state, blockPos.west(), pos, Direction.WEST);
++        giveShapeUpdate(level, state, blockPos.east(), pos, Direction.EAST);
++        giveShapeUpdate(level, state, blockPos.below(), pos, Direction.DOWN);
++        giveShapeUpdate(level, state, blockPos.above(), pos, Direction.UP);
++        shapeUpdateEnd(self, level, pos, state, countAmt, dir, c, blockPos);
++        if (c == 0 && count[1] == 0) giveShapeUpdate(level, state, blockPos.relative(dir.getOpposite()), pos, dir.getOpposite());
++    }
++
++    private static void updateRailsEW(PoweredRailBlock self, Level level, BlockPos pos, BlockState state, int[] count) {
++        for (int i = 0; i < EAST_WEST_DIR.length; ++i) {
++            int countAmt = count[i];
++            if (i == 1 && countAmt == 0) continue;
++            Direction dir = EAST_WEST_DIR[i];
++            Block block = state.getBlock();
++            for (int c = countAmt; c >= i; c--) updateRailsNeighborEW(self, level, pos, c, block, dir, count, countAmt);
++            for (int c = countAmt; c >= i; c--) updateRailsSectionEW(self, level, pos, c, state, dir, count, countAmt);
++        }
++    }
++
++    private static void updateRailsNS(PoweredRailBlock self, Level level, BlockPos pos, BlockState state, int[] count) {
++        for (int i = 0; i < NORTH_SOUTH_DIR.length; ++i) {
++            int countAmt = count[i];
++            if (i == 1 && countAmt == 0) continue;
++            Direction dir = NORTH_SOUTH_DIR[i];
++            Block block = state.getBlock();
++            for (int c = countAmt; c >= i; c--) updateRailsNeighborNS(self, level, pos, c, block, dir, count, countAmt);
++            for (int c = countAmt; c >= i; c--) updateRailsSectionNS(self, level, pos, c, state, dir, count, countAmt);
++        }
++    }
++
++}
+diff --git a/src/main/java/net/minecraft/world/level/block/PoweredRailBlock.java b/src/main/java/net/minecraft/world/level/block/PoweredRailBlock.java
+index bd14c08defe8afc5ceca59d16a5b1dbad178f594..99dc44c569b6003b271ce2ea3f80cb194173ff95 100644
+--- a/src/main/java/net/minecraft/world/level/block/PoweredRailBlock.java
++++ b/src/main/java/net/minecraft/world/level/block/PoweredRailBlock.java
+@@ -29,7 +29,7 @@ public class PoweredRailBlock extends BaseRailBlock {
+         this.registerDefaultState((BlockState) ((BlockState) ((BlockState) ((BlockState) this.stateDefinition.any()).setValue(PoweredRailBlock.SHAPE, RailShape.NORTH_SOUTH)).setValue(PoweredRailBlock.POWERED, false)).setValue(PoweredRailBlock.WATERLOGGED, false));
+     }
+ 
+-    protected boolean findPoweredRailSignal(Level world, BlockPos pos, BlockState state, boolean flag, int distance) {
++    public boolean findPoweredRailSignal(Level world, BlockPos pos, BlockState state, boolean flag, int distance) { // Plazma - protected -> public
+         if (distance >= world.purpurConfig.railActivationRange) { // Purpur
+             return false;
+         } else {
+@@ -117,6 +117,12 @@ public class PoweredRailBlock extends BaseRailBlock {
+ 
+     @Override
+     protected void updateState(BlockState state, Level world, BlockPos pos, Block neighbor) {
++        // Plazma start - Optimize powered rail processing
++        if (world.plazmaConfig().block.rail.useFasterSignalSearch) {
++            ca.fxco.railoptimization.RailLogic.customUpdateState(this, state, world, pos);
++            return;
++        }
++        // Plazma end - Optimize powered rail processing
+         boolean flag = (Boolean) state.getValue(PoweredRailBlock.POWERED);
+         boolean flag1 = world.hasNeighborSignal(pos) || this.findPoweredRailSignal(world, pos, state, true, 0) || this.findPoweredRailSignal(world, pos, state, false, 0);
+ 
+diff --git a/src/main/java/org/plazmamc/plazma/configurations/WorldConfigurations.java b/src/main/java/org/plazmamc/plazma/configurations/WorldConfigurations.java
+index 9cfab16b9cdf40ccb709c0af66c406954560c0ef..0e27e4a1f767842d1dcd2ed235a6a45f120bf32e 100644
+--- a/src/main/java/org/plazmamc/plazma/configurations/WorldConfigurations.java
++++ b/src/main/java/org/plazmamc/plazma/configurations/WorldConfigurations.java
+@@ -72,6 +72,13 @@ public class WorldConfigurations extends ConfigurationPart {
+ 
+         }
+ 
++        public Rail rail;
++        public class Rail extends ConfigurationPart {
++
++            public boolean useFasterSignalSearch = OPTIMIZE;
++
++        }
++
+     }
+ 
+     public Item item;

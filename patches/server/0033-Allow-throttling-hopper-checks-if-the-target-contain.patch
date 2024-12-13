@@ -1,0 +1,38 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: AlphaKR93 <dev@alpha93.kr>
+Date: Fri, 25 Oct 2024 19:13:21 +0900
+Subject: [PATCH] Allow throttling hopper checks if the target container is
+ full
+
+Based on SparklyPaper, Copyright (C) 2024 SparklyPower.
+commit: c023b928439b9c71277f27cc9b5bd36ca32624ea
+
+diff --git a/src/main/java/net/minecraft/world/level/block/entity/HopperBlockEntity.java b/src/main/java/net/minecraft/world/level/block/entity/HopperBlockEntity.java
+index 5ebbdb94d9b91c442ff60eb6872f740ebd790fa0..aeeb8af68ea43ae6c93952610918d77b1593ed54 100644
+--- a/src/main/java/net/minecraft/world/level/block/entity/HopperBlockEntity.java
++++ b/src/main/java/net/minecraft/world/level/block/entity/HopperBlockEntity.java
+@@ -441,6 +441,7 @@ public class HopperBlockEntity extends RandomizableContainerBlockEntity implemen
+             Direction enumdirection = blockEntity.facing.getOpposite();
+ 
+             if (HopperBlockEntity.isFullContainer(iinventory, enumdirection)) {
++                if (world.plazmaConfig().block.hopper.fullCooldown != 0) blockEntity.setCooldown(world.plazmaConfig().block.hopper.fullCooldown); // Plazma - Allow throttling hopper checks if the target container is full
+                 return false;
+             } else {
+                 // Paper start - Perf: Optimize Hoppers
+diff --git a/src/main/java/org/plazmamc/plazma/configurations/WorldConfigurations.java b/src/main/java/org/plazmamc/plazma/configurations/WorldConfigurations.java
+index d366e8755ba91c329164c16659f6b07245577fba..f21ed3431fd8472c78c15578bbd12214c499ceea 100644
+--- a/src/main/java/org/plazmamc/plazma/configurations/WorldConfigurations.java
++++ b/src/main/java/org/plazmamc/plazma/configurations/WorldConfigurations.java
+@@ -64,6 +64,12 @@ public class WorldConfigurations extends ConfigurationPart {
+     public Block block;
+     public class Block extends ConfigurationPart {
+         
++        public Hopper hopper;
++        public class Hopper extends ConfigurationPart {
++
++            public int fullCooldown = 0;
++
++        }
+ 
+     }
+ 

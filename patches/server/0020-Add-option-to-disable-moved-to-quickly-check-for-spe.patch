@@ -1,0 +1,37 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: AlphaKR93 <dev@alpha93.kr>
+Date: Sun, 5 Nov 2023 12:16:14 +0900
+Subject: [PATCH] Add option to disable moved to quickly check for specific
+ players
+
+
+diff --git a/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java b/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
+index 9ae16e24013ea5664d4ea6d52ed7dd188404890f..91f161d27a45174b6f3c31440eea46ff81185203 100644
+--- a/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
++++ b/src/main/java/net/minecraft/server/network/ServerGamePacketListenerImpl.java
+@@ -1695,7 +1695,13 @@ public class ServerGamePacketListenerImpl extends ServerCommonPacketListenerImpl
+         }
+     }
+ 
++    // Plazma start - Add option to bypass moved to quickly check
+     private boolean shouldCheckPlayerMovement(boolean elytra) {
++        return (!this.player.getBukkitEntity().hasPermission("plazma.bypass-moved-to-quickly-check") || !(org.plazmamc.plazma.configurations.GlobalConfiguration.get().player.checkSpectatorMovedToQuickly && this.player.isSpectator())) && shouldCheckPlayerMovement0(elytra);
++    }
++
++    private boolean shouldCheckPlayerMovement0(boolean elytra) {
++    // Plazma end - Add option to bypass moved to quickly check
+         if (this.isSingleplayerOwner()) {
+             return false;
+         } else if (this.player.isChangingDimension()) {
+diff --git a/src/main/java/org/plazmamc/plazma/configurations/GlobalConfiguration.java b/src/main/java/org/plazmamc/plazma/configurations/GlobalConfiguration.java
+index 665b77d5cdf81a73d28f93294ee590af746bdfbc..e2aa6b8ae63ed7f5a0882fcaf5a3fadc29f553f1 100644
+--- a/src/main/java/org/plazmamc/plazma/configurations/GlobalConfiguration.java
++++ b/src/main/java/org/plazmamc/plazma/configurations/GlobalConfiguration.java
+@@ -27,6 +27,7 @@ public class GlobalConfiguration extends ConfigurationPart {
+     public Player player;
+     public class Player extends ConfigurationPart {
+ 
++        public boolean checkSpectatorMovedToQuickly = !OPTIMIZE;
+ 
+     }
+ 

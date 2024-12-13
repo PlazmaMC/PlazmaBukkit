@@ -3,65 +3,123 @@
 # run below command in your terminal:
 # source ./initDev
 
-export PROJECT_DIR=$(pwd)
+PROJECT_DIR=$(pwd)
 
-alias api="cd $PROJECT_DIR/*-API"
-alias srv="cd $PROJECT_DIR/*-Server"
+alias cl="clear;"
 
-alias g="./gradlew"
-alias c="clear;"
+alias src="cd $PROJECT_DIR;"
+alias ca="cd $PROJECT_DIR/*-API || exit 1; vs;"
+alias cg="cd $PROJECT_DIR/paper-api-generator/generated || exit 1; vs;"
+alias cs="cd $PROJECT_DIR/*-Server || exit 1; vs;"
 
-alias ap="./gradlew --no-rebuild applyPatches"
-alias aap="./gradlew --no-rebuild applyAPIPatches"
-alias agp="./gradlew --no-rebuild applyGeneratedAPIPatches"
-alias asp="./gradlew --no-rebuild applyServerPatches"
+alias fa="ca __generate_fixup_patch"
+alias fg="cg __generate_fixup_patch"
+alias fs="cs __generate_fixup_patch"
 
-alias rp="./gradlew --no-rebuild rebuildPatches"
-alias rap="./gradlew --no-rebuild rebuildAPIPatches"
-alias rgp="./gradlew --no-rebuild rebuildGeneratedAPIPatches"
-alias rsp="./gradlew --no-rebuild rebuildServerPatches"
+hash gradle 2>&1 && alias gradle="./gradlew"
+alias gr="cd $PROJECT_DIR; gradle"
+alias grc="gr --no-rebuild"
 
-alias run="./gradlew runDevServer"
-alias build="./gradlew build"
-alias reobf="./gradlew createReobfPaperclipJar"
-alias mojmap="./gradlew createMojmapPaperclipJar"
+alias ap="grc applyPatches"
+alias aap="grc applyAPIPatches"
+alias agp="grc applyGeneratedAPIPatches"
+alias asp="grc applyServerPatches"
 
-alias lg="git log --oneline base..HEAD"
-alias rc="git rebase --autosquash -i base"
-alias rcc="git rebase --continue"
+alias aap!="rm -rf $PROJECT_DIR/*-API; aap"
+alias agp!="rm -rf $PROJECT_DIR/paper-api-generator/generated; agp"
+alias asp!="rm -rf $PROJECT_DIR/*-Server; asp"
 
-# generate Fixup patches for Server
-function fs() {
-    cd ./*-Server || exit 1
+alias aapa="ca vpa"
+alias aapc="ca vpc"
+alias aapc="ca vps"
+alias agpa="cg vpa"
+alias agpc="cg vpc"
+alias agpc="cg vps"
+alias aspa="cs vpa"
+alias aspc="cs vpc"
+alias aspc="cs vps"
+
+alias rp="grc rebuildPatches"
+alias rap="grc rebuildAPIPatches"
+alias rgp="grc rebuildGeneratedAPIPatches"
+alias rsp="grc rebuildServerPatches"
+
+alias mk="gr build"
+alias mko="gr createReobfPaperclipJar"
+alias mkm="gr createMojmapPaperclipJar"
+
+
+alias va="git add"
+alias va.="git add ."
+
+alias vl="git log --oneline base..HEAD"
+
+alias vr="git rebase --autosquash base"
+alias vra="git rebase --abort"
+alias vrc="va.; git rebase --continue"
+alias vrs="git rebase --skip"
+
+alias vp="git am --show-current-patch"
+alias vpa="git am --abort"
+alias vpc="git am --continue"
+alias vps="git am --skip"
+
+alias vm="git commit --fixup"
+alias vs="git status"
+
+alias vc="git commit --verbose --no-interactive"
+alias vcn="vc --no-message"
+alias vcm="vc --message"
+
+alias vca="git commit --verbose --no-interactive --all"
+alias vcan="git commit --verbose --no-interactive --all --no-message"
+alias vcam="git commit --verbose --no-interactive --all --message"
+
+alias ve="git commit --verbose --no-interactive --amend"
+alias ven="ve --no-message"
+alias vem="ve --message"
+
+alias vea="git commit --verbose --no-interactive --all --amend"
+alias vean="vea --no-message"
+alias veam="vea --message"
+
+alias as="ca src"
+alias al="ca vl"
+alias ac="ca va.; vcm"
+alias am="ca vm"
+alias ae="ca ve"
+alias aea="ca vea"
+alias aean="ca vean"
+alias aeam="ca veam"
+
+alias gs="cg src"
+alias gl="cg vl"
+alias gc="cg va.; vcm"
+alias gm="cg vm"
+alias ge="cg ve"
+alias gea="cg vea"
+alias gean="cg vean"
+alias geam="cg veam"
+
+alias ss="cs src"
+alias sl="cs vl"
+alias sc="cs va.; vcm"
+alias sm="cs vm"
+alias se="cs ve"
+alias sea="cs vea"
+alias sean="cs vean"
+alias seam="cs veam"
+
+function __generate_fixup_patch() {
     garg="."
     [[ "$1" == "-x" ]] && garg="--amend"
 
     git add .
     git commit "$garg" -m "fixup"
     git format-patch -1
-    mv 0001-fixup.patch ../
+    mv 0001-fixup.patch ../ -f
 
     cd ../
-}
-
-# generate Fixup patches for API
-function fa() {
-    cd ./*-API || exit 1
-    garg="."
-    [[ "$1" == "-x" ]] && garg="--amend"
-
-    git add .
-    git commit "$garg" -m "fixup"
-    git format-patch -1
-    mv 0001-fixup.patch ../
-
-    cd ../
-}
-
-# ReApply Server Patches
-function rasp() {
-    rm -rf ./*-Server
-    ./gradlew applyServerPatches
 }
 
 # Commit Updated Upstream
@@ -70,3 +128,9 @@ function cuu() {
     printf "Updated Upstream ($1)$(/bin/cat compare.txt)" | git commit -F -
 }
 
+git update-index --assume-unchanged ./build-data/dev-imports.txt
+
+if [ ! -L "$PROJECT_DIR/upstream" ]; then
+    grc applyPatches
+    ln -dsf "$PROJECT_DIR/.gradle/caches/paperweight/upstreams/paper" "$PROJECT_DIR/upstream"
+fi
