@@ -5,31 +5,62 @@ Subject: [PATCH] Add option to allow shoot fireball
 
 
 diff --git a/src/main/java/net/minecraft/world/item/FireChargeItem.java b/src/main/java/net/minecraft/world/item/FireChargeItem.java
-index 641eb27097740219199ce61ed3e6aa5f42a51b1c..c5973b9182d25d7eb03ba3d91ec7a325cae5fa00 100644
+index 641eb27097740219199ce61ed3e6aa5f42a51b1c..f51be1746fc649d636bc9e3ae451d18e35a04026 100644
 --- a/src/main/java/net/minecraft/world/item/FireChargeItem.java
 +++ b/src/main/java/net/minecraft/world/item/FireChargeItem.java
-@@ -30,6 +30,27 @@ public class FireChargeItem extends Item implements ProjectileItem {
+@@ -30,6 +30,58 @@ public class FireChargeItem extends Item implements ProjectileItem {
          super(settings);
      }
  
 +    // Plazma start - Option to shoot fireballs
 +    @Override
 +    public InteractionResult use(Level world, Player user, net.minecraft.world.InteractionHand hand) {
-+        if (!world.plazmaConfig().item.allowShootFireballs) {
++        if (!(world instanceof net.minecraft.server.level.ServerLevel level) || !world.plazmaConfig().item.shootableFireCharge.enabled) {
 +            super.use(world, user, hand);
 +            return InteractionResult.PASS;
 +        }
 +
-+        ItemStack itemStack = user.getItemInHand(hand);
 +        Vec3 vec = user.getDirection().getUnitVec3().multiply(10, 10, 10);
++        net.minecraft.world.entity.projectile.AbstractHurtingProjectile fireball = switch(world.plazmaConfig().item.shootableFireCharge.shootType) {
++            case SMALL_FIREBALL -> new SmallFireball(world, user, vec);
++            case LARGE_FIREBALL -> new net.minecraft.world.entity.projectile.LargeFireball(world, user, vec, world.plazmaConfig().item.shootableFireCharge.explosionPower);
++            case DRAGON_FIREBALL -> new net.minecraft.world.entity.projectile.DragonFireball(world, user, vec);
++            case WITHER_SKULL -> new net.minecraft.world.entity.projectile.WitherSkull(world, user, vec);
++        };
 +
-+        SmallFireball fireball = new SmallFireball(world, user, vec);
-+        fireball.setItem(itemStack);
-+        fireball.shootFromRotation(user, user.getXRot(), user.getYRot(), 0.0F, 1.5F, 1.0F);
-+        world.addFreshEntity(fireball);
++        ItemStack itemStack = user.getItemInHand(hand);
++        net.minecraft.world.entity.projectile.Projectile.Delayed<net.minecraft.world.entity.projectile.AbstractHurtingProjectile> delayed;
++        delayed = net.minecraft.world.entity.projectile.Projectile.spawnProjectileDelayed(
++            fireball,
++            level,
++            itemStack,
++            projectile -> {
++                projectile.setPos(user.getX(), user.getEyeY() - 0.10000000149011612D, user.getZ());
++                projectile.shootFromRotation(user, user.getXRot(), user.getYRot(), world.plazmaConfig().item.shootableFireCharge.shootRoll, world.plazmaConfig().item.shootableFireCharge.shootPower, world.plazmaConfig().item.shootableFireCharge.shootOffset);
++                if (!(projectile instanceof net.minecraft.world.entity.projectile.Fireball ball)) return;
++                ball.setItem(itemStack);
++            }
++        );
 +
-+        itemStack.shrink(1);
-+        return InteractionResult.SUCCESS;
++        com.destroystokyo.paper.event.player.PlayerLaunchProjectileEvent event;
++        event = new com.destroystokyo.paper.event.player.PlayerLaunchProjectileEvent(
++            (org.bukkit.entity.Player) user.getBukkitEntity(),
++            org.bukkit.craftbukkit.inventory.CraftItemStack.asCraftMirror(itemStack),
++            (org.bukkit.entity.Projectile) delayed.projectile().getBukkitEntity()
++        );
++
++        if (event.callEvent() && delayed.attemptSpawn(org.bukkit.event.entity.CreatureSpawnEvent.SpawnReason.FIRE_CHARGE)) {
++            user.awardStat(net.minecraft.stats.Stats.ITEM_USED.get(this));
++
++            if (event.shouldConsume()) itemStack.consume(1, user);
++            else if (user instanceof net.minecraft.server.level.ServerPlayer) ((net.minecraft.server.level.ServerPlayer) user).getBukkitEntity().updateInventory();
++
++            world.playSound(null, user.getX(), user.getY(), user.getZ(), SoundEvents.FIRECHARGE_USE, SoundSource.NEUTRAL, 0.5F, 0.4F / (world.getRandom().nextFloat() * 0.4F + 0.8F));
++            return InteractionResult.SUCCESS;
++        }
++
++        if (user instanceof net.minecraft.server.level.ServerPlayer) ((net.minecraft.server.level.ServerPlayer) user).getBukkitEntity().updateInventory();
++        return InteractionResult.FAIL;
 +    }
 +    // Plazma end - Option to shoot fireballs
 +
@@ -50,10 +81,10 @@ index 580bd63fdbf9555f867362d3c1f39f41fd750089..bfde7c2d386d94913bde5452b903f2f2
      public static final Item WRITABLE_BOOK = registerItem(
          "writable_book", WritableBookItem::new, new Item.Properties().stacksTo(1).component(DataComponents.WRITABLE_BOOK_CONTENT, WritableBookContent.EMPTY)
 diff --git a/src/main/java/org/plazmamc/plazma/configurations/GlobalConfiguration.java b/src/main/java/org/plazmamc/plazma/configurations/GlobalConfiguration.java
-index dc300e14e1bd03b4e855a360f1deda1cd7d6f7f0..2e1cf5f79556250aa22df3ade66393fe6a947659 100644
+index dc632fe50e777c019705796602debc3a7f33152d..3c917e2a7fe8e5ff1ac91ddba29c717952a15d57 100644
 --- a/src/main/java/org/plazmamc/plazma/configurations/GlobalConfiguration.java
 +++ b/src/main/java/org/plazmamc/plazma/configurations/GlobalConfiguration.java
-@@ -146,7 +146,6 @@ public class GlobalConfiguration extends ConfigurationPart {
+@@ -156,7 +156,6 @@ public class GlobalConfiguration extends ConfigurationPart {
  
      }
  
@@ -61,15 +92,47 @@ index dc300e14e1bd03b4e855a360f1deda1cd7d6f7f0..2e1cf5f79556250aa22df3ade66393fe
      public ConsoleLogs consoleLogs;
      public class ConsoleLogs extends ConfigurationPart {
  
+diff --git a/src/main/java/org/plazmamc/plazma/configurations/RemovedConfigurations.java b/src/main/java/org/plazmamc/plazma/configurations/RemovedConfigurations.java
+index ac0f038de0ce5cf6df0b730af69d3229c3119eff..ba3331a81002304187318ed32fec2dd31e4c23ee 100644
+--- a/src/main/java/org/plazmamc/plazma/configurations/RemovedConfigurations.java
++++ b/src/main/java/org/plazmamc/plazma/configurations/RemovedConfigurations.java
+@@ -7,7 +7,8 @@ import static org.spongepowered.configurate.NodePath.path;
+ interface RemovedConfigurations {
+ 
+     NodePath[] WORLD_PATHS = {
+-        path("structure", "nether-portal")
++        path("structure", "nether-portal"),
++        path("item", "allow-shoot-fireballs")
+     };
+ 
+     NodePath[] GLOBAL_PATHS = {
 diff --git a/src/main/java/org/plazmamc/plazma/configurations/WorldConfigurations.java b/src/main/java/org/plazmamc/plazma/configurations/WorldConfigurations.java
-index c1d4a96cf5be77f4460c54ed19622f527d42ca06..7591e21bfd90edff05639bb6a027c3fe8c1c36c3 100644
+index c1d4a96cf5be77f4460c54ed19622f527d42ca06..bbb51ccf2016987202811ee893f855da2612dd17 100644
 --- a/src/main/java/org/plazmamc/plazma/configurations/WorldConfigurations.java
 +++ b/src/main/java/org/plazmamc/plazma/configurations/WorldConfigurations.java
-@@ -86,6 +86,7 @@ public class WorldConfigurations extends ConfigurationPart {
+@@ -86,6 +86,25 @@ public class WorldConfigurations extends ConfigurationPart {
      public Item item;
      public class Item extends ConfigurationPart {
  
-+        public boolean allowShootFireballs = false;
++        public ShootableFireCharge shootableFireCharge;
++        public class ShootableFireCharge extends ConfigurationPart {
++
++            public boolean enabled = false;
++            public ShootType shootType = ShootType.SMALL_FIREBALL;
++            public int explosionPower = 1;
++
++            public float shootRoll = 0.0f;
++            public float shootPower = 1.5f;
++            public float shootOffset = 1.0f;
++
++            public enum ShootType {
++                SMALL_FIREBALL,
++                LARGE_FIREBALL,
++                DRAGON_FIREBALL,
++                WITHER_SKULL
++            }
++
++        }
  
      }
  
