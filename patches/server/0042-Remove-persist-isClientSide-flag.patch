@@ -195,6 +195,70 @@ index 571db5f9bf94745a8afe2cd313e593fb15db5e37..43e42d265513feedc54f3780f37427a5
  
      public ChunkAccess getAnyChunkNow(final int chunkX, final int chunkZ) {
          if (this.world == null) {
+diff --git a/src/main/java/net/minecraft/commands/Commands.java b/src/main/java/net/minecraft/commands/Commands.java
+index 8d82425ccbc30b3f4a59767ca72bf37311ddeda0..e137cc2e16a7b1532501bb3bb568236b427d171b 100644
+--- a/src/main/java/net/minecraft/commands/Commands.java
++++ b/src/main/java/net/minecraft/commands/Commands.java
+@@ -203,7 +203,7 @@ public class Commands {
+         SayCommand.register(this.dispatcher);
+         ScheduleCommand.register(this.dispatcher);
+         ScoreboardCommand.register(this.dispatcher, commandRegistryAccess);
+-        SeedCommand.register(this.dispatcher, environment != Commands.CommandSelection.INTEGRATED);
++        SeedCommand.register(this.dispatcher, true); // Plazma - Remove persist 'isClientSide' flag
+         SetBlockCommand.register(this.dispatcher, commandRegistryAccess);
+         SetSpawnCommand.register(this.dispatcher);
+         SetWorldSpawnCommand.register(this.dispatcher);
+@@ -234,12 +234,12 @@ public class Commands {
+             WardenSpawnTrackerCommand.register(this.dispatcher);
+             SpawnArmorTrimsCommand.register(this.dispatcher);
+             ServerPackCommand.register(this.dispatcher);
+-            if (environment.includeDedicated) {
++            //if (environment.includeDedicated) { // Plazma - Remove persist 'isClientSide' flag
+                 DebugConfigCommand.register(this.dispatcher);
+-            }
++            //} // Plazma - Remove persist 'isClientSide' flag
+         }
+ 
+-        if (environment.includeDedicated) {
++        //if (environment.includeDedicated) { // Plazma - Remove persist 'isClientSide' flag
+             BanIpCommands.register(this.dispatcher);
+             BanListCommands.register(this.dispatcher);
+             BanPlayerCommands.register(this.dispatcher);
+@@ -263,11 +263,13 @@ public class Commands {
+             org.purpurmc.purpur.command.CompassCommand.register(this.dispatcher); // Purpur
+             org.purpurmc.purpur.command.RamBarCommand.register(this.dispatcher); // Purpur
+             org.purpurmc.purpur.command.RamCommand.register(this.dispatcher); // Purpur
+-        }
++        //} // Plazma - Remove persist 'isClientSide' flag
+ 
++        /* // Plazma - Remove persist 'isClientSide' flag
+         if (environment.includeIntegrated) {
+             PublishCommand.register(this.dispatcher);
+         }
++         */ // Plazma - Remove persist 'isClientSide' flag
+ 
+         // Paper start - Vanilla command permission fixes
+         for (final CommandNode<CommandSourceStack> node : this.dispatcher.getRoot().getChildren()) {
+@@ -731,18 +733,7 @@ public class Commands {
+         }
+     }
+ 
+-    public static enum CommandSelection {
+-
+-        ALL(true, true), DEDICATED(false, true), INTEGRATED(true, false);
+-
+-        final boolean includeIntegrated;
+-        final boolean includeDedicated;
+-
+-        private CommandSelection(final boolean flag, final boolean flag1) {
+-            this.includeIntegrated = flag;
+-            this.includeDedicated = flag1;
+-        }
+-    }
++    public enum CommandSelection {  ALL, DEDICATED, INTEGRATED } // Plazma - Remove persist 'isClientSide' flag
+ 
+     @FunctionalInterface
+     public interface ParseFunction {
 diff --git a/src/main/java/net/minecraft/core/cauldron/CauldronInteraction.java b/src/main/java/net/minecraft/core/cauldron/CauldronInteraction.java
 index ee2c4c5265d96afe592c5007b0b6ad7649ce5190..2495456fae536d83afd8023f531aeb65ec10bf82 100644
 --- a/src/main/java/net/minecraft/core/cauldron/CauldronInteraction.java
@@ -406,7 +470,7 @@ index 65ed3d77a51b8299517e0c165403b0c5ac413475..5c7dbb218b6a9a7ccb2c9dbab93a7d8b
          return stack;
      }
 diff --git a/src/main/java/net/minecraft/server/MinecraftServer.java b/src/main/java/net/minecraft/server/MinecraftServer.java
-index 6e9766aff9a9f2b578f5b8a6b42e206fb7ad1bc6..ad0e9c8f64e9ef925b3f12ac1570689c9450e21b 100644
+index 6e9766aff9a9f2b578f5b8a6b42e206fb7ad1bc6..421b3c524a2828fdd8b0b95c37bce9b79fc7825d 100644
 --- a/src/main/java/net/minecraft/server/MinecraftServer.java
 +++ b/src/main/java/net/minecraft/server/MinecraftServer.java
 @@ -270,8 +270,8 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
@@ -436,6 +500,15 @@ index 6e9766aff9a9f2b578f5b8a6b42e206fb7ad1bc6..ad0e9c8f64e9ef925b3f12ac1570689c
  
      protected void initializeKeyPair() {
          MinecraftServer.LOGGER.info("Generating keypair");
+@@ -2429,7 +2431,7 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
+             MultiPackResourceManager resourcemanager = new MultiPackResourceManager(PackType.SERVER_DATA, immutablelist);
+             List<Registry.PendingTags<?>> list = TagLoader.loadTagsForExistingRegistries(resourcemanager, this.registries.compositeAccess(), io.papermc.paper.plugin.lifecycle.event.registrar.ReloadableRegistrarEvent.Cause.RELOAD); // Paper - tag lifecycle - add cause
+ 
+-            return ReloadableServerResources.loadResources(resourcemanager, this.registries, list, this.worldData.enabledFeatures(), this.isDedicatedServer() ? Commands.CommandSelection.DEDICATED : Commands.CommandSelection.INTEGRATED, this.getFunctionCompilationLevel(), this.executor, this).whenComplete((datapackresources, throwable) -> {
++            return ReloadableServerResources.loadResources(resourcemanager, this.registries, list, this.worldData.enabledFeatures(), Commands.CommandSelection.DEDICATED, this.getFunctionCompilationLevel(), this.executor, this).whenComplete((datapackresources, throwable) -> { // Plazma - Remove persist 'isClientSide' flag
+                 if (throwable != null) {
+                     resourcemanager.close();
+                 }
 @@ -2687,16 +2689,15 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
      }
  
@@ -612,7 +685,7 @@ index a4421517b8136bb974e197eaa6dd0d83c2fdd0de..3a8b566aa44df367c6edacf371c0b7a2
  
      public void updateSleepingPlayerList() {
 diff --git a/src/main/java/net/minecraft/server/level/ServerPlayer.java b/src/main/java/net/minecraft/server/level/ServerPlayer.java
-index e6001fadc04b63b82e20652bbb16cb1db5cf44bd..94ab672f4576a77a609093eab76b1c5e2abddde2 100644
+index e6001fadc04b63b82e20652bbb16cb1db5cf44bd..ba8ff8f39d3ba39db9c2ce6070cabe33381f4adb 100644
 --- a/src/main/java/net/minecraft/server/level/ServerPlayer.java
 +++ b/src/main/java/net/minecraft/server/level/ServerPlayer.java
 @@ -1014,7 +1014,7 @@ public class ServerPlayer extends net.minecraft.world.entity.player.Player imple
@@ -624,6 +697,15 @@ index e6001fadc04b63b82e20652bbb16cb1db5cf44bd..94ab672f4576a77a609093eab76b1c5e
              this.closeContainer(org.bukkit.event.inventory.InventoryCloseEvent.Reason.CANT_USE); // Paper - Inventory close reason
              this.containerMenu = this.inventoryMenu;
          }
+@@ -1462,7 +1462,7 @@ public class ServerPlayer extends net.minecraft.world.entity.player.Player imple
+                 }
+             }
+             // Purpur end
+-            boolean flag = this.server.isDedicatedServer() && this.isPvpAllowed() && source.is(DamageTypeTags.IS_FALL);
++            boolean flag = this.isPvpAllowed() && source.is(DamageTypeTags.IS_FALL); // Plazma - Remove persist 'isClientSide' flag
+ 
+             if (!flag && this.spawnInvulnerableTime > 0 && !source.is(DamageTypeTags.BYPASSES_INVULNERABILITY)) {
+                 return false;
 diff --git a/src/main/java/net/minecraft/server/level/WorldGenRegion.java b/src/main/java/net/minecraft/server/level/WorldGenRegion.java
 index a8484b9659f175cc20985bf66082616ceb31df4d..abd93a93e6c9367c022259d1ab3895e2764ac702 100644
 --- a/src/main/java/net/minecraft/server/level/WorldGenRegion.java
@@ -896,6 +978,27 @@ index 579f81ed04eeb6373b25e6794d3bf0c403891011..e0b70bac3018dc39e6c8e47171060332
      }
  
      @Nullable
+diff --git a/src/main/java/net/minecraft/util/profiling/jfr/Environment.java b/src/main/java/net/minecraft/util/profiling/jfr/Environment.java
+index 5250e97ccfe3c5bcb98980d46d2257165ad508a6..17953a59188048ad3ab388d9713ada6148a682b6 100644
+--- a/src/main/java/net/minecraft/util/profiling/jfr/Environment.java
++++ b/src/main/java/net/minecraft/util/profiling/jfr/Environment.java
+@@ -3,7 +3,6 @@ package net.minecraft.util.profiling.jfr;
+ import net.minecraft.server.MinecraftServer;
+ 
+ public enum Environment {
+-    CLIENT("client"),
+     SERVER("server");
+ 
+     private final String description;
+@@ -13,7 +12,7 @@ public enum Environment {
+     }
+ 
+     public static Environment from(MinecraftServer server) {
+-        return server.isDedicatedServer() ? SERVER : CLIENT;
++        return SERVER; // Plazma - Remove persist 'isClientSide' flag
+     }
+ 
+     public String getDescription() {
 diff --git a/src/main/java/net/minecraft/world/entity/AgeableMob.java b/src/main/java/net/minecraft/world/entity/AgeableMob.java
 index 119856b22df5bbcd4e5bf5f95645156f774c6168..809b72d0eb69f21d0d71515259e5e2f9d01d6232 100644
 --- a/src/main/java/net/minecraft/world/entity/AgeableMob.java
@@ -1236,6 +1339,28 @@ index 1d50b03246d114c6583815205eeacb7ac8549aec..2ff0dc3823c1b0c4e2c26fbc7196f420
      }
  
      public boolean canSerialize() {
+diff --git a/src/main/java/net/minecraft/world/entity/FlyingMob.java b/src/main/java/net/minecraft/world/entity/FlyingMob.java
+index 255f0c078cf931ee0612358900fa73e6c43a9a66..dc0d2c31b0d6624cb8fe8fbc3b0ed0fb45f335b1 100644
+--- a/src/main/java/net/minecraft/world/entity/FlyingMob.java
++++ b/src/main/java/net/minecraft/world/entity/FlyingMob.java
+@@ -16,7 +16,7 @@ public abstract class FlyingMob extends Mob {
+ 
+     @Override
+     public void travel(Vec3 movementInput) {
+-        if (this.isControlledByLocalInstance()) {
++        //if (this.isControlledByLocalInstance()) { // Plazma - Remove persist 'isClientSide' flag
+             if (this.isInWater()) {
+                 this.moveRelative(0.02F, movementInput);
+                 this.move(MoverType.SELF, this.getDeltaMovement());
+@@ -41,7 +41,7 @@ public abstract class FlyingMob extends Mob {
+                 this.move(MoverType.SELF, this.getDeltaMovement());
+                 this.setDeltaMovement(this.getDeltaMovement().scale((double)f));
+             }
+-        }
++        //} // Plazma - Remove persist 'isClientSide' flag
+     }
+ 
+     @Override
 diff --git a/src/main/java/net/minecraft/world/entity/Interaction.java b/src/main/java/net/minecraft/world/entity/Interaction.java
 index 221d73676fe2fd240a47cf312c1179e049298cac..bc991efa3d1845642df3741e650aa559c3f6edab 100644
 --- a/src/main/java/net/minecraft/world/entity/Interaction.java

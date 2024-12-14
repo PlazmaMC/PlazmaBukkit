@@ -3,49 +3,117 @@ import org.gradle.api.tasks.testing.logging.TestLogEvent
 
 plugins {
     java
-    `maven-publish`
     `kotlin-dsl`
+    `maven-publish`
     `always-up-to-date`
     alias(libs.plugins.shadow) apply false
     alias(libs.plugins.paperweight)
 }
 
 val jdkVersion = property("jdkVersion").toString().toInt()
-val providerRepo = property("providerRepo").toString()
-val brandName = property("brandName").toString()
-
 kotlin.jvmToolchain(jdkVersion)
 
+val paperMcRepo = "https://repo.papermc.io/repository/maven-public/"
 repositories {
     mavenCentral()
-    maven("https://repo.papermc.io/repository/maven-public/") {
+    maven(paperMcRepo) {
+        name = "papermc-repo"
         content { onlyForConfigurations(configurations.paperclip.name) }
+    }
+    maven("https://repo.codemc.io/repository/maven-public/") {
+        name = "codemc-repo"
     }
 }
 
 dependencies {
     remapper(libs.remapper)
-    decompiler(libs.decompiler)
     paperclip(libs.paperclip)
+    decompiler(libs.decompiler)
 }
 
+val brandName: String by project
+val providerRepo: String by project
+paperweight {
+    serverProject = project(":${brandName.lowercase()}-server")
+
+    remapRepo = paperMcRepo
+    decompileRepo = paperMcRepo
+
+    useStandardUpstream("paper") {
+        url = github("PaperMC", "Paper-archive")
+        ref = providers.gradleProperty("paperCommit")
+
+        withStandardPatcher {
+            baseName("Paper")
+
+            apiPatchDir.set(projectDir.resolve("patches/api"))
+            apiOutputDir.set(projectDir.resolve("$brandName-API"))
+
+            serverPatchDir.set(projectDir.resolve("patches/server"))
+            serverOutputDir.set(projectDir.resolve("$brandName-Server"))
+        }
+
+        patchTasks.register("generatedApi") {
+            isBareDirectory = true
+            upstreamDirPath = "paper-api-generator/generated"
+            patchDir = projectDir.resolve("patches/generated-api")
+            outputDir = projectDir.resolve("paper-api-generator/generated")
+        }
+    }
+}
+
+tasks {
+    applyPatches {
+        dependsOn("applyGeneratedApiPatches")
+    }
+
+    rebuildPatches {
+        dependsOn("rebuildGeneratedApiPatches")
+    }
+
+    generateDevelopmentBundle {
+        apiCoordinates.set("${project.group}:${brandName.lowercase()}-api")
+        libraryRepositories.addAll(
+            "https://repo.maven.apache.org/maven2/",
+            "https://maven.pkg.github.com/$providerRepo",
+            "https://papermc.io/repo/repository/maven-public/"
+        )
+    }
+}
+
+publishing.publications.create<MavenPublication>("devBundle") {
+    artifact(tasks.generateDevelopmentBundle) {  artifactId = "dev-bundle" }
+}
+
+val mavenUrl: String? by project
+val mavenUsername: String? by project
+val mavenPassword: String? by project
 allprojects {
     apply(plugin = "java")
     apply(plugin = "maven-publish")
 
     java.toolchain.languageVersion.set(JavaLanguageVersion.of(jdkVersion))
 
-    publishing.repositories.maven("https://maven.pkg.github.com/$providerRepo") {
-        name = "githubPackage"
+    mavenUrl?.let {
+        publishing.repositories.maven(it) {
+            name = "codemc-repo"
 
-        credentials {
-            username = providers.systemProperty("ghName").orElse(providers.gradleProperty("ghName")).getOrElse(System.getenv("GITHUB_NAME"))
-            password = providers.systemProperty("ghToken").orElse(providers.gradleProperty("ghToken")).getOrElse(System.getenv("GITHUB_TOKEN"))
+            credentials {
+                username = mavenUsername
+                password = mavenPassword
+            }
         }
     }
 }
 
 subprojects {
+    repositories {
+        mavenCentral()
+        maven(paperMcRepo)
+        maven("https://jitpack.io")
+        maven("https://repo.codemc.io/repository/maven-public/")
+    }
+
     tasks {
         withType<JavaCompile>().configureEach {
             options.encoding = Charsets.UTF_8.name()
@@ -68,36 +136,6 @@ subprojects {
             }
         }
     }
-
-    repositories {
-        mavenCentral()
-        maven("https://jitpack.io")
-        maven("https://papermc.io/repo/repository/maven-public/")
-    }
-}
-
-paperweight {
-    serverProject = project(":${brandName.lowercase()}-server")
-
-    remapRepo = "https://repo.papermc.io/repository/maven-public/"
-    decompileRepo = "https://repo.papermc.io/repository/maven-public/"
-
-    usePaperUpstream(providers.gradleProperty("paperCommit")) {
-        withPaperPatcher {
-            apiPatchDir.set(projectDir.resolve("patches/api"))
-            apiOutputDir.set(projectDir.resolve("$brandName-API"))
-
-            serverPatchDir.set(projectDir.resolve("patches/server"))
-            serverOutputDir.set(projectDir.resolve("$brandName-Server"))
-        }
-
-        patchTasks.register("generatedApi") {
-            isBareDirectory = true
-            upstreamDirPath = "paper-api-generator/generated"
-            patchDir = projectDir.resolve("patches/generated-api")
-            outputDir = projectDir.resolve("paper-api-generator/generated")
-        }
-    }
 }
 
 val paperRepoVal = property("paperRepo").toString()
@@ -107,7 +145,6 @@ val purpurBranch = property("purpurBranch").toString()
 val pufferfishRepoVal = property("pufferfishRepo").toString()
 val pufferfishBranch = property("pufferfishBranch").toString()
 val isUsePufferfish = property("usePufferfish").toString().toBoolean()
-
 alwaysUpToDate {
 
     paperRepo.set(paperRepoVal)
@@ -122,47 +159,4 @@ alwaysUpToDate {
     pufferfishRef.set(pufferfishBranch)
     usePufferfish.set(isUsePufferfish)
 
-}
-
-tasks {
-    applyPatches {
-        dependsOn("applyGeneratedApiPatches")
-    }
-
-    rebuildPatches {
-        dependsOn("rebuildGeneratedApiPatches")
-    }
-
-    generateDevelopmentBundle {
-        apiCoordinates.set("${project.group}:${brandName.lowercase()}-api")
-        libraryRepositories.addAll(
-                "https://repo.maven.apache.org/maven2/",
-                "https://maven.pkg.github.com/$providerRepo",
-                "https://papermc.io/repo/repository/maven-public/"
-        )
-    }
-
-    clean {
-        doLast {
-            listOf(
-                ".gradle/caches",
-                "$brandName-API",
-                "$brandName-Server",
-                "paper-api-generator",
-                "run",
-
-                // remove dev environment files
-                "0001-fixup.patch",
-                "compare.txt"
-            ).forEach {
-                projectDir.resolve(it).deleteRecursively()
-            }
-        }
-    }
-}
-
-publishing {
-    publications.create<MavenPublication>("devBundle") {
-        artifact(tasks.generateDevelopmentBundle) {  artifactId = "dev-bundle" }
-    }
 }
