@@ -13,16 +13,13 @@ plugins {
 val jdkVersion = property("jdkVersion").toString().toInt()
 kotlin.jvmToolchain(jdkVersion)
 
-val paperMcRepo = "https://repo.papermc.io/repository/maven-public/"
 repositories {
     mavenCentral()
-    maven(paperMcRepo) {
-        name = "papermc-repo"
+    maven("https://repo.papermc.io/repository/maven-public/") { name = "papermc"
         content { onlyForConfigurations(configurations.paperclip.name) }
     }
-    maven("https://repo.codemc.io/repository/maven-public/") {
-        name = "codemc-repo"
-    }
+    maven("https://repo.codemc.io/repository/maven-public/") { name = "codemc" }
+    maven("https://jitpack.io") { name = "jitpack" }
 }
 
 dependencies {
@@ -36,8 +33,8 @@ val providerRepo: String by project
 paperweight {
     serverProject = project(":${brandName.lowercase()}-server")
 
-    remapRepo = paperMcRepo
-    decompileRepo = paperMcRepo
+    remapRepo = "https://repo.papermc.io/repository/maven-public/"
+    decompileRepo = "https://repo.papermc.io/repository/maven-public/"
 
     useStandardUpstream("paper") {
         url = github("PaperMC", "Paper-archive")
@@ -74,9 +71,10 @@ tasks {
     generateDevelopmentBundle {
         apiCoordinates.set("${project.group}:${brandName.lowercase()}-api")
         libraryRepositories.addAll(
-            "https://repo.maven.apache.org/maven2/",
-            "https://maven.pkg.github.com/$providerRepo",
-            "https://papermc.io/repo/repository/maven-public/"
+            "https://repo1.maven.org/maven2/",
+            "https://papermc.io/repo/repository/maven-public/",
+            "https://repo.codemc.io/repository/maven-public/",
+            "https://jitpack.io",
         )
     }
 }
@@ -85,7 +83,6 @@ publishing.publications.create<MavenPublication>("devBundle") {
     artifact(tasks.generateDevelopmentBundle) {  artifactId = "dev-bundle" }
 }
 
-val mavenUrl: String? by project
 val mavenUsername: String? by project
 val mavenPassword: String? by project
 allprojects {
@@ -94,14 +91,21 @@ allprojects {
 
     java.toolchain.languageVersion.set(JavaLanguageVersion.of(jdkVersion))
 
-    mavenUrl?.let {
-        publishing.repositories.maven(it) {
-            name = "codemc-repo"
+    publishing.repositories.maven("https://maven.pkg.github.com/$providerRepo") {
+        name = "github"
 
-            credentials {
-                username = mavenUsername
-                password = mavenPassword
-            }
+        credentials {
+            username = mavenUsername ?: System.getenv("GRADLE_PROPERTY_MAVEN_USERNAME") ?: System.getenv("MAVEN_USERNAME")
+            password = mavenPassword ?: System.getenv("GRADLE_PROPERTY_MAVEN_PASSWORD") ?: System.getenv("MAVEN_PASSWORD")
+        }
+    }
+
+    publishing.repositories.maven("https://repo.codemc.io/repository/PlazmaMC/") {
+        name = "codemc"
+
+        credentials {
+            username = mavenUsername ?: System.getenv("GRADLE_PROPERTY_MAVEN_USERNAME") ?: System.getenv("MAVEN_USERNAME")
+            password = mavenPassword ?: System.getenv("GRADLE_PROPERTY_MAVEN_PASSWORD") ?: System.getenv("MAVEN_PASSWORD")
         }
     }
 }
@@ -109,9 +113,9 @@ allprojects {
 subprojects {
     repositories {
         mavenCentral()
-        maven(paperMcRepo)
-        maven("https://jitpack.io")
-        maven("https://repo.codemc.io/repository/maven-public/")
+        maven("https://repo.papermc.io/repository/maven-public/") { name = "papermc" }
+        maven("https://repo.codemc.io/repository/maven-public/") { name = "codeme" }
+        maven("https://jitpack.io") { name = "jitpack" }
     }
 
     tasks {
