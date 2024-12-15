@@ -95,7 +95,7 @@ allprojects {
         }
     }
 
-    publishing.repositories.maven("https://repo.codemc.io/repository/maven-public/") {
+    publishing.repositories.maven("https://repo.codemc.io/repository/maven-sanpshots/") {
         name = "codemc"
 
         credentials {
