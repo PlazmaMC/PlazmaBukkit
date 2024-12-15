@@ -464,12 +464,12 @@ index 0000000000000000000000000000000000000000..3456f38d381643b0461669b0b5fec6bf
 +
 +}
 diff --git a/src/main/java/net/minecraft/world/entity/ai/behavior/AcquirePoi.java b/src/main/java/net/minecraft/world/entity/ai/behavior/AcquirePoi.java
-index 3d7578605812021bc84b99d4db1672a682d897ad..58feaaed5e301eb402dab24e6f155beb865fa5ee 100644
+index 273ba657926ce72a7c82861e880a82bf7f322a0b..f90a14860e4c9a11a972edc3cea011e1cf67b4eb 100644
 --- a/src/main/java/net/minecraft/world/entity/ai/behavior/AcquirePoi.java
 +++ b/src/main/java/net/minecraft/world/entity/ai/behavior/AcquirePoi.java
-@@ -76,6 +76,35 @@ public class AcquirePoi {
-                                     io.papermc.paper.util.PoiAccess.findNearestPoiPositions(poiManager, poiPredicate, predicate2, entity.blockPosition(), world.purpurConfig.villagerAcquirePoiSearchRadius, world.purpurConfig.villagerAcquirePoiSearchRadius*world.purpurConfig.villagerAcquirePoiSearchRadius, PoiManager.Occupancy.HAS_SPACE, false, 5, poiposes);
-                                     Set<Pair<Holder<PoiType>, BlockPos>> set = new java.util.HashSet<>(poiposes);
+@@ -94,6 +94,35 @@ public class AcquirePoi {
+                                         }
+                                     }
                                      // Paper end - optimise POI access
 +                                    // Plazma start - Process Pathfinding Asynchronously
 +                                    if (org.plazmamc.plazma.configurations.GlobalConfiguration.get().entity.asyncPathProcess.enabled) {
@@ -653,23 +653,23 @@ index 6802e0c4d331c7125114dd86409f6a110465ab82..0b8973765bcaa77e70ac7afe5b6a99ab
                                          if (path != null && path.canReach()) {
                                              BlockPos blockPos = path.getTarget();
 diff --git a/src/main/java/net/minecraft/world/entity/ai/goal/DoorInteractGoal.java b/src/main/java/net/minecraft/world/entity/ai/goal/DoorInteractGoal.java
-index 74aca307b4ebffe4e33c4fca3e07c23ca87622ac..a1c99a611c9b0c99d851393c668fe02c5a31536f 100644
+index 2846790fcd00788cf0284c348161ee1aee415f13..069e27041434c11ae5235ccb0e17544fe4a14e12 100644
 --- a/src/main/java/net/minecraft/world/entity/ai/goal/DoorInteractGoal.java
 +++ b/src/main/java/net/minecraft/world/entity/ai/goal/DoorInteractGoal.java
 @@ -56,7 +56,7 @@ public abstract class DoorInteractGoal extends Goal {
          } else {
              GroundPathNavigation groundPathNavigation = (GroundPathNavigation)this.mob.getNavigation();
              Path path = groundPathNavigation.getPath();
--            if (path != null && !path.isDone() && groundPathNavigation.canOpenDoors()) {
-+            if (path != null && path.isProcessed() && !path.isDone() && groundPathNavigation.canOpenDoors()) { // Plazma - Process Pathfinding asynchronously
+-            if (path != null && !path.isDone()) {
++            if (path != null && path.isProcessed() && !path.isDone()) { // Plazma - Process Pathfinding asynchronously
                  for (int i = 0; i < Math.min(path.getNextNodeIndex() + 2, path.getNodeCount()); i++) {
                      Node node = path.getNode(i);
                      this.doorPos = new BlockPos(node.x, node.y + 1, node.z);
 diff --git a/src/main/java/net/minecraft/world/entity/ai/navigation/AmphibiousPathNavigation.java b/src/main/java/net/minecraft/world/entity/ai/navigation/AmphibiousPathNavigation.java
-index ee38e447a810094d2253b85714b74282a4b4c2bc..8361b230963469d564d6280414ea083e975f9cf7 100644
+index 29b852c3262c9cd0d2c77a93c01a386a2c184742..8361b230963469d564d6280414ea083e975f9cf7 100644
 --- a/src/main/java/net/minecraft/world/entity/ai/navigation/AmphibiousPathNavigation.java
 +++ b/src/main/java/net/minecraft/world/entity/ai/navigation/AmphibiousPathNavigation.java
-@@ -12,12 +12,26 @@ public class AmphibiousPathNavigation extends PathNavigation {
+@@ -12,11 +12,26 @@ public class AmphibiousPathNavigation extends PathNavigation {
          super(mob, world);
      }
  
@@ -687,7 +687,7 @@ index ee38e447a810094d2253b85714b74282a4b4c2bc..8361b230963469d564d6280414ea083e
      @Override
      protected PathFinder createPathFinder(int range) {
          this.nodeEvaluator = new AmphibiousNodeEvaluator(false);
-         this.nodeEvaluator.setCanPassDoors(true);
++        this.nodeEvaluator.setCanPassDoors(true);
 +        if (org.plazmamc.plazma.configurations.GlobalConfiguration.get().entity.asyncPathProcess.enabled)
 +            return new PathFinder(this.nodeEvaluator, range, GENERATOR);
          return new PathFinder(this.nodeEvaluator, range);
@@ -697,10 +697,10 @@ index ee38e447a810094d2253b85714b74282a4b4c2bc..8361b230963469d564d6280414ea083e
      @Override
      protected boolean canUpdatePath() {
 diff --git a/src/main/java/net/minecraft/world/entity/ai/navigation/FlyingPathNavigation.java b/src/main/java/net/minecraft/world/entity/ai/navigation/FlyingPathNavigation.java
-index a3e0c5af4cc9323c02e88e768cbda9e46854aea1..d68e97084ba6bc97312fc5b62ffcb6e6b21b056e 100644
+index 2bd66da93227d4e4fc2ec4df47ae94b17f4d39d3..ee395676b5eb14cd24b7251a83be7154d71b7b20 100644
 --- a/src/main/java/net/minecraft/world/entity/ai/navigation/FlyingPathNavigation.java
 +++ b/src/main/java/net/minecraft/world/entity/ai/navigation/FlyingPathNavigation.java
-@@ -16,12 +16,26 @@ public class FlyingPathNavigation extends PathNavigation {
+@@ -16,11 +16,26 @@ public class FlyingPathNavigation extends PathNavigation {
          super(entity, world);
      }
  
@@ -713,12 +713,12 @@ index a3e0c5af4cc9323c02e88e768cbda9e46854aea1..d68e97084ba6bc97312fc5b62ffcb6e6
 +            evaluator.setCanFloat(features.canFloat());
 +            evaluator.setCanWalkOverFences(features.canWalkOverFences());
 +            return evaluator;
-+        };
++       };
 +
      @Override
      protected PathFinder createPathFinder(int range) {
          this.nodeEvaluator = new FlyNodeEvaluator();
-         this.nodeEvaluator.setCanPassDoors(true);
++        this.nodeEvaluator.setCanPassDoors(true);
 +        if (org.plazmamc.plazma.configurations.GlobalConfiguration.get().entity.asyncPathProcess.enabled)
 +            return new PathFinder(this.nodeEvaluator, range, GENERATOR);
          return new PathFinder(this.nodeEvaluator, range);
@@ -727,7 +727,7 @@ index a3e0c5af4cc9323c02e88e768cbda9e46854aea1..d68e97084ba6bc97312fc5b62ffcb6e6
  
      @Override
      protected boolean canMoveDirectly(Vec3 origin, Vec3 target) {
-@@ -50,6 +64,7 @@ public class FlyingPathNavigation extends PathNavigation {
+@@ -49,6 +64,7 @@ public class FlyingPathNavigation extends PathNavigation {
              this.recomputePath();
          }
  
@@ -736,10 +736,10 @@ index a3e0c5af4cc9323c02e88e768cbda9e46854aea1..d68e97084ba6bc97312fc5b62ffcb6e6
              if (this.canUpdatePath()) {
                  this.followThePath();
 diff --git a/src/main/java/net/minecraft/world/entity/ai/navigation/GroundPathNavigation.java b/src/main/java/net/minecraft/world/entity/ai/navigation/GroundPathNavigation.java
-index f73b559b8e60859020f762dab88b67b8c912bf8f..d218604447afbde96dc4af33ba90a87617a13ed4 100644
+index 2796df7af365c452b28373adfd7daf1d6730bac5..921b0f792fbb3e7a0bb0275d8494a19830a08eae 100644
 --- a/src/main/java/net/minecraft/world/entity/ai/navigation/GroundPathNavigation.java
 +++ b/src/main/java/net/minecraft/world/entity/ai/navigation/GroundPathNavigation.java
-@@ -24,10 +24,23 @@ public class GroundPathNavigation extends PathNavigation {
+@@ -24,11 +24,25 @@ public class GroundPathNavigation extends PathNavigation {
          super(entity, world);
      }
  
@@ -753,16 +753,18 @@ index f73b559b8e60859020f762dab88b67b8c912bf8f..d218604447afbde96dc4af33ba90a876
 +            evaluator.setCanWalkOverFences(features.canWalkOverFences());
 +            return evaluator;
 +        };
-+    // Plazma end - Process pathfinding asynchronously
 +
      @Override
      protected PathFinder createPathFinder(int range) {
          this.nodeEvaluator = new WalkNodeEvaluator();
-         this.nodeEvaluator.setCanPassDoors(true);
-+        if (org.plazmamc.plazma.configurations.GlobalConfiguration.get().entity.asyncPathProcess.enabled) return new PathFinder(this.nodeEvaluator, range, GENERATOR); // Plazma - Process pathfinding asynchronously
++        this.nodeEvaluator.setCanPassDoors(true);
++        if (org.plazmamc.plazma.configurations.GlobalConfiguration.get().entity.asyncPathProcess.enabled) return new PathFinder(this.nodeEvaluator, range, GENERATOR);
          return new PathFinder(this.nodeEvaluator, range);
      }
++    // Plazma end - Process pathfinding asynchronously
  
+     @Override
+     protected boolean canUpdatePath() {
 diff --git a/src/main/java/net/minecraft/world/entity/ai/navigation/PathNavigation.java b/src/main/java/net/minecraft/world/entity/ai/navigation/PathNavigation.java
 index 48c0de870a5bbf647309e69361dfb10ab56c65ab..99e31c8e8488ce7138c5385575cbbabe0bd7394e 100644
 --- a/src/main/java/net/minecraft/world/entity/ai/navigation/PathNavigation.java
@@ -836,10 +838,10 @@ index 48c0de870a5bbf647309e69361dfb10ab56c65ab..99e31c8e8488ce7138c5385575cbbabe
              Vec3 vec3 = new Vec3(((double)node.x + this.mob.getX()) / 2.0, ((double)node.y + this.mob.getY()) / 2.0, ((double)node.z + this.mob.getZ()) / 2.0);
              return pos.closerToCenterThan(vec3, (double)(this.path.getNodeCount() - this.path.getNextNodeIndex()));
 diff --git a/src/main/java/net/minecraft/world/entity/ai/navigation/WaterBoundPathNavigation.java b/src/main/java/net/minecraft/world/entity/ai/navigation/WaterBoundPathNavigation.java
-index 0446ac540d8509a653abe1a8bc10f52fb43d6ae1..77c10a3e9570f53ce73dacb39cb86a00202e6ce6 100644
+index 943c9944ae17fa7cd72e437cce61beaf3fc9505e..77c10a3e9570f53ce73dacb39cb86a00202e6ce6 100644
 --- a/src/main/java/net/minecraft/world/entity/ai/navigation/WaterBoundPathNavigation.java
 +++ b/src/main/java/net/minecraft/world/entity/ai/navigation/WaterBoundPathNavigation.java
-@@ -15,10 +15,23 @@ public class WaterBoundPathNavigation extends PathNavigation {
+@@ -15,11 +15,23 @@ public class WaterBoundPathNavigation extends PathNavigation {
          super(entity, world);
      }
  
@@ -859,6 +861,7 @@ index 0446ac540d8509a653abe1a8bc10f52fb43d6ae1..77c10a3e9570f53ce73dacb39cb86a00
      protected PathFinder createPathFinder(int range) {
          this.allowBreaching = this.mob.getType() == EntityType.DOLPHIN;
          this.nodeEvaluator = new SwimNodeEvaluator(this.allowBreaching);
+-        this.nodeEvaluator.setCanPassDoors(false);
 +        if (org.plazmamc.plazma.configurations.GlobalConfiguration.get().entity.asyncPathProcess.enabled) return new PathFinder(this.nodeEvaluator, range, GENERATOR); // Plazma - Process pathfinding asynchronously
          return new PathFinder(this.nodeEvaluator, range);
      }
@@ -894,10 +897,10 @@ index 9104d7010bda6f9f73b478c11490ef9c53f76da2..a53950a6e4cb2e672b6f130461fa6306
              // Paper end - optimise POI access
              if (path != null && path.canReach()) {
 diff --git a/src/main/java/net/minecraft/world/entity/animal/Bee.java b/src/main/java/net/minecraft/world/entity/animal/Bee.java
-index 6dec1720aea724baab541e26e14c9fa0646abdbf..bf4a3bc730709f41a5089dfe4c6342b08057ef02 100644
+index dc4231375730357f6b6d7f902a71b0a593a34a8e..c43c26134c3431e66c767d54fc5b8761ca109084 100644
 --- a/src/main/java/net/minecraft/world/entity/animal/Bee.java
 +++ b/src/main/java/net/minecraft/world/entity/animal/Bee.java
-@@ -1206,7 +1206,7 @@ public class Bee extends Animal implements NeutralMob, FlyingAnimal {
+@@ -1240,7 +1240,7 @@ public class Bee extends Animal implements NeutralMob, FlyingAnimal {
                          } else {
                              Bee.this.pathfindRandomlyTowards(Bee.this.hivePos);
                          }
@@ -906,7 +909,7 @@ index 6dec1720aea724baab541e26e14c9fa0646abdbf..bf4a3bc730709f41a5089dfe4c6342b0
                          boolean flag = this.pathfindDirectlyTowards(Bee.this.hivePos);
  
                          if (!flag) {
-@@ -1265,7 +1265,7 @@ public class Bee extends Animal implements NeutralMob, FlyingAnimal {
+@@ -1299,7 +1299,7 @@ public class Bee extends Animal implements NeutralMob, FlyingAnimal {
              } else {
                  Path pathentity = Bee.this.navigation.getPath();
  
@@ -916,10 +919,10 @@ index 6dec1720aea724baab541e26e14c9fa0646abdbf..bf4a3bc730709f41a5089dfe4c6342b0
          }
      }
 diff --git a/src/main/java/net/minecraft/world/entity/animal/frog/Frog.java b/src/main/java/net/minecraft/world/entity/animal/frog/Frog.java
-index 17ba0c6060ab56ab97b133565ebf86320ab52e1b..305fe2c13ae2d81b99ff36f8ef18e24c23255eae 100644
+index 59b955c946caf35bee22c32f5d0e30b79523e4ef..305fe2c13ae2d81b99ff36f8ef18e24c23255eae 100644
 --- a/src/main/java/net/minecraft/world/entity/animal/frog/Frog.java
 +++ b/src/main/java/net/minecraft/world/entity/animal/frog/Frog.java
-@@ -506,10 +506,23 @@ public class Frog extends Animal implements VariantHolder<Holder<FrogVariant>> {
+@@ -506,9 +506,23 @@ public class Frog extends Animal implements VariantHolder<Holder<FrogVariant>> {
              return nodeType != PathType.WATER_BORDER && super.canCutCorner(nodeType);
          }
  
@@ -938,16 +941,16 @@ index 17ba0c6060ab56ab97b133565ebf86320ab52e1b..305fe2c13ae2d81b99ff36f8ef18e24c
          @Override
          protected PathFinder createPathFinder(int range) {
              this.nodeEvaluator = new Frog.FrogNodeEvaluator(true);
-             this.nodeEvaluator.setCanPassDoors(true);
++            this.nodeEvaluator.setCanPassDoors(true);
 +            if (org.plazmamc.plazma.configurations.GlobalConfiguration.get().entity.asyncPathProcess.enabled) return new PathFinder(this.nodeEvaluator, range, GENERATOR); // Plazma - Process pathfinding asynchronously
              return new PathFinder(this.nodeEvaluator, range);
          }
      }
 diff --git a/src/main/java/net/minecraft/world/entity/monster/Drowned.java b/src/main/java/net/minecraft/world/entity/monster/Drowned.java
-index 19bc362ff8e28cd0e26ba357dda425bac24c5a56..e4784d37c4b93c34325eb72cfbaa640c63d0c3c1 100644
+index 38cf26247c80430401b814b57a8eed6805caa614..ad08dc9965c35bc06c67ee929b2cbb3432c2d9ba 100644
 --- a/src/main/java/net/minecraft/world/entity/monster/Drowned.java
 +++ b/src/main/java/net/minecraft/world/entity/monster/Drowned.java
-@@ -308,7 +308,7 @@ public class Drowned extends Zombie implements RangedAttackMob {
+@@ -305,7 +305,7 @@ public class Drowned extends Zombie implements RangedAttackMob {
  
      protected boolean closeToNextPos() {
          Path path = this.getNavigation().getPath();
@@ -957,10 +960,10 @@ index 19bc362ff8e28cd0e26ba357dda425bac24c5a56..e4784d37c4b93c34325eb72cfbaa640c
              if (blockPos != null) {
                  double d = this.distanceToSqr((double)blockPos.getX(), (double)blockPos.getY(), (double)blockPos.getZ());
 diff --git a/src/main/java/net/minecraft/world/entity/monster/Strider.java b/src/main/java/net/minecraft/world/entity/monster/Strider.java
-index c09e49f928e32a3dc6c557f01d92c455d9bfc8c6..bf507bcb8746298ca96e50686cdf1bd91c91e4c1 100644
+index 06c64092ef9df58470448c333dab3a0fabdeb072..e8c310e84f799217bc8bdda47fa24b872ad64e2d 100644
 --- a/src/main/java/net/minecraft/world/entity/monster/Strider.java
 +++ b/src/main/java/net/minecraft/world/entity/monster/Strider.java
-@@ -610,10 +610,23 @@ public class Strider extends Animal implements ItemSteerable, Saddleable {
+@@ -610,9 +610,23 @@ public class Strider extends Animal implements ItemSteerable, Saddleable {
              super(entity, world);
          }
  
@@ -979,19 +982,19 @@ index c09e49f928e32a3dc6c557f01d92c455d9bfc8c6..bf507bcb8746298ca96e50686cdf1bd9
          @Override
          protected PathFinder createPathFinder(int range) {
              this.nodeEvaluator = new WalkNodeEvaluator();
-             this.nodeEvaluator.setCanPassDoors(true);
++            this.nodeEvaluator.setCanPassDoors(true);
 +            if (org.plazmamc.plazma.configurations.GlobalConfiguration.get().entity.asyncPathProcess.enabled) return new PathFinder(this.nodeEvaluator, range, GENERATOR); // Plazma - Process pathfinding asynchronously
              return new PathFinder(this.nodeEvaluator, range);
          }
  
 diff --git a/src/main/java/net/minecraft/world/entity/monster/warden/Warden.java b/src/main/java/net/minecraft/world/entity/monster/warden/Warden.java
-index 6cce132f43ce7aad6f5ee2b351855c9b57b8f0c1..4102dc4c8b63a1d00a8417aa303521590202f9a6 100644
+index 9bbf0eef3af5b7e26ae98649706746c67b76f069..d121fd2796382654aee39c6bebf8adb72b064d71 100644
 --- a/src/main/java/net/minecraft/world/entity/monster/warden/Warden.java
 +++ b/src/main/java/net/minecraft/world/entity/monster/warden/Warden.java
-@@ -638,6 +638,15 @@ public class Warden extends Monster implements VibrationSystem {
+@@ -637,6 +637,15 @@ public class Warden extends Monster implements VibrationSystem {
+             @Override
              protected PathFinder createPathFinder(int range) {
                  this.nodeEvaluator = new WalkNodeEvaluator();
-                 this.nodeEvaluator.setCanPassDoors(true);
 +                // Plazma start - Process pathfinding asynchonously
 +                if (org.plazmamc.plazma.configurations.GlobalConfiguration.get().entity.asyncPathProcess.enabled)
 +                    return new PathFinder(this.nodeEvaluator, range, GroundPathNavigation.GENERATOR) {

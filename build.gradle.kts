@@ -36,13 +36,8 @@ paperweight {
     remapRepo = "https://repo.papermc.io/repository/maven-public/"
     decompileRepo = "https://repo.papermc.io/repository/maven-public/"
 
-    useStandardUpstream("paper") {
-        url = github("PaperMC", "Paper-archive")
-        ref = providers.gradleProperty("paperCommit")
-
-        withStandardPatcher {
-            baseName("Paper")
-
+    usePaperUpstream(providers.gradleProperty("paperCommit")) {
+        withPaperPatcher {
             apiPatchDir.set(projectDir.resolve("patches/api"))
             apiOutputDir.set(projectDir.resolve("$brandName-API"))
 

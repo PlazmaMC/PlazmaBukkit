@@ -5,7 +5,7 @@ Subject: [PATCH] Use Gradle Version Catalogs
 
 
 diff --git a/build.gradle.kts b/build.gradle.kts
-index b0fd6c1804844f09428051952e3ac4e58f8c859c..2b668f8a5c245d024e03c94b7d8872448f1929cf 100644
+index 49546dfbb4dd006b5a2419908890ba4c2a0e207a..6963a76b9040c01dc60d0f24c9eef4738e93f753 100644
 --- a/build.gradle.kts
 +++ b/build.gradle.kts
 @@ -9,11 +9,13 @@ java {
@@ -22,26 +22,28 @@ index b0fd6c1804844f09428051952e3ac4e58f8c859c..2b668f8a5c245d024e03c94b7d887244
  val apiAndDocs: Configuration by configurations.creating {
      attributes {
          attribute(Category.CATEGORY_ATTRIBUTE, objects.named(Category.DOCUMENTATION))
-@@ -39,58 +41,30 @@ abstract class MockitoAgentProvider : CommandLineArgumentProvider {
+@@ -39,60 +41,30 @@ abstract class MockitoAgentProvider : CommandLineArgumentProvider {
  // Paper end - configure mockito agent that is needed in newer java versions
  
  dependencies {
 -    api("com.mojang:brigadier:1.2.9") // Paper - Brigadier command api
 -    // api dependencies are listed transitively to API consumers
--    api("com.google.guava:guava:32.1.2-jre")
--    api("com.google.code.gson:gson:2.10.1")
+-    api("com.google.guava:guava:33.3.1-jre")
+-    api("com.google.code.gson:gson:2.11.0")
 -    // Paper start - adventure
--    api("net.md-5:bungeecord-chat:$bungeeCordChatVersion-deprecated+build.18") {
+-    api("net.md-5:bungeecord-chat:$bungeeCordChatVersion-deprecated+build.19") {
 -        exclude("com.google.guava", "guava")
 -    }
 -    // Paper - adventure
 -    api("org.yaml:snakeyaml:2.2")
--    api("org.joml:joml:1.10.5")
+-    api("org.joml:joml:1.10.8") {
+-        isTransitive = false // https://github.com/JOML-CI/JOML/issues/352
+-    }
 -    // Paper start
 -    api("com.googlecode.json-simple:json-simple:1.1.1") {
 -        isTransitive = false // includes junit
 -    }
--    api("it.unimi.dsi:fastutil:8.5.6")
+-    api("it.unimi.dsi:fastutil:8.5.15")
 -    apiAndDocs(platform("net.kyori:adventure-bom:$adventureVersion"))
 -    apiAndDocs("net.kyori:adventure-api")
 -    apiAndDocs("net.kyori:adventure-text-minimessage")
@@ -105,17 +107,17 @@ index b0fd6c1804844f09428051952e3ac4e58f8c859c..2b668f8a5c245d024e03c94b7d887244
  }
  
  // Paper start
-@@ -175,27 +149,25 @@ tasks.withType<Javadoc> {
+@@ -177,27 +149,25 @@ tasks.withType<Javadoc> {
      options.use()
      options.isDocFilesSubDirs = true
      options.links(
--        "https://guava.dev/releases/32.1.2-jre/api/docs/",
+-        "https://guava.dev/releases/33.3.1-jre/api/docs/",
 -        "https://javadoc.io/doc/org.yaml/snakeyaml/2.2/",
 -        "https://javadoc.io/doc/org.jetbrains/annotations/$annotationsVersion/", // Paper - we don't want Java 5 annotations
 -        // "https://javadoc.io/doc/net.md-5/bungeecord-chat/$bungeeCordChatVersion/", // Paper - don't link to bungee chat
 -        // Paper start - add missing javadoc links
--        "https://javadoc.io/doc/org.joml/joml/1.10.5/index.html",
--        "https://www.javadoc.io/doc/com.google.code.gson/gson/2.10.1",
+-        "https://javadoc.io/doc/org.joml/joml/1.10.8/index.html",
+-        "https://www.javadoc.io/doc/com.google.code.gson/gson/2.11.0",
 -        "https://jspecify.dev/docs/api/",
 -        // Paper end
 -        // Paper start

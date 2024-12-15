@@ -20,5 +20,5 @@
 [main]: https://github.com/PlazmaMC/PlazmaBukkit/blob/main/README.md
 
 > [!IMPORTANT]
-This is the branch for Plazma 1.21.2/3. If you want to know more about Plazma, please check the **[main branch][main]**.<br>
-이곳은 플라즈마의 1.21.2/3용 분기입니다. 플라즈마에 대해 자세히 알고 싶다면 **[main 분기][main]** 를 확인해주세요.
+This is the branch for Plazma 1.21.4. If you want to know more about Plazma, please check the **[main branch][main]**.<br>
+해당 페이지는 Plazma의 1.21.4용 분기입니다. 플라즈마에 대해 자세히 알고 싶다면 **[main 분기][main]** 를 확인해주세요.

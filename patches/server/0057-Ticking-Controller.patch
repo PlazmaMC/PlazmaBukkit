@@ -5,10 +5,10 @@ Subject: [PATCH] Ticking Controller
 
 
 diff --git a/src/main/java/net/minecraft/server/MinecraftServer.java b/src/main/java/net/minecraft/server/MinecraftServer.java
-index 26c5cb68b464305fde43e2e0e1a415a2425483ea..ef1b47ebb8d79fbe177d4ad08e07bd182657c5d3 100644
+index 117d0c39ef7ccd0b7c381aa985b11bc52346fc6a..994d67f1b1961abadb65d8160ca9bdd48055335d 100644
 --- a/src/main/java/net/minecraft/server/MinecraftServer.java
 +++ b/src/main/java/net/minecraft/server/MinecraftServer.java
-@@ -1689,6 +1689,7 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
+@@ -1654,6 +1654,7 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
      }
  
      public void tickServer(BooleanSupplier shouldKeepTicking) {
@@ -29,10 +29,10 @@ index 660a142036c4e608d3d6fed6ec700a3488400bec..d092bef5e6626f000a44a0f424f247a1
              long m = Util.getNanos();
              long n = m - l;
 diff --git a/src/main/java/net/minecraft/server/level/ServerChunkCache.java b/src/main/java/net/minecraft/server/level/ServerChunkCache.java
-index e1957ad2a804f1272ccd458560bd7bde4ed0fe53..97e9f64498b9eb4d595e94cc63038363092809ae 100644
+index a84faa2e82a8d33b7bfe71f174f2913b585d99e8..0d8800d05bd6a14b3d5702d6a51f8cb0c7ae2186 100644
 --- a/src/main/java/net/minecraft/server/level/ServerChunkCache.java
 +++ b/src/main/java/net/minecraft/server/level/ServerChunkCache.java
-@@ -621,7 +621,7 @@ public class ServerChunkCache extends ChunkSource implements ca.spottedleaf.moon
+@@ -630,7 +630,7 @@ public class ServerChunkCache extends ChunkSource implements ca.spottedleaf.moon
          // this.lastSpawnState = spawnercreature_d; // Pufferfish - this is managed asynchronously
          //profiler.popPush("spawnAndTick"); // Plazma - Completely remove Mojang profiler
          boolean flag = this.level.getGameRules().getBoolean(GameRules.RULE_DOMOBSPAWNING) && !this.level.players().isEmpty(); // CraftBukkit
@@ -42,10 +42,10 @@ index e1957ad2a804f1272ccd458560bd7bde4ed0fe53..97e9f64498b9eb4d595e94cc63038363
  
          if (flag && (this.spawnEnemies || this.spawnFriendlies)) {
 diff --git a/src/main/java/net/minecraft/server/level/ServerLevel.java b/src/main/java/net/minecraft/server/level/ServerLevel.java
-index 137138aa1e42d4f12ed0bc54bc25918d29120333..b1bdd91eb821dee6c20bed9adb019eda2e8395d7 100644
+index 69c958de75eff4cafba799e67bc60373fbdf91b9..910b4103a4a8b5163e5e07e5da9ad917d0b4a439 100644
 --- a/src/main/java/net/minecraft/server/level/ServerLevel.java
 +++ b/src/main/java/net/minecraft/server/level/ServerLevel.java
-@@ -908,7 +908,12 @@ public class ServerLevel extends Level implements ServerEntityGetter, WorldGenLe
+@@ -909,7 +909,12 @@ public class ServerLevel extends Level implements ServerEntityGetter, WorldGenLe
                      this.setDayTime(this.preciseTime);
                  } else
                  // Purpur end
@@ -60,7 +60,7 @@ index 137138aa1e42d4f12ed0bc54bc25918d29120333..b1bdd91eb821dee6c20bed9adb019eda
  
          }
 diff --git a/src/main/java/net/minecraft/world/entity/LivingEntity.java b/src/main/java/net/minecraft/world/entity/LivingEntity.java
-index 9cd39ccca746c96809e3e1862e25240714662fb2..5f8415f510bb13f9ffe16c869cf8b010c5cbb5e8 100644
+index b982f884aadc04d302d54405b50f11567174a4f2..7c50156a019cfa44ad177813e902b9397a875acb 100644
 --- a/src/main/java/net/minecraft/world/entity/LivingEntity.java
 +++ b/src/main/java/net/minecraft/world/entity/LivingEntity.java
 @@ -562,6 +562,7 @@ public abstract class LivingEntity extends Entity implements Attackable {
@@ -112,10 +112,10 @@ index 8c5dff4e24c1366d583ba9c7c2c15ea166a24933..96f34e3cd6fcb44f503ce25a3479997e
              // Paper start - remove anti tick skipping measures / wall time - revert to vanilla
              if (this.pickupDelay > 0 && this.pickupDelay != 32767) {
 diff --git a/src/main/java/net/minecraft/world/entity/player/Player.java b/src/main/java/net/minecraft/world/entity/player/Player.java
-index f92b72ee0172cd878baef69b9710dbaf7e5c4495..7865f5375ab3938e326a76766517785821efe19a 100644
+index 9ecd1b747066fa954608c3064867d06d4937dc85..515da2d32aa23286cea47e160e01c7581d5b02be 100644
 --- a/src/main/java/net/minecraft/world/entity/player/Player.java
 +++ b/src/main/java/net/minecraft/world/entity/player/Player.java
-@@ -302,6 +302,11 @@ public abstract class Player extends LivingEntity {
+@@ -305,6 +305,11 @@ public abstract class Player extends LivingEntity {
              if (this.sleepCounter > 100) {
                  this.sleepCounter = 100;
              }
@@ -128,7 +128,7 @@ index f92b72ee0172cd878baef69b9710dbaf7e5c4495..7865f5375ab3938e326a767665177858
              if (/*!this.level().isClientSide &&*/ this.level().isDay()) { // Plazma - Remove persist 'isClientSide' flag
                  this.stopSleepInBed(false, true);
 diff --git a/src/main/java/net/minecraft/world/item/Item.java b/src/main/java/net/minecraft/world/item/Item.java
-index 7fc8fcab93be9076391a2981d028831cbd02a3d2..dccc95834b4cf625b7f5ce88916cbf9a865d87a4 100644
+index 29afbe0aa72f12d8fa6c03af55d17abef89c8dd4..78742ef91ed332d229d007af9224555a79cd6be9 100644
 --- a/src/main/java/net/minecraft/world/item/Item.java
 +++ b/src/main/java/net/minecraft/world/item/Item.java
 @@ -260,7 +260,7 @@ public class Item implements FeatureElement, ItemLike {
@@ -141,7 +141,7 @@ index 7fc8fcab93be9076391a2981d028831cbd02a3d2..dccc95834b4cf625b7f5ce88916cbf9a
  
      public boolean releaseUsing(ItemStack stack, Level world, LivingEntity user, int remainingUseTicks) {
 diff --git a/src/main/java/net/minecraft/world/level/block/state/BlockBehaviour.java b/src/main/java/net/minecraft/world/level/block/state/BlockBehaviour.java
-index dcf2dcece3e995ce4646b931329246be19a4e1c2..b99945c052d62e293bd3e516c7e9e407d358bbb7 100644
+index c8ae6e4cd74549f753ec04def5d882de1ab72308..b01b80ff0318f95a737ce3f93a5c69426019cc9c 100644
 --- a/src/main/java/net/minecraft/world/level/block/state/BlockBehaviour.java
 +++ b/src/main/java/net/minecraft/world/level/block/state/BlockBehaviour.java
 @@ -336,13 +336,14 @@ public abstract class BlockBehaviour implements FeatureElement {
@@ -167,10 +167,10 @@ index dcf2dcece3e995ce4646b931329246be19a4e1c2..b99945c052d62e293bd3e516c7e9e407
  
      protected void spawnAfterBreak(BlockState state, ServerLevel world, BlockPos pos, ItemStack tool, boolean dropExperience) {}
 diff --git a/src/main/java/net/minecraft/world/level/chunk/LevelChunk.java b/src/main/java/net/minecraft/world/level/chunk/LevelChunk.java
-index 2966caede97e01b5ad15a0d56232a0f5526685e2..f1baa2a5ba541fb4a99500b2c79326dec1cd0128 100644
+index f2d6d432f1314bc8bbc262f70c1632af5faff52d..3b2d12b4869a22b0161d8d67ff782a396d8773aa 100644
 --- a/src/main/java/net/minecraft/world/level/chunk/LevelChunk.java
 +++ b/src/main/java/net/minecraft/world/level/chunk/LevelChunk.java
-@@ -1076,8 +1076,18 @@ public class LevelChunk extends ChunkAccess implements ca.spottedleaf.moonrise.p
+@@ -1081,8 +1081,18 @@ public class LevelChunk extends ChunkAccess implements ca.spottedleaf.moonrise.p
              this.chunkCoordinateKey = chunkCoordinateKey;
          }
  
@@ -190,7 +190,7 @@ index 2966caede97e01b5ad15a0d56232a0f5526685e2..f1baa2a5ba541fb4a99500b2c79326de
              if (this.blockEntity.isRemoved() || !this.blockEntity.hasLevel()) return;
  
              BlockPos pos = this.blockEntity.getBlockPos();
-@@ -1087,7 +1097,7 @@ public class LevelChunk extends ChunkAccess implements ca.spottedleaf.moonrise.p
+@@ -1092,7 +1102,7 @@ public class LevelChunk extends ChunkAccess implements ca.spottedleaf.moonrise.p
                  BlockState state = LevelChunk.this.getBlockState(pos);
  
                  if (this.blockEntity.getType().isValid(state)) {
@@ -226,10 +226,10 @@ index 028aea6640356ba80f5d682e3cc03b7f82f5b9c7..d788849dc5a568d455cd83ca5b6e1b4b
  
      @Override
 diff --git a/src/main/java/org/plazmamc/plazma/configurations/GlobalConfiguration.java b/src/main/java/org/plazmamc/plazma/configurations/GlobalConfiguration.java
-index db31d0c066e92fe308e7e64075e832bec66a5c02..04a8bb41b27b8c435203991bebddccb27f472cdb 100644
+index 914f0d59801250d4e738a8595c747fd1e766d13f..7ea1b7e41557b7960b65b2e6d2dcb6fd2f9a24af 100644
 --- a/src/main/java/org/plazmamc/plazma/configurations/GlobalConfiguration.java
 +++ b/src/main/java/org/plazmamc/plazma/configurations/GlobalConfiguration.java
-@@ -200,4 +200,39 @@ public class GlobalConfiguration extends ConfigurationPart {
+@@ -189,4 +189,39 @@ public class GlobalConfiguration extends ConfigurationPart {
  
      }
  

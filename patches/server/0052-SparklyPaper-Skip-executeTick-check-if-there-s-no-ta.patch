@@ -75,18 +75,18 @@ index c03608fec96b51e1867f43d8f42e5aefb1520e46..9bb01accce426fafbddc1965a61257a7
                  throw new IllegalStateException("Ticking retired scheduler");
              }
 diff --git a/src/main/java/net/minecraft/server/MinecraftServer.java b/src/main/java/net/minecraft/server/MinecraftServer.java
-index e63e6d885054cd926508f9999c8a4eed712d4891..022c4c01ab015a2a6135baa5dbe442fa7a1b4615 100644
+index e66ba297c6f92fe855d992ceb5d4468be5670377..6ea53f0ad431a77f3f75ca89abd74f6eba98f898 100644
 --- a/src/main/java/net/minecraft/server/MinecraftServer.java
 +++ b/src/main/java/net/minecraft/server/MinecraftServer.java
 @@ -337,6 +337,7 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
+     public volatile Thread shutdownThread; // Paper
      public volatile boolean abnormalExit = false; // Paper
      public static final long SERVER_INIT = System.nanoTime(); // Paper - Lag compensation
-     private final Set<String> pluginsBlockingSleep = new java.util.HashSet<>(); // Paper - API to allow/disallow tick sleeping
 +    public final Set<Entity> entitiesWithScheduledTasks = java.util.concurrent.ConcurrentHashMap.newKeySet(); // Plazma - Skip executeTick check if there is no any task to be run
      public gg.pufferfish.pufferfish.util.AsyncExecutor mobSpawnExecutor = new gg.pufferfish.pufferfish.util.AsyncExecutor("MobSpawning"); // Pufferfish - optimize mob spawning
  
      public static <S extends MinecraftServer> S spin(Function<Thread, S> serverFactory) {
-@@ -1869,17 +1870,16 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
+@@ -1834,17 +1835,16 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
          this.server.getScheduler().mainThreadHeartbeat(); // CraftBukkit
          // Paper start - Folia scheduler API
          ((io.papermc.paper.threadedregions.scheduler.FoliaGlobalRegionScheduler) Bukkit.getGlobalRegionScheduler()).tick();
@@ -113,9 +113,9 @@ index e63e6d885054cd926508f9999c8a4eed712d4891..022c4c01ab015a2a6135baa5dbe442fa
 +        // Plazma end - Skip executeTick check if there is no any task to be run
          // Paper end - Folia scheduler API
          io.papermc.paper.adventure.providers.ClickCallbackProviderImpl.CALLBACK_MANAGER.handleQueue(this.tickCount); // Paper
-         //gameprofilerfiller.push("commandFunctions"); // Plazma - Completely remove Mojang profilers
+         //gameprofilerfiller.push("commandFunctions"); // Plazma - Completely remove Mojang profiler
 diff --git a/src/main/java/org/bukkit/craftbukkit/entity/CraftEntity.java b/src/main/java/org/bukkit/craftbukkit/entity/CraftEntity.java
-index 51aee9a468f4ebfa9672fd9ce84883cf080859e3..94bdeaf15a73228ff92b50a22bc3aca41658de8d 100644
+index 1290c1587fe9e39d9350c1079ab27f3be0c6084f..9f3286067031ae36375f8048bf7b2472e3bd96e1 100644
 --- a/src/main/java/org/bukkit/craftbukkit/entity/CraftEntity.java
 +++ b/src/main/java/org/bukkit/craftbukkit/entity/CraftEntity.java
 @@ -72,7 +72,7 @@ public abstract class CraftEntity implements org.bukkit.entity.Entity {

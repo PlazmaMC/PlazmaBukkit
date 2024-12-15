@@ -5,13 +5,15 @@ Subject: [PATCH] Build System Changes
 
 
 diff --git a/build.gradle.kts b/build.gradle.kts
-index 77602e4445b1b45a17e5552ac6a769e0ed46ebc7..f021047331c7eb3dac7f0d56af73a9056ffe826b 100644
+index 74d7aaae57e0e9ea9e31c4b2189ba50a0ac83bea..20abf704decfad4dc1744b6515f540d0f871fcb7 100644
 --- a/build.gradle.kts
 +++ b/build.gradle.kts
-@@ -26,71 +26,34 @@ abstract class MockitoAgentProvider : CommandLineArgumentProvider {
+@@ -25,73 +25,35 @@ abstract class MockitoAgentProvider : CommandLineArgumentProvider {
+ // Paper end - configure mockito agent that is needed in newer java versions
  
  dependencies {
-     implementation(project(":purpur-api")) // Pufferfish // Paper // Purpur
+-    implementation(project(":purpur-api")) // Pufferfish // Paper // Purpur
+-    implementation("ca.spottedleaf:concurrentutil:0.0.2") // Paper - Add ConcurrentUtil dependency
 -    // Paper start
 -    implementation("org.jline:jline-terminal-ffm:3.27.1") // use ffm on java 22+
 -    implementation("org.jline:jline-terminal-jni:3.27.1") // fall back to jni on java 21
@@ -29,11 +31,11 @@ index 77602e4445b1b45a17e5552ac6a769e0ed46ebc7..f021047331c7eb3dac7f0d56af73a905
 -    alsoShade(log4jPlugins.output)
 -    implementation("io.netty:netty-codec-haproxy:4.1.97.Final") // Paper - Add support for proxy protocol
 -    // Paper end
--    implementation("org.apache.logging.log4j:log4j-iostreams:2.22.1") // Paper - remove exclusion
+-    implementation("org.apache.logging.log4j:log4j-iostreams:2.24.1") // Paper - remove exclusion
 -    implementation("org.ow2.asm:asm-commons:9.7.1")
 -    implementation("org.spongepowered:configurate-yaml:4.2.0-SNAPSHOT") // Paper - config files
 -    implementation("commons-lang:commons-lang:2.6")
--    runtimeOnly("org.xerial:sqlite-jdbc:3.46.1.3")
+-    runtimeOnly("org.xerial:sqlite-jdbc:3.47.0.0")
 -    runtimeOnly("com.mysql:mysql-connector-j:9.1.0")
 -    runtimeOnly("com.lmax:disruptor:3.4.4") // Paper
 -    // Paper start - Use Velocity cipher
@@ -77,6 +79,7 @@ index 77602e4445b1b45a17e5552ac6a769e0ed46ebc7..f021047331c7eb3dac7f0d56af73a905
 -    implementation("me.lucko:spark-api:0.1-20240720.200737-2")
 -    implementation("me.lucko:spark-paper:1.10.119-SNAPSHOT")
 -    // Paper end - spark
++    implementation(project(":${rootProject.providers.gradleProperty("brandName").get().lowercase()}-api")) // Pufferfish // Paper // Purpur // Plazma - Fork-friendly Rebranding
 +    // Plazma start - Use Gradle Version Catalogs
 +    implementation(server.bundles.implementation)
 +    implementation(common.adventure.serializer.ansi)
@@ -108,7 +111,7 @@ index 77602e4445b1b45a17e5552ac6a769e0ed46ebc7..f021047331c7eb3dac7f0d56af73a905
  }
  
  paperweight {
-@@ -118,14 +81,14 @@ tasks.jar {
+@@ -119,14 +81,14 @@ tasks.jar {
          val gitBranch = git("rev-parse", "--abbrev-ref", "HEAD").getText().trim() // Paper
          attributes(
              "Main-Class" to "org.bukkit.craftbukkit.Main",
