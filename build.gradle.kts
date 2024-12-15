@@ -95,7 +95,7 @@ allprojects {
         }
     }
 
-    publishing.repositories.maven("https://repo.codemc.io/repository/PlazmaMC/") {
+    publishing.repositories.maven("https://repo.codemc.io/repository/maven-public/") {
         name = "codemc"
 
         credentials {
