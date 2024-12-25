@@ -1,0 +1,107 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: AlphaKR93 <dev@alpha93.kr>
+Date: Wed, 25 Dec 2024 19:07:19 +0900
+Subject: [PATCH] Add heal command
+
+
+diff --git a/src/main/java/net/minecraft/commands/Commands.java b/src/main/java/net/minecraft/commands/Commands.java
+index 2ef4dc9169a9bec304b4922a2e91c31b966c711d..6d7af7e8923219145e79a6b5673566634740023c 100644
+--- a/src/main/java/net/minecraft/commands/Commands.java
++++ b/src/main/java/net/minecraft/commands/Commands.java
+@@ -263,6 +263,7 @@ public class Commands {
+             org.purpurmc.purpur.command.CompassCommand.register(this.dispatcher); // Purpur
+             org.purpurmc.purpur.command.RamBarCommand.register(this.dispatcher); // Purpur - Implement ram and rambar commands
+             org.purpurmc.purpur.command.RamCommand.register(this.dispatcher); // Purpur - Implement ram and rambar commands
++            org.plazmamc.plazma.commands.HealCommand.register(this.dispatcher); // Plazma - Add heal command
+         }
+ 
+         if (environment.includeIntegrated) {
+diff --git a/src/main/java/org/plazmamc/plazma/commands/HealCommand.java b/src/main/java/org/plazmamc/plazma/commands/HealCommand.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..2e9f1c95b5532eb020f5d1466c4f7aed8fc1b3d6
+--- /dev/null
++++ b/src/main/java/org/plazmamc/plazma/commands/HealCommand.java
+@@ -0,0 +1,65 @@
++package org.plazmamc.plazma.commands;
++
++import com.mojang.brigadier.CommandDispatcher;
++import com.mojang.brigadier.exceptions.CommandSyntaxException;
++import com.mojang.brigadier.exceptions.SimpleCommandExceptionType;
++import io.papermc.paper.adventure.PaperAdventure;
++import net.kyori.adventure.text.Component;
++import net.kyori.adventure.text.TextComponent;
++import net.kyori.adventure.text.minimessage.tag.resolver.Placeholder;
++import net.minecraft.commands.CommandSourceStack;
++import net.minecraft.commands.arguments.EntityArgument;
++import net.minecraft.world.entity.Entity;
++import net.minecraft.world.entity.LivingEntity;
++import net.minecraft.world.entity.player.Player;
++import org.checkerframework.checker.nullness.qual.NonNull;
++import org.checkerframework.framework.qual.DefaultQualifier;
++import org.jetbrains.annotations.Contract;
++import org.plazmamc.plazma.configurations.GlobalConfiguration;
++import java.util.ArrayList;
++import java.util.Collection;
++import java.util.Collections;
++
++import static net.kyori.adventure.text.minimessage.MiniMessage.miniMessage;
++
++@DefaultQualifier(NonNull.class)
++public class HealCommand {
++
++    public static void register(final CommandDispatcher<CommandSourceStack> dispatcher) {
++        dispatcher.register(net.minecraft.commands.Commands.literal("heal")
++            .requires(source -> source.hasPermission(2, "bukkit.command.heal"))
++            .executes(ctx -> execute(ctx.getSource(), Collections.singleton(ctx.getSource().getEntityOrException())))
++            .then(net.minecraft.commands.Commands.argument("targets", EntityArgument.entities())
++                .requires(source -> source.hasPermission(3, "bukkit.command.heal.others"))
++                .executes(ctx -> execute(ctx.getSource(), EntityArgument.getEntities(ctx, "targets")))
++            )
++        );
++    }
++
++    @Contract(pure = true)
++    private static int execute(final CommandSourceStack sender, Collection<? extends Entity> targets) throws CommandSyntaxException {
++        final ArrayList<Component> success = new ArrayList<>();
++
++        for (Entity target : targets) {
++            if (!(target instanceof LivingEntity entity)) continue;
++            if (entity.isDeadOrDying()) continue;
++
++            entity.heal(entity.getMaxHealth());
++            success.add(PaperAdventure.asAdventure(entity.getDisplayName()));
++
++            if (!(entity instanceof Player player)) continue;
++            player.getFoodData().setFoodLevel(20);
++            player.getFoodData().setSaturation(5.0F);
++        }
++
++        if (success.isEmpty()) {
++            throw new SimpleCommandExceptionType(PaperAdventure.asVanilla(miniMessage().deserialize(GlobalConfiguration.get().messages.heal.noTargets))).create();
++        }
++
++        final Component successJoined = success.stream().reduce((a, b) -> a.append(Component.text(", ").append(b))).orElseThrow();
++
++        sender.sendSuccess(miniMessage().deserialize(GlobalConfiguration.get().messages.heal.healed, Placeholder.component("targets", successJoined)));
++        return success.size();
++    }
++
++}
+diff --git a/src/main/java/org/plazmamc/plazma/configurations/GlobalConfiguration.java b/src/main/java/org/plazmamc/plazma/configurations/GlobalConfiguration.java
+index 898f9e6ec6f306a15639ee0d03bcfe7bf55e2c6c..02a164ff2c855864e246dcaaf8186274421edea7 100644
+--- a/src/main/java/org/plazmamc/plazma/configurations/GlobalConfiguration.java
++++ b/src/main/java/org/plazmamc/plazma/configurations/GlobalConfiguration.java
+@@ -31,6 +31,13 @@ public class GlobalConfiguration extends ConfigurationPart {
+     public Messages messages;
+     public class Messages extends ConfigurationPart {
+ 
++        public Heal heal;
++        public class Heal extends ConfigurationPart {
++
++            public String healed = "Healed %s";
++            public String noTargets = "No targets matched selector";
++
++        }
+ 
+     }
+ 

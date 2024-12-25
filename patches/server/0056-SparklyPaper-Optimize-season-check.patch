@@ -1,0 +1,146 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: AlphaKR93 <dev@alpha93.kr>
+Date: Fri, 13 Dec 2024 23:37:17 +0900
+Subject: [PATCH] SparklyPaper - Optimize season check
+
+
+diff --git a/src/main/java/net/minecraft/world/entity/ambient/Bat.java b/src/main/java/net/minecraft/world/entity/ambient/Bat.java
+index 737e9d8b75df05ca0e032916564599d5abad45ff..c5bb327fbf4efea250b74346521fe565df71bb94 100644
+--- a/src/main/java/net/minecraft/world/entity/ambient/Bat.java
++++ b/src/main/java/net/minecraft/world/entity/ambient/Bat.java
+@@ -327,15 +327,19 @@ public class Bat extends AmbientCreature {
+     private static boolean isSpookySeason = false;
+     private static final int ONE_HOUR = 20 * 60 * 60;
+     private static int lastSpookyCheck = -ONE_HOUR;
+-    public static boolean isHalloweenSeason(Level level) { return level.purpurConfig.forceHalloweenSeason || isHalloween(); } // Purpur
++
++    public static boolean isHalloweenSeason(Level level) {
++        return level.purpurConfig.forceHalloweenSeason || net.sparklypower.sparklypaper.HalloweenManager.isInSeason() || isHalloween();
++    }
++
+     private static boolean isHalloween() {
+         if (net.minecraft.server.MinecraftServer.currentTick - lastSpookyCheck > ONE_HOUR) {
+-        LocalDate localdate = LocalDate.now();
+-        int i = localdate.get(ChronoField.DAY_OF_MONTH);
+-        int j = localdate.get(ChronoField.MONTH_OF_YEAR);
++            LocalDate now = LocalDate.now();
++            int day = now.getDayOfMonth();
++            int month = now.getMonth().getValue();
+ 
+-        isSpookySeason = j == 10 && i >= 20 || j == 11 && i <= 3;
+-        lastSpookyCheck = net.minecraft.server.MinecraftServer.currentTick;
++            isSpookySeason = month == 10 && day >= 20 || month == 11 && day <= 3;
++            lastSpookyCheck = net.minecraft.server.MinecraftServer.currentTick;
+         }
+         return isSpookySeason;
+     }
+diff --git a/src/main/java/net/sparklypower/sparklypaper/HalloweenManager.java b/src/main/java/net/sparklypower/sparklypaper/HalloweenManager.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..530bac5a415c8597ae76ec603c1d8158535c66d0
+--- /dev/null
++++ b/src/main/java/net/sparklypower/sparklypaper/HalloweenManager.java
+@@ -0,0 +1,82 @@
++package net.sparklypower.sparklypaper;
++
++import com.mojang.logging.LogUtils;
++import org.jetbrains.annotations.Nullable;
++import org.slf4j.Logger;
++import java.time.LocalDateTime;
++import java.time.Month;
++import java.time.ZoneOffset;
++import java.util.concurrent.CountDownLatch;
++import java.util.concurrent.Executors;
++import java.util.concurrent.ScheduledExecutorService;
++import java.util.concurrent.TimeUnit;
++import java.util.concurrent.atomic.AtomicBoolean;
++
++public final class HalloweenManager {
++
++    private static final Logger LOGGER = LogUtils.getLogger();
++    public static @Nullable net.sparklypower.sparklypaper.HalloweenManager INSTANCE;
++
++    private long seasonStartEpoch = 0L;
++    private long seasonEndEpoch = 0L;
++
++    private final ScheduledExecutorService EXECUTOR = Executors.newSingleThreadScheduledExecutor(runnable -> {
++        final Thread thread = new Thread(runnable);
++        thread.setName("halloween-timer-updater");
++        thread.setPriority(1);
++        return thread;
++    });
++
++    public HalloweenManager() {
++        final AtomicBoolean first = new AtomicBoolean(true);
++        final CountDownLatch LATCH = new CountDownLatch(1);
++
++        try {
++            EXECUTOR.scheduleAtFixedRate(() -> {
++                updateEpoch();
++                if (first.get()) LATCH.countDown();
++                first.set(false);
++            }, 0L, 90L, TimeUnit.DAYS);
++
++            LATCH.await();
++        } catch (InterruptedException e) {
++            LOGGER.error("Interrupted while waiting for HalloweenManager to start", e);
++        }
++    }
++
++    public @Nullable HalloweenManager close() {
++        EXECUTOR.shutdownNow();
++        return null;
++    }
++
++    public static boolean isInSeason() {
++        return INSTANCE != null && INSTANCE.isSeason();
++    }
++
++    private boolean isSeason() {
++        return this.seasonStartEpoch <= System.currentTimeMillis() && System.currentTimeMillis() < this.seasonEndEpoch;
++    }
++
++    private void updateEpoch() {
++        LOGGER.info("Updating Spooky Season and Halloween Time");
++        this.seasonStartEpoch = millisFromDate(20, 10, false);
++        this.seasonEndEpoch = millisFromDate(3, 11, true);
++        LOGGER.info("Updated Spooky Season and Halloween Time!");
++    }
++
++    private static long millisFromDate(int day, int month, boolean endOfMonth) {
++        LocalDateTime target = LocalDateTime.of(
++            LocalDateTime.now().getYear(),
++            Month.of(month),
++            day,
++            endOfMonth ? 23 : 0,
++            endOfMonth ? 59 : 0,
++            endOfMonth ? 59 : 0,
++            endOfMonth ? 999_999_999 : 0
++        );
++
++        return (LocalDateTime.now().isAfter(target) ? target.plusYears(1) : target)
++            .atZone(ZoneOffset.systemDefault()).toInstant().toEpochMilli();
++    }
++
++}
+diff --git a/src/main/java/org/plazmamc/plazma/configurations/GlobalConfiguration.java b/src/main/java/org/plazmamc/plazma/configurations/GlobalConfiguration.java
+index dc632fe50e777c019705796602debc3a7f33152d..914f0d59801250d4e738a8595c747fd1e766d13f 100644
+--- a/src/main/java/org/plazmamc/plazma/configurations/GlobalConfiguration.java
++++ b/src/main/java/org/plazmamc/plazma/configurations/GlobalConfiguration.java
+@@ -153,6 +153,17 @@ public class GlobalConfiguration extends ConfigurationPart {
+     public class Miscellaneous extends ConfigurationPart {
+ 
+         public boolean resetDirtyWhenLoadingMapsFromDisk = false;
++        public boolean optimizeHalloweenCheck = OPTIMIZE;
++
++        @PostProcess
++        void post() {
++            net.sparklypower.sparklypaper.HalloweenManager manager = net.sparklypower.sparklypaper.HalloweenManager.INSTANCE;
++
++            if (manager == null && this.optimizeHalloweenCheck)
++                net.sparklypower.sparklypaper.HalloweenManager.INSTANCE = new net.sparklypower.sparklypaper.HalloweenManager();
++            else if (manager != null && !this.optimizeHalloweenCheck)
++                net.sparklypower.sparklypaper.HalloweenManager.INSTANCE = manager.close();
++        }
+ 
+     }
+ 

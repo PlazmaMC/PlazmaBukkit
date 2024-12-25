@@ -1,0 +1,35 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: AlphaKR93 <dev@alpha93.kr>
+Date: Wed, 25 Dec 2024 19:10:40 +0900
+Subject: [PATCH] Add missing argument place for /compass command
+
+
+diff --git a/src/main/java/org/purpurmc/purpur/command/CompassCommand.java b/src/main/java/org/purpurmc/purpur/command/CompassCommand.java
+index 79b8490832d2a0cc7846ddcb091cb6bcac74ea45..bc4bdb86dc9a8f454058e0e9555e0af6f70d6b37 100644
+--- a/src/main/java/org/purpurmc/purpur/command/CompassCommand.java
++++ b/src/main/java/org/purpurmc/purpur/command/CompassCommand.java
+@@ -22,6 +22,24 @@ public class CompassCommand {
+                     }
+                     return 1;
+                 })
++                // Plazma start - Add missing argument place for /compass command
++                .then(Commands.argument("targets", net.minecraft.commands.arguments.EntityArgument.players())
++                        .requires(listener -> listener.hasPermission(2, "bukkit.command.compass.other"))
++                        .executes(context -> {
++                            for (ServerPlayer player : net.minecraft.commands.arguments.EntityArgument.getPlayers(context, "targets")) {
++                                CompassTask task = CompassTask.instance();
++                                if (player.compassBar()) {
++                                    task.removePlayer(player.getBukkitEntity());
++                                    player.compassBar(false);
++                                } else {
++                                    task.addPlayer(player.getBukkitEntity());
++                                    player.compassBar(true);
++                                }
++                            }
++                            return net.minecraft.commands.arguments.EntityArgument.getPlayers(context, "targets").size();
++                        })
++                )
++                // Plazma end - Add missing argument place for /compass command
+         );
+     }
+ }

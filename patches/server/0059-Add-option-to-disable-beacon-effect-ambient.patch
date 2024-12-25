@@ -1,0 +1,58 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: AlphaKR93 <dev@alpha93.kr>
+Date: Sat, 14 Dec 2024 01:03:07 +0900
+Subject: [PATCH] Add option to disable beacon effect ambient
+
+
+diff --git a/src/main/java/net/minecraft/world/level/block/entity/BeaconBlockEntity.java b/src/main/java/net/minecraft/world/level/block/entity/BeaconBlockEntity.java
+index c8ac3df678bc62985972d520f84f26a44ddd6970..ee97079a57750cc5f0ee06567704575987afea47 100644
+--- a/src/main/java/net/minecraft/world/level/block/entity/BeaconBlockEntity.java
++++ b/src/main/java/net/minecraft/world/level/block/entity/BeaconBlockEntity.java
+@@ -368,24 +368,20 @@ public class BeaconBlockEntity extends BlockEntity implements MenuProvider, Name
+         }
+     }
+ 
+-    private static void applyEffect(List list, @Nullable Holder<MobEffect> holder, int j, int b0, boolean isPrimary, BlockPos worldPosition) { // Paper - BeaconEffectEvent
+-        if (!list.isEmpty()) { // Paper - BeaconEffectEvent
+-            Iterator iterator = list.iterator();
++    private static void applyEffect(List<Player> list, @Nullable Holder<MobEffect> holder, int j, int b0, boolean isPrimary, BlockPos worldPosition) { // Paper - BeaconEffectEvent
++        if (list.isEmpty()) return;
+ 
+-            Player entityhuman;
++        // Paper start - BeaconEffectEvent
++        org.bukkit.craftbukkit.block.CraftBlock block = org.bukkit.craftbukkit.block.CraftBlock.at(list.getFirst().level(), worldPosition);
++        PotionEffect effect = CraftPotionUtil.toBukkit(new MobEffectInstance(holder, j, b0, true, !(block).getCraftWorld().getHandle().plazmaConfig().entity.disableBeaconEffectAmbient, true));
++        // Paper end - BeaconEffectEvent
++
++        for (final Player player : list) {
+             // Paper start - BeaconEffectEvent
+-            org.bukkit.block.Block block = org.bukkit.craftbukkit.block.CraftBlock.at(((Player) list.get(0)).level(), worldPosition);
+-            PotionEffect effect = CraftPotionUtil.toBukkit(new MobEffectInstance(holder, j, b0, true, true));
++            BeaconEffectEvent event = new BeaconEffectEvent(block, effect, (org.bukkit.entity.Player) player.getBukkitEntity(), isPrimary);
++            if (CraftEventFactory.callEvent(event).isCancelled()) continue;
++            player.addEffect(new MobEffectInstance(CraftPotionUtil.fromBukkit(event.getEffect())), org.bukkit.event.entity.EntityPotionEffectEvent.Cause.BEACON);
+             // Paper end - BeaconEffectEvent
+-
+-            while (iterator.hasNext()) {
+-                // Paper start - BeaconEffectEvent
+-                entityhuman = (ServerPlayer) iterator.next();
+-                BeaconEffectEvent event = new BeaconEffectEvent(block, effect, (org.bukkit.entity.Player) entityhuman.getBukkitEntity(), isPrimary);
+-                if (CraftEventFactory.callEvent(event).isCancelled()) continue;
+-                entityhuman.addEffect(new MobEffectInstance(CraftPotionUtil.fromBukkit(event.getEffect())), org.bukkit.event.entity.EntityPotionEffectEvent.Cause.BEACON);
+-                // Paper end - BeaconEffectEvent
+-            }
+         }
+     }
+ 
+diff --git a/src/main/java/org/plazmamc/plazma/configurations/WorldConfigurations.java b/src/main/java/org/plazmamc/plazma/configurations/WorldConfigurations.java
+index 36345efa302413ad4e7d6e611d182572622f76ff..e88b18ff76bf21d9fa340a1d58abedefbf30ec91 100644
+--- a/src/main/java/org/plazmamc/plazma/configurations/WorldConfigurations.java
++++ b/src/main/java/org/plazmamc/plazma/configurations/WorldConfigurations.java
+@@ -30,6 +30,7 @@ public class WorldConfigurations extends ConfigurationPart {
+ 
+         public int sensorTick = 1;
+         public boolean suppressErrorsFromDirtyAttributes = OPTIMIZE;
++        public boolean disableBeaconEffectAmbient = false;
+ 
+         public Phantom phantom;
+         public class Phantom extends ConfigurationPart {

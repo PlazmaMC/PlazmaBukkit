@@ -1,0 +1,137 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: AlphaKR93 <dev@alpha93.kr>
+Date: Fri, 13 Dec 2024 21:18:55 +0900
+Subject: [PATCH] SparklyPaper - Skip executeTick check if there's no task to
+ be run
+
+
+diff --git a/src/main/java/io/papermc/paper/threadedregions/EntityScheduler.java b/src/main/java/io/papermc/paper/threadedregions/EntityScheduler.java
+index c03608fec96b51e1867f43d8f42e5aefb1520e46..9bb01accce426fafbddc1965a61257a73af8f152 100644
+--- a/src/main/java/io/papermc/paper/threadedregions/EntityScheduler.java
++++ b/src/main/java/io/papermc/paper/threadedregions/EntityScheduler.java
+@@ -36,8 +36,9 @@ public final class EntityScheduler {
+      * The Entity. Note that it is the CraftEntity, since only that class properly tracks world transfers.
+      */
+     public final CraftEntity entity;
++    public final net.minecraft.server.MinecraftServer server; // Plazma - Skip executeTick check if there is no any task to be run
+ 
+-    private static final record ScheduledTask(Consumer<? extends Entity> run, Consumer<? extends Entity> retired) {}
++    private record ScheduledTask(Consumer<? extends Entity> run, Consumer<? extends Entity> retired) {} // Plazma - minor code improvement
+ 
+     private long tickCount = 0L;
+     private static final long RETIRED_TICK_COUNT = -1L;
+@@ -46,7 +47,8 @@ public final class EntityScheduler {
+ 
+     private final ArrayDeque<ScheduledTask> currentlyExecuting = new ArrayDeque<>();
+ 
+-    public EntityScheduler(final CraftEntity entity) {
++    public EntityScheduler(final net.minecraft.server.MinecraftServer server, final CraftEntity entity) { // Plazma - Skip executeTick check if there is no any task to be run
++        this.server = Validate.notNull(server); // Plazma - Skip executeTick check if there is no any task to be run
+         this.entity = Validate.notNull(entity);
+     }
+ 
+@@ -61,15 +63,15 @@ public final class EntityScheduler {
+      * @throws IllegalStateException If the scheduler is already retired.
+      */
+     public void retire() {
++        final Entity thisEntity = this.entity.getHandleRaw(); // Plazma - Skip executeTick check if there is no any task to be run
+         synchronized (this.stateLock) {
+             if (this.tickCount == RETIRED_TICK_COUNT) {
+                 throw new IllegalStateException("Already retired");
+             }
+             this.tickCount = RETIRED_TICK_COUNT;
++            this.server.entitiesWithScheduledTasks.remove(thisEntity); // Plazma - Skip executeTick check if there is no any task to be run
+         }
+ 
+-        final Entity thisEntity = this.entity.getHandleRaw();
+-
+         // correctly handle and order retiring while running executeTick
+         for (int i = 0, len = this.currentlyExecuting.size(); i < len; ++i) {
+             final ScheduledTask task = this.currentlyExecuting.pollFirst();
+@@ -124,9 +126,8 @@ public final class EntityScheduler {
+             if (this.tickCount == RETIRED_TICK_COUNT) {
+                 return false;
+             }
+-            this.oneTimeDelayed.computeIfAbsent(this.tickCount + Math.max(1L, delay), (final long keyInMap) -> {
+-                return new ArrayList<>();
+-            }).add(task);
++            this.server.entitiesWithScheduledTasks.add(this.entity.getHandleRaw()); // Plazma - Skip executeTick check if there is no any task to be run
++            this.oneTimeDelayed.computeIfAbsent(this.tickCount + Math.max(1L, delay), ignored -> new ArrayList<>()).add(task); // Plazma - Skip executeTick check if there is no any task to be run
+         }
+ 
+         return true;
+@@ -143,6 +144,13 @@ public final class EntityScheduler {
+         TickThread.ensureTickThread(thisEntity, "May not tick entity scheduler asynchronously");
+         final List<ScheduledTask> toRun;
+         synchronized (this.stateLock) {
++            // Plazma start - Skip executeTick check if there is no any task to be run
++            if (this.currentlyExecuting.isEmpty() && this.oneTimeDelayed.isEmpty()) {
++                this.server.entitiesWithScheduledTasks.remove(thisEntity);
++                return;
++            }
++            // Plazma end - Skip executeTick check if there is no any task to be run
++
+             if (this.tickCount == RETIRED_TICK_COUNT) {
+                 throw new IllegalStateException("Ticking retired scheduler");
+             }
+diff --git a/src/main/java/net/minecraft/server/MinecraftServer.java b/src/main/java/net/minecraft/server/MinecraftServer.java
+index f8377d6165f77bc19b904ca81a0c4aa139e728b0..fd74856160fa048941e10f52d2061e4ccdc86f31 100644
+--- a/src/main/java/net/minecraft/server/MinecraftServer.java
++++ b/src/main/java/net/minecraft/server/MinecraftServer.java
+@@ -337,6 +337,7 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
+     public volatile Thread shutdownThread; // Paper
+     public volatile boolean abnormalExit = false; // Paper
+     public static final long SERVER_INIT = System.nanoTime(); // Paper - Lag compensation
++    public final Set<Entity> entitiesWithScheduledTasks = java.util.concurrent.ConcurrentHashMap.newKeySet(); // Plazma - Skip executeTick check if there is no any task to be run
+     public gg.pufferfish.pufferfish.util.AsyncExecutor mobSpawnExecutor = new gg.pufferfish.pufferfish.util.AsyncExecutor("MobSpawning"); // Pufferfish - optimize mob spawning
+ 
+     public static <S extends MinecraftServer> S spin(Function<Thread, S> serverFactory) {
+@@ -1834,17 +1835,16 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
+         this.server.getScheduler().mainThreadHeartbeat(); // CraftBukkit
+         // Paper start - Folia scheduler API
+         ((io.papermc.paper.threadedregions.scheduler.FoliaGlobalRegionScheduler) Bukkit.getGlobalRegionScheduler()).tick();
+-        getAllLevels().forEach(level -> {
+-            for (final Entity entity : level.getEntities().getAll()) {
+-                if (entity.isRemoved()) {
+-                    continue;
+-                }
+-                final org.bukkit.craftbukkit.entity.CraftEntity bukkit = entity.getBukkitEntityRaw();
+-                if (bukkit != null) {
+-                    bukkit.taskScheduler.executeTick();
+-                }
+-            }
+-        });
++        // Plazma start - Skip executeTick check if there is no any task to be run
++        for (final Entity entity : entitiesWithScheduledTasks) {
++            if (entity.isRemoved()) continue;
++
++            final org.bukkit.craftbukkit.entity.CraftEntity craftEntity = entity.getBukkitEntityRaw();
++            if (craftEntity == null) return;
++
++            craftEntity.taskScheduler.executeTick();
++        }
++        // Plazma end - Skip executeTick check if there is no any task to be run
+         // Paper end - Folia scheduler API
+         io.papermc.paper.adventure.providers.ClickCallbackProviderImpl.CALLBACK_MANAGER.handleQueue(this.tickCount); // Paper
+         //gameprofilerfiller.push("commandFunctions"); // Plazma - Completely remove Mojang profiler
+diff --git a/src/main/java/org/bukkit/craftbukkit/entity/CraftEntity.java b/src/main/java/org/bukkit/craftbukkit/entity/CraftEntity.java
+index 0e1b3f64d1a828b9c69efe45c511582880bdcb92..9afcc3cc8ef61864da8194d412ddce159db4029e 100644
+--- a/src/main/java/org/bukkit/craftbukkit/entity/CraftEntity.java
++++ b/src/main/java/org/bukkit/craftbukkit/entity/CraftEntity.java
+@@ -72,7 +72,7 @@ public abstract class CraftEntity implements org.bukkit.entity.Entity {
+     private final CraftPersistentDataContainer persistentDataContainer = new CraftPersistentDataContainer(CraftEntity.DATA_TYPE_REGISTRY);
+     protected net.kyori.adventure.pointer.Pointers adventure$pointers; // Paper - implement pointers
+     // Paper start - Folia shedulers
+-    public final io.papermc.paper.threadedregions.EntityScheduler taskScheduler = new io.papermc.paper.threadedregions.EntityScheduler(this);
++    public final io.papermc.paper.threadedregions.EntityScheduler taskScheduler; // Plazma - Skip executeTick check if there is no any task to be run
+     private final io.papermc.paper.threadedregions.scheduler.FoliaEntityScheduler apiScheduler = new io.papermc.paper.threadedregions.scheduler.FoliaEntityScheduler(this);
+ 
+     @Override
+@@ -85,6 +85,7 @@ public abstract class CraftEntity implements org.bukkit.entity.Entity {
+         this.server = server;
+         this.entity = entity;
+         this.entityType = CraftEntityType.minecraftToBukkit(entity.getType());
++        this.taskScheduler = new io.papermc.paper.threadedregions.EntityScheduler(this.entity.getServer(), this); // Plazma - Skip executeTick check if there is no any task to be run
+     }
+ 
+     // Purpur start - API for any mob to burn daylight

@@ -1,0 +1,333 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: AlphaKR93 <dev@alpha93.kr>
+Date: Sat, 14 Dec 2024 00:39:05 +0900
+Subject: [PATCH] Ticking Controller
+
+
+diff --git a/src/main/java/net/minecraft/server/MinecraftServer.java b/src/main/java/net/minecraft/server/MinecraftServer.java
+index 8964ccc27ea7db306140fd6b04c9f5cb33158aa0..bd8048bfe2a93c3a4b4bb84e7d992a8bb0c65778 100644
+--- a/src/main/java/net/minecraft/server/MinecraftServer.java
++++ b/src/main/java/net/minecraft/server/MinecraftServer.java
+@@ -1654,6 +1654,7 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
+     }
+ 
+     public void tickServer(BooleanSupplier shouldKeepTicking) {
++        org.plazmamc.plazma.util.TickingController.tick(); // Plazma - TickControl System
+         org.spigotmc.WatchdogThread.tick(); // Spigot
+         long i = Util.getNanos();
+         int j = this.pauseWhileEmptySeconds() * 20;
+diff --git a/src/main/java/net/minecraft/server/dedicated/ServerWatchdog.java b/src/main/java/net/minecraft/server/dedicated/ServerWatchdog.java
+index 660a142036c4e608d3d6fed6ec700a3488400bec..d092bef5e6626f000a44a0f424f247a1a69d34af 100644
+--- a/src/main/java/net/minecraft/server/dedicated/ServerWatchdog.java
++++ b/src/main/java/net/minecraft/server/dedicated/ServerWatchdog.java
+@@ -34,6 +34,7 @@ public class ServerWatchdog implements Runnable {
+     @Override
+     public void run() {
+         while (this.server.isRunning()) {
++            if (org.plazmamc.plazma.configurations.GlobalConfiguration.get().tickControl.enabled) return; // Plazma - TickControl System
+             long l = this.server.getNextTickTime();
+             long m = Util.getNanos();
+             long n = m - l;
+diff --git a/src/main/java/net/minecraft/server/level/ServerChunkCache.java b/src/main/java/net/minecraft/server/level/ServerChunkCache.java
+index a84faa2e82a8d33b7bfe71f174f2913b585d99e8..0d8800d05bd6a14b3d5702d6a51f8cb0c7ae2186 100644
+--- a/src/main/java/net/minecraft/server/level/ServerChunkCache.java
++++ b/src/main/java/net/minecraft/server/level/ServerChunkCache.java
+@@ -630,7 +630,7 @@ public class ServerChunkCache extends ChunkSource implements ca.spottedleaf.moon
+         // this.lastSpawnState = spawnercreature_d; // Pufferfish - this is managed asynchronously
+         //profiler.popPush("spawnAndTick"); // Plazma - Completely remove Mojang profiler
+         boolean flag = this.level.getGameRules().getBoolean(GameRules.RULE_DOMOBSPAWNING) && !this.level.players().isEmpty(); // CraftBukkit
+-        int k = this.level.getGameRules().getInt(GameRules.RULE_RANDOMTICKING);
++        int k = org.plazmamc.plazma.util.TickingController.calc(this.level.getGameRules().getInt(GameRules.RULE_RANDOMTICKING), it -> it.accelerate.randomTick, false); // Plazma - TickControl system
+         List list1;
+ 
+         if (flag && (this.spawnEnemies || this.spawnFriendlies)) {
+diff --git a/src/main/java/net/minecraft/server/level/ServerLevel.java b/src/main/java/net/minecraft/server/level/ServerLevel.java
+index 9a54883281352cc4fa08143f5126d61dbd89761d..982b172b188fb890fa7719662e67a007ab172668 100644
+--- a/src/main/java/net/minecraft/server/level/ServerLevel.java
++++ b/src/main/java/net/minecraft/server/level/ServerLevel.java
+@@ -909,7 +909,12 @@ public class ServerLevel extends Level implements ServerEntityGetter, WorldGenLe
+                     this.setDayTime(this.preciseTime);
+                 } else
+                 // Purpur end - Configurable daylight cycle
+-                this.setDayTime(this.levelData.getDayTime() + 1L);
++                // Plazma start - TickControl System
++                    if (org.plazmamc.plazma.configurations.GlobalConfiguration.get().tickControl.accelerate.dayTime)
++                        this.setDayTime(this.levelData.getDayTime() + org.plazmamc.plazma.util.TickingController.missedTicks() + 1L);
++                    else
++                        this.setDayTime(this.levelData.getDayTime() + 1L);
++                // Plazma end - TickControl System
+             }
+ 
+         }
+diff --git a/src/main/java/net/minecraft/world/entity/LivingEntity.java b/src/main/java/net/minecraft/world/entity/LivingEntity.java
+index d6d43ad1677d035c26619b73e5a2dd6e72ab278b..ee6ad451ba8755cf296e9c0a01404a5ed025e749 100644
+--- a/src/main/java/net/minecraft/world/entity/LivingEntity.java
++++ b/src/main/java/net/minecraft/world/entity/LivingEntity.java
+@@ -562,6 +562,7 @@ public abstract class LivingEntity extends Entity implements Attackable {
+         }
+ 
+         this.tickEffects();
++        if (plazma.Config.get().tickControl.delay.potionEffect) for (int i = 0; i < org.plazmamc.plazma.util.TickingController.missedTicks(); i++) this.tickEffects(); // Plazma - TickControl System
+         this.animStepO = this.animStep;
+         this.yBodyRotO = this.yBodyRot;
+         this.yHeadRotO = this.yHeadRot;
+diff --git a/src/main/java/net/minecraft/world/entity/PortalProcessor.java b/src/main/java/net/minecraft/world/entity/PortalProcessor.java
+index b4a8249964786d484aa0767d0e73d71d2156f0e8..49505d04c737c41e4229d80a7b96d4ed0b68d083 100644
+--- a/src/main/java/net/minecraft/world/entity/PortalProcessor.java
++++ b/src/main/java/net/minecraft/world/entity/PortalProcessor.java
+@@ -24,7 +24,7 @@ public class PortalProcessor {
+             return false;
+         } else {
+             this.insidePortalThisTick = false;
+-            return canUsePortals && this.portalTime++ >= this.portal.getPortalTransitionTime(world, entity);
++            return canUsePortals && this.increaseTick() >= this.portal.getPortalTransitionTime(world, entity); // Plazma - TickControl System
+         }
+     }
+ 
+@@ -33,6 +33,14 @@ public class PortalProcessor {
+         return this.portal.getPortalDestination(world, entity, this.entryPosition);
+     }
+ 
++    // Plazma start - TickControl System
++    private int increaseTick() {
++        if (!plazma.Config.get().tickControl.delay.portalUse)
++            this.portalTime += org.plazmamc.plazma.util.TickingController.missedTicks();
++        return this.portalTime++;
++    }
++    // Plazma end - TickControl System
++
+     public Portal.Transition getPortalLocalTransition() {
+         return this.portal.getLocalTransition();
+     }
+diff --git a/src/main/java/net/minecraft/world/entity/item/ItemEntity.java b/src/main/java/net/minecraft/world/entity/item/ItemEntity.java
+index 4aaaadce69e62fa371d5b441e5e69c1384e5d63e..97c63c335287e01b20687eeea4a5815520363e13 100644
+--- a/src/main/java/net/minecraft/world/entity/item/ItemEntity.java
++++ b/src/main/java/net/minecraft/world/entity/item/ItemEntity.java
+@@ -158,6 +158,7 @@ public class ItemEntity extends Entity implements TraceableEntity {
+         if (this.getItem().isEmpty()) {
+             this.discard(EntityRemoveEvent.Cause.DESPAWN); // CraftBukkit - add Bukkit remove cause
+         } else {
++            if (this.pickupDelay > 0 && plazma.Config.get().tickControl.delay.itemPickup) this.pickupDelay = Math.max(this.pickupDelay - org.plazmamc.plazma.util.TickingController.missedTicks(), 0); // Plazma - TickControl System
+             super.tick();
+             // Paper start - remove anti tick skipping measures / wall time - revert to vanilla
+             if (this.pickupDelay > 0 && this.pickupDelay != 32767) {
+diff --git a/src/main/java/net/minecraft/world/entity/player/Player.java b/src/main/java/net/minecraft/world/entity/player/Player.java
+index 5a9e85c44fbb716dc1e8616645732cb8db947ee9..4ea1a327c80f915aa45ccf3a5955ed6ff42692c1 100644
+--- a/src/main/java/net/minecraft/world/entity/player/Player.java
++++ b/src/main/java/net/minecraft/world/entity/player/Player.java
+@@ -305,6 +305,11 @@ public abstract class Player extends LivingEntity {
+             if (this.sleepCounter > 100) {
+                 this.sleepCounter = 100;
+             }
++            // Plazma start - TickControl System
++            else if (this.sleepCounter < 100 && plazma.Config.get().tickControl.delay.sleep && org.plazmamc.plazma.util.TickingController.missedTicks() > 0) {
++                this.sleepCounter += org.plazmamc.plazma.util.TickingController.missedTicks();
++            }
++            // Plazma end - TickControl System
+ 
+             if (/*!this.level().isClientSide &&*/ this.level().isDay()) { // Plazma - Remove persist 'isClientSide' flag
+                 this.stopSleepInBed(false, true);
+diff --git a/src/main/java/net/minecraft/world/item/Item.java b/src/main/java/net/minecraft/world/item/Item.java
+index 29afbe0aa72f12d8fa6c03af55d17abef89c8dd4..78742ef91ed332d229d007af9224555a79cd6be9 100644
+--- a/src/main/java/net/minecraft/world/item/Item.java
++++ b/src/main/java/net/minecraft/world/item/Item.java
+@@ -260,7 +260,7 @@ public class Item implements FeatureElement, ItemLike {
+ 
+     public int getUseDuration(ItemStack stack, LivingEntity user) {
+         Consumable consumable = stack.get(DataComponents.CONSUMABLE);
+-        return consumable != null ? consumable.consumeTicks() : 0;
++        return consumable != null ? org.plazmamc.plazma.util.TickingController.calc(consumable.consumeTicks(), it -> it.delay.itemUse, true) : 0; // Plazma - TickControl System
+     }
+ 
+     public boolean releaseUsing(ItemStack stack, Level world, LivingEntity user, int remainingUseTicks) {
+diff --git a/src/main/java/net/minecraft/world/level/block/state/BlockBehaviour.java b/src/main/java/net/minecraft/world/level/block/state/BlockBehaviour.java
+index c8ae6e4cd74549f753ec04def5d882de1ab72308..b01b80ff0318f95a737ce3f93a5c69426019cc9c 100644
+--- a/src/main/java/net/minecraft/world/level/block/state/BlockBehaviour.java
++++ b/src/main/java/net/minecraft/world/level/block/state/BlockBehaviour.java
+@@ -336,13 +336,14 @@ public abstract class BlockBehaviour implements FeatureElement {
+     protected float getDestroyProgress(BlockState state, Player player, BlockGetter world, BlockPos pos) {
+         float f = state.getDestroySpeed(world, pos);
+ 
+-        if (f == -1.0F) {
+-            return 0.0F;
+-        } else {
+-            int i = player.hasCorrectToolForDrops(state) ? 30 : 100;
+-
+-            return player.getDestroySpeed(state) / f / (float) i;
+-        }
++        // Plazma start - TickControl system
++        if (f == -1.0F) return 0.0F;
++        return org.plazmamc.plazma.util.TickingController.calc(
++            player.getDestroySpeed(state) / f / (player.hasCorrectToolForDrops(state) ? 30 : 100),
++            it -> it.delay.blockBreak,
++            false
++        );
++        // Plazma end - TickControl system
+     }
+ 
+     protected void spawnAfterBreak(BlockState state, ServerLevel world, BlockPos pos, ItemStack tool, boolean dropExperience) {}
+diff --git a/src/main/java/net/minecraft/world/level/chunk/LevelChunk.java b/src/main/java/net/minecraft/world/level/chunk/LevelChunk.java
+index a1756429e8fc09cfd78109c4d5113857304b317d..158da3ebd4b09d8c682960ff658a2e861cbee6dc 100644
+--- a/src/main/java/net/minecraft/world/level/chunk/LevelChunk.java
++++ b/src/main/java/net/minecraft/world/level/chunk/LevelChunk.java
+@@ -1081,8 +1081,18 @@ public class LevelChunk extends ChunkAccess implements ca.spottedleaf.moonrise.p
+             this.chunkCoordinateKey = chunkCoordinateKey;
+         }
+ 
++        // Plazma start - TickControl System
++        private void tickTicker(BlockState state) {
++            this.ticker.tick(LevelChunk.this.level, this.blockEntity.getBlockPos(), state, this.blockEntity);
++
++            if (!org.plazmamc.plazma.util.TickingController.shouldTickAgain(state.getBlock())) return;
++            for (int i = 0; i < org.plazmamc.plazma.util.TickingController.missedTicks(); i++)
++                this.ticker.tick(LevelChunk.this.level, this.blockEntity.getBlockPos(), state, this.blockEntity);
++        }
++        // Plazma end - TickControl System
++
+         @Override
+-        public void tick() {
++        public final void tick() { // Plazma - TickControl System (make final)
+             if (this.blockEntity.isRemoved() || !this.blockEntity.hasLevel()) return;
+ 
+             BlockPos pos = this.blockEntity.getBlockPos();
+@@ -1092,7 +1102,7 @@ public class LevelChunk extends ChunkAccess implements ca.spottedleaf.moonrise.p
+                 BlockState state = LevelChunk.this.getBlockState(pos);
+ 
+                 if (this.blockEntity.getType().isValid(state)) {
+-                    this.ticker.tick(LevelChunk.this.level, this.blockEntity.getBlockPos(), state, this.blockEntity);
++                    this.tickTicker(state); // Plazma - TickControl System
+                     this.loggedInvalidBlockState = false;
+                     // Paper start - Remove the Block Entity if it's invalid
+                 } else {
+diff --git a/src/main/java/net/minecraft/world/level/material/LavaFluid.java b/src/main/java/net/minecraft/world/level/material/LavaFluid.java
+index 6e643c1a7f7e71cfd20603facaf224985ee81716..cbbbcf8a915a4146eb63e29ba5dd91354ac7228b 100644
+--- a/src/main/java/net/minecraft/world/level/material/LavaFluid.java
++++ b/src/main/java/net/minecraft/world/level/material/LavaFluid.java
+@@ -181,7 +181,7 @@ public abstract class LavaFluid extends FlowingFluid {
+ 
+     @Override
+     public int getTickDelay(LevelReader world) {
+-        return world.dimensionType().ultraWarm() ? world.getWorldBorder().world.purpurConfig.lavaSpeedNether : world.getWorldBorder().world.purpurConfig.lavaSpeedNotNether; // Purpur
++        return org.plazmamc.plazma.util.TickingController.calc(world.dimensionType().ultraWarm() ? world.getWorldBorder().world.purpurConfig.lavaSpeedNether : world.getWorldBorder().world.purpurConfig.lavaSpeedNotNether, it -> it.delay.lavaFluid, true); // Purpur // Plazma - TickControl system
+     }
+ 
+     @Override
+diff --git a/src/main/java/net/minecraft/world/level/material/WaterFluid.java b/src/main/java/net/minecraft/world/level/material/WaterFluid.java
+index 028aea6640356ba80f5d682e3cc03b7f82f5b9c7..d788849dc5a568d455cd83ca5b6e1b4ba1a9161f 100644
+--- a/src/main/java/net/minecraft/world/level/material/WaterFluid.java
++++ b/src/main/java/net/minecraft/world/level/material/WaterFluid.java
+@@ -123,7 +123,7 @@ public abstract class WaterFluid extends FlowingFluid {
+ 
+     @Override
+     public int getTickDelay(LevelReader world) {
+-        return world.getWorldBorder().world.plazmaConfig().block.waterFlowingTick; // Plazma - Configurable water flowing speed
++        return org.plazmamc.plazma.util.TickingController.calc(world.getWorldBorder().world.plazmaConfig().block.waterFlowingTick, it -> it.delay.waterFluid, true); // Plazma - Configurable water flowing speed // Plazma - TickControl System
+     }
+ 
+     @Override
+diff --git a/src/main/java/org/plazmamc/plazma/configurations/GlobalConfiguration.java b/src/main/java/org/plazmamc/plazma/configurations/GlobalConfiguration.java
+index 914f0d59801250d4e738a8595c747fd1e766d13f..7ea1b7e41557b7960b65b2e6d2dcb6fd2f9a24af 100644
+--- a/src/main/java/org/plazmamc/plazma/configurations/GlobalConfiguration.java
++++ b/src/main/java/org/plazmamc/plazma/configurations/GlobalConfiguration.java
+@@ -189,4 +189,39 @@ public class GlobalConfiguration extends ConfigurationPart {
+ 
+     }
+ 
++    public TickControl tickControl;
++    public class TickControl extends ConfigurationPart {
++
++        public boolean enabled = false;
++
++        public Delay delay;
++        public class Delay extends ConfigurationPart {
++
++            public boolean sleep = true;
++            public boolean itemUse = true;
++            public boolean portalUse = true;
++            public boolean lavaFluid = true;
++            public boolean waterFluid = true;
++            public boolean blockBreak = true;
++            public boolean itemPickup = true;
++            public boolean potionEffect = true;
++
++        }
++
++        public Accelerate accelerate;
++        public class Accelerate extends ConfigurationPart {
++
++            public boolean dayTime = true;
++            public boolean randomTick = true;
++            public boolean blockEntity = true;
++
++        }
++
++        @PostProcess
++        void post() {
++            org.plazmamc.plazma.util.TickingController.post(this);
++        }
++
++    }
++
+ }
+diff --git a/src/main/java/org/plazmamc/plazma/util/TickingController.java b/src/main/java/org/plazmamc/plazma/util/TickingController.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..0e71a47a639a1a3dd0918c5a403ed827aca67966
+--- /dev/null
++++ b/src/main/java/org/plazmamc/plazma/util/TickingController.java
+@@ -0,0 +1,56 @@
++package org.plazmamc.plazma.util;
++
++import net.minecraft.world.level.block.Block;
++import org.jspecify.annotations.NonNull;
++import org.jspecify.annotations.Nullable;
++import org.plazmamc.plazma.configurations.GlobalConfiguration;
++import java.util.function.Function;
++
++import static net.minecraft.server.MinecraftServer.getServer;
++
++public final class TickingController {
++
++    private static @Nullable TickingController INSTANCE;
++    private final GlobalConfiguration.TickControl configuration;
++    private int missedTicks = 0;
++
++    private TickingController(GlobalConfiguration.TickControl configuration) {
++        this.configuration = configuration;
++    }
++
++    public static void tick() {
++        if (INSTANCE == null) return;
++        INSTANCE.missedTicks -= INSTANCE.missedTicks;
++        INSTANCE.missedTicks += (int) (getServer().tickTimes5s.getAverage() / 50 - 1);
++    }
++
++    public static void post(GlobalConfiguration.TickControl configuration) {
++        if (!configuration.enabled) {
++            INSTANCE = null;
++            return;
++        }
++
++        INSTANCE = new TickingController(configuration);
++    }
++
++    public static float calc(float original, @NonNull Function<GlobalConfiguration.TickControl, Boolean> isAffected, boolean swap) {
++        if (INSTANCE == null || !isAffected.apply(INSTANCE.configuration) || original == 0) return original;
++        if (swap) return (float) Math.max(original * getServer().tps5s.getAverage() / 20, 1);
++        return (float) (original * 20 / getServer().tps5s.getAverage());
++    }
++
++    public static int calc(int original, @NonNull Function<GlobalConfiguration.TickControl, Boolean> isAccelerated, boolean swap) {
++        return (int) Math.ceil(calc((float) original, isAccelerated, swap));
++    }
++
++    public static int missedTicks() {
++        if (INSTANCE == null) return 0;
++        return INSTANCE.missedTicks;
++    }
++
++    public static boolean shouldTickAgain(Block block) {
++        // TODO: Configurable block masking
++        return INSTANCE != null && !INSTANCE.configuration.accelerate.blockEntity;
++    }
++
++}

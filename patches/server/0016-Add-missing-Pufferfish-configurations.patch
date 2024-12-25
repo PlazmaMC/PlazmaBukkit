@@ -1,0 +1,62 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: AlphaKR93 <dev@alpha93.kr>
+Date: Fri, 13 Dec 2024 13:08:37 +0900
+Subject: [PATCH] Add missing Pufferfish configurations
+
+
+diff --git a/src/main/java/net/minecraft/world/entity/animal/armadillo/Armadillo.java b/src/main/java/net/minecraft/world/entity/animal/armadillo/Armadillo.java
+index 30779f8a00d438972ad59372ce92e23193f99820..a1612c503c12b9a4d03c1a62320801f41c0ffa2e 100644
+--- a/src/main/java/net/minecraft/world/entity/animal/armadillo/Armadillo.java
++++ b/src/main/java/net/minecraft/world/entity/animal/armadillo/Armadillo.java
+@@ -163,11 +163,13 @@ public class Armadillo extends Animal {
+         return ArmadilloAi.makeBrain(this.brainProvider().makeBrain(dynamic));
+     }
+ 
++    private int behaviorTick; // Plazma - Add missing pufferfish configurations
+     @Override
+     protected void customServerAiStep(ServerLevel world) {
+         ProfilerFiller gameprofilerfiller = Profiler.get();
+ 
+         gameprofilerfiller.push("armadilloBrain");
++        if ((getRider() == null || !this.isControllable()) && this.behaviorTick++ % this.activatedPriority == 0) // Plazma - Add missing pufferfish configurations
+         ((Brain<Armadillo>) this.brain).tick(world, this); // CraftBukkit - decompile error
+         gameprofilerfiller.pop();
+         gameprofilerfiller.push("armadilloActivityUpdate");
+diff --git a/src/main/java/net/minecraft/world/entity/animal/camel/Camel.java b/src/main/java/net/minecraft/world/entity/animal/camel/Camel.java
+index d0023e3734bb3c625fa53077f47039dcb82d9606..36f8bb5cf25566784e11988c91e1c7409f1ac5c8 100644
+--- a/src/main/java/net/minecraft/world/entity/animal/camel/Camel.java
++++ b/src/main/java/net/minecraft/world/entity/animal/camel/Camel.java
+@@ -154,6 +154,7 @@ public class Camel extends AbstractHorse {
+         return pose == Pose.SITTING ? Camel.SITTING_DIMENSIONS.scale(this.getAgeScale()) : super.getDefaultDimensions(pose);
+     }
+ 
++    private int behaviorTick = 0; // Plazma - Add missing pufferfish configurations
+     @Override
+     protected void customServerAiStep(ServerLevel world) {
+         ProfilerFiller gameprofilerfiller = Profiler.get();
+@@ -161,6 +162,7 @@ public class Camel extends AbstractHorse {
+         gameprofilerfiller.push("camelBrain");
+         Brain<Camel> behaviorcontroller = (Brain<Camel>) this.getBrain(); // CraftBukkit - decompile error
+ 
++        if ((getRider() == null || !this.isControllable()) && this.behaviorTick++ % this.activatedPriority == 0) // Plazma - Add missing pufferfish configurations
+         behaviorcontroller.tick(world, this);
+         gameprofilerfiller.pop();
+         gameprofilerfiller.push("camelActivityUpdate");
+diff --git a/src/main/java/net/minecraft/world/entity/animal/sniffer/Sniffer.java b/src/main/java/net/minecraft/world/entity/animal/sniffer/Sniffer.java
+index 489854333e71ad4e7635870eedbdd07a84297a13..3fa391b638062196675d102b8731a96a51df8e15 100644
+--- a/src/main/java/net/minecraft/world/entity/animal/sniffer/Sniffer.java
++++ b/src/main/java/net/minecraft/world/entity/animal/sniffer/Sniffer.java
+@@ -495,11 +495,13 @@ public class Sniffer extends Animal {
+         return Brain.provider(SnifferAi.MEMORY_TYPES, SnifferAi.SENSOR_TYPES);
+     }
+ 
++    private int behaviorTick; // Plazma - Add missing pufferfish configurations
+     @Override
+     protected void customServerAiStep(ServerLevel world) {
+         ProfilerFiller gameprofilerfiller = Profiler.get();
+ 
+         gameprofilerfiller.push("snifferBrain");
++        if ((getRider() == null || !this.isControllable()) && this.behaviorTick++ % this.activatedPriority == 0) // Plazma - Add missing pufferfish configurations
+         this.getBrain().tick(world, this);
+         gameprofilerfiller.popPush("snifferActivityUpdate");
+         SnifferAi.updateActivity(this);

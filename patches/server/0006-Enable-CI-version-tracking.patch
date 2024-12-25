@@ -1,0 +1,41 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: AlphaKR93 <dev@alpha93.kr>
+Date: Wed, 25 Dec 2024 18:16:50 +0900
+Subject: [PATCH] Enable CI version tracking
+
+
+diff --git a/src/main/java/com/destroystokyo/paper/PaperVersionFetcher.java b/src/main/java/com/destroystokyo/paper/PaperVersionFetcher.java
+index 1ad562a95809cf7d503f5446f8645ba8c2680914..21a3761f075ace896c981936b2810fccb0b5d610 100644
+--- a/src/main/java/com/destroystokyo/paper/PaperVersionFetcher.java
++++ b/src/main/java/com/destroystokyo/paper/PaperVersionFetcher.java
+@@ -90,19 +90,18 @@ public class PaperVersionFetcher implements VersionFetcher {
+         };
+     }
+ 
+-    /* // Plazma - TODO: CI Checking
+     private static int fetchDistanceFromSiteApi(final ServerBuildInfo build, final int jenkinsBuild) {
+         try {
+             try (final BufferedReader reader = Resources.asCharSource(
+-                URI.create("https://api.purpurmc.org/v2/purpur/" + build.minecraftVersionId()).toURL(), // Purpur - Rebrand
++                URI.create("https://ci.codemc.io/job/PlazmaMC/job/Plazma/job/" + build.gitBranch().orElseThrow().replace("/", "%2F") + "/api/json").toURL(), // Purpur - Rebrand // Plazma - Rebrand
+                 Charsets.UTF_8
+             ).openBufferedStream()) {
+                 final JsonObject json = new Gson().fromJson(reader, JsonObject.class);
+                 //final JsonArray builds = json.getAsJsonArray("builds"); // Purpur - Rebrand
+-                final int latest = json.getAsJsonObject("builds").getAsJsonPrimitive("latest").getAsInt(); // Purpur - Rebrand
++                final int latest = json.getAsJsonObject("lastSuccessfulBuild").getAsJsonPrimitive("number").getAsInt(); // Purpur - Rebrand // Plazma - Rebrand
+                 return latest - jenkinsBuild;
+             } catch (final JsonSyntaxException ex) {
+-                LOGGER.error("Error parsing json from Purpur's downloads API", ex); // Purpur - Rebrand
++                LOGGER.error("Error parsing json from CI", ex); // Purpur - Rebrand // Plazma - Rebrand
+                 return DISTANCE_ERROR;
+             }
+         } catch (final IOException e) {
+@@ -110,7 +109,6 @@ public class PaperVersionFetcher implements VersionFetcher {
+             return DISTANCE_ERROR;
+         }
+     }
+-     */ // Plazma - TODO: CI Checking
+ 
+     // Contributed by Techcable <Techcable@outlook.com> in GH-65
+     private static int fetchDistanceFromGitHub(final String repo, final String branch, final String hash) {
