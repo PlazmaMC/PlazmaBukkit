@@ -1,0 +1,446 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: AlphaKR93 <dev@alpha93.kr>
+Date: Wed, 25 Dec 2024 23:33:48 +0900
+Subject: [PATCH] Add PlayerList API
+
+
+diff --git a/src/main/java/com/destroystokyo/paper/event/profile/ProfileWhitelistVerifyEvent.java b/src/main/java/com/destroystokyo/paper/event/profile/ProfileWhitelistVerifyEvent.java
+index 901efb61fdc02b3228cc25649926d691c4617512..53680f712abf2d52cbf35f85cd7bb855860a98d6 100644
+--- a/src/main/java/com/destroystokyo/paper/event/profile/ProfileWhitelistVerifyEvent.java
++++ b/src/main/java/com/destroystokyo/paper/event/profile/ProfileWhitelistVerifyEvent.java
+@@ -40,7 +40,7 @@ import org.jspecify.annotations.Nullable;
+  * and dynamically change the kick message.
+  */
+ @NullMarked
+-public class ProfileWhitelistVerifyEvent extends Event {
++public class ProfileWhitelistVerifyEvent extends org.plazmamc.plazma.event.players.ProfileLoginVerifyEvent {
+ 
+     private static final HandlerList HANDLER_LIST = new HandlerList();
+ 
+@@ -87,6 +87,7 @@ public class ProfileWhitelistVerifyEvent extends Event {
+      * @return the currently planned message to send to the user if they are not whitelisted
+      */
+     @Contract(pure = true)
++    @Override // Plazma - Configurable persistent player list provider
+     public @Nullable Component kickMessage() {
+         return this.kickMessage;
+     }
+@@ -94,6 +95,7 @@ public class ProfileWhitelistVerifyEvent extends Event {
+     /**
+      * @param kickMessage The message to send to the player on kick if not whitelisted. May set to {@code null} to use the server configured default
+      */
++    @Override // Plazma - Configurable persistent player list provider
+     public void kickMessage(final @Nullable Component kickMessage) {
+         this.kickMessage = kickMessage;
+     }
+@@ -124,6 +126,7 @@ public class ProfileWhitelistVerifyEvent extends Event {
+     /**
+      * @return if the player obtained whitelist status by having op
+      */
++    @Override // Plazma - Configurable persistent player list provider
+     public boolean isOp() {
+         return this.isOp;
+     }
+@@ -143,4 +146,11 @@ public class ProfileWhitelistVerifyEvent extends Event {
+     public static HandlerList getHandlerList() {
+         return HANDLER_LIST;
+     }
++
++    // Plazma start - Configurable persistent player list provider
++    @Override
++    public PlayerProfile getTarget() {
++        return this.getPlayerProfile();
++    }
++    // Plazma end - Configurable persistent player list provider
+ }
+diff --git a/src/main/java/org/bukkit/Server.java b/src/main/java/org/bukkit/Server.java
+index c5ae50d099989c96ed8d2c2d5dea4017da7c3079..7a8e247554c60b46b8a60f107bf574c730f4b568 100644
+--- a/src/main/java/org/bukkit/Server.java
++++ b/src/main/java/org/bukkit/Server.java
+@@ -2727,4 +2727,10 @@ public interface Server extends PluginMessageRecipient, net.kyori.adventure.audi
+      */
+     void clearBlockHighlights();
+     // Purpur end
++
++    // Plazma start - Configurable persistent player list provider
++    org.plazmamc.plazma.players.PersistentPlayerListProvider getPersistentPlayerListProvider();
++
++    void setPersistentPlayerListProvider(final @NotNull org.plazmamc.plazma.players.PersistentPlayerListProvider provider);
++    // Plazma end - Configurable persistent player list provider
+ }
+diff --git a/src/main/java/org/plazmamc/plazma/event/players/BanVerifyEvent.java b/src/main/java/org/plazmamc/plazma/event/players/BanVerifyEvent.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..b236b876f51ad32ff64b111d7ecffc5372cbb66c
+--- /dev/null
++++ b/src/main/java/org/plazmamc/plazma/event/players/BanVerifyEvent.java
+@@ -0,0 +1,29 @@
++package org.plazmamc.plazma.event.players;
++
++import net.kyori.adventure.text.Component;
++import org.jspecify.annotations.Nullable;
++import org.plazmamc.plazma.players.BanInfo;
++import java.util.Date;
++
++public interface BanVerifyEvent<T> {
++
++    boolean isBanned();
++
++    void setBanned(boolean banned);
++
++    @Nullable
++    BanInfo<T> getBanInfo();
++
++    @Nullable
++    Date getCreated();
++
++    @Nullable
++    Date getExpires();
++
++    @Nullable
++    String getSource();
++
++    @Nullable
++    Component getReason();
++
++}
+diff --git a/src/main/java/org/plazmamc/plazma/event/players/IpBanVerifyEvent.java b/src/main/java/org/plazmamc/plazma/event/players/IpBanVerifyEvent.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..ce1d5ff284b37a35a300bffbed70406c98a1bdea
+--- /dev/null
++++ b/src/main/java/org/plazmamc/plazma/event/players/IpBanVerifyEvent.java
+@@ -0,0 +1,95 @@
++package org.plazmamc.plazma.event.players;
++
++import net.kyori.adventure.text.Component;
++import org.bukkit.event.HandlerList;
++import org.jetbrains.annotations.Contract;
++import org.jetbrains.annotations.NotNull;
++import org.jspecify.annotations.NonNull;
++import org.jspecify.annotations.Nullable;
++import org.plazmamc.plazma.players.BanInfo;
++import java.net.SocketAddress;
++import java.util.Date;
++
++public class IpBanVerifyEvent extends LoginVerifyEvent<SocketAddress> implements BanVerifyEvent<String> {
++
++    private static final HandlerList HANDLERS = new HandlerList();
++
++    private final @Nullable BanInfo<String> banInfo;
++    private final @NonNull SocketAddress target;
++    private boolean banned;
++    private @Nullable Component kickMessage;
++
++    public IpBanVerifyEvent(final @NonNull SocketAddress target) {
++        this.banInfo = null;
++        this.target = target;
++        this.banned = false;
++        this.kickMessage = null;
++    }
++
++    public IpBanVerifyEvent(final @NonNull SocketAddress target, final @NonNull BanInfo<String> banInfo, final @Nullable Component kickMessage) {
++        this.banInfo = banInfo;
++        this.target = target;
++        this.banned = true;
++        this.kickMessage = kickMessage;
++    }
++
++    @Override
++    public Component kickMessage() {
++        return this.kickMessage;
++    }
++
++    @Override
++    public void kickMessage(final @NonNull Component kickMessage) {
++        this.kickMessage = kickMessage;
++    }
++
++    @Override
++    public @NotNull SocketAddress getTarget() {
++        return this.target;
++    }
++
++    @Override
++    public @NotNull HandlerList getHandlers() {
++        return HANDLERS;
++    }
++
++    @Contract(pure = true)
++    public static HandlerList getHandlerList() {
++        return HANDLERS;
++    }
++
++    @Override
++    public boolean isBanned() {
++        return this.banned;
++    }
++
++    @Override
++    public void setBanned(final boolean banned) {
++        this.banned = banned;
++    }
++
++    @Override
++    public @Nullable BanInfo<String> getBanInfo() {
++        return this.banInfo;
++    }
++
++    @Override
++    public @Nullable Date getCreated() {
++        return this.banInfo == null ? null : this.banInfo.getCreated();
++    }
++
++    @Override
++    public @Nullable Date getExpires() {
++        return this.banInfo == null ? null : this.banInfo.getExpires();
++    }
++
++    @Override
++    public @Nullable String getSource() {
++        return this.banInfo == null ? null : this.banInfo.getSource();
++    }
++
++    @Override
++    public Component getReason() {
++        return this.kickMessage;
++    }
++}
+diff --git a/src/main/java/org/plazmamc/plazma/event/players/LoginVerifyEvent.java b/src/main/java/org/plazmamc/plazma/event/players/LoginVerifyEvent.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..ab74b6d2da4d64378afc75cbdb5b5c50f468a6b9
+--- /dev/null
++++ b/src/main/java/org/plazmamc/plazma/event/players/LoginVerifyEvent.java
+@@ -0,0 +1,15 @@
++package org.plazmamc.plazma.event.players;
++
++import net.kyori.adventure.text.Component;
++import org.bukkit.event.Event;
++import org.jspecify.annotations.NonNull;
++
++public abstract class LoginVerifyEvent<T> extends Event {
++
++    public abstract Component kickMessage();
++
++    public abstract void kickMessage(final @NonNull Component kickMessage);
++
++    public abstract T getTarget();
++
++}
+diff --git a/src/main/java/org/plazmamc/plazma/event/players/ProfileBanVerifyEvent.java b/src/main/java/org/plazmamc/plazma/event/players/ProfileBanVerifyEvent.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..0e7d7718300e1422b2c0409655d2425114f98a21
+--- /dev/null
++++ b/src/main/java/org/plazmamc/plazma/event/players/ProfileBanVerifyEvent.java
+@@ -0,0 +1,108 @@
++package org.plazmamc.plazma.event.players;
++
++import com.destroystokyo.paper.profile.PlayerProfile;
++import net.kyori.adventure.text.Component;
++import net.kyori.adventure.text.minimessage.MiniMessage;
++import org.bukkit.event.HandlerList;
++import org.jetbrains.annotations.ApiStatus;
++import org.jetbrains.annotations.Contract;
++import org.jetbrains.annotations.NotNull;
++import org.jspecify.annotations.NonNull;
++import org.jspecify.annotations.Nullable;
++import org.plazmamc.plazma.players.BanInfo;
++import java.util.Date;
++
++public class ProfileBanVerifyEvent extends ProfileLoginVerifyEvent implements BanVerifyEvent<PlayerProfile> {
++
++    private static final HandlerList HANDLERS = new HandlerList();
++
++    private final @Nullable BanInfo<PlayerProfile> banInfo;
++    private final @NonNull PlayerProfile target;
++    private final boolean isOp;
++    private boolean banned;
++    private @Nullable Component kickMessage;
++
++    @ApiStatus.Internal
++    public ProfileBanVerifyEvent(final @NonNull PlayerProfile profile, final boolean isOp) {
++        this.banInfo = null;
++        this.target = profile;
++        this.isOp = isOp;
++        this.banned = false;
++        this.kickMessage = null;
++    }
++
++    @ApiStatus.Internal
++    public ProfileBanVerifyEvent(final @NonNull BanInfo<PlayerProfile> banInfo, final boolean isOp, final @Nullable Component kickMessage) {
++        this.banInfo = banInfo;
++        this.target = this.banInfo.getTarget();
++        this.isOp = isOp;
++        this.banned = true;
++        this.kickMessage = kickMessage;
++    }
++
++    @Override
++    public @Nullable BanInfo<PlayerProfile> getBanInfo() {
++        return this.banInfo;
++    }
++
++    @Override
++    public boolean isBanned() {
++        return this.banned;
++    }
++
++    @Override
++    public void setBanned(final boolean banned) {
++        this.banned = banned;
++    }
++
++    @Override
++    public Date getCreated() {
++        return this.banInfo == null ? null : this.banInfo.getCreated();
++    }
++
++    @Override
++    public Date getExpires() {
++        return this.banInfo == null ? null : this.banInfo.getExpires();
++    }
++
++    @Override
++    public String getSource() {
++        return this.banInfo == null ? null : this.banInfo.getSource();
++    }
++
++    @Override
++    public Component getReason() {
++        return this.banInfo == null ? null : MiniMessage.miniMessage().deserialize(this.banInfo.getReason());
++    }
++
++    @Override
++    public boolean isOp() {
++        return this.isOp;
++    }
++
++    @Override
++    public Component kickMessage() {
++        return this.kickMessage;
++    }
++
++    @Override
++    public void kickMessage(final @NonNull Component kickMessage) {
++        this.kickMessage = kickMessage;
++    }
++
++    @Override
++    public @NotNull PlayerProfile getTarget() {
++        return this.target;
++    }
++
++    @Override
++    public @NotNull HandlerList getHandlers() {
++        return HANDLERS;
++    }
++
++    @Contract(pure = true)
++    public static HandlerList getHandlerList() {
++        return HANDLERS;
++    }
++
++}
+diff --git a/src/main/java/org/plazmamc/plazma/event/players/ProfileLoginVerifyEvent.java b/src/main/java/org/plazmamc/plazma/event/players/ProfileLoginVerifyEvent.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..073da484fc4b792ed14b3880c5d705220fee6491
+--- /dev/null
++++ b/src/main/java/org/plazmamc/plazma/event/players/ProfileLoginVerifyEvent.java
+@@ -0,0 +1,9 @@
++package org.plazmamc.plazma.event.players;
++
++import com.destroystokyo.paper.profile.PlayerProfile;
++
++public abstract class ProfileLoginVerifyEvent extends LoginVerifyEvent<PlayerProfile> {
++
++    public abstract boolean isOp();
++
++}
+diff --git a/src/main/java/org/plazmamc/plazma/players/BanInfo.java b/src/main/java/org/plazmamc/plazma/players/BanInfo.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..62c16a30c3a0989af955646f8e3c24a709be8e10
+--- /dev/null
++++ b/src/main/java/org/plazmamc/plazma/players/BanInfo.java
+@@ -0,0 +1,24 @@
++package org.plazmamc.plazma.players;
++
++import org.jspecify.annotations.NonNull;
++import org.jspecify.annotations.Nullable;
++import java.util.Date;
++
++public interface BanInfo<T> {
++
++    @NonNull
++    T getTarget();
++
++    @NonNull
++    Date getCreated();
++
++    @Nullable
++    Date getExpires();
++
++    @NonNull
++    String getSource();
++
++    @NonNull
++    String getReason();
++
++}
+diff --git a/src/main/java/org/plazmamc/plazma/players/PersistentPlayerListProvider.java b/src/main/java/org/plazmamc/plazma/players/PersistentPlayerListProvider.java
+new file mode 100644
+index 0000000000000000000000000000000000000000..c217754fc4350d14d52ceb1d9efb20427d8e185a
+--- /dev/null
++++ b/src/main/java/org/plazmamc/plazma/players/PersistentPlayerListProvider.java
+@@ -0,0 +1,54 @@
++package org.plazmamc.plazma.players;
++
++import com.destroystokyo.paper.profile.PlayerProfile;
++import org.jspecify.annotations.NonNull;
++import java.net.SocketAddress;
++import java.util.Collection;
++
++public interface PersistentPlayerListProvider {
++
++    void load();
++
++    void save();
++
++    void reloadWhitelist();
++
++    void addOp(final @NonNull PlayerProfile profile, final int permissionsLevel, final boolean bypassPlayerLimit);
++
++    void removeOp(final @NonNull PlayerProfile profile);
++
++    void addWhitelist(final @NonNull PlayerProfile profile);
++
++    void removeWhitelist(final @NonNull PlayerProfile profile);
++
++    int getPermissionLevel(final @NonNull PlayerProfile profile);
++
++    boolean isOp(final @NonNull PlayerProfile profile);
++
++    boolean isBanned(final @NonNull PlayerProfile profile);
++
++    boolean isBanned(final @NonNull SocketAddress address);
++
++    boolean isWhitelisted(final @NonNull PlayerProfile profile);
++
++    boolean canBypassPlayerLimit(final @NonNull PlayerProfile profile);
++
++    @NonNull
++    BanInfo<PlayerProfile> getBanInfo(final @NonNull PlayerProfile profile);
++
++    @NonNull
++    BanInfo<String> getBanInfo(final @NonNull SocketAddress address);
++
++    @NonNull
++    Collection<PlayerProfile> getOps();
++
++    @NonNull
++    Collection<PlayerProfile> getWhitelists();
++
++    @NonNull
++    Collection<PlayerProfile> getBannedPlayers();
++
++    @NonNull
++    Collection<String> getBannedIps();
++
++}
