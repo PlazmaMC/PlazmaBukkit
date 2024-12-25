@@ -1,0 +1,121 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: AlphaKR93 <dev@alpha93.kr>
+Date: Wed, 25 Dec 2024 13:24:51 +0900
+Subject: [PATCH] Configurable player list file path
+
+
+diff --git a/src/main/java/net/minecraft/server/players/OldUsersConverter.java b/src/main/java/net/minecraft/server/players/OldUsersConverter.java
+index 1f2958d21c279ecb377b7c90ba643ea83e217eca..6a411f609c48b28115b947494062f9f7bf5b2d93 100644
+--- a/src/main/java/net/minecraft/server/players/OldUsersConverter.java
++++ b/src/main/java/net/minecraft/server/players/OldUsersConverter.java
+@@ -82,7 +82,7 @@ public class OldUsersConverter {
+     }
+ 
+     public static boolean convertUserBanlist(final MinecraftServer server) {
+-        final UserBanList gameprofilebanlist = new UserBanList(PlayerList.USERBANLIST_FILE);
++        final UserBanList gameprofilebanlist = new UserBanList((File) server.options.valueOf("banned-players")); // Plazma - Configurable player list file path
+ 
+         if (OldUsersConverter.OLD_USERBANLIST.exists() && OldUsersConverter.OLD_USERBANLIST.isFile()) {
+             if (gameprofilebanlist.getFile().exists()) {
+@@ -140,7 +140,7 @@ public class OldUsersConverter {
+     }
+ 
+     public static boolean convertIpBanlist(MinecraftServer server) {
+-        IpBanList ipbanlist = new IpBanList(PlayerList.IPBANLIST_FILE);
++        IpBanList ipbanlist = new IpBanList((File) server.options.valueOf("banned-ips")); // Plazma - Configurable player list file path
+ 
+         if (OldUsersConverter.OLD_IPBANLIST.exists() && OldUsersConverter.OLD_IPBANLIST.isFile()) {
+             if (ipbanlist.getFile().exists()) {
+@@ -181,7 +181,7 @@ public class OldUsersConverter {
+     }
+ 
+     public static boolean convertOpsList(final MinecraftServer server) {
+-        final ServerOpList oplist = new ServerOpList(PlayerList.OPLIST_FILE);
++        final ServerOpList oplist = new ServerOpList((File) server.options.valueOf("ops")); // Plazma - Configurable player list file path
+ 
+         if (OldUsersConverter.OLD_OPLIST.exists() && OldUsersConverter.OLD_OPLIST.isFile()) {
+             if (oplist.getFile().exists()) {
+@@ -225,7 +225,7 @@ public class OldUsersConverter {
+     }
+ 
+     public static boolean convertWhiteList(final MinecraftServer server) {
+-        final UserWhiteList whitelist = new UserWhiteList(PlayerList.WHITELIST_FILE);
++        final UserWhiteList whitelist = new UserWhiteList((File) server.options.valueOf("whitelist")); // Plazma - Configurable player list file path
+ 
+         if (OldUsersConverter.OLD_WHITELIST.exists() && OldUsersConverter.OLD_WHITELIST.isFile()) {
+             if (whitelist.getFile().exists()) {
+diff --git a/src/main/java/net/minecraft/server/players/PlayerList.java b/src/main/java/net/minecraft/server/players/PlayerList.java
+index 70bb8a45217b51d3a156aabce32efbca1ae7fcc9..dee8346f0c9507576142e0f74e303b29b60af0c0 100644
+--- a/src/main/java/net/minecraft/server/players/PlayerList.java
++++ b/src/main/java/net/minecraft/server/players/PlayerList.java
+@@ -126,10 +126,12 @@ import org.bukkit.event.player.PlayerSpawnChangeEvent;
+ 
+ public abstract class PlayerList {
+ 
++    /* // Plazma - Configurable player list file path
+     public static final File USERBANLIST_FILE = new File("banned-players.json");
+     public static final File IPBANLIST_FILE = new File("banned-ips.json");
+     public static final File OPLIST_FILE = new File("ops.json");
+     public static final File WHITELIST_FILE = new File("whitelist.json");
++     */ // Plazma - Configurable player list file path
+     public static final Component CHAT_FILTERED_FULL = Component.translatable("chat.filtered_full");
+     public static final Component DUPLICATE_LOGIN_DISCONNECT_MESSAGE = Component.translatable("multiplayer.disconnect.duplicate_login");
+     private static final Logger LOGGER = LogUtils.getLogger();
+@@ -167,14 +169,12 @@ public abstract class PlayerList {
+         server.console = new com.destroystokyo.paper.console.TerminalConsoleCommandSender(); // Paper
+         // CraftBukkit end
+ 
+-        this.bans = new UserBanList(PlayerList.USERBANLIST_FILE);
+-        this.ipBans = new IpBanList(PlayerList.IPBANLIST_FILE);
+-        this.ops = new ServerOpList(PlayerList.OPLIST_FILE);
+-        this.whitelist = new UserWhiteList(PlayerList.WHITELIST_FILE);
+-        // CraftBukkit start
+-        // this.stats = Maps.newHashMap();
+-        // this.advancements = Maps.newHashMap();
+-        // CraftBukkit end
++        // Plazma start - Configurable player list file path
++        this.bans = new UserBanList((File) server.options.valueOf("banned-players"));
++        this.ipBans = new IpBanList((File) server.options.valueOf("banned-ips"));
++        this.ops = new ServerOpList((File) server.options.valueOf("ops"));
++        this.whitelist = new UserWhiteList((File) server.options.valueOf("whitelist"));
++        // Plazma end - Configurable player list file path
+         this.server = server;
+         this.registries = registryManager;
+         this.maxPlayers = maxPlayers;
+diff --git a/src/main/java/org/bukkit/craftbukkit/Main.java b/src/main/java/org/bukkit/craftbukkit/Main.java
+index ba002bf801ec34f88671031fe916e0dddf86a437..61bd19718a5bf5f574b62013298217f0a88685a8 100644
+--- a/src/main/java/org/bukkit/craftbukkit/Main.java
++++ b/src/main/java/org/bukkit/craftbukkit/Main.java
+@@ -205,6 +205,32 @@ public class Main {
+                     .defaultsTo(new File(org.plazmamc.plazma.configurations.PlazmaConfigurations.CONFIG_DIR))
+                     .describedAs("Configuration Directory");
+                 // Plazma end - Configurable Plazma
++
++                // Plazma start - Configurable player data storage
++                acceptsAll(asList("banned-ips"), "File for banned IPs")
++                    .withRequiredArg()
++                    .ofType(File.class)
++                    .defaultsTo(new File("banned-ips.json"))
++                    .describedAs("JSON file");
++
++                acceptsAll(asList("banned-players"), "File for banned players")
++                    .withRequiredArg()
++                    .ofType(File.class)
++                    .defaultsTo(new File("banned-players.json"))
++                    .describedAs("JSON file");
++
++                acceptsAll(asList("ops"), "File for ops")
++                    .withRequiredArg()
++                    .ofType(File.class)
++                    .defaultsTo(new File("ops.json"))
++                    .describedAs("JSON file");
++
++                acceptsAll(asList("whitelist"), "File for whitelist")
++                    .withRequiredArg()
++                    .ofType(File.class)
++                    .defaultsTo(new File("whitelist.json"))
++                    .describedAs("JSON file");
++                // Plazma end - Configurable player data storage
+             }
+         };
+ 
