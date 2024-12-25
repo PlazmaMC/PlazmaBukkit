@@ -1,9 +1,79 @@
 From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
 From: AlphaKR93 <dev@alpha93.kr>
 Date: Wed, 25 Dec 2024 13:24:51 +0900
-Subject: [PATCH] Configurable player list file path
+Subject: [PATCH] Add options to modify configurations path
 
 
+diff --git a/src/main/java/com/destroystokyo/paper/PaperVersionFetcher.java b/src/main/java/com/destroystokyo/paper/PaperVersionFetcher.java
+index 21a3761f075ace896c981936b2810fccb0b5d610..d99adf4a0b430b8a1ae41d3f4f04ad0c7a6e7eaa 100644
+--- a/src/main/java/com/destroystokyo/paper/PaperVersionFetcher.java
++++ b/src/main/java/com/destroystokyo/paper/PaperVersionFetcher.java
+@@ -135,7 +135,7 @@ public class PaperVersionFetcher implements VersionFetcher {
+     }
+ 
+     private @Nullable Component getHistory() {
+-        final VersionHistoryManager.@Nullable VersionData data = VersionHistoryManager.INSTANCE.getVersionData();
++        final VersionHistoryManager.@Nullable VersionData data = VersionHistoryManager.getInstance().getVersionData(); // Plazma - Add options to modify the configuration files
+         if (data == null) {
+             return null;
+         }
+diff --git a/src/main/java/com/destroystokyo/paper/VersionHistoryManager.java b/src/main/java/com/destroystokyo/paper/VersionHistoryManager.java
+index 660b2ec6b63a4ceffee44ab11f54dfa7c0d0996f..aa936d21bd458deef5672ddd782897c41daa765e 100644
+--- a/src/main/java/com/destroystokyo/paper/VersionHistoryManager.java
++++ b/src/main/java/com/destroystokyo/paper/VersionHistoryManager.java
+@@ -19,8 +19,24 @@ import org.bukkit.Bukkit;
+ import javax.annotation.Nonnull;
+ import javax.annotation.Nullable;
+ 
+-public enum VersionHistoryManager {
+-    INSTANCE;
++// Plazma start - Add options to modify the configuration files
++public final class VersionHistoryManager {
++    private static VersionHistoryManager INSTANCE;
++
++    public static VersionHistoryManager getInstance() {
++        if (INSTANCE == null) {
++            throw new IllegalStateException("VersionHistoryManager has not been initialized yet");
++        }
++        return INSTANCE;
++    }
++
++    public static void initialize(final joptsimple.OptionSet options) {
++        if (INSTANCE != null) {
++            throw new IllegalStateException("VersionHistoryManager has already been initialized");
++        }
++        INSTANCE = new VersionHistoryManager((java.io.File) options.valueOf("version-history"));
++    }
++    // Plazma end - Add options to modify the configuration files
+ 
+     private final Gson gson = new Gson();
+ 
+@@ -28,8 +44,10 @@ public enum VersionHistoryManager {
+ 
+     private VersionData currentData = null;
+ 
+-    VersionHistoryManager() {
+-        final Path path = Paths.get("version_history.json");
++    // Plazma start - Add options to modify the configuration files
++    private VersionHistoryManager(final @Nonnull java.io.File file) {
++        final Path path = file.toPath();
++        // Plazma end - Add options to modify the configuration files
+ 
+         if (Files.exists(path)) {
+             // Basic file santiy checks
+diff --git a/src/main/java/net/minecraft/server/dedicated/DedicatedServer.java b/src/main/java/net/minecraft/server/dedicated/DedicatedServer.java
+index 3e211e6ea16c8110e662d6201e8325ecd3d6a93b..011cdc8dbef3e823bdccf1a1c7cf945cf0cf7005 100644
+--- a/src/main/java/net/minecraft/server/dedicated/DedicatedServer.java
++++ b/src/main/java/net/minecraft/server/dedicated/DedicatedServer.java
+@@ -256,7 +256,7 @@ public class DedicatedServer extends MinecraftServer implements ServerInterface
+         }
+         org.purpurmc.purpur.PurpurConfig.registerCommands();
+         // Purpur end - Purpur config files
+-        com.destroystokyo.paper.VersionHistoryManager.INSTANCE.getClass(); // Paper - load version history now
++        com.destroystokyo.paper.VersionHistoryManager.initialize(this.options); // Paper - load version history now // Plazma - Add options to modify the configuration files
+         gg.pufferfish.pufferfish.PufferfishConfig.pufferfishFile = (java.io.File) options.valueOf("pufferfish-settings"); // Purpur - Fix pufferfish issues
+         gg.pufferfish.pufferfish.PufferfishConfig.load(); // Pufferfish
+         gg.pufferfish.pufferfish.PufferfishCommand.init(); // Pufferfish
 diff --git a/src/main/java/net/minecraft/server/players/OldUsersConverter.java b/src/main/java/net/minecraft/server/players/OldUsersConverter.java
 index 1f2958d21c279ecb377b7c90ba643ea83e217eca..6a411f609c48b28115b947494062f9f7bf5b2d93 100644
 --- a/src/main/java/net/minecraft/server/players/OldUsersConverter.java
@@ -83,10 +153,10 @@ index d5d09bf63f4b7fba73188f75d5fe9599b8da2844..8ab6df63d9a22ac76b2ba14bc8fef318
          this.registries = registryManager;
          this.maxPlayers = maxPlayers;
 diff --git a/src/main/java/org/bukkit/craftbukkit/Main.java b/src/main/java/org/bukkit/craftbukkit/Main.java
-index a75f3328ba32466b6ceeddb0069c856524f19c0a..10308192df338ebb3db8d2e1ebade4786ee4ec28 100644
+index a75f3328ba32466b6ceeddb0069c856524f19c0a..913213c77fa2cf8038768a34b38bb59d698e714b 100644
 --- a/src/main/java/org/bukkit/craftbukkit/Main.java
 +++ b/src/main/java/org/bukkit/craftbukkit/Main.java
-@@ -205,6 +205,32 @@ public class Main {
+@@ -205,6 +205,44 @@ public class Main {
                      .defaultsTo(new File(org.plazmamc.plazma.configurations.PlazmaConfigurations.CONFIG_DIR))
                      .describedAs("Configuration Directory");
                  // Plazma end - Configurable Plazma
@@ -115,7 +185,32 @@ index a75f3328ba32466b6ceeddb0069c856524f19c0a..10308192df338ebb3db8d2e1ebade478
 +                    .ofType(File.class)
 +                    .defaultsTo(new File("whitelist.json"))
 +                    .describedAs("JSON file");
++
++                acceptsAll(asList("version-history"), "File for version history")
++                    .withRequiredArg()
++                    .ofType(File.class)
++                    .defaultsTo(new File("version_history.json"))
++                    .describedAs("JSON file");
++
++                acceptsAll(asList("help"), "File for help command")
++                    .withRequiredArg()
++                    .ofType(File.class)
++                    .defaultsTo(new File("help.yml"))
++                    .describedAs("Yaml file");
 +                // Plazma end - Configurable player data storage
              }
          };
  
+diff --git a/src/main/java/org/bukkit/craftbukkit/help/HelpYamlReader.java b/src/main/java/org/bukkit/craftbukkit/help/HelpYamlReader.java
+index 5923d3c17756c489fcb392044c0679fe52e2d58f..a433d691831c620112a1c824f8f26cb50cfa8dbd 100644
+--- a/src/main/java/org/bukkit/craftbukkit/help/HelpYamlReader.java
++++ b/src/main/java/org/bukkit/craftbukkit/help/HelpYamlReader.java
+@@ -25,7 +25,7 @@ public class HelpYamlReader {
+     public HelpYamlReader(Server server) {
+         this.server = server;
+ 
+-        File helpYamlFile = new File("help.yml");
++        File helpYamlFile = (File) ((org.bukkit.craftbukkit.CraftServer) server).getHandle().getServer().options.valueOf("help"); // Plazma - Add options to modify the configuration files
+         YamlConfiguration defaultConfig = YamlConfiguration.loadConfiguration(new InputStreamReader(this.getClass().getClassLoader().getResourceAsStream("configurations/help.yml"), Charsets.UTF_8));
+ 
+         try {
