@@ -172,6 +172,33 @@ index d5d09bf63f4b7fba73188f75d5fe9599b8da2844..8ab6df63d9a22ac76b2ba14bc8fef318
          this.server = server;
          this.registries = registryManager;
          this.maxPlayers = maxPlayers;
+diff --git a/src/main/java/org/bukkit/craftbukkit/CraftServer.java b/src/main/java/org/bukkit/craftbukkit/CraftServer.java
+index 15527e902484496a6804c879d1de589bed3f8713..b2f924d0236683dc0a994350efe9a9db54b2ab98 100644
+--- a/src/main/java/org/bukkit/craftbukkit/CraftServer.java
++++ b/src/main/java/org/bukkit/craftbukkit/CraftServer.java
+@@ -276,12 +276,12 @@ public final class CraftServer implements Server {
+     private final ServicesManager servicesManager = new SimpleServicesManager();
+     private final CraftScheduler scheduler = new CraftScheduler();
+     private final CraftCommandMap commandMap; // Paper - Move down
+-    private final SimpleHelpMap helpMap = new SimpleHelpMap(this);
++    private final SimpleHelpMap helpMap;
+     private final StandardMessenger messenger = new StandardMessenger();
+     private final SimplePluginManager pluginManager; // Paper - Move down
+     public final io.papermc.paper.plugin.manager.PaperPluginManagerImpl paperPluginManager; // Paper
+     private final StructureManager structureManager;
+-    protected final DedicatedServer console;
++    public final DedicatedServer console; // Plazma - AT (protected -> public)
+     protected final DedicatedPlayerList playerList;
+     private final Map<String, World> worlds = new LinkedHashMap<String, World>();
+     // private final Map<Class<?>, Registry<?>> registries = new HashMap<>(); // Paper - replace with RegistryAccess
+@@ -421,6 +421,7 @@ public final class CraftServer implements Server {
+ 
+         Bukkit.setServer(this);
+         // Paper start
++        this.helpMap = new SimpleHelpMap(this); // Plazma - Add options to modify the configuration files
+         this.commandMap = new CraftCommandMap(this);
+         this.pluginManager = new SimplePluginManager(this, commandMap);
+         this.paperPluginManager = new io.papermc.paper.plugin.manager.PaperPluginManagerImpl(this, this.commandMap, pluginManager);
 diff --git a/src/main/java/org/bukkit/craftbukkit/Main.java b/src/main/java/org/bukkit/craftbukkit/Main.java
 index a75f3328ba32466b6ceeddb0069c856524f19c0a..913213c77fa2cf8038768a34b38bb59d698e714b 100644
 --- a/src/main/java/org/bukkit/craftbukkit/Main.java
@@ -222,7 +249,7 @@ index a75f3328ba32466b6ceeddb0069c856524f19c0a..913213c77fa2cf8038768a34b38bb59d
          };
  
 diff --git a/src/main/java/org/bukkit/craftbukkit/help/HelpYamlReader.java b/src/main/java/org/bukkit/craftbukkit/help/HelpYamlReader.java
-index 5923d3c17756c489fcb392044c0679fe52e2d58f..a433d691831c620112a1c824f8f26cb50cfa8dbd 100644
+index 5923d3c17756c489fcb392044c0679fe52e2d58f..3ec5cf874dfd9d2e016daa9f7c7aee2646e67861 100644
 --- a/src/main/java/org/bukkit/craftbukkit/help/HelpYamlReader.java
 +++ b/src/main/java/org/bukkit/craftbukkit/help/HelpYamlReader.java
 @@ -25,7 +25,7 @@ public class HelpYamlReader {
@@ -230,7 +257,7 @@ index 5923d3c17756c489fcb392044c0679fe52e2d58f..a433d691831c620112a1c824f8f26cb5
          this.server = server;
  
 -        File helpYamlFile = new File("help.yml");
-+        File helpYamlFile = (File) ((org.bukkit.craftbukkit.CraftServer) server).getHandle().getServer().options.valueOf("help"); // Plazma - Add options to modify the configuration files
++        File helpYamlFile = (File) ((org.bukkit.craftbukkit.CraftServer) server).console.options.valueOf("help"); // Plazma - Add options to modify the configuration files
          YamlConfiguration defaultConfig = YamlConfiguration.loadConfiguration(new InputStreamReader(this.getClass().getClassLoader().getResourceAsStream("configurations/help.yml"), Charsets.UTF_8));
  
          try {
