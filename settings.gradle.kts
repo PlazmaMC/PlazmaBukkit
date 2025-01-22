@@ -2,13 +2,6 @@ import java.util.Locale
 
 val projectName = "Plazma"
 
-pluginManagement {
-    repositories {
-        gradlePluginPortal()
-        maven("https://papermc.io/repo/repository/maven-public/")
-    }
-}
-
 dependencyResolutionManagement {
     versionCatalogs {
         create("libs") {}

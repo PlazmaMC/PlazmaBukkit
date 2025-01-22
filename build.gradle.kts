@@ -3,15 +3,10 @@ import org.gradle.api.tasks.testing.logging.TestLogEvent
 
 plugins {
     java
-    `kotlin-dsl`
     `maven-publish`
-    `always-up-to-date`
     alias(libs.plugins.shadow) apply false
     alias(libs.plugins.paperweight)
 }
-
-val jdkVersion = property("jdkVersion").toString().toInt()
-kotlin.jvmToolchain(jdkVersion)
 
 repositories {
     mavenCentral()
@@ -67,7 +62,7 @@ tasks {
         apiCoordinates.set("${project.group}:${brandName.lowercase()}-api")
         libraryRepositories.addAll(
             "https://repo1.maven.org/maven2/",
-            "https://papermc.io/repo/repository/maven-public/",
+            "https://repo.papermc.io/repository/maven-public/",
             "https://repo.codemc.io/repository/maven-public/",
             "https://jitpack.io",
         )
@@ -84,7 +79,7 @@ allprojects {
     apply(plugin = "java")
     apply(plugin = "maven-publish")
 
-    java.toolchain.languageVersion.set(JavaLanguageVersion.of(jdkVersion))
+    java.toolchain.languageVersion.set(JavaLanguageVersion.of(21))
 
     publishing.repositories.maven("https://maven.pkg.github.com/$providerRepo") {
         name = "github"
@@ -116,7 +111,7 @@ subprojects {
     tasks {
         withType<JavaCompile>().configureEach {
             options.encoding = Charsets.UTF_8.name()
-            options.release = jdkVersion
+            options.release = 21
         }
 
         withType<Javadoc> {
@@ -135,27 +130,4 @@ subprojects {
             }
         }
     }
-}
-
-val paperRepoVal = property("paperRepo").toString()
-val paperBranch = property("paperBranch").toString()
-val purpurRepoVal = property("purpurRepo").toString()
-val purpurBranch = property("purpurBranch").toString()
-val pufferfishRepoVal = property("pufferfishRepo").toString()
-val pufferfishBranch = property("pufferfishBranch").toString()
-val isUsePufferfish = property("usePufferfish").toString().toBoolean()
-alwaysUpToDate {
-
-    paperRepo.set(paperRepoVal)
-    paperRef.set(paperBranch)
-    paperCommitName.set("paperCommit")
-
-    purpurRepo.set(purpurRepoVal)
-    purpurRef.set(purpurBranch)
-    purpurCommitName.set("purpurCommit")
-
-    pufferfishRepo.set(pufferfishRepoVal)
-    pufferfishRef.set(pufferfishBranch)
-    usePufferfish.set(isUsePufferfish)
-
 }

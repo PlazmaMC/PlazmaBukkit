@@ -1,0 +1,225 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: AlphaKR93 <dev@alpha93.kr>
+Date: Wed, 22 Jan 2025 11:50:19 +0900
+Subject: [PATCH] Bundle as quivers
+
+
+diff --git a/src/main/java/net/minecraft/world/entity/LivingEntity.java b/src/main/java/net/minecraft/world/entity/LivingEntity.java
+index ee6ad451ba8755cf296e9c0a01404a5ed025e749..53c62f51bcdaecba265eb2e0f5e69e890b1b0b03 100644
+--- a/src/main/java/net/minecraft/world/entity/LivingEntity.java
++++ b/src/main/java/net/minecraft/world/entity/LivingEntity.java
+@@ -4774,7 +4774,13 @@ public abstract class LivingEntity extends Entity implements Attackable {
+         return !this.isSleeping() && super.isInWall();
+     }
+ 
+-    public ItemStack getProjectile(ItemStack stack) {
++    // Plazma start - Bundle as quivers!
++    public final ItemStack getProjectile(final ItemStack stack) {
++        return this.getProjectile(stack, false, false);
++    }
++
++    public ItemStack getProjectile(final ItemStack stack, final boolean bundle, final boolean shrink) {
++    // Plazma end - Bundle as quivers!
+         return ItemStack.EMPTY;
+     }
+ 
+diff --git a/src/main/java/net/minecraft/world/entity/monster/Monster.java b/src/main/java/net/minecraft/world/entity/monster/Monster.java
+index c2061f575c731ecc6071384b007517c08e0cf983..a9f7a1ef69fa6fb8ce45237dd812a4827eb5940d 100644
+--- a/src/main/java/net/minecraft/world/entity/monster/Monster.java
++++ b/src/main/java/net/minecraft/world/entity/monster/Monster.java
+@@ -143,7 +143,7 @@ public abstract class Monster extends PathfinderMob implements Enemy {
+     }
+ 
+     @Override
+-    public ItemStack getProjectile(ItemStack stack) {
++    public final ItemStack getProjectile(final ItemStack stack, final boolean bundle, final boolean shrink) { // Plazma - Bundle as quivers!
+         if (stack.getItem() instanceof ProjectileWeaponItem) {
+             Predicate<ItemStack> predicate = ((ProjectileWeaponItem)stack.getItem()).getSupportedHeldProjectiles();
+             ItemStack itemStack = ProjectileWeaponItem.getHeldProjectile(this, predicate);
+diff --git a/src/main/java/net/minecraft/world/entity/player/Player.java b/src/main/java/net/minecraft/world/entity/player/Player.java
+index 4ea1a327c80f915aa45ccf3a5955ed6ff42692c1..121c2a78b0ae30785dcb3587cfd228d049e10993 100644
+--- a/src/main/java/net/minecraft/world/entity/player/Player.java
++++ b/src/main/java/net/minecraft/world/entity/player/Player.java
+@@ -2321,30 +2321,49 @@ public abstract class Player extends LivingEntity {
+     // Paper end - PlayerReadyArrowEvent
+ 
+     @Override
+-    public ItemStack getProjectile(ItemStack stack) {
+-        if (!(stack.getItem() instanceof ProjectileWeaponItem)) {
+-            return ItemStack.EMPTY;
+-        } else {
+-            Predicate<ItemStack> predicate = ((ProjectileWeaponItem) stack.getItem()).getSupportedHeldProjectiles().and(item -> tryReadyArrow(stack, item)); // Paper - PlayerReadyArrowEvent
+-            ItemStack itemstack1 = ProjectileWeaponItem.getHeldProjectile(this, predicate);
++    // Plazma start - Bundle as quivers!
++    public final ItemStack getProjectile(final ItemStack stack, final boolean bundle, final boolean shrink) {
++        if (!(stack.getItem() instanceof ProjectileWeaponItem weapon)) return ItemStack.EMPTY;
+ 
+-            if (!itemstack1.isEmpty()) {
+-                return itemstack1;
+-            } else {
+-                predicate = ((ProjectileWeaponItem) stack.getItem()).getAllSupportedProjectiles().and(item -> tryReadyArrow(stack, item)); // Paper - PlayerReadyArrowEvent
++        Predicate<ItemStack> predicate = weapon.getSupportedHeldProjectiles().and(item -> tryReadyArrow(stack, item)); // Paper - PlayerReadyArrowEvent
++        final ItemStack held = ProjectileWeaponItem.getHeldProjectile(this, predicate);
++        if (!held.isEmpty()) return held;
++
++        predicate = weapon.getAllSupportedProjectiles().and(item -> tryReadyArrow(stack, item)); // Paper - PlayerReadyArrowEvent
++        for (int i = 0; i < this.inventory.getContainerSize(); ++i) {
++            ItemStack item = this.inventory.getItem(i);
+ 
+-                for (int i = 0; i < this.inventory.getContainerSize(); ++i) {
+-                    ItemStack itemstack2 = this.inventory.getItem(i);
++            if (bundle && item.getItem() instanceof net.minecraft.world.item.BundleItem) {
++                final net.minecraft.world.item.component.BundleContents contents = item.get(net.minecraft.core.component.DataComponents.BUNDLE_CONTENTS);
++                if (contents == null || contents.isEmpty()) continue;
+ 
+-                    if (predicate.test(itemstack2)) {
+-                        return itemstack2;
+-                    }
++                final Optional<ItemStack> optional = contents.itemCopyStream().filter(predicate).findFirst();
++                if (optional.isEmpty()) continue;
++
++                final ItemStack first = optional.get();
++                if (shrink) {
++                    final net.minecraft.world.item.component.BundleContents.Mutable mutable = new net.minecraft.world.item.component.BundleContents.Mutable(contents);
++                    final ItemStack next = mutable.removeOne(first.copyAndClear());
++                    if (next == null) continue;
++
++                    next.shrink(1);
++                    if (next.getCount() != 0) mutable.tryInsert(next);
++
++                    item.set(net.minecraft.core.component.DataComponents.BUNDLE_CONTENTS, mutable.toImmutable());
+                 }
+ 
+-                return this.abilities.instabuild ? new ItemStack(Items.ARROW) : ItemStack.EMPTY;
++                first.setCount(1);
++                return first;
++            }
++
++            if (predicate.test(item)) {
++                return item;
+             }
+         }
++
++        return this.abilities.instabuild ? new ItemStack(Items.ARROW) : ItemStack.EMPTY;
+     }
++    // Plazma end - Bundle as quivers!
+ 
+     @Override
+     public Vec3 getRopeHoldPosition(float delta) {
+diff --git a/src/main/java/net/minecraft/world/item/BowItem.java b/src/main/java/net/minecraft/world/item/BowItem.java
+index 58fa528e4b2589d362eb976afd6221cd94f2623c..6a2381e37709b05a9c5e49c34d549a6da1b8f388 100644
+--- a/src/main/java/net/minecraft/world/item/BowItem.java
++++ b/src/main/java/net/minecraft/world/item/BowItem.java
+@@ -27,7 +27,7 @@ public class BowItem extends ProjectileWeaponItem {
+         if (!(user instanceof Player player)) {
+             return false;
+         } else {
+-            ItemStack itemStack = player.getProjectile(stack);
++            ItemStack itemStack = player.getProjectile(stack, world.plazmaConfig().item.bundleAsQuivers.enableForBow, net.minecraft.world.item.enchantment.EnchantmentHelper.getItemEnchantmentLevel(net.minecraft.world.item.enchantment.Enchantments.INFINITY, stack) == 0); // Plazma - Bundle as quivers!
+             //  Purpur start
+             if (world.purpurConfig.infinityWorksWithoutArrows && itemStack.isEmpty() && net.minecraft.world.item.enchantment.EnchantmentHelper.getItemEnchantmentLevel(net.minecraft.world.item.enchantment.Enchantments.INFINITY, stack) > 0) {
+                 itemStack = new ItemStack(Items.ARROW);
+@@ -93,7 +93,7 @@ public class BowItem extends ProjectileWeaponItem {
+     @Override
+     public InteractionResult use(Level world, Player user, InteractionHand hand) {
+         ItemStack itemStack = user.getItemInHand(hand);
+-        boolean bl = !user.getProjectile(itemStack).isEmpty();
++        boolean bl = !user.getProjectile(itemStack, world.plazmaConfig().item.bundleAsQuivers.enableForBow, false).isEmpty();
+         if (!user.hasInfiniteMaterials() && !bl && !(world.purpurConfig.infinityWorksWithoutArrows && net.minecraft.world.item.enchantment.EnchantmentHelper.getItemEnchantmentLevel(net.minecraft.world.item.enchantment.Enchantments.INFINITY, itemStack) > 0)) { // Purpur
+             return InteractionResult.FAIL;
+         } else {
+diff --git a/src/main/java/net/minecraft/world/item/CrossbowItem.java b/src/main/java/net/minecraft/world/item/CrossbowItem.java
+index f8946704838d96ad522182d2b9f41ac8bfe92ac4..c46b5e6fb007280b1ff264414c9acaf8a5f49101 100644
+--- a/src/main/java/net/minecraft/world/item/CrossbowItem.java
++++ b/src/main/java/net/minecraft/world/item/CrossbowItem.java
+@@ -72,7 +72,7 @@ public class CrossbowItem extends ProjectileWeaponItem {
+         if (chargedProjectiles != null && !chargedProjectiles.isEmpty()) {
+             this.performShooting(world, user, hand, itemStack, getShootingPower(chargedProjectiles), (float) world.purpurConfig.crossbowProjectileOffset, null); // Purpur
+             return InteractionResult.CONSUME;
+-        } else if (!user.getProjectile(itemStack).isEmpty()) {
++        } else if (!user.getProjectile(itemStack, world.plazmaConfig().item.bundleAsQuivers.enableForCrossbow, false).isEmpty() || net.minecraft.world.item.enchantment.EnchantmentHelper.getItemEnchantmentLevel(net.minecraft.world.item.enchantment.Enchantments.INFINITY, itemStack) > 0 && world.plazmaConfig().item.allowCrossbowInfinity) { // Plazma - Bundle as quivers!
+             this.startSoundPlayed = false;
+             this.midLoadSoundPlayed = false;
+             user.startUsingItem(hand);
+@@ -124,7 +124,11 @@ public class CrossbowItem extends ProjectileWeaponItem {
+         return CrossbowItem.tryLoadProjectiles(shooter, crossbow, true);
+     }
+     private static boolean tryLoadProjectiles(LivingEntity shooter, ItemStack crossbow, boolean consume) {
+-        List<ItemStack> list = draw(crossbow, shooter.getProjectile(crossbow), shooter, consume);
++        // Plazma start - Bundle as quivers!
++        boolean infinity = net.minecraft.world.item.enchantment.EnchantmentHelper.getItemEnchantmentLevel(net.minecraft.world.item.enchantment.Enchantments.INFINITY, crossbow) > 0 && shooter.level().plazmaConfig().item.allowCrossbowInfinity;
++        List<ItemStack> list = draw(crossbow, shooter.getProjectile(crossbow, shooter.level().plazmaConfig().item.bundleAsQuivers.enableForBow, !infinity), shooter, consume);
++        if (list.isEmpty() && infinity) list = List.of(new ItemStack(Items.ARROW));
++        // Plazma end - Bundle as quivers!
+         // Paper end - Add EntityLoadCrossbowEvent
+         if (!list.isEmpty()) {
+             crossbow.set(DataComponents.CHARGED_PROJECTILES, ChargedProjectiles.of(list));
+diff --git a/src/main/java/net/minecraft/world/item/component/BundleContents.java b/src/main/java/net/minecraft/world/item/component/BundleContents.java
+index d4e7e92875162b67226a20c5add8973e09fd882c..6e57ed3b395b0155bdf13129c11ee8ddf4a68199 100644
+--- a/src/main/java/net/minecraft/world/item/component/BundleContents.java
++++ b/src/main/java/net/minecraft/world/item/component/BundleContents.java
+@@ -157,7 +157,13 @@ public final class BundleContents implements TooltipComponent {
+         }
+ 
+         private int findStackIndex(ItemStack stack) {
+-            if (!stack.isStackable()) {
++            // Plazma start - Bundle as quivers!
++            return this.findStackIndex(stack, false);
++        }
++
++        private int findStackIndex(final ItemStack stack, final boolean skipStackableCheck) {
++            if (!skipStackableCheck && !stack.isStackable()) {
++            // Plazma end - Bundle as quivers!
+                 return -1;
+             } else {
+                 for (int i = 0; i < this.items.size(); i++) {
+@@ -211,11 +217,20 @@ public final class BundleContents implements TooltipComponent {
+ 
+         @Nullable
+         public ItemStack removeOne() {
++            // Plazma start - Bundle as quivers!
++            return this.removeOne(null);
++        }
++
++        @Nullable
++        public ItemStack removeOne(final @Nullable ItemStack stack) {
++            // Plazma end - Bundle as quivers!
+             if (this.items.isEmpty()) {
+                 return null;
+             } else {
+-                int i = this.selectedItem != -1 && this.selectedItem < this.items.size() ? this.selectedItem : 0;
+-                ItemStack itemStack = this.items.remove(i).copy();
++                // Plazma start - Bundle as quivers!
++                int i = stack != null ? this.findStackIndex(stack, true) : this.selectedItem != -1 && this.selectedItem < this.items.size() ? this.selectedItem : 0;
++                ItemStack itemStack = this.items.remove(i != -1 ? i : 0).copy();
++                // Plazma end - Bundle as quivers!
+                 this.weight = this.weight.subtract(BundleContents.getWeight(itemStack).multiplyBy(Fraction.getFraction(itemStack.getCount(), 1)));
+                 this.toggleSelectedItem(-1);
+                 return itemStack;
+diff --git a/src/main/java/org/plazmamc/plazma/configurations/WorldConfigurations.java b/src/main/java/org/plazmamc/plazma/configurations/WorldConfigurations.java
+index e88b18ff76bf21d9fa340a1d58abedefbf30ec91..8daf361f82af8d41661d8c5afe717c8a90803dfe 100644
+--- a/src/main/java/org/plazmamc/plazma/configurations/WorldConfigurations.java
++++ b/src/main/java/org/plazmamc/plazma/configurations/WorldConfigurations.java
+@@ -104,6 +104,7 @@ public class WorldConfigurations extends ConfigurationPart {
+     public class Item extends ConfigurationPart {
+ 
+         public boolean skipMapUpdateIfCraftRenderIsNull = true;
++        public boolean allowCrossbowInfinity = false;
+ 
+         public ShootableFireCharge shootableFireCharge;
+         public class ShootableFireCharge extends ConfigurationPart {
+@@ -125,6 +126,14 @@ public class WorldConfigurations extends ConfigurationPart {
+ 
+         }
+ 
++        public BundleAsQuivers bundleAsQuivers;
++        public class BundleAsQuivers extends ConfigurationPart {
++
++            public boolean enableForBow = false;
++            public boolean enableForCrossbow = false;
++
++        }
++
+     }
+ 
+ }
