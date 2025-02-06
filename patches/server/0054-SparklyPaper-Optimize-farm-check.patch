@@ -5,10 +5,10 @@ Subject: [PATCH] SparklyPaper - Optimize farm check
 
 
 diff --git a/src/main/java/net/minecraft/world/level/block/CropBlock.java b/src/main/java/net/minecraft/world/level/block/CropBlock.java
-index 34f338a246824dbabc7bc386b74cb62c78a8f1b6..84e214100233575cdb8a2ae7289fd321c7e1bcff 100644
+index 34f338a246824dbabc7bc386b74cb62c78a8f1b6..62fd2e85c4ece8c1d7954accc901e02ae7597e78 100644
 --- a/src/main/java/net/minecraft/world/level/block/CropBlock.java
 +++ b/src/main/java/net/minecraft/world/level/block/CropBlock.java
-@@ -77,35 +77,52 @@ public class CropBlock extends BushBlock implements BonemealableBlock {
+@@ -77,35 +77,53 @@ public class CropBlock extends BushBlock implements BonemealableBlock {
  
      @Override
      protected void randomTick(BlockState state, ServerLevel world, BlockPos pos, RandomSource random) {
@@ -74,16 +74,17 @@ index 34f338a246824dbabc7bc386b74cb62c78a8f1b6..84e214100233575cdb8a2ae7289fd321
 +                if ((age + 1) != getMaxAge() || !isMoist || FarmBlock.isNearWater(world, below)) return;
 +// PLAZMA - REMOVE THIS
 +                CraftEventFactory.handleMoistureChangeEvent(world, below, state.setValue(FarmBlock.MOISTURE, 0), 2);
++            }
++        } else {
++// PLAZMA - REMOVE THIS
++            float growthSpeed = CropBlock.getGrowthSpeed(this, world, pos); // Plazma - moved down
++// PLAZMA - REMOVE THIS
++            if (random.nextFloat() < (modifier / (100.0f * (Math.floor((25.0F / growthSpeed) + 1))))) { // Spigot - SPIGOT-7159: Better modifier resolution
++                // Spigot end
++                CraftEventFactory.handleBlockGrowEvent(world, pos, this.getStateForAge(age + 1), 2); // CraftBukkit
              }
          }
 -
-+// PLAZMA - REMOVE THIS
-+        float growthSpeed = CropBlock.getGrowthSpeed(this, world, pos); // Plazma - moved down
-+// PLAZMA - REMOVE THIS
-+        if (random.nextFloat() < (modifier / (100.0f * (Math.floor((25.0F / growthSpeed) + 1))))) { // Spigot - SPIGOT-7159: Better modifier resolution
-+            // Spigot end
-+            CraftEventFactory.handleBlockGrowEvent(world, pos, this.getStateForAge(age + 1), 2); // CraftBukkit
-+        }
 +        // Plazma end - Optimize farm check
      }
  
