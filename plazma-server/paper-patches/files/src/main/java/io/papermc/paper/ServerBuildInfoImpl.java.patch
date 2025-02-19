@@ -1,0 +1,38 @@
+--- a/src/main/java/io/papermc/paper/ServerBuildInfoImpl.java
++++ b/src/main/java/io/papermc/paper/ServerBuildInfoImpl.java
+@@ -30,8 +_,12 @@
+     private static final String ATTRIBUTE_GIT_BRANCH = "Git-Branch";
+     private static final String ATTRIBUTE_GIT_COMMIT = "Git-Commit";
+ 
+-    private static final String BRAND_PAPER_NAME = "Paper";
+-    private static final String BRAND_PURPUR_NAME = "Purpur"; // Purpur - Rebrand
++    // Plazma start - Rebrand
++    private static final java.util.Set<Key> COMPATIBLE = new java.util.HashSet<>() {{
++        add(BRAND_PAPER_ID);
++        add(BRAND_PURPUR_ID);
++    }};
++    // Plazma end - Rebrand
+ 
+     private static final String BUILD_DEV = "DEV";
+ 
+@@ -43,9 +_,9 @@
+         this(
+             getManifestAttribute(manifest, ATTRIBUTE_BRAND_ID)
+                 .map(Key::key)
+-                .orElse(BRAND_PURPUR_ID), // Purpur - Fix pufferfish issues // Purpur - Rebrand
++                .orElse(BRAND_PLAZMA_ID), // Purpur - Fix pufferfish issues // Purpur - Rebrand
+             getManifestAttribute(manifest, ATTRIBUTE_BRAND_NAME)
+-                .orElse(BRAND_PURPUR_NAME), // Purpur - Fix pufferfish issues // Purpur - Rebrand
++                .orElse("Plazma"), // Purpur - Fix pufferfish issues // Purpur - Rebrand // Plazma - Rebrand
+             SharedConstants.getCurrentVersion().getId(),
+             SharedConstants.getCurrentVersion().getName(),
+             getManifestAttribute(manifest, ATTRIBUTE_BUILD_NUMBER)
+@@ -62,7 +_,7 @@
+ 
+     @Override
+     public boolean isBrandCompatible(final @NotNull Key brandId) {
+-        return brandId.equals(this.brandId) || brandId.equals(BRAND_PAPER_ID); // Purpur - Fix pufferfish issues // Purpur - Rebrand
++        return brandId.equals(this.brandId) || COMPATIBLE.contains(brandId); // Purpur - Fix pufferfish issues // Purpur - Rebrand // Plazma - Rebrand
+     }
+ 
+     @Override

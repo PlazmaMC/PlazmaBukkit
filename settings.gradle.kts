@@ -1,25 +1,16 @@
-import java.util.Locale
-
-val projectName = "Plazma"
-
-dependencyResolutionManagement {
-    versionCatalogs {
-        create("libs") {}
-        create("api") {
-            from(files("libs/api.versions.toml"))
-        }
-        create("server") {
-            from(files("libs/server.versions.toml"))
-        }
-        create("common") {
-            from(files("libs/common.versions.toml"))
-        }
+pluginManagement {
+    repositories {
+        gradlePluginPortal()
+        mavenLocal()
+        maven("https://repo.papermc.io/repository/maven-public/")
     }
 }
 
-rootProject.name = projectName.lowercase()
-for (name in listOf("$projectName-API", "$projectName-Server")) {
-    val projName = name.lowercase(Locale.ENGLISH)
-    include(projName)
-    findProject(":$projName")!!.projectDir = file(name)
+plugins {
+    id("org.gradle.toolchains.foojay-resolver-convention") version "0.9.0"
 }
+
+rootProject.name = "plazma"
+
+include("plazma-api")
+include("plazma-server")

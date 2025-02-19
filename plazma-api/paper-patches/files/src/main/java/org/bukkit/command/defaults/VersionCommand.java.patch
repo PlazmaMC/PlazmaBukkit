@@ -1,0 +1,110 @@
+--- a/src/main/java/org/bukkit/command/defaults/VersionCommand.java
++++ b/src/main/java/org/bukkit/command/defaults/VersionCommand.java
+@@ -64,7 +_,7 @@
+             StringBuilder name = new StringBuilder();
+ 
+             for (String arg : args) {
+-                if (name.length() > 0) {
++                if (!name.isEmpty()) { // Plazma
+                     name.append(' ');
+                 }
+ 
+@@ -96,7 +_,7 @@
+     }
+ 
+     private void describeToSender(@NotNull Plugin plugin, @NotNull CommandSender sender) {
+-        PluginDescriptionFile desc = plugin.getDescription();
++        io.papermc.paper.plugin.configuration.PluginMeta desc = plugin.getPluginMeta(); // Plazma - Use modern method
+         // Paper start - version command 2.0
+         sender.sendMessage(
+             Component.text()
+@@ -198,13 +_,7 @@
+             sender.sendMessage(Component.text("Checking version, please wait...", NamedTextColor.WHITE, TextDecoration.ITALIC)); // Paper
+             if (!versionTaskStarted) {
+                 versionTaskStarted = true;
+-                new Thread(new Runnable() {
+-
+-                    @Override
+-                    public void run() {
+-                        obtainVersion();
+-                    }
+-                }).start();
++                new Thread(this::obtainVersion).start(); // Plazma
+             }
+         } finally {
+             versionLock.unlock();
+@@ -219,37 +_,6 @@
+             return;
+         }
+         setVersionMessage(getVersionFetcher().getVersionMessage(version));
+-        /*
+-        if (version == null) version = "Custom";
+-        String[] parts = version.substring(0, version.indexOf(' ')).split("-");
+-        if (parts.length == 4) {
+-            int cbVersions = getDistance("craftbukkit", parts[3]);
+-            int spigotVersions = getDistance("spigot", parts[2]);
+-            if (cbVersions == -1 || spigotVersions == -1) {
+-                setVersionMessage("Error obtaining version information");
+-            } else {
+-                if (cbVersions == 0 && spigotVersions == 0) {
+-                    setVersionMessage("You are running the latest version");
+-                } else {
+-                    setVersionMessage("You are " + (cbVersions + spigotVersions) + " version(s) behind");
+-                }
+-            }
+-
+-        } else if (parts.length == 3) {
+-            int cbVersions = getDistance("craftbukkit", parts[2]);
+-            if (cbVersions == -1) {
+-                setVersionMessage("Error obtaining version information");
+-            } else {
+-                if (cbVersions == 0) {
+-                    setVersionMessage("You are running the latest version");
+-                } else {
+-                    setVersionMessage("You are " + cbVersions + " version(s) behind");
+-                }
+-            }
+-        } else {
+-            setVersionMessage("Unknown version, custom build?");
+-        }
+-         */
+         // Paper end
+     }
+ 
+@@ -259,7 +_,7 @@
+         // Purpur start
+         int distance = getVersionFetcher().distance();
+         final Component message = Component.join(net.kyori.adventure.text.JoinConfiguration.separator(Component.newline()),
+-            ChatColor.parseMM("<grey>Current Purpur Version: %s%s*", distance == 0 ? "<green>" : distance > 0 ? "<yellow>" : "<red>", Bukkit.getVersion()),
++            net.kyori.adventure.text.minimessage.MiniMessage.miniMessage().deserialize("<grey>Current Plazma Version: " + (distance == 0 ? "<green>" : distance > 0 ? "<yellow>" : "<red>") + Bukkit.getVersion() + "*"), // Plazma
+             // Purpur end
+             msg
+         );
+@@ -279,27 +_,6 @@
+             versionWaiters.clear();
+         } finally {
+             versionLock.unlock();
+-        }
+-    }
+-
+-    private static int getDistance(@NotNull String repo, @NotNull String hash) {
+-        try {
+-            BufferedReader reader = Resources.asCharSource(
+-                    new URL("https://hub.spigotmc.org/stash/rest/api/1.0/projects/SPIGOT/repos/" + repo + "/commits?since=" + URLEncoder.encode(hash, "UTF-8") + "&withCounts=true"),
+-                    Charsets.UTF_8
+-            ).openBufferedStream();
+-            try {
+-                JsonObject obj = new Gson().fromJson(reader, JsonObject.class);
+-                return obj.get("totalCount").getAsInt();
+-            } catch (JsonSyntaxException ex) {
+-                ex.printStackTrace();
+-                return -1;
+-            } finally {
+-                reader.close();
+-            }
+-        } catch (IOException e) {
+-            e.printStackTrace();
+-            return -1;
+         }
+     }
+ }

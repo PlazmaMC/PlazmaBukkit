@@ -1,0 +1,62 @@
+--- a/net/minecraft/server/Services.java
++++ b/net/minecraft/server/Services.java
+@@ -6,26 +_,42 @@
+ import com.mojang.authlib.yggdrasil.ServicesKeyType;
+ import com.mojang.authlib.yggdrasil.YggdrasilAuthenticationService;
+ import java.io.File;
+-import javax.annotation.Nullable;
++import org.jspecify.annotations.Nullable; // Plazma
+ import net.minecraft.server.players.GameProfileCache;
+ import net.minecraft.util.SignatureValidator;
+ 
+ public record Services(
+-    MinecraftSessionService sessionService, ServicesKeySet servicesKeySet, GameProfileRepository profileRepository, GameProfileCache profileCache, @javax.annotation.Nullable io.papermc.paper.configuration.PaperConfigurations paperConfigurations // Paper - add paper configuration files
++    // Plazma start - Null safety
++    @Nullable MinecraftSessionService sessionService,
++    @org.jspecify.annotations.NonNull ServicesKeySet servicesKeySet,
++    @Nullable GameProfileRepository profileRepository,
++    @Nullable GameProfileCache profileCache, // Plazma -
++    io.papermc.paper.configuration.@Nullable PaperConfigurations paperConfigurations, // Paper - add paper configuration files
++    org.plazmamc.plazma.configurations.@Nullable PlazmaConfigurations plazmaConfigurations // Plazma - Configurable Plazma
++    // Plazma end - Null safety
+ ) {
+     public static final String USERID_CACHE_FILE = "usercache.json"; // Paper - private -> public
+ 
+     // Paper start - add paper configuration files
+     public Services(MinecraftSessionService sessionService, ServicesKeySet servicesKeySet, GameProfileRepository profileRepository, GameProfileCache profileCache) {
+-        this(sessionService, servicesKeySet, profileRepository, profileCache, null);
++        this(sessionService, servicesKeySet, profileRepository, profileCache, null, null); // Plazma
+     }
+ 
++    @org.jetbrains.annotations.Contract(pure = true) // Plazma
+     @Override
+-    public io.papermc.paper.configuration.PaperConfigurations paperConfigurations() {
++    public io.papermc.paper.configuration.@org.jspecify.annotations.NonNull PaperConfigurations paperConfigurations() {
+         return java.util.Objects.requireNonNull(this.paperConfigurations);
+     }
+     // Paper end - add paper configuration files
+ 
++    // Plazma start - Configurable Plazma
++    @org.jetbrains.annotations.Contract(pure = true)
++    @Override
++    public org.plazmamc.plazma.configurations.@org.jspecify.annotations.NonNull PlazmaConfigurations plazmaConfigurations() {
++        return java.util.Objects.requireNonNull(this.plazmaConfigurations);
++    }
++    // Plazma end - Configurable Plazma
++
+     public static Services create(YggdrasilAuthenticationService authenticationService, File profileRepository, File userCacheFile, joptsimple.OptionSet optionSet) throws Exception { // Paper - add optionset to load paper config files; add userCacheFile parameter
+         MinecraftSessionService minecraftSessionService = authenticationService.createMinecraftSessionService();
+         GameProfileRepository gameProfileRepository = authenticationService.createProfileRepository();
+@@ -34,7 +_,11 @@
+         final java.nio.file.Path legacyConfigPath = ((File) optionSet.valueOf("paper-settings")).toPath();
+         final java.nio.file.Path configDirPath = ((File) optionSet.valueOf("paper-settings-directory")).toPath();
+         io.papermc.paper.configuration.PaperConfigurations paperConfigurations = io.papermc.paper.configuration.PaperConfigurations.setup(legacyConfigPath, configDirPath, profileRepository.toPath(), (File) optionSet.valueOf("spigot-settings"));
+-        return new Services(minecraftSessionService, authenticationService.getServicesKeySet(), gameProfileRepository, gameProfileCache, paperConfigurations);
++
++        // Plazma start - Configurable Plazma
++        final org.plazmamc.plazma.configurations.PlazmaConfigurations plazmaConfigurations = org.plazmamc.plazma.configurations.PlazmaConfigurations.create(optionSet);
++        return new Services(minecraftSessionService, authenticationService.getServicesKeySet(), gameProfileRepository, gameProfileCache, paperConfigurations, plazmaConfigurations);
++        // Plazma end - Configurable Plazma
+         // Paper end - load paper config files from cli options
+     }
+ 
