@@ -1,0 +1,95 @@
+--- a/net/minecraft/CrashReport.java
++++ b/net/minecraft/CrashReport.java
+@@ -22,15 +_,16 @@
+ public class CrashReport {
+     private static final Logger LOGGER = LogUtils.getLogger();
+     private static final DateTimeFormatter DATE_TIME_FORMATTER = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss", Locale.ROOT);
++    private static final List<String> extraInfo = List.of("", "DO NOT REPORT THIS TO PAPER OR PURPUR! REPORT TO PLAZMA INSTEAD!", ""); // Purpur - Rebrand // Plazma - Use modern method // Plazma - Rebrand
+     private final String title;
+     private final Throwable exception;
+     private final List<CrashReportCategory> details = Lists.newArrayList();
+     @Nullable
+     private Path saveFile;
+     private boolean trackingStackTrace = true;
++    @Nullable // Plazma - Fix IDE warning
+     private StackTraceElement[] uncategorizedStackTrace = new StackTraceElement[0];
+     private final SystemReport systemReport = new SystemReport();
+-    private List<String> extraInfo = List.of("", "DO NOT REPORT THIS TO PAPER! REPORT TO PURPUR INSTEAD!", ""); // Purpur - Rebrand
+ 
+     public CrashReport(String title, Throwable exception) {
+         io.papermc.paper.util.StacktraceDeobfuscator.INSTANCE.deobfuscateThrowable(exception); // Paper
+@@ -54,8 +_,8 @@
+     }
+ 
+     public void getDetails(StringBuilder builder) {
+-        if ((this.uncategorizedStackTrace == null || this.uncategorizedStackTrace.length <= 0) && !this.details.isEmpty()) {
+-            this.uncategorizedStackTrace = ArrayUtils.subarray(this.details.get(0).getStacktrace(), 0, 1);
++        if ((this.uncategorizedStackTrace == null || this.uncategorizedStackTrace.length == 0) && !this.details.isEmpty()) {
++            this.uncategorizedStackTrace = ArrayUtils.subarray(this.details.getFirst().getStacktrace(), 0, 1); // Plazma - Use modern method
+         }
+ 
+         if (this.uncategorizedStackTrace != null && this.uncategorizedStackTrace.length > 0) {
+@@ -84,13 +_,14 @@
+         PrintWriter printWriter = null;
+         Throwable throwable = this.exception;
+         if (throwable.getMessage() == null) {
+-            if (throwable instanceof NullPointerException) {
+-                throwable = new NullPointerException(this.title);
+-            } else if (throwable instanceof StackOverflowError) {
+-                throwable = new StackOverflowError(this.title);
+-            } else if (throwable instanceof OutOfMemoryError) {
+-                throwable = new OutOfMemoryError(this.title);
++            // Plazma start - Use modern method
++            switch (throwable) {
++                case NullPointerException ignore -> throwable = new NullPointerException(this.title);
++                case StackOverflowError ignore -> throwable = new StackOverflowError(this.title);
++                case OutOfMemoryError ignore -> throwable = new OutOfMemoryError(this.title);
++                default -> {}
+             }
++            // Plazma end - Use modern method
+ 
+             throwable.setStackTrace(this.exception.getStackTrace());
+         }
+@@ -102,8 +_,8 @@
+             throwable.printStackTrace(printWriter);
+             var4 = stringWriter.toString();
+         } finally {
+-            IOUtils.closeQuietly((Writer)stringWriter);
+-            IOUtils.closeQuietly((Writer)printWriter);
++            IOUtils.closeQuietly(stringWriter); // Plazma - Remove unnecessary type cast
++            IOUtils.closeQuietly(printWriter); // Plazma - Remove unnecessary type cast
+         }
+ 
+         return var4;
+@@ -120,12 +_,7 @@
+         stringBuilder.append("\n\n");
+         stringBuilder.append(this.getExceptionMessage());
+         stringBuilder.append("\n\nA detailed walkthrough of the error, its code path and all known details is as follows:\n");
+-
+-        for (int i = 0; i < 87; i++) {
+-            stringBuilder.append("-");
+-        }
+-
+-        stringBuilder.append("\n\n");
++        stringBuilder.repeat("-", 87).append("\n\n"); // Plazma - Use modern method
+         this.getDetails(stringBuilder);
+         return stringBuilder.toString();
+     }
+@@ -185,7 +_,7 @@
+                 LOGGER.error("Negative index in crash report handler ({}/{})", stackTrace.length, i);
+             }
+ 
+-            if (stackTrace != null && 0 <= i1 && i1 < stackTrace.length) {
++            if (0 <= i1 && i1 < stackTrace.length) {
+                 stackTraceElement = stackTrace[i1];
+                 if (stackTrace.length + 1 - i < stackTrace.length) {
+                     stackTraceElement1 = stackTrace[stackTrace.length + 1 - i];
+@@ -193,7 +_,7 @@
+             }
+ 
+             this.trackingStackTrace = crashReportCategory.validateStackTrace(stackTraceElement, stackTraceElement1);
+-            if (stackTrace != null && stackTrace.length >= i && 0 <= i1 && i1 < stackTrace.length) {
++            if (stackTrace.length >= i && 0 <= i1 && i1 < stackTrace.length) {
+                 this.uncategorizedStackTrace = new StackTraceElement[i1];
+                 System.arraycopy(stackTrace, 0, this.uncategorizedStackTrace, 0, this.uncategorizedStackTrace.length);
+             } else {

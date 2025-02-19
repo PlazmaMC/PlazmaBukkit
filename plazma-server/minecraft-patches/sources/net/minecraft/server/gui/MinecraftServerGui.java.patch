@@ -1,0 +1,137 @@
+--- a/net/minecraft/server/gui/MinecraftServerGui.java
++++ b/net/minecraft/server/gui/MinecraftServerGui.java
+@@ -3,25 +_,14 @@
+ import com.google.common.collect.Lists;
+ import com.mojang.logging.LogQueues;
+ import com.mojang.logging.LogUtils;
+-import java.awt.BorderLayout;
+-import java.awt.Dimension;
+-import java.awt.Font;
++import java.awt.*; // Plazma - Improve code quality
+ import java.awt.event.FocusAdapter;
+ import java.awt.event.FocusEvent;
+ import java.awt.event.WindowAdapter;
+ import java.awt.event.WindowEvent;
+ import java.util.Collection;
+ import java.util.concurrent.atomic.AtomicBoolean;
+-import javax.swing.JComponent;
+-import javax.swing.JFrame;
+-import javax.swing.JList;
+-import javax.swing.JPanel;
+-import javax.swing.JScrollBar;
+-import javax.swing.JScrollPane;
+-import javax.swing.JTextArea;
+-import javax.swing.JTextField;
+-import javax.swing.SwingUtilities;
+-import javax.swing.UIManager;
++import javax.swing.*; // Plazma - Improve code quality
+ import javax.swing.border.EtchedBorder;
+ import javax.swing.border.TitledBorder;
+ import javax.swing.text.BadLocationException;
+@@ -31,11 +_,10 @@
+ import org.slf4j.Logger;
+ 
+ public class MinecraftServerGui extends JComponent {
+-    private static final Font MONOSPACED = new Font("Monospaced", 0, 12);
++    private static final Font MONOSPACED = new Font("Monospaced", Font.PLAIN, 12); // Plazma - Improve code quality
+     private static final Logger LOGGER = LogUtils.getLogger();
+-    private static final String TITLE = "Minecraft server";
+-    private static final String SHUTDOWN_TITLE = "Minecraft server - shutting down!";
+     private final DedicatedServer server;
++    @org.jspecify.annotations.Nullable // Plazma - Improve code quality
+     private Thread logAppenderThread;
+     private final Collection<Runnable> finalizers = Lists.newArrayList();
+     final AtomicBoolean isClosing = new AtomicBoolean();
+@@ -48,12 +_,12 @@
+     public static MinecraftServerGui showFrameFor(final DedicatedServer server) {
+         try {
+             UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName());
+-        } catch (Exception var3) {
++        } catch (Exception ignore) { // Plazma - Fix IDE warning
+         }
+ 
+-        final JFrame jFrame = new JFrame("Purpur Minecraft server"); // Purpur - Improve GUI
++        final JFrame jFrame = new JFrame("Plazma Minecraft server"); // Purpur - Improve GUI // Plazma - Rebrand
+         final MinecraftServerGui minecraftServerGui = new MinecraftServerGui(server);
+-        jFrame.setDefaultCloseOperation(2);
++        jFrame.setDefaultCloseOperation(WindowConstants.DISPOSE_ON_CLOSE); // Plazma - Improve code quality
+         jFrame.add(minecraftServerGui);
+         jFrame.pack();
+         jFrame.setLocationRelativeTo(null);
+@@ -110,7 +_,7 @@
+ 
+     private JComponent buildPlayerPanel() {
+         JList<?> jList = new PlayerListComponent(this.server);
+-        JScrollPane jScrollPane = new JScrollPane(jList, 22, 30);
++        JScrollPane jScrollPane = new JScrollPane(jList, ScrollPaneConstants.VERTICAL_SCROLLBAR_ALWAYS, ScrollPaneConstants.HORIZONTAL_SCROLLBAR_AS_NEEDED); // Plazma - Improve code quality
+         jScrollPane.setBorder(new TitledBorder(new EtchedBorder(), "Players"));
+         return jScrollPane;
+     }
+@@ -118,7 +_,7 @@
+     private JComponent buildChatPanel() {
+         JPanel jPanel = new JPanel(new BorderLayout());
+         org.purpurmc.purpur.gui.JColorTextPane jTextArea = new org.purpurmc.purpur.gui.JColorTextPane(); // Purpur - GUI Improvements
+-        JScrollPane jScrollPane = new JScrollPane(jTextArea, 22, 30);
++        JScrollPane jScrollPane = new JScrollPane(jTextArea, ScrollPaneConstants.VERTICAL_SCROLLBAR_ALWAYS, ScrollPaneConstants.HORIZONTAL_SCROLLBAR_AS_NEEDED); // Plazma - Improve code quality
+         jTextArea.setEditable(false);
+         jTextArea.setFont(MONOSPACED);
+         JTextField jTextField = new JTextField();
+@@ -163,11 +_,6 @@
+             }
+         });
+         // Purpur end - GUI Improvements
+-        jTextArea.addFocusListener(new FocusAdapter() {
+-            @Override
+-            public void focusGained(FocusEvent event) {
+-            }
+-        });
+         jPanel.add(jScrollPane, "Center");
+         jPanel.add(jTextField, "South");
+         jPanel.setBorder(new TitledBorder(new EtchedBorder(), "Log and chat"));
+@@ -183,7 +_,7 @@
+     }
+ 
+     public void start() {
+-        this.logAppenderThread.start();
++        java.util.Objects.requireNonNull(this.logAppenderThread).start(); // Plazma - Improve code quality
+     }
+ 
+     public void close() {
+@@ -196,22 +_,16 @@
+         this.finalizers.forEach(Runnable::run);
+     }
+ 
+-    private static final java.util.regex.Pattern ANSI = java.util.regex.Pattern.compile("\\e\\[[\\d;]*[^\\d;]"); // CraftBukkit // Paper
+     public void print(org.purpurmc.purpur.gui.JColorTextPane textArea, JScrollPane scrollPane, String line) { // Purpur - GUI Improvements
+         if (!SwingUtilities.isEventDispatchThread()) {
+             SwingUtilities.invokeLater(() -> this.print(textArea, scrollPane, line));
+         } else {
+-            Document document = textArea.getDocument();
+             JScrollBar verticalScrollBar = scrollPane.getVerticalScrollBar();
+             boolean flag = false;
+             if (scrollPane.getViewport().getView() == textArea) {
+                 flag = verticalScrollBar.getValue() + verticalScrollBar.getSize().getHeight() + MONOSPACED.getSize() * 4 > verticalScrollBar.getMaximum();
+             }
+ 
+-            /*try { // Purpur - GUI Improvements
+-                document.insertString(document.getLength(), MinecraftServerGui.ANSI.matcher(line).replaceAll(""), null); // CraftBukkit
+-            } catch (BadLocationException var8) {
+-            }*/ // Purpur - GUI Improvements
+             textArea.append(line); // Purpur - GUI Improvements
+ 
+             if (flag) {
+@@ -249,11 +_,11 @@
+                 try {
+                     java.awt.Desktop.getDesktop().browse(java.net.URI.create(onboardingLink));
+                 } catch (java.io.IOException exception) {
+-                    LOGGER.error("Unable to find a default browser. Please manually visit the website: " + onboardingLink, exception);
++                    LOGGER.error("Unable to find a default browser. Please manually visit the website: {}", onboardingLink, exception); // Plazma - Improve code quality
+                 } catch (UnsupportedOperationException exception) {
+-                    LOGGER.error("This platform does not support the BROWSE action. Please manually visit the website: " + onboardingLink, exception);
++                    LOGGER.error("This platform does not support the BROWSE action. Please manually visit the website: {}", onboardingLink, exception); // Plazma - Improve code quality
+                 } catch (SecurityException exception) {
+-                    LOGGER.error("This action has been denied by the security manager. Please manually visit the website: " + onboardingLink, exception);
++                    LOGGER.error("This action has been denied by the security manager. Please manually visit the website: {}", onboardingLink, exception); // Plazma - Improve code quality
+                 }
+             }
+         });

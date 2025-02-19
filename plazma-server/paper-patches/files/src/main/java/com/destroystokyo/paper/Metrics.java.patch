@@ -1,0 +1,100 @@
+--- a/src/main/java/com/destroystokyo/paper/Metrics.java
++++ b/src/main/java/com/destroystokyo/paper/Metrics.java
+@@ -109,7 +_,7 @@
+     }
+ 
+     /**
+-     * Gets the plugin specific data.
++     * Gets the plugin-specific data.
+      *
+      * @return The plugin specific data.
+      */
+@@ -132,7 +_,7 @@
+     }
+ 
+     /**
+-     * Gets the server specific data.
++     * Gets the server-specific data.
+      *
+      * @return The server specific data.
+      */
+@@ -186,7 +_,7 @@
+         if (data == null) {
+             throw new IllegalArgumentException("Data cannot be null!");
+         }
+-        HttpsURLConnection connection = (HttpsURLConnection) new URL(URL).openConnection();
++        HttpsURLConnection connection = (HttpsURLConnection) new java.net.URI(URL).toURL().openConnection(); // Plazma - Use modern method
+ 
+         // Compress the data to save bandwidth
+         byte[] compressedData = compress(data.toString());
+@@ -211,10 +_,10 @@
+     }
+ 
+     /**
+-     * Gzips the given String.
++     * Compresses the given String using Gzip.
+      *
+-     * @param str The string to gzip.
+-     * @return The gzipped String.
++     * @param str The string to compress.
++     * @return The compressed String.
+      * @throws IOException If the compression failed.
+      */
+     private static byte[] compress(final String str) throws IOException {
+@@ -223,7 +_,7 @@
+         }
+         ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
+         GZIPOutputStream gzip = new GZIPOutputStream(outputStream);
+-        gzip.write(str.getBytes("UTF-8"));
++        gzip.write(str.getBytes(java.nio.charset.StandardCharsets.UTF_8)); // Plazma - Use modern method
+         gzip.close();
+         return outputStream.toByteArray();
+     }
+@@ -396,7 +_,7 @@
+     }
+ 
+     /**
+-     * Represents a custom single line chart.
++     * Represents a custom single-line chart.
+      */
+     public static class SingleLineChart extends CustomChart {
+ 
+@@ -576,12 +_,14 @@
+                 config.addDefault("logFailedRequests", false);
+ 
+                 // Inform the server owners about bStats
+-                config.options().header(
+-                        "bStats collects some data for plugin authors like how many servers are using their plugins.\n" +
+-                                "To honor their work, you should not disable it.\n" +
+-                                "This has nearly no effect on the server performance!\n" +
+-                                "Check out https://bStats.org/ to learn more :)"
+-                ).copyDefaults(true);
++                // Plazma start - Use modern method
++                config.options().setHeader(List.of(
++                    "bStats collects some data for plugin authors like how many servers are using their plugins.",
++                    "To honor their work, you should not disable it.",
++                    "This has nearly no effect on the server performance!",
++                    "Check out https://bStats.org/ to learn more :)"
++                )).copyDefaults(true);
++                // Plazma end - Use modern method
+                 try {
+                     config.save(configFile);
+                 } catch (IOException ignored) {
+@@ -592,7 +_,7 @@
+             boolean logFailedRequests = config.getBoolean("logFailedRequests", false);
+             // Only start Metrics, if it's enabled in the config
+             if (config.getBoolean("enabled", true)) {
+-                Metrics metrics = new Metrics("Purpur", serverUUID, logFailedRequests, Bukkit.getLogger()); // Pufferfish // Purpur - Purpur config files
++                Metrics metrics = new Metrics("Plazma", serverUUID, logFailedRequests, Bukkit.getLogger()); // Pufferfish // Purpur - Purpur config files // Plazma - Rebrand
+ 
+                 metrics.addCustomChart(new Metrics.SimplePie("minecraft_version", () -> {
+                     String minecraftVersion = Bukkit.getVersion();
+@@ -602,7 +_,7 @@
+ 
+                 metrics.addCustomChart(new Metrics.SingleLineChart("players", () -> Bukkit.getOnlinePlayers().size()));
+                 metrics.addCustomChart(new Metrics.SimplePie("online_mode", () -> Bukkit.getOnlineMode() ? "online" : (io.papermc.paper.configuration.GlobalConfiguration.get().proxies.isProxyOnlineMode() ? "bungee" : "offline"))); // Purpur - Purpur config files
+-                metrics.addCustomChart(new Metrics.SimplePie("purpur_version", () -> (org.bukkit.craftbukkit.Main.class.getPackage().getImplementationVersion() != null) ? org.bukkit.craftbukkit.Main.class.getPackage().getImplementationVersion() : "unknown")); // Purpur - Purpur config files
++                metrics.addCustomChart(new Metrics.SimplePie("plazma_version", () -> (org.bukkit.craftbukkit.Main.class.getPackage().getImplementationVersion() != null) ? org.bukkit.craftbukkit.Main.class.getPackage().getImplementationVersion() : "unknown")); // Purpur - Purpur config files // Plazma - Rebrand
+ 
+                 metrics.addCustomChart(new Metrics.DrilldownPie("java_version", () -> {
+                     Map<String, Map<String, Integer>> map = new HashMap<>();

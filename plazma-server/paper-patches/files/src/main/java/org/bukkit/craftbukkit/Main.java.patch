@@ -1,0 +1,92 @@
+--- a/src/main/java/org/bukkit/craftbukkit/Main.java
++++ b/src/main/java/org/bukkit/craftbukkit/Main.java
+@@ -26,13 +_,6 @@
+     // Paper end - Reset loggers after shutdown
+ 
+     public static void main(String[] args) {
+-        // Paper start
+-        final String warnWhenLegacyFormattingDetected = String.join(".", "net", "kyori", "adventure", "text", "warnWhenLegacyFormattingDetected");
+-        if (false && System.getProperty(warnWhenLegacyFormattingDetected) == null) {
+-            System.setProperty(warnWhenLegacyFormattingDetected, String.valueOf(true));
+-        }
+-        // Paper end
+-        // Todo: Installation script
+         if (System.getProperty("jdk.nio.maxCachedBufferSize") == null) System.setProperty("jdk.nio.maxCachedBufferSize", "262144"); // Paper - cap per-thread NIO cache size; https://www.evanjones.ca/java-bytebuffer-leak.html
+         OptionParser parser = new OptionParser() {
+             {
+@@ -143,7 +_,7 @@
+ 
+                 this.acceptsAll(Main.asList("noconsole"), "Disables the console");
+ 
+-                this.acceptsAll(Main.asList("v", "version"), "Show the CraftBukkit Version");
++                this.acceptsAll(Main.asList("v", "version"), "Show the Plazma Version"); // Plazma - Rebrand
+ 
+                 this.acceptsAll(Main.asList("demo"), "Demo mode");
+ 
+@@ -183,13 +_,6 @@
+                     .defaultsTo(new File("purpur.yml"))
+                     .describedAs("Yml file");
+                 // Purpur end - Purpur config files
+-                // Paper start
+-                acceptsAll(asList("server-name"), "Name of the server")
+-                        .withRequiredArg()
+-                        .ofType(String.class)
+-                        .defaultsTo("Unknown Server")
+-                        .describedAs("Name");
+-                // Paper end
+             }
+         };
+ 
+@@ -234,26 +_,6 @@
+ 
+             try {
+                 // Paper start - Handled by TerminalConsoleAppender
+-                /*
+-                // This trick bypasses Maven Shade's clever rewriting of our getProperty call when using String literals
+-                String jline_UnsupportedTerminal = new String(new char[]{'j', 'l', 'i', 'n', 'e', '.', 'U', 'n', 's', 'u', 'p', 'p', 'o', 'r', 't', 'e', 'd', 'T', 'e', 'r', 'm', 'i', 'n', 'a', 'l'});
+-                String jline_terminal = new String(new char[]{'j', 'l', 'i', 'n', 'e', '.', 't', 'e', 'r', 'm', 'i', 'n', 'a', 'l'});
+-
+-                Main.useJline = !(jline_UnsupportedTerminal).equals(System.getProperty(jline_terminal));
+-
+-                if (options.has("nojline")) {
+-                    System.setProperty("user.language", "en");
+-                    Main.useJline = false;
+-                }
+-
+-                if (Main.useJline) {
+-                    AnsiConsole.systemInstall();
+-                } else {
+-                    // This ensures the terminal literal will always match the jline implementation
+-                    System.setProperty(jline.TerminalFactory.JLINE_TERMINAL, jline.UnsupportedTerminal.class.getName());
+-                }
+-                */
+-
+                 if (options.has("nojline")) {
+                     System.setProperty(net.minecrell.terminalconsole.TerminalConsoleAppender.JLINE_OVERRIDE_PROPERTY, "false");
+                     useJline = false;
+@@ -266,25 +_,8 @@
+                     System.setProperty(net.minecrell.terminalconsole.TerminalConsoleAppender.JLINE_OVERRIDE_PROPERTY, "false"); // Paper
+                 }
+ 
+-                if (false && Main.class.getPackage().getImplementationVendor() != null && System.getProperty("IReallyKnowWhatIAmDoingISwear") == null) { // Purpur - Disable outdated build check
+-                    Date buildDate = new java.text.SimpleDateFormat("yyyy-MM-dd HH:mm:ss Z").parse(Main.class.getPackage().getImplementationVendor()); // Paper
+-
+-                    Calendar deadline = Calendar.getInstance();
+-                    deadline.add(Calendar.DAY_OF_YEAR, -14);
+-                    if (buildDate.before(deadline.getTime())) {
+-                        // Paper start - This is some stupid bullshit
+-                        System.err.println("*** Warning, you've not updated in a while! ***");
+-                        System.err.println("*** Please download a new build from https://papermc.io/downloads/paper ***"); // Paper
+-                        //System.err.println("*** Server will start in 20 seconds ***");
+-                        //Thread.sleep(TimeUnit.SECONDS.toMillis(20));
+-                        // Paper end
+-                    }
+-                }
+-
+                 System.setProperty("library.jansi.version", "Paper"); // Paper - set meaningless jansi version to prevent git builds from crashing on Windows
+                 System.setProperty("jdk.console", "java.base"); // Paper - revert default console provider back to java.base so we can have our own jline
+-                //System.out.println("Loading libraries, please wait...");
+-                //net.minecraft.server.Main.main(options);
+                 io.papermc.paper.PaperBootstrap.boot(options);
+             } catch (Throwable t) {
+                 t.printStackTrace();

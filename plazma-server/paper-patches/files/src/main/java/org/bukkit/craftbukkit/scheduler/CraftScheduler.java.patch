@@ -1,0 +1,436 @@
+--- a/src/main/java/org/bukkit/craftbukkit/scheduler/CraftScheduler.java
++++ b/src/main/java/org/bukkit/craftbukkit/scheduler/CraftScheduler.java
+@@ -23,6 +_,7 @@
+ import org.bukkit.scheduler.BukkitScheduler;
+ import org.bukkit.scheduler.BukkitTask;
+ import org.bukkit.scheduler.BukkitWorker;
++import org.jspecify.annotations.NonNull; // Plazma - Null safety
+ 
+ /**
+  * The fundamental concepts for this implementation:
+@@ -34,7 +_,7 @@
+  *     Adding to the tail is atomic and very efficient; utility method is {@link #handle(CraftTask, long)} or {@link #addTask(CraftTask)}. </li>
+  * <li>Changing the period on a task is delicate.
+  *     Any future task needs to notify waiting threads.
+- *     Async tasks must be synchronized to make sure that any thread that's finishing will remove itself from {@link #runners}.
++ *     Async tasks must be synchronised to make sure that any thread that's finishing will remove itself from {@link #runners}.
+  *     Another utility method is provided for this, {@link #cancelTask(int)}</li>
+  * <li>{@link #runners} provides a moderately up-to-date view of active tasks.
+  *     If the linked head to tail set is read, all remaining tasks that were active at the time execution started will be located in runners.</li>
+@@ -65,56 +_,31 @@
+      */
+     private final AtomicInteger ids = new AtomicInteger(CraftScheduler.START_ID);
+     /**
+-     * Current head of linked-list. This reference is always stale, {@link CraftTask#next} is the live reference.
++     * Current head of a linked-list. This reference is always stale, {@link CraftTask#getNext} is the live reference.
+      */
+     private volatile CraftTask head = new CraftTask();
+     /**
+-     * Tail of a linked-list. AtomicReference only matters when adding to queue
+-     */
+-    private final AtomicReference<CraftTask> tail = new AtomicReference<CraftTask>(this.head);
+-    /**
+-     * Main thread logic only
+-     */
+-    final PriorityQueue<CraftTask> pending = new PriorityQueue<CraftTask>(10, // Paper
+-            new Comparator<CraftTask>() {
+-                @Override
+-                public int compare(final CraftTask o1, final CraftTask o2) {
+-                    int value = Long.compare(o1.getNextRun(), o2.getNextRun());
+-
+-                    // If the tasks should run on the same tick they should be run FIFO
+-                    return value != 0 ? value : Long.compare(o1.getCreatedAt(), o2.getCreatedAt());
+-                }
+-            });
+-    /**
+-     * Main thread logic only
+-     */
+-    private final List<CraftTask> temp = new ArrayList<CraftTask>();
++     * Tail of a linked-list. AtomicReference only matters when adding to a queue
++     */
++    private final AtomicReference<CraftTask> tail = new AtomicReference<>(this.head); // Plazma - Remove unnecessary type parameter
++    /**
++     * Main thread logic only
++     */
++    final PriorityQueue<CraftTask> pending = new PriorityQueue<>(10, Comparator.comparingLong(CraftTask::getNextRun).thenComparingLong(CraftTask::getCreatedAt)); // Plazma - Remove unnecessary type parameter
++    /**
++     * Main thread logic only
++     */
++    private final List<CraftTask> temp = new ArrayList<>(); // Plazma - Remove unnecessary type parameter
+     /**
+      * These are tasks that are currently active. It's provided for 'viewing' the current state.
+      */
+-    final ConcurrentHashMap<Integer, CraftTask> runners = new ConcurrentHashMap<Integer, CraftTask>(); // Paper
++    final ConcurrentHashMap<Integer, CraftTask> runners = new ConcurrentHashMap<>(); // Paper // Plazma - Remove unnecessary type parameter
+     /**
+      * The sync task that is currently running on the main thread.
+      */
+     private volatile CraftTask currentTask = null;
+     // Paper start - Improved Async Task Scheduler
+-    volatile int currentTick = -1;/*
+-    private final Executor executor = Executors.newCachedThreadPool(new ThreadFactoryBuilder().setNameFormat("Craft Scheduler Thread - %d").build());
+-    private CraftAsyncDebugger debugHead = new CraftAsyncDebugger(-1, null, null) {
+-        @Override
+-        StringBuilder debugTo(StringBuilder string) {
+-            return string;
+-        }
+-    };
+-    private CraftAsyncDebugger debugTail = this.debugHead;
+-
+-    */ // Paper end
+-    private static final int RECENT_TICKS;
+-
+-    static {
+-        RECENT_TICKS = 30;
+-    }
+-
++    volatile int currentTick = -1; // Plazma
+ 
+     // Paper start
+     private final CraftScheduler asyncScheduler;
+@@ -125,96 +_,98 @@
+ 
+     public CraftScheduler(boolean isAsync) {
+         this.isAsyncScheduler = isAsync;
+-        if (isAsync) {
+-            this.asyncScheduler = this;
+-        } else {
+-            this.asyncScheduler = new CraftAsyncScheduler();
+-        }
++        this.asyncScheduler = isAsync ? this : new CraftAsyncScheduler(); // Plazma - Improve code quality
+     }
+     // Paper end
+     @Override
+-    public int scheduleSyncDelayedTask(final Plugin plugin, final Runnable task) {
++    public int scheduleSyncDelayedTask(final @NonNull Plugin plugin, final @NonNull Runnable task) { // Plazma - Null safety
+         return this.scheduleSyncDelayedTask(plugin, task, 0L);
+     }
+ 
+     @Override
+-    public BukkitTask runTask(Plugin plugin, Runnable runnable) {
++    @NonNull // Plazma - Null safety
++    public BukkitTask runTask(final @NonNull Plugin plugin, final @NonNull Runnable runnable) { // Plazma - Null safety
+         return this.runTaskLater(plugin, runnable, 0L);
+     }
+ 
+     @Override
+-    public void runTask(Plugin plugin, Consumer<? super BukkitTask> task) throws IllegalArgumentException {
++    public void runTask(final @NonNull Plugin plugin, final @NonNull Consumer<? super BukkitTask> task) throws IllegalArgumentException { // Plazma - Null safety
+         this.runTaskLater(plugin, task, 0L);
+     }
+ 
+     @Deprecated
+     @Override
+-    public int scheduleAsyncDelayedTask(final Plugin plugin, final Runnable task) {
++    public int scheduleAsyncDelayedTask(final @NonNull Plugin plugin, final @NonNull Runnable task) { // Plazma - Null safety
+         return this.scheduleAsyncDelayedTask(plugin, task, 0L);
+     }
+ 
+     @Override
+-    public BukkitTask runTaskAsynchronously(Plugin plugin, Runnable runnable) {
++    @NonNull // Plazma - Null safety
++    public BukkitTask runTaskAsynchronously(final @NonNull Plugin plugin, final @NonNull Runnable runnable) { // Plazma - Null safety
+         return this.runTaskLaterAsynchronously(plugin, runnable, 0L);
+     }
+ 
+     @Override
+-    public void runTaskAsynchronously(Plugin plugin, Consumer<? super BukkitTask> task) throws IllegalArgumentException {
++    public void runTaskAsynchronously(final @NonNull Plugin plugin, final @NonNull Consumer<? super BukkitTask> task) throws IllegalArgumentException { // Plazma - Null safety
+         this.runTaskLaterAsynchronously(plugin, task, 0L);
+     }
+ 
+     @Override
+-    public int scheduleSyncDelayedTask(final Plugin plugin, final Runnable task, final long delay) {
++    public int scheduleSyncDelayedTask(final @NonNull Plugin plugin, final @NonNull Runnable task, long delay) { // Plazma - Null safety
+         return this.scheduleSyncRepeatingTask(plugin, task, delay, CraftTask.NO_REPEATING);
+     }
+ 
+     @Override
+-    public BukkitTask runTaskLater(Plugin plugin, Runnable runnable, long delay) {
++    @NonNull // Plazma - Null safety
++    public BukkitTask runTaskLater(final @NonNull Plugin plugin, final @NonNull Runnable runnable, long delay) { // Plazma - Null safety
+         return this.runTaskTimer(plugin, runnable, delay, CraftTask.NO_REPEATING);
+     }
+ 
+     @Override
+-    public void runTaskLater(Plugin plugin, Consumer<? super BukkitTask> task, long delay) throws IllegalArgumentException {
++    public void runTaskLater(final @NonNull Plugin plugin, final @NonNull Consumer<? super BukkitTask> task, long delay) throws IllegalArgumentException { // Plazma - Null safety
+         this.runTaskTimer(plugin, task, delay, CraftTask.NO_REPEATING);
+     }
+ 
+     @Deprecated
+     @Override
+-    public int scheduleAsyncDelayedTask(final Plugin plugin, final Runnable task, final long delay) {
++    public int scheduleAsyncDelayedTask(final @NonNull Plugin plugin, final @NonNull Runnable task, long delay) { // Plazma - Null safety
+         return this.scheduleAsyncRepeatingTask(plugin, task, delay, CraftTask.NO_REPEATING);
+     }
+ 
+     @Override
+-    public BukkitTask runTaskLaterAsynchronously(Plugin plugin, Runnable runnable, long delay) {
++    @NonNull // Plazma - Null safety
++    public BukkitTask runTaskLaterAsynchronously(final @NonNull Plugin plugin, final @NonNull Runnable runnable, long delay) { // Plazma - Null safety
+         return this.runTaskTimerAsynchronously(plugin, runnable, delay, CraftTask.NO_REPEATING);
+     }
+ 
+     @Override
+-    public void runTaskLaterAsynchronously(Plugin plugin, Consumer<? super BukkitTask> task, long delay) throws IllegalArgumentException {
++    public void runTaskLaterAsynchronously(final @NonNull Plugin plugin, final @NonNull Consumer<? super BukkitTask> task, long delay) throws IllegalArgumentException { // Plazma - Null safety
+         this.runTaskTimerAsynchronously(plugin, task, delay, CraftTask.NO_REPEATING);
+     }
+ 
+     @Override
+-    public void runTaskTimerAsynchronously(Plugin plugin, Consumer<? super BukkitTask> task, long delay, long period) throws IllegalArgumentException {
++    public void runTaskTimerAsynchronously(final @NonNull Plugin plugin, final @NonNull Consumer<? super BukkitTask> task, long delay, long period) throws IllegalArgumentException { // Plazma - Null safety
+         this.runTaskTimerAsynchronously(plugin, (Object) task, delay, period); // Paper
+     }
+ 
+     @Override
+-    public int scheduleSyncRepeatingTask(final Plugin plugin, final Runnable runnable, long delay, long period) {
++    public int scheduleSyncRepeatingTask(final @NonNull Plugin plugin, final @NonNull Runnable runnable, long delay, long period) { // Plazma - Null safety
+         return this.runTaskTimer(plugin, runnable, delay, period).getTaskId();
+     }
+ 
+     @Override
+-    public BukkitTask runTaskTimer(Plugin plugin, Runnable runnable, long delay, long period) {
++    @NonNull // Plazma - Null safety
++    public BukkitTask runTaskTimer(final @NonNull Plugin plugin, final @NonNull Runnable runnable, long delay, long period) { // Plazma - Null safety
+         return this.runTaskTimer(plugin, (Object) runnable, delay, period);
+     }
+ 
+     @Override
+-    public void runTaskTimer(Plugin plugin, Consumer<? super BukkitTask> task, long delay, long period) throws IllegalArgumentException {
++    public void runTaskTimer(final @NonNull Plugin plugin, final @NonNull Consumer<? super BukkitTask> task, long delay, long period) throws IllegalArgumentException { // Plazma - Null safety
+         this.runTaskTimer(plugin, (Object) task, delay, period);
+     }
+ 
+-    public BukkitTask runTaskTimer(Plugin plugin, Object runnable, long delay, long period) {
++    @NonNull // Plazma - Null safety
++    public BukkitTask runTaskTimer(final @NonNull Plugin plugin, final @NonNull Object runnable, long delay, long period) { // Plazma - Null safety
+         CraftScheduler.validate(plugin, runnable);
+         if (delay < 0L) {
+             delay = 0;
+@@ -229,16 +_,18 @@
+ 
+     @Deprecated
+     @Override
+-    public int scheduleAsyncRepeatingTask(final Plugin plugin, final Runnable runnable, long delay, long period) {
++    public int scheduleAsyncRepeatingTask(final @NonNull Plugin plugin, final @NonNull Runnable runnable, long delay, long period) { // Plazma - Null safety
+         return this.runTaskTimerAsynchronously(plugin, runnable, delay, period).getTaskId();
+     }
+ 
+     @Override
+-    public BukkitTask runTaskTimerAsynchronously(Plugin plugin, Runnable runnable, long delay, long period) {
++    @NonNull // Plazma - Null safety
++    public BukkitTask runTaskTimerAsynchronously(final @NonNull Plugin plugin, final @NonNull Runnable runnable, long delay, long period) { // Plazma - Null safety
+         return this.runTaskTimerAsynchronously(plugin, (Object) runnable, delay, period);
+     }
+ 
+-    public BukkitTask runTaskTimerAsynchronously(Plugin plugin, Object runnable, long delay, long period) {
++    @NonNull // Plazma - Null safety
++    public BukkitTask runTaskTimerAsynchronously(final @NonNull Plugin plugin, final @NonNull Object runnable, long delay, long period) { // Plazma - Null safety
+         CraftScheduler.validate(plugin, runnable);
+         if (delay < 0L) {
+             delay = 0;
+@@ -252,9 +_,10 @@
+     }
+ 
+     @Override
+-    public <T> Future<T> callSyncMethod(final Plugin plugin, final Callable<T> task) {
++    @NonNull // Plazma - Null safety
++    public <T> Future<T> callSyncMethod(final @NonNull Plugin plugin, final @NonNull Callable<T> task) { // Plazma - Null safety
+         CraftScheduler.validate(plugin, task);
+-        final CraftFuture<T> future = new CraftFuture<T>(task, plugin, this.nextId());
++        final CraftFuture<T> future = new CraftFuture<>(task, plugin, this.nextId()); // Plazma - Remove unnecessary type parameter
+         this.handle(future, 0L);
+         return future;
+     }
+@@ -309,8 +_,7 @@
+     }
+ 
+     @Override
+-    public void cancelTasks(final Plugin plugin) {
+-        Preconditions.checkArgument(plugin != null, "Cannot cancel tasks of null plugin");
++    public void cancelTasks(final @NonNull Plugin plugin) { // Plazma - Null safety
+         // Paper start
+         if (!this.isAsyncScheduler) {
+             this.asyncScheduler.cancelTasks(plugin);
+@@ -395,6 +_,7 @@
+     }
+ 
+     @Override
++    @NonNull // Plazma - Null safety
+     public List<BukkitWorker> getActiveWorkers() {
+         // Paper start
+         if (!isAsyncScheduler) {
+@@ -402,7 +_,7 @@
+             return this.asyncScheduler.getActiveWorkers();
+         }
+         // Paper end
+-        final ArrayList<BukkitWorker> workers = new ArrayList<BukkitWorker>();
++        final ArrayList<BukkitWorker> workers = new ArrayList<>(); // Plazma - Remove unnecessary type parameter
+         for (final CraftTask taskObj : this.runners.values()) {
+             // Iterator will be a best-effort (may fail to grab very new values) if called from an async thread
+             if (taskObj.isSync()) {
+@@ -418,8 +_,9 @@
+     }
+ 
+     @Override
++    @NonNull // Plazma - Null safety
+     public List<BukkitTask> getPendingTasks() {
+-        final ArrayList<CraftTask> truePending = new ArrayList<CraftTask>();
++        final ArrayList<CraftTask> truePending = new ArrayList<>(); // Plazma - Remove unnecessary type parameter
+         for (CraftTask task = this.head.getNext(); task != null; task = task.getNext()) {
+             if (task.getTaskId() != -1) {
+                 // -1 is special code
+@@ -427,7 +_,7 @@
+             }
+         }
+ 
+-        final ArrayList<BukkitTask> pending = new ArrayList<BukkitTask>();
++        final ArrayList<BukkitTask> pending = new ArrayList<>(); // Plazma - Remove unnecessary type parameter
+         for (CraftTask task : this.runners.values()) {
+             if (task.getPeriod() >= CraftTask.NO_REPEATING) {
+                 pending.add(task);
+@@ -477,7 +_,7 @@
+                     final String logMessage = String.format(
+                         "Task #%s for %s generated an exception",
+                         task.getTaskId(),
+-                        task.getOwner().getDescription().getFullName());
++                        task.getOwner().getPluginMeta().getDisplayName()); // Plazma - Use modern method
+                     task.getOwner().getLogger().log(
+                             Level.WARNING,
+                         logMessage,
+@@ -491,7 +_,7 @@
+                 this.parsePending();
+             } else {
+                 // this.debugTail = this.debugTail.setNext(new CraftAsyncDebugger(this.currentTick + CraftScheduler.RECENT_TICKS, task.getOwner(), task.getTaskClass())); // Paper
+-                task.getOwner().getLogger().log(Level.SEVERE, "Unexpected Async Task in the Sync Scheduler. Report this to Purpur"); // Paper // Purpur - Rebrand
++                task.getOwner().getLogger().log(Level.SEVERE, "Unexpected Async Task in the Sync Scheduler. Report this to Plazma"); // Paper // Purpur - Rebrand // Plazma - Rebrand
+                 // We don't need to parse pending
+                 // (async tasks must live with race-conditions if they attempt to cancel between these few lines of code)
+             }
+@@ -508,12 +_,13 @@
+         //this.debugHead = this.debugHead.getNextHead(this.currentTick); // Paper
+     }
+ 
+-    protected void addTask(final CraftTask task) {
++    protected void addTask(final @NonNull CraftTask task) { // Plazma - Null safety
+         final CraftTask tailTask = this.tail.getAndSet(task);
+         tailTask.setNext(task);
+     }
+ 
+-    protected CraftTask handle(final CraftTask task, final long delay) { // Paper
++    @NonNull // Plazma - Null safety
++    protected CraftTask handle(final @NonNull CraftTask task, final long delay) { // Paper // Plazma - Null safety
+         // Paper start
+         if (!this.isAsyncScheduler && !task.isSync()) {
+             this.asyncScheduler.handle(task, delay);
+@@ -525,8 +_,7 @@
+         return task;
+     }
+ 
+-    private static void validate(final Plugin plugin, final Object task) {
+-        Preconditions.checkArgument(plugin != null, "Plugin cannot be null");
++    private static void validate(final @NonNull Plugin plugin, final @NonNull Object task) { // Plazma - Null safety
+         Preconditions.checkArgument(task instanceof Runnable || task instanceof Consumer || task instanceof Callable, "Task must be Runnable, Consumer, or Callable");
+         if (!plugin.isEnabled()) {
+             throw new IllegalPluginAccessException("Plugin attempted to register task while disabled");
+@@ -569,79 +_,74 @@
+ 
+     @Override
+     public String toString() {
+-        // Paper start
+-        return "";
+-        /*
+-        int debugTick = this.currentTick;
+-        StringBuilder string = new StringBuilder("Recent tasks from ").append(debugTick - CraftScheduler.RECENT_TICKS).append('-').append(debugTick).append('{');
+-        this.debugHead.debugTo(string);
+-        return string.append('}').toString();
+-        */
+-        // Paper end
++        return ""; // Paper // Plazma
+     }
+ 
+     @Deprecated
+     @Override
+-    public int scheduleSyncDelayedTask(Plugin plugin, BukkitRunnable task, long delay) {
++    public int scheduleSyncDelayedTask(final @NonNull Plugin plugin, final @NonNull BukkitRunnable task, long delay) { // Plazma - Null safety
+         throw new UnsupportedOperationException("Use BukkitRunnable#runTaskLater(Plugin, long)");
+     }
+ 
+     @Deprecated
+     @Override
+-    public int scheduleSyncDelayedTask(Plugin plugin, BukkitRunnable task) {
++    public int scheduleSyncDelayedTask(final @NonNull Plugin plugin, final @NonNull BukkitRunnable task) { // Plazma - Null safety
+         throw new UnsupportedOperationException("Use BukkitRunnable#runTask(Plugin)");
+     }
+ 
+     @Deprecated
+     @Override
+-    public int scheduleSyncRepeatingTask(Plugin plugin, BukkitRunnable task, long delay, long period) {
++    public int scheduleSyncRepeatingTask(final @NonNull Plugin plugin, final @NonNull BukkitRunnable task, long delay, long period) { // Plazma - Null safety
+         throw new UnsupportedOperationException("Use BukkitRunnable#runTaskTimer(Plugin, long, long)");
+     }
+ 
+     @Deprecated
+     @Override
+-    public BukkitTask runTask(Plugin plugin, BukkitRunnable task) throws IllegalArgumentException {
++    @NonNull // Plazma - Null safety
++    public BukkitTask runTask(final @NonNull Plugin plugin, final @NonNull BukkitRunnable task) throws IllegalArgumentException { // Plazma - Null safety
+         throw new UnsupportedOperationException("Use BukkitRunnable#runTask(Plugin)");
+     }
+ 
+     @Deprecated
+     @Override
+-    public BukkitTask runTaskAsynchronously(Plugin plugin, BukkitRunnable task) throws IllegalArgumentException {
++    @NonNull // Plazma - Null safety
++    public BukkitTask runTaskAsynchronously(final @NonNull Plugin plugin, final @NonNull BukkitRunnable task) throws IllegalArgumentException { // Plazma - Null safety
+         throw new UnsupportedOperationException("Use BukkitRunnable#runTaskAsynchronously(Plugin)");
+     }
+ 
+     @Deprecated
+     @Override
+-    public BukkitTask runTaskLater(Plugin plugin, BukkitRunnable task, long delay) throws IllegalArgumentException {
++    @NonNull // Plazma - Null safety
++    public BukkitTask runTaskLater(final @NonNull Plugin plugin, final @NonNull BukkitRunnable task, long delay) throws IllegalArgumentException { // Plazma - Null safety
+         throw new UnsupportedOperationException("Use BukkitRunnable#runTaskLater(Plugin, long)");
+     }
+ 
+     @Deprecated
+     @Override
+-    public BukkitTask runTaskLaterAsynchronously(Plugin plugin, BukkitRunnable task, long delay) throws IllegalArgumentException {
++    @NonNull // Plazma - Null safety
++    public BukkitTask runTaskLaterAsynchronously(final @NonNull Plugin plugin, final @NonNull BukkitRunnable task, long delay) throws IllegalArgumentException { // Plazma - Null safety
+         throw new UnsupportedOperationException("Use BukkitRunnable#runTaskLaterAsynchronously(Plugin, long)");
+     }
+ 
+     @Deprecated
+     @Override
+-    public BukkitTask runTaskTimer(Plugin plugin, BukkitRunnable task, long delay, long period) throws IllegalArgumentException {
++    @NonNull // Plazma - Null safety
++    public BukkitTask runTaskTimer(final @NonNull Plugin plugin, final @NonNull BukkitRunnable task, long delay, long period) throws IllegalArgumentException { // Plazma - Null safety
+         throw new UnsupportedOperationException("Use BukkitRunnable#runTaskTimer(Plugin, long, long)");
+     }
+ 
+     @Deprecated
+     @Override
+-    public BukkitTask runTaskTimerAsynchronously(Plugin plugin, BukkitRunnable task, long delay, long period) throws IllegalArgumentException {
++    @NonNull // Plazma - Null safety
++    public BukkitTask runTaskTimerAsynchronously(final @NonNull Plugin plugin, final @NonNull BukkitRunnable task, long delay, long period) throws IllegalArgumentException { // Plazma - Null safety
+         throw new UnsupportedOperationException("Use BukkitRunnable#runTaskTimerAsynchronously(Plugin, long, long)");
+     }
+ 
+     // Paper start - add getMainThreadExecutor
+     @Override
+-    public Executor getMainThreadExecutor(Plugin plugin) {
+-        Preconditions.checkArgument(plugin != null, "Plugin cannot be null");
+-        return command -> {
+-            Preconditions.checkArgument(command != null, "Command cannot be null");
+-            this.runTask(plugin, command);
+-        };
++    @NonNull // Plazma - Null safety
++    public Executor getMainThreadExecutor(final @NonNull Plugin plugin) { // Plazma - Null safety
++        return command -> this.runTask(plugin, command); // Plazma - Null safety
+     }
+     // Paper end
+ }

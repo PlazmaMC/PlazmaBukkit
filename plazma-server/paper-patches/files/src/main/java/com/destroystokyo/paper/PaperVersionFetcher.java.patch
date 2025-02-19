@@ -1,0 +1,53 @@
+--- a/src/main/java/com/destroystokyo/paper/PaperVersionFetcher.java
++++ b/src/main/java/com/destroystokyo/paper/PaperVersionFetcher.java
+@@ -36,7 +_,7 @@
+     private static final int DISTANCE_ERROR = -1;
+     private static final int DISTANCE_UNKNOWN = -2;
+     // Purpur start - Rebrand
+-    private static final String DOWNLOAD_PAGE = "https://purpurmc.org/downloads";
++    private static final String DOWNLOAD_PAGE = "https://plazmamc.org/downloads";
+     private static int distance = DISTANCE_UNKNOWN; public int distance() { return distance; }
+     // Purpur end - Rebrand
+ 
+@@ -52,7 +_,7 @@
+         if (build.buildNumber().isEmpty() && build.gitCommit().isEmpty()) {
+             updateMessage = text("You are running a development version without access to version information", color(0xFF5300));
+         } else {
+-            updateMessage = getUpdateStatusMessage("PurpurMC/Purpur", build); // Purpur - Rebrand
++            updateMessage = getUpdateStatusMessage("PlazmaMC/Plazma", build); // Purpur - Rebrand // Plazma - Configurable Plazma
+         }
+         final @Nullable Component history = this.getHistory();
+ 
+@@ -87,23 +_,23 @@
+     }
+ 
+     private static int fetchDistanceFromSiteApi(final ServerBuildInfo build, final int jenkinsBuild) {
+-        try {
+-            try (final BufferedReader reader = Resources.asCharSource(
+-                URI.create("https://api.purpurmc.org/v2/purpur/" + build.minecraftVersionId()).toURL(), // Purpur - Rebrand
+-                Charsets.UTF_8
+-            ).openBufferedStream()) {
++        // Plazma start - Configurable Plazma
++        final String branch = build.gitBranch().orElse("ver/" + build.minecraftVersionId());
++
++        try (final BufferedReader reader = Resources.asCharSource(URI.create(branch).toURL(), java.nio.charset.StandardCharsets.UTF_8).openBufferedStream()) {
++            try {
+                 final JsonObject json = new Gson().fromJson(reader, JsonObject.class);
+-                //final JsonArray builds = json.getAsJsonArray("builds"); // Purpur - Rebrand
+-                final int latest = json.getAsJsonObject("builds").getAsJsonPrimitive("latest").getAsInt(); // Purpur - Rebrand
++                final int latest = json.getAsJsonObject("lastSuccessfulBuild").getAsJsonPrimitive("number").getAsInt();
+                 return latest - jenkinsBuild;
+-            } catch (final JsonSyntaxException ex) {
+-                LOGGER.error("Error parsing json from Purpur's downloads API", ex); // Purpur - Rebrand
++            } catch (final JsonSyntaxException e) {
++                LOGGER.error("Error parsing json from Jenkins API", e);
+                 return DISTANCE_ERROR;
+             }
+         } catch (final IOException e) {
+             LOGGER.error("Error while parsing version", e);
+             return DISTANCE_ERROR;
+         }
++        // Plazma end - Configurable Plazma
+     }
+ 
+     // Contributed by Techcable <Techcable@outlook.com> in GH-65

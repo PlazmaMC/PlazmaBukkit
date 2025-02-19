@@ -1,0 +1,177 @@
+--- a/net/minecraft/server/dedicated/DedicatedServer.java
++++ b/net/minecraft/server/dedicated/DedicatedServer.java
+@@ -105,47 +_,12 @@
+             public void run() {
+                 // CraftBukkit start
+                 if (!org.bukkit.craftbukkit.Main.useConsole) return;
++                // Plazma start - Improve code quality
+                 // Paper start - Use TerminalConsoleAppender
+-                if (DedicatedServer.this.gui == null || System.console() != null) // Purpur - GUI Improvements - has no GUI or has console (did not double-click)
++                if (DedicatedServer.this.gui != null && System.console() == null) return;
+                 new com.destroystokyo.paper.console.PaperConsole(DedicatedServer.this).start();
+-                /*
+-                jline.console.ConsoleReader bufferedreader = DedicatedServer.this.reader;
+-                // MC-33041, SPIGOT-5538: if System.in is not valid due to javaw, then return
+-                try {
+-                    System.in.available();
+-                } catch (IOException ex) {
+-                    return;
+-                }
+-                // CraftBukkit end
+-                String string1;
+-                try {
+-                    // CraftBukkit start - JLine disabling compatibility
+-                    while (!DedicatedServer.this.isStopped() && DedicatedServer.this.isRunning()) {
+-                        if (org.bukkit.craftbukkit.Main.useJline) {
+-                            string1 = bufferedreader.readLine(">", null);
+-                        } else {
+-                            string1 = bufferedreader.readLine();
+-                        }
+-
+-                        // SPIGOT-5220: Throttle if EOF (ctrl^d) or stdin is /dev/null
+-                        if (string1 == null) {
+-                            try {
+-                                Thread.sleep(50L);
+-                            } catch (InterruptedException ex) {
+-                                Thread.currentThread().interrupt();
+-                            }
+-                            continue;
+-                        }
+-                        if (string1.trim().length() > 0) { // Trim to filter lines which are just spaces
+-                            DedicatedServer.this.issueCommand(s, DedicatedServer.this.getServerCommandListener());
+-                        }
+-                        // CraftBukkit end
+-                    }
+-                } catch (IOException var4) {
+-                    DedicatedServer.LOGGER.error("Exception handling console input", (Throwable)var4);
+-                }
+-                */
+-                // Paper end
++                // Paper end - Use TerminalConsoleAppender
++                // Plazma end - Improve code quality
+             }
+         };
+         // CraftBukkit start - TODO: handle command-line logging arguments
+@@ -156,21 +_,7 @@
+         }
+         global.addHandler(new org.bukkit.craftbukkit.util.ForwardLogHandler());
+ 
+-        // Paper start - Not needed with TerminalConsoleAppender
+-        final org.apache.logging.log4j.Logger logger = org.apache.logging.log4j.LogManager.getRootLogger();
+-        /*
+-        final org.apache.logging.log4j.core.Logger logger = ((org.apache.logging.log4j.core.Logger) LogManager.getRootLogger());
+-        for (org.apache.logging.log4j.core.Appender appender : logger.getAppenders().values()) {
+-            if (appender instanceof org.apache.logging.log4j.core.appender.ConsoleAppender) {
+-                logger.removeAppender(appender);
+-            }
+-        }
+-
+-        TerminalConsoleWriterThread writerThread = new TerminalConsoleWriterThread(System.out, this.reader);
+-        this.reader.setCompletionHandler(new TerminalCompletionHandler(writerThread, this.reader.getCompletionHandler()));
+-        writerThread.start();
+-        */
+-        // Paper end - Not needed with TerminalConsoleAppender
++        final org.apache.logging.log4j.Logger logger = org.apache.logging.log4j.LogManager.getRootLogger(); // Paper - Not needed with TCA // Plazma - Remove commented codes
+ 
+         System.setOut(org.apache.logging.log4j.io.IoBuilder.forLogger(logger).setLevel(org.apache.logging.log4j.Level.INFO).buildPrintStream());
+         System.setErr(org.apache.logging.log4j.io.IoBuilder.forLogger(logger).setLevel(org.apache.logging.log4j.Level.WARN).buildPrintStream());
+@@ -208,6 +_,7 @@
+         org.spigotmc.SpigotConfig.init((java.io.File) this.options.valueOf("spigot-settings"));
+         org.spigotmc.SpigotConfig.registerCommands();
+         // Spigot end
++        // noinspection ResultOfMethodCallIgnored // Plazma - For preloading
+         io.papermc.paper.util.ObfHelper.INSTANCE.getClass(); // Paper - load mappings for stacktrace deobf and etc.
+         // Purpur start - Configurable void damage height and damage
+         try {
+@@ -234,15 +_,7 @@
+         io.papermc.paper.command.PaperCommands.registerCommands(this); // Paper - setup /paper command
+         this.server.spark.registerCommandBeforePlugins(this.server); // Paper - spark
+         com.destroystokyo.paper.Metrics.PaperMetrics.startMetrics(); // Paper - start metrics
+-        /*// Purpur start - Purpur config files // Purpur - Configurable void damage height and damage
+-        try {
+-            org.purpurmc.purpur.PurpurConfig.init((java.io.File) options.valueOf("purpur-settings"));
+-        } catch (Exception e) {
+-            DedicatedServer.LOGGER.error("Unable to load server configuration", e);
+-            return false;
+-        }
+-        org.purpurmc.purpur.PurpurConfig.registerCommands();
+-        */// Purpur end - Purpur config files // Purpur - Configurable void damage height and damage
++        // noinspection ResultOfMethodCallIgnored // Plazma - For preloading
+         com.destroystokyo.paper.VersionHistoryManager.INSTANCE.getClass(); // Paper - load version history now
+ 
+         this.setPvpAllowed(properties.pvp);
+@@ -287,8 +_,7 @@
+             LOGGER.warn("**** FAILED TO BIND TO PORT!");
+             LOGGER.warn("The exception was: {}", var10.toString());
+             LOGGER.warn("Perhaps a server is already running on that port?");
+-            if (true) throw new IllegalStateException("Failed to bind to port", var10); // Paper - Propagate failed to bind to port error
+-            return false;
++            throw new IllegalStateException("Failed to bind to port", var10); // Paper - Propagate failed to bind to port error
+         }
+         // Purpur start - UPnP Port Forwarding
+         if (org.purpurmc.purpur.PurpurConfig.useUPnP) {
+@@ -380,14 +_,6 @@
+                 this.rconThread = RconThread.create(this);
+             }
+ 
+-            if (false && this.getMaxTickLength() > 0L) { // Spigot - disable
+-                Thread thread1 = new Thread(new ServerWatchdog(this));
+-                thread1.setUncaughtExceptionHandler(new DefaultUncaughtExceptionHandlerWithName(LOGGER));
+-                thread1.setName("Server Watchdog");
+-                thread1.setDaemon(true);
+-                thread1.start();
+-            }
+-
+             if (properties.enableJmxMonitoring) {
+                 MinecraftServerStatistics.registerJmxMonitoring(this);
+                 LOGGER.info("JMX monitoring enabled");
+@@ -459,10 +_,6 @@
+             this.rconThread.stopNonBlocking(); // Paper - don't wait for remote connections
+         }
+ 
+-        if (this.queryThreadGs4 != null) {
+-            // this.remoteStatusListener.stop(); // Paper - don't wait for remote connections
+-        }
+-
+         this.hasFullyShutdown = true; // Paper - Improved watchdog support
+         System.exit(this.abnormalExit ? 70 : 0); // CraftBukkit // Paper - Improved watchdog support
+     }
+@@ -728,7 +_,7 @@
+     private void waitForRetry() {
+         try {
+             Thread.sleep(5000L);
+-        } catch (InterruptedException var2) {
++        } catch (InterruptedException ignore) { // Plazma - Fix IDE warning
+         }
+     }
+ 
+@@ -748,7 +_,7 @@
+         org.bukkit.plugin.Plugin[] plugins = this.server.getPluginManager().getPlugins();
+ 
+         result.append(this.server.getName());
+-        result.append(" on Bukkit ");
++        result.append(" on Plazma "); // Plazma - Rebrand
+         result.append(this.server.getBukkitVersion());
+ 
+         if (plugins.length > 0 && this.server.getQueryPlugins()) {
+@@ -759,9 +_,9 @@
+                     result.append("; ");
+                 }
+ 
+-                result.append(plugins[i].getDescription().getName());
++                result.append(plugins[i].getPluginMeta().getName()); // Plazma - Use modern method
+                 result.append(" ");
+-                result.append(plugins[i].getDescription().getVersion().replaceAll(";", ","));
++                result.append(plugins[i].getPluginMeta().getVersion().replaceAll(";", ",")); // Plazma - Use modern method
+             }
+         }
+ 
+@@ -876,7 +_,7 @@
+ 
+     private static ServerLinks createServerLinks(DedicatedServerSettings settings) {
+         Optional<URI> optional = parseBugReportLink(settings.getProperties());
+-        return optional.<ServerLinks>map(uri -> new ServerLinks(List.of(ServerLinks.KnownLinkType.BUG_REPORT.create(uri)))).orElse(ServerLinks.EMPTY);
++        return optional.map(uri -> new ServerLinks(List.of(ServerLinks.KnownLinkType.BUG_REPORT.create(uri)))).orElse(ServerLinks.EMPTY); // Plazma - Remove unnecessary type parameter
+     }
+ 
+     private static Optional<URI> parseBugReportLink(DedicatedServerProperties properties) {
