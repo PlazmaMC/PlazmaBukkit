@@ -2,132 +2,84 @@ import org.gradle.api.tasks.testing.logging.TestExceptionFormat
 import org.gradle.api.tasks.testing.logging.TestLogEvent
 
 plugins {
-    java
-    `maven-publish`
-    alias(libs.plugins.shadow) apply false
-    alias(libs.plugins.paperweight)
+    id("io.papermc.paperweight.patcher") version "2.0.0-beta.14"
 }
 
-repositories {
-    mavenCentral()
-    maven("https://repo.papermc.io/repository/maven-public/") { name = "papermc"
-        content { onlyForConfigurations(configurations.paperclip.name) }
-    }
-    maven("https://repo.codemc.io/repository/maven-public/") { name = "codemc" }
-    maven("https://jitpack.io") { name = "jitpack" }
-}
-
-dependencies {
-    remapper(libs.remapper)
-    paperclip(libs.paperclip)
-    decompiler(libs.decompiler)
-}
-
-val brandName: String by project
-val providerRepo: String by project
 paperweight {
-    serverProject = project(":${brandName.lowercase()}-server")
+    upstreams.register("purpur") {
+        repo = github("PurpurMC", "Purpur")
+        ref = providers.gradleProperty("purpurRef")
 
-    remapRepo = "https://repo.papermc.io/repository/maven-public/"
-    decompileRepo = "https://repo.papermc.io/repository/maven-public/"
-
-    usePaperUpstream(providers.gradleProperty("paperCommit")) {
-        withPaperPatcher {
-            apiPatchDir.set(projectDir.resolve("patches/api"))
-            apiOutputDir.set(projectDir.resolve("$brandName-API"))
-
-            serverPatchDir.set(projectDir.resolve("patches/server"))
-            serverOutputDir.set(projectDir.resolve("$brandName-Server"))
+        patchFile {
+            path = "purpur-server/build.gradle.kts"
+            outputFile = file("plazma-server/build.gradle.kts")
+            patchFile = file("plazma-server/build.gradle.kts.patch")
         }
-
-        patchTasks.register("generatedApi") {
-            isBareDirectory = true
-            upstreamDirPath = "paper-api-generator/generated"
-            patchDir = projectDir.resolve("patches/generated-api")
-            outputDir = projectDir.resolve("paper-api-generator/generated")
+        patchFile {
+            path = "purpur-api/build.gradle.kts"
+            outputFile = file("plazma-api/build.gradle.kts")
+            patchFile = file("plazma-api/build.gradle.kts.patch")
         }
-    }
-}
-
-tasks {
-    applyPatches {
-        dependsOn("applyGeneratedApiPatches")
-    }
-
-    rebuildPatches {
-        dependsOn("rebuildGeneratedApiPatches")
-    }
-
-    generateDevelopmentBundle {
-        apiCoordinates.set("${project.group}:${brandName.lowercase()}-api")
-        libraryRepositories.addAll(
-            "https://repo1.maven.org/maven2/",
-            "https://repo.papermc.io/repository/maven-public/",
-            "https://repo.codemc.io/repository/maven-public/",
-            "https://jitpack.io",
-        )
-    }
-}
-
-publishing.publications.create<MavenPublication>("devBundle") {
-    artifact(tasks.generateDevelopmentBundle) {  artifactId = "dev-bundle" }
-}
-
-val mavenUsername: String? by project
-val mavenPassword: String? by project
-allprojects {
-    apply(plugin = "java")
-    apply(plugin = "maven-publish")
-
-    java.toolchain.languageVersion.set(JavaLanguageVersion.of(21))
-
-    publishing.repositories.maven("https://maven.pkg.github.com/$providerRepo") {
-        name = "github"
-
-        credentials {
-            username = mavenUsername ?: System.getenv("GRADLE_PROPERTY_MAVEN_USERNAME") ?: System.getenv("MAVEN_USERNAME")
-            password = mavenPassword ?: System.getenv("GRADLE_PROPERTY_MAVEN_PASSWORD") ?: System.getenv("MAVEN_PASSWORD")
+        patchRepo("paperApi") {
+            upstreamPath = "paper-api"
+            patchesDir = file("plazma-api/paper-patches")
+            outputDir = file("paper-api")
         }
-    }
-
-    publishing.repositories.maven("https://repo.codemc.io/repository/maven-snapshots/") {
-        name = "codemc"
-
-        credentials {
-            username = mavenUsername ?: System.getenv("GRADLE_PROPERTY_MAVEN_USERNAME") ?: System.getenv("MAVEN_USERNAME")
-            password = mavenPassword ?: System.getenv("GRADLE_PROPERTY_MAVEN_PASSWORD") ?: System.getenv("MAVEN_PASSWORD")
+        patchDir("purpurApi") {
+            upstreamPath = "purpur-api"
+            excludes = listOf("build.gradle.kts", "build.gradle.kts.patch", "paper-patches")
+            patchesDir = file("plazma-api/fork-patches")
+            outputDir = file("purpur-api")
         }
     }
 }
 
 subprojects {
-    repositories {
-        mavenCentral()
-        maven("https://repo.papermc.io/repository/maven-public/") { name = "papermc" }
-        maven("https://repo.codemc.io/repository/maven-public/") { name = "codeme" }
-        maven("https://jitpack.io") { name = "jitpack" }
+    apply(plugin = "java-library")
+    apply(plugin = "maven-publish")
+
+    extensions.configure<JavaPluginExtension> {
+        toolchain {
+            languageVersion = JavaLanguageVersion.of(21)
+        }
     }
 
-    tasks {
-        withType<JavaCompile>().configureEach {
-            options.encoding = Charsets.UTF_8.name()
-            options.release = 21
-        }
+    repositories {
+        mavenCentral()
+        maven("https://repo.papermc.io/repository/maven-public/")
+    }
 
-        withType<Javadoc> {
-            options.encoding = Charsets.UTF_8.name()
+    tasks.withType<AbstractArchiveTask>().configureEach {
+        isPreserveFileTimestamps = false
+        isReproducibleFileOrder = true
+    }
+    tasks.withType<JavaCompile> {
+        options.encoding = Charsets.UTF_8.name()
+        options.release = 21
+        options.isFork = true
+    }
+    tasks.withType<Javadoc> {
+        options.encoding = Charsets.UTF_8.name()
+    }
+    tasks.withType<ProcessResources> {
+        filteringCharset = Charsets.UTF_8.name()
+    }
+    tasks.withType<Test> {
+        testLogging {
+            showStackTraces = true
+            exceptionFormat = TestExceptionFormat.FULL
+            events(TestLogEvent.STANDARD_OUT)
         }
+    }
 
-        withType<ProcessResources> {
-            filteringCharset = Charsets.UTF_8.name()
-        }
-
-        withType<Test> {
-            testLogging {
-                showStackTraces = true
-                exceptionFormat = TestExceptionFormat.FULL
-                events(TestLogEvent.STANDARD_OUT)
+    extensions.configure<PublishingExtension> {
+        repositories {
+            /*
+            maven("https://repo.papermc.io/repository/maven-snapshots/") {
+                name = "paperSnapshots"
+                credentials(PasswordCredentials::class)
             }
+             */
         }
     }
 }
