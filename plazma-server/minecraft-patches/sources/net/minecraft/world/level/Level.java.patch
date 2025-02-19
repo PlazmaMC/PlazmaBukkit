@@ -23,6 +23,14 @@
      protected float oRainLevel;
      public float rainLevel;
      protected float oThunderLevel;
+@@ -144,6 +_,7 @@
+     // CraftBukkit start Added the following
+     private final CraftWorld world;
+     public boolean pvpMode;
++    @Nullable // Plazma - Null safety
+     public org.bukkit.generator.ChunkGenerator generator;
+ 
+     public boolean preventPoiUpdated = false; // CraftBukkit - SPIGOT-5710
 @@ -152,6 +_,7 @@
      public boolean isBlockPlaceCancelled = false; // Paper - prevent calling cleanup logic when undoing a block place upon a cancelled BlockPlaceEvent
      public Map<BlockPos, org.bukkit.craftbukkit.block.CraftBlockState> capturedBlockStates = new java.util.LinkedHashMap<>(); // Paper
@@ -31,8 +39,17 @@
      public List<net.minecraft.world.entity.item.ItemEntity> captureDrops;
      public final it.unimi.dsi.fastutil.objects.Object2LongOpenHashMap<SpawnCategory> ticksPerSpawnCategory = new it.unimi.dsi.fastutil.objects.Object2LongOpenHashMap<>();
      // Paper start
-@@ -171,11 +_,13 @@
+@@ -169,13 +_,22 @@
+     }
+     // Paper end - add paper world config
  
++    // Plazma start - Configurable Plazma
++    private final org.plazmamc.plazma.configurations.WorldConfiguration plazmaConfig;
++    public org.plazmamc.plazma.configurations.WorldConfiguration plazmaConfig() {
++        return this.plazmaConfig;
++    }
++    // Plazma end - Configurable Plazma
++
      public final io.papermc.paper.antixray.ChunkPacketBlockController chunkPacketBlockController; // Paper - Anti-Xray
      public final org.purpurmc.purpur.PurpurWorldConfig purpurConfig; // Purpur - Purpur config files
 +    @Nullable // Plazma - Null safety
@@ -119,6 +136,30 @@
      }
  
      @Override
+@@ -879,11 +_,11 @@
+         boolean isDebug,
+         long biomeZoomSeed,
+         int maxChainedNeighborUpdates,
+-        org.bukkit.generator.ChunkGenerator gen, // CraftBukkit
+-        org.bukkit.generator.BiomeProvider biomeProvider, // CraftBukkit
++        org.bukkit.generator.@org.jspecify.annotations.Nullable ChunkGenerator gen, // CraftBukkit
++        org.bukkit.generator.@org.jspecify.annotations.Nullable BiomeProvider biomeProvider, // CraftBukkit
+         org.bukkit.World.Environment env, // CraftBukkit
+-        java.util.function.Function<org.spigotmc.SpigotWorldConfig, // Spigot - create per world config
+-        io.papermc.paper.configuration.WorldConfiguration> paperWorldConfigCreator, // Paper - create paper world config
++        java.util.function.Function<org.spigotmc.SpigotWorldConfig, io.papermc.paper.configuration.WorldConfiguration> paperWorldConfigCreator, // Paper - create paper world config
++        java.util.function.Supplier<org.plazmamc.plazma.configurations.WorldConfiguration> plazmaWorldConfigSupplier, // Plazma - Plazma config files
+         java.util.concurrent.Executor executor // Paper - Anti-Xray
+     ) {
+         // Paper start - getblock optimisations - cache world height/sections
+@@ -897,6 +_,7 @@
+         // Paper end - getblock optimisations - cache world height/sections
+         this.spigotConfig = new org.spigotmc.SpigotWorldConfig(((net.minecraft.world.level.storage.PrimaryLevelData) levelData).getLevelName()); // Spigot
+         this.paperConfig = paperWorldConfigCreator.apply(this.spigotConfig); // Paper - create paper world config
++        this.plazmaConfig = plazmaWorldConfigSupplier.get(); // Plazma - Plazma config files
+         this.purpurConfig = new org.purpurmc.purpur.PurpurWorldConfig(((net.minecraft.world.level.storage.PrimaryLevelData) levelData).getLevelName(), env); // Purpur - Purpur config files
+         this.playerBreedingCooldowns = this.getNewBreedingCooldownCache(); // Purpur - Add adjustable breeding cooldown to config
+         this.generator = gen;
 @@ -990,7 +_,7 @@
              return true;
          }

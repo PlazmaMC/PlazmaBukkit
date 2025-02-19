@@ -1,6 +1,530 @@
 --- a/net/minecraft/server/MinecraftServer.java
 +++ b/net/minecraft/server/MinecraftServer.java
-@@ -1777,7 +_,7 @@
+@@ -18,6 +_,7 @@
+ import it.unimi.dsi.fastutil.objects.ObjectArraySet;
+ import java.awt.image.BufferedImage;
+ import java.io.ByteArrayOutputStream;
++import java.io.File;
+ import java.io.IOException;
+ import java.io.Writer;
+ import java.lang.management.ManagementFactory;
+@@ -174,24 +_,26 @@
+ import org.slf4j.Logger;
+ 
+ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTask> implements ServerInfo, ChunkIOErrorReporter, CommandSource, ca.spottedleaf.moonrise.patches.chunk_system.server.ChunkSystemMinecraftServer { // Paper - rewrite chunk system
++    @Nullable // Plazma - Null safety
+     private static MinecraftServer SERVER; // Paper
+     public static final Logger LOGGER = LogUtils.getLogger();
+     public static final net.kyori.adventure.text.logger.slf4j.ComponentLogger COMPONENT_LOGGER = net.kyori.adventure.text.logger.slf4j.ComponentLogger.logger(LOGGER.getName()); // Paper
+-    public static final String VANILLA_BRAND = "vanilla";
+-    private static final float AVERAGE_TICK_TIME_SMOOTHING = 0.8F;
+-    private static final int TICK_STATS_SPAN = 100;
++    // public static final String VANILLA_BRAND = "vanilla";
++    // private static final float AVERAGE_TICK_TIME_SMOOTHING = 0.8F;
++    // private static final int TICK_STATS_SPAN = 100;
+     private static final long OVERLOADED_THRESHOLD_NANOS = 30L * TimeUtil.NANOSECONDS_PER_SECOND / 20L; // CraftBukkit
+-    private static final int OVERLOADED_TICKS_THRESHOLD = 20;
++    // private static final int OVERLOADED_TICKS_THRESHOLD = 20;
+     private static final long OVERLOADED_WARNING_INTERVAL_NANOS = 10L * TimeUtil.NANOSECONDS_PER_SECOND;
+-    private static final int OVERLOADED_TICKS_WARNING_INTERVAL = 100;
++    // private static final int OVERLOADED_TICKS_WARNING_INTERVAL = 100;
+     private static final long STATUS_EXPIRE_TIME_NANOS = 5L * TimeUtil.NANOSECONDS_PER_SECOND;
+-    private static final long PREPARE_LEVELS_DEFAULT_DELAY_NANOS = 10L * TimeUtil.NANOSECONDS_PER_MILLISECOND;
+-    private static final int MAX_STATUS_PLAYER_SAMPLE = 12;
+-    private static final int SPAWN_POSITION_SEARCH_RADIUS = 5;
+-    private static final int AUTOSAVE_INTERVAL = 6000;
+-    private static final int MIMINUM_AUTOSAVE_TICKS = 100;
+-    private static final int MAX_TICK_LATENCY = 3;
+-    public static final int ABSOLUTE_MAX_WORLD_SIZE = 29999984;
++    // private static final long PREPARE_LEVELS_DEFAULT_DELAY_NANOS = 10L * TimeUtil.NANOSECONDS_PER_MILLISECOND;
++    // private static final int MAX_STATUS_PLAYER_SAMPLE = 12;
++    // private static final int SPAWN_POSITION_SEARCH_RADIUS = 5;
++    // private static final int AUTOSAVE_INTERVAL = 6000;
++    // private static final int MIMINUM_AUTOSAVE_TICKS = 100;
++    // private static final int MAX_TICK_LATENCY = 3;
++    // public static final int ABSOLUTE_MAX_WORLD_SIZE = 29999984;
++    @Deprecated(forRemoval = true) // Plazma
+     public static final LevelSettings DEMO_SETTINGS = new LevelSettings(
+         "Demo World", GameType.SURVIVAL, false, Difficulty.NORMAL, false, new GameRules(FeatureFlags.DEFAULT_FLAGS), WorldDataConfiguration.DEFAULT
+     );
+@@ -206,6 +_,7 @@
+     @Nullable
+     private MinecraftServer.TimeProfiler debugCommandProfiler;
+     private boolean debugCommandProfilerDelayStart;
++    @Nullable // Plazma - Null safety
+     private ServerConnectionListener connection;
+     public final ChunkProgressListenerFactory progressListenerFactory;
+     @Nullable
+@@ -214,10 +_,12 @@
+     private ServerStatus.Favicon statusIcon;
+     private final RandomSource random = RandomSource.create();
+     public final DataFixer fixerUpper;
++    @Nullable // Plazma - Null safety
+     private String localIp;
+     private int port = -1;
+     private final LayeredRegistryAccess<RegistryLayer> registries;
+     private Map<ResourceKey<Level>, ServerLevel> levels = Maps.newLinkedHashMap();
++    @Nullable // Plazma - Null safety
+     private PlayerList playerList;
+     private volatile boolean running = true;
+     private volatile boolean isRestarting = false; // Paper - flag to signify we're attempting to restart
+@@ -229,6 +_,7 @@
+     private boolean preventProxyConnections;
+     private boolean pvp;
+     private boolean allowFlight;
++    @Nullable // Plazma - Null safety
+     private net.kyori.adventure.text.Component motd; // Paper - Adventure
+     private int playerIdleTimeout;
+     private final long[] tickTimesNanos = new long[100];
+@@ -285,7 +_,7 @@
+     public org.bukkit.command.ConsoleCommandSender console;
+     public static int currentTick; // Paper - improve tick loop
+     public static final long startTimeMillis = System.currentTimeMillis(); // Purpur - Add uptime command
+-    public java.util.Queue<Runnable> processQueue = new java.util.concurrent.ConcurrentLinkedQueue<Runnable>();
++    public java.util.Queue<Runnable> processQueue = new java.util.concurrent.ConcurrentLinkedQueue<>(); // Plazma - Remove unnecessary type parameter
+     public int autosavePeriod;
+     // Paper - don't store the vanilla dispatcher
+     public boolean forceTicks;
+@@ -299,8 +_,10 @@
+     // Spigot end
+     public volatile boolean hasFullyShutdown; // Paper - Improved watchdog support
+     public volatile boolean abnormalExit; // Paper - Improved watchdog support
++    @Nullable // Plazma - Null safety
+     public volatile Thread shutdownThread; // Paper - Improved watchdog support
+     public final io.papermc.paper.configuration.PaperConfigurations paperConfigurations; // Paper - add paper configuration files
++    public final org.plazmamc.plazma.configurations.PlazmaConfigurations plazmaConfigurations; // Plazma - Configurable Plazma
+     public boolean isIteratingOverLevels = false; // Paper - Throw exception on world create while being ticked
+     private final Set<String> pluginsBlockingSleep = new java.util.HashSet<>(); // Paper - API to allow/disallow tick sleeping
+     public boolean lagging = false; // Purpur - Lagging threshold
+@@ -312,18 +_,19 @@
+         AtomicReference<S> atomicReference = new AtomicReference<>();
+         Thread thread = new ca.spottedleaf.moonrise.common.util.TickThread(() -> atomicReference.get().runServer(), "Server thread");
+         thread.setUncaughtExceptionHandler((thread1, exception) -> LOGGER.error("Uncaught exception in server thread", exception));
+-        thread.setPriority(Thread.NORM_PRIORITY+2); // Paper - Perf: Boost priority
++        thread.setPriority(Thread.NORM_PRIORITY + 2); // Paper - Perf: Boost priority // Plazma - Improve code quality
+         if (Runtime.getRuntime().availableProcessors() > 4) {
+             thread.setPriority(8);
+         }
+ 
+-        S minecraftServer = (S)threadFunction.apply(thread);
++        S minecraftServer = threadFunction.apply(thread); // Plazma - Remove unnecessary type casting
+         atomicReference.set(minecraftServer);
+         thread.start();
+         return minecraftServer;
+     }
+ 
+     // Paper start - rewrite chunk system
++    @Nullable // Plazma - Null safety
+     private volatile Throwable chunkSystemCrash;
+ 
+     @Override
+@@ -344,12 +_,12 @@
+         boolean executed = false;
+         for (final ServerLevel world : this.getAllLevels()) {
+             long currTime = System.nanoTime();
+-            if (currTime - ((ca.spottedleaf.moonrise.patches.chunk_system.level.ChunkSystemServerLevel)world).moonrise$getLastMidTickFailure() <= TASK_EXECUTION_FAILURE_BACKOFF) {
++            if (currTime - world.moonrise$getLastMidTickFailure() <= TASK_EXECUTION_FAILURE_BACKOFF) { // Plazma - Remove unnecessary type casting
+                 continue;
+             }
+             if (!world.getChunkSource().pollTask()) {
+                 // we need to back off if this fails
+-                ((ca.spottedleaf.moonrise.patches.chunk_system.level.ChunkSystemServerLevel)world).moonrise$setLastMidTickFailure(currTime);
++                world.moonrise$setLastMidTickFailure(currTime); // Plazma - Remove unnecessary type casting
+             } else {
+                 executed = true;
+             }
+@@ -384,8 +_,8 @@
+                     overuse = 10L * 1000L * 1000L; // 10ms
+                 }
+ 
+-                final double overuseCount = (double)overuse/(double)MAX_CHUNK_EXEC_TIME;
+-                final long extraSleep = (long)Math.round(overuseCount*CHUNK_TASK_QUEUE_BACKOFF_MIN_TIME);
++                final double overuseCount = (double) overuse / (double) MAX_CHUNK_EXEC_TIME; // Plazma - Remove unnecessary type casting
++                final long extraSleep = Math.round(overuseCount*CHUNK_TASK_QUEUE_BACKOFF_MIN_TIME); // Plazma - Remove unnecessary type casting
+ 
+                 this.lastMidTickExecute = currTime + extraSleep;
+                 return;
+@@ -412,68 +_,42 @@
+         SERVER = this; // Paper - better singleton
+         this.registries = worldStem.registries();
+         this.worldData = worldStem.worldData();
+-        if (false && !this.registries.compositeAccess().lookupOrThrow(Registries.LEVEL_STEM).containsKey(LevelStem.OVERWORLD)) { // CraftBukkit - initialised later
+-            throw new IllegalStateException("Missing Overworld dimension data");
+-        } else {
+-            this.proxy = proxy;
+-            this.packRepository = packRepository;
+-            this.resources = new MinecraftServer.ReloadableResources(worldStem.resourceManager(), worldStem.dataPackResources());
+-            this.services = services;
+-            if (services.profileCache() != null) {
+-                services.profileCache().setExecutor(this);
+-            }
+-
+-            // this.connection = new ServerConnectionListener(this); // Spigot
+-            this.tickRateManager = new ServerTickRateManager(this);
+-            this.progressListenerFactory = progressListenerFactory;
+-            this.storageSource = storageSource;
+-            this.playerDataStorage = storageSource.createPlayerStorage();
+-            this.fixerUpper = fixerUpper;
+-            this.functionManager = new ServerFunctionManager(this, this.resources.managers.getFunctionLibrary());
+-            HolderGetter<Block> holderGetter = this.registries
+-                .compositeAccess()
+-                .lookupOrThrow(Registries.BLOCK)
+-                .filterFeatures(this.worldData.enabledFeatures());
+-            this.structureTemplateManager = new StructureTemplateManager(worldStem.resourceManager(), storageSource, fixerUpper, holderGetter);
+-            this.serverThread = serverThread;
+-            this.executor = Util.backgroundExecutor();
+-            this.potionBrewing = PotionBrewing.bootstrap(this.worldData.enabledFeatures());
+-            this.resources.managers.getRecipeManager().finalizeRecipeLoading(this.worldData.enabledFeatures());
+-            this.fuelValues = FuelValues.vanillaBurnTimes(this.registries.compositeAccess(), this.worldData.enabledFeatures());
+-            this.tickFrame = TracyClient.createDiscontinuousFrame("Server Tick");
++        // Plazma start - Imporve code quality
++        this.proxy = proxy;
++        this.packRepository = packRepository;
++        this.resources = new MinecraftServer.ReloadableResources(worldStem.resourceManager(), worldStem.dataPackResources());
++        this.services = services;
++        if (services.profileCache() != null) {
++            services.profileCache().setExecutor(this);
+         }
++
++        // this.connection = new ServerConnectionListener(this); // Spigot
++        this.tickRateManager = new ServerTickRateManager(this);
++        this.progressListenerFactory = progressListenerFactory;
++        this.storageSource = storageSource;
++        this.playerDataStorage = storageSource.createPlayerStorage();
++        this.fixerUpper = fixerUpper;
++        this.functionManager = new ServerFunctionManager(this, this.resources.managers.getFunctionLibrary());
++        HolderGetter<Block> holderGetter = this.registries
++            .compositeAccess()
++            .lookupOrThrow(Registries.BLOCK)
++            .filterFeatures(this.worldData.enabledFeatures());
++        this.structureTemplateManager = new StructureTemplateManager(worldStem.resourceManager(), storageSource, fixerUpper, holderGetter);
++        this.serverThread = serverThread;
++        this.executor = Util.backgroundExecutor();
++        this.potionBrewing = PotionBrewing.bootstrap(this.worldData.enabledFeatures());
++        this.resources.managers.getRecipeManager().finalizeRecipeLoading(this.worldData.enabledFeatures());
++        this.fuelValues = FuelValues.vanillaBurnTimes(this.registries.compositeAccess(), this.worldData.enabledFeatures());
++        this.tickFrame = TracyClient.createDiscontinuousFrame("Server Tick");
++        // Plazma end - Improve code quality
+         // CraftBukkit start
+         this.options = options;
+         this.worldLoader = worldLoader;
+-        // Paper start - Handled by TerminalConsoleAppender
+-        // Try to see if we're actually running in a terminal, disable jline if not
+-        /*
+-        if (System.console() == null && System.getProperty("jline.terminal") == null) {
+-            System.setProperty("jline.terminal", "jline.UnsupportedTerminal");
+-            Main.useJline = false;
+-        }
+-
+-        try {
+-            this.reader = new ConsoleReader(System.in, System.out);
+-            this.reader.setExpandEvents(false); // Avoid parsing exceptions for uncommonly used event designators
+-        } catch (Throwable e) {
+-            try {
+-                // Try again with jline disabled for Windows users without C++ 2008 Redistributable
+-                System.setProperty("jline.terminal", "jline.UnsupportedTerminal");
+-                System.setProperty("user.language", "en");
+-                Main.useJline = false;
+-                this.reader = new ConsoleReader(System.in, System.out);
+-                this.reader.setExpandEvents(false);
+-            } catch (IOException ex) {
+-                MinecraftServer.LOGGER.warn((String) null, ex);
+-            }
+-        }
+-        */
+-        // Paper end
+         io.papermc.paper.util.LogManagerShutdownThread.unhook(); // Paper - Improved watchdog support
+         Runtime.getRuntime().addShutdownHook(new org.bukkit.craftbukkit.util.ServerShutdownThread(this));
+         // CraftBukkit end
+         this.paperConfigurations = services.paperConfigurations(); // Paper - add paper configuration files
++        this.plazmaConfigurations = services.plazmaConfigurations();
+     }
+ 
+     private void readScoreboard(DimensionDataStorage dataStorage) {
+@@ -483,23 +_,11 @@
+     protected abstract boolean initServer() throws IOException;
+ 
+     protected void loadLevel(String levelId) { // CraftBukkit
+-        if (!JvmProfiler.INSTANCE.isRunning()) {
+-        }
+-
+-        boolean flag = false;
+         ProfiledDuration profiledDuration = JvmProfiler.INSTANCE.onWorldLoadedStarted();
+         this.loadWorld0(levelId); // CraftBukkit
+         if (profiledDuration != null) {
+             profiledDuration.finish(true);
+         }
+-
+-        if (flag) {
+-            try {
+-                JvmProfiler.INSTANCE.stop();
+-            } catch (Throwable var5) {
+-                LOGGER.warn("Failed to stop JFR profiling", var5);
+-            }
+-        }
+     }
+ 
+     protected void forceDifficulty() {
+@@ -776,7 +_,7 @@
+ 
+                 try {
+                     serverLevel.fillReportDetails(crashReport);
+-                } catch (Throwable var22) {
++                } catch (Throwable ignore) { // Plazma - Fix IDE warning
+                 }
+ 
+                 throw new ReportedException(crashReport);
+@@ -872,39 +_,30 @@
+         int _int = serverLevel.getGameRules().getInt(GameRules.RULE_SPAWN_CHUNK_RADIUS); // CraftBukkit - per-world
+         int i = _int > 0 ? Mth.square(ChunkProgressListener.calculateDiameter(_int)) : 0;
+ 
++        // CraftBukkit start
+         while (chunkSource.getTickingGenerated() < i) {
+-            // CraftBukkit start
+-            // this.nextTickTimeNanos = Util.getNanos() + PREPARE_LEVELS_DEFAULT_DELAY_NANOS;
+             this.executeModerately();
+         }
+ 
+-        // this.nextTickTimeNanos = Util.getNanos() + PREPARE_LEVELS_DEFAULT_DELAY_NANOS;
+         this.executeModerately();
+ 
+-        if (true) {
+-            ServerLevel serverLevel1 = serverLevel;
+-            // CraftBukkit end
+-            ForcedChunksSavedData forcedChunksSavedData = serverLevel1.getDataStorage().get(ForcedChunksSavedData.factory(), "chunks");
+-            if (forcedChunksSavedData != null) {
+-                LongIterator longIterator = forcedChunksSavedData.getChunks().iterator();
++        // Plazma start - Improve code quality
++        ForcedChunksSavedData forcedChunksSavedData = serverLevel.getDataStorage().get(ForcedChunksSavedData.factory(), "chunks");
++        if (forcedChunksSavedData != null) {
++            LongIterator longIterator = forcedChunksSavedData.getChunks().iterator();
+ 
+-                while (longIterator.hasNext()) {
+-                    long l = longIterator.nextLong();
+-                    ChunkPos chunkPos = new ChunkPos(l);
+-                    serverLevel1.getChunkSource().updateChunkForced(chunkPos, true);
+-                }
++            while (longIterator.hasNext()) {
++                long l = longIterator.nextLong();
++                ChunkPos chunkPos = new ChunkPos(l);
++                serverLevel.getChunkSource().updateChunkForced(chunkPos, true);
+             }
+         }
++        // Plazma end - Improve code quality
+ 
+-        // CraftBukkit start
+-        // this.nextTickTimeNanos = SystemUtils.getNanos() + MinecraftServer.PREPARE_LEVELS_DEFAULT_DELAY_NANOS;
+         this.executeModerately();
+-        // CraftBukkit end
+         listener.stop();
+         // CraftBukkit start
+-        // this.updateMobSpawningFlags();
+         serverLevel.setSpawnSettings(serverLevel.serverLevelData.getDifficulty() != Difficulty.PEACEFUL && ((net.minecraft.server.dedicated.DedicatedServer) this).settings.getProperties().spawnMonsters); // Paper - per level difficulty (from setDifficulty(ServerLevel, Difficulty, boolean))
+-
+         this.forceTicks = false;
+         // CraftBukkit end
+     }
+@@ -1014,6 +_,7 @@
+         }
+         // Purpur end - UPnP Port Forwarding
+         // CraftBukkit start
++        // noinspection ConstantValue // Plazma - Null safety
+         if (this.server != null) {
+             this.server.spark.disable(); // Paper - spark
+             this.server.disablePlugins();
+@@ -1027,7 +_,7 @@
+             LOGGER.info("Saving players");
+             this.playerList.saveAll();
+             this.playerList.removeAll(this.isRestarting); // Paper
+-            try { Thread.sleep(100); } catch (InterruptedException ex) {} // CraftBukkit - SPIGOT-625 - give server at least a chance to send packets
++            try { Thread.sleep(100); } catch (InterruptedException ignore) {} // CraftBukkit - SPIGOT-625 - give server at least a chance to send packets // Plazma - Fix IDE warning
+         }
+ 
+         LOGGER.info("Saving worlds");
+@@ -1038,17 +_,6 @@
+             }
+         }
+ 
+-        while (false && this.levels.values().stream().anyMatch(level -> level.getChunkSource().chunkMap.hasWork())) { // Paper - rewrite chunk system
+-            this.nextTickTimeNanos = Util.getNanos() + TimeUtil.NANOSECONDS_PER_MILLISECOND;
+-
+-            for (ServerLevel serverLevelx : this.getAllLevels()) {
+-                serverLevelx.getChunkSource().removeTicketsOnClosing();
+-                serverLevelx.getChunkSource().tick(() -> true, false);
+-            }
+-
+-            this.waitUntilNextTick();
+-        }
+-
+         this.saveAllChunks(false, true, false, true); // Paper - rewrite chunk system
+ 
+         this.isSaving = false;
+@@ -1069,14 +_,16 @@
+             this.getProfileCache().save(false); // Paper - Perf: Async GameProfileCache saving
+         }
+         // Spigot end
++
+         // Paper start - rewrite chunk system
+         LOGGER.info("Waiting for I/O tasks to complete...");
+-        ca.spottedleaf.moonrise.patches.chunk_system.io.MoonriseRegionFileIO.flush((MinecraftServer)(Object)this);
++        ca.spottedleaf.moonrise.patches.chunk_system.io.MoonriseRegionFileIO.flush(this); // Plazma - Remove unnecessary type casting
+         LOGGER.info("All I/O tasks to complete");
+-        if ((Object)this instanceof net.minecraft.server.dedicated.DedicatedServer) {
++        if (this instanceof net.minecraft.server.dedicated.DedicatedServer) { // Plazma - Remove unnecessary type casting
+             ca.spottedleaf.moonrise.common.util.MoonriseCommon.haltExecutors();
+         }
+         // Paper end - rewrite chunk system
++
+         // Paper start - Improved watchdog support - move final shutdown items here
+         Util.shutdownExecutors();
+         try {
+@@ -1089,7 +_,7 @@
+     }
+ 
+     public String getLocalIp() {
+-        return this.localIp;
++        return (this.localIp == null) ? "" : this.localIp;
+     }
+ 
+     public void setLocalIp(String localIp) {
+@@ -1123,9 +_,9 @@
+ 
+     // Paper start - Further improve server tick loop
+     private static final long SEC_IN_NANO = 1000000000;
+-    private static final long MAX_CATCHUP_BUFFER = TICK_TIME * TPS * 60L;
++    //private static final long MAX_CATCHUP_BUFFER = TICK_TIME * TPS * 60L;
+     private long lastTick = 0;
+-    private long catchupTime = 0;
++    //private long catchupTime = 0;
+     public final RollingAverage tps5s = new RollingAverage(5); // Purpur - Add 5 second tps average in /tps
+     public final RollingAverage tps1 = new RollingAverage(60);
+     public final RollingAverage tps5 = new RollingAverage(60 * 5);
+@@ -1170,7 +_,7 @@
+             return total.divide(dec(time), 30, java.math.RoundingMode.HALF_UP).doubleValue();
+         }
+     }
+-    private static final java.math.BigDecimal TPS_BASE = new java.math.BigDecimal(1E9).multiply(new java.math.BigDecimal(SAMPLE_INTERVAL));
++    private static final java.math.BigDecimal TPS_BASE = new java.math.BigDecimal("1E9").multiply(new java.math.BigDecimal(SAMPLE_INTERVAL)); // Plazma
+     // Paper end
+ 
+     protected void runServer() {
+@@ -1184,7 +_,6 @@
+             this.status = this.buildServerStatus();
+ 
+             this.server.spark.enableBeforePlugins(); // Paper - spark
+-            // Spigot start
+             // Paper start
+             LOGGER.info("Running delayed init tasks");
+             this.server.getScheduler().mainThreadHeartbeat(); // run all 1 tick delay tasks during init,
+@@ -1202,6 +_,7 @@
+             long tickSection = Util.getNanos();
+             long currentTime;
+             // Paper end - further improve server tick loop
++
+             // Paper start - Add onboarding message for initial server start
+             if (io.papermc.paper.configuration.GlobalConfiguration.isFirstStart) {
+                 LOGGER.info("*************************************************************************************");
+@@ -1496,8 +_,8 @@
+ 
+     private Optional<ServerStatus.Favicon> loadStatusIcon() {
+         Optional<Path> optional = Optional.of(this.getFile("server-icon.png"))
+-            .filter(path -> Files.isRegularFile(path))
+-            .or(() -> this.storageSource.getIconFile().filter(path -> Files.isRegularFile(path)));
++            .filter(Files::isRegularFile)
++            .or(() -> this.storageSource.getIconFile().filter(Files::isRegularFile));
+         return optional.flatMap(path -> {
+             try {
+                 BufferedImage bufferedImage = ImageIO.read(path.toFile());
+@@ -1507,7 +_,7 @@
+                 ImageIO.write(bufferedImage, "PNG", byteArrayOutputStream);
+                 return Optional.of(new ServerStatus.Favicon(byteArrayOutputStream.toByteArray()));
+             } catch (Exception var3) {
+-                LOGGER.error("Couldn't load server icon", (Throwable)var3);
++                LOGGER.error("Couldn't load server icon", var3); // Plazma - Remove unnecessary type casting
+                 return Optional.empty();
+             }
+         });
+@@ -1537,7 +_,7 @@
+         int i = this.pauseWhileEmptySeconds() * 20;
+         this.removeDisabledPluginsBlockingSleep(); // Paper - API to allow/disallow tick sleeping
+         if (i > 0) {
+-            if (this.playerList.getPlayerCount() == 0 && !this.tickRateManager.isSprinting() && this.pluginsBlockingSleep.isEmpty()) { // Paper - API to allow/disallow tick sleeping
++            if (this.getPlayerList().getPlayerCount() == 0 && !this.tickRateManager.isSprinting() && this.pluginsBlockingSleep.isEmpty()) { // Paper - API to allow/disallow tick sleeping // Plazma - Null safety
+                 this.emptyTicks++;
+             } else {
+                 this.emptyTicks = 0;
+@@ -1590,7 +_,7 @@
+         try {
+             this.isSaving = true;
+             if (playerSaveInterval > 0) {
+-                this.playerList.saveAll(playerSaveInterval);
++                this.getPlayerList().saveAll(playerSaveInterval); // Plazma - Null safety
+             }
+             for (final ServerLevel level : this.getAllLevels()) {
+                 if (level.paperConfig().chunks.autoSaveInterval.value() > 0) {
+@@ -1608,7 +_,7 @@
+         this.server.spark.executeMainThreadTasks(); // Paper - spark
+         // Paper start - Server Tick Events
+         long endTime = System.nanoTime();
+-        long remaining = (TICK_TIME - (endTime - lastTick)) - catchupTime;
++        long remaining = (TICK_TIME - (endTime - lastTick)); // Plazma - Remove unnecessary variable
+         new com.destroystokyo.paper.event.server.ServerTickEndEvent(this.tickCount, ((double)(endTime - lastTick) / 1000000D), remaining).callEvent();
+         // Paper end - Server Tick Events
+         this.server.spark.tickEnd(((double)(endTime - lastTick) / 1000000D)); // Paper - spark
+@@ -1671,7 +_,7 @@
+     private ServerStatus buildServerStatus() {
+         ServerStatus.Players players = this.buildPlayerStatus();
+         return new ServerStatus(
+-            io.papermc.paper.adventure.PaperAdventure.asVanilla(this.motd), // Paper - Adventure
++            io.papermc.paper.adventure.PaperAdventure.asVanilla(this.motd()), // Paper - Adventure // Plazma - Null safety
+             Optional.of(players),
+             Optional.of(ServerStatus.Version.current()),
+             Optional.ofNullable(this.statusIcon),
+@@ -1680,7 +_,7 @@
+     }
+ 
+     private ServerStatus.Players buildPlayerStatus() {
+-        List<ServerPlayer> players = this.playerList.getPlayers();
++        List<ServerPlayer> players = this.getPlayerList().getPlayers(); // Plazma - Null safety
+         int maxPlayers = this.getMaxPlayers();
+         if (this.hidesOnlinePlayers()) {
+             return new ServerStatus.Players(maxPlayers, players.size(), List.of());
+@@ -1701,7 +_,7 @@
+ 
+     protected void tickChildren(BooleanSupplier hasTimeLeft) {
+         ProfilerFiller profilerFiller = Profiler.get();
+-        this.getPlayerList().getPlayers().forEach(serverPlayer1 -> serverPlayer1.connection.suspendFlushing());
++        this.getPlayerList().getPlayers().forEach(serverPlayer1 -> serverPlayer1.connection.suspendFlushing()); // Plazma - Null safety
+         this.server.getScheduler().mainThreadHeartbeat(); // CraftBukkit
+         // Paper start - Folia scheduler API
+         ((io.papermc.paper.threadedregions.scheduler.FoliaGlobalRegionScheduler) org.bukkit.Bukkit.getGlobalRegionScheduler()).tick();
+@@ -1736,10 +_,9 @@
+             long worldTime = level.getGameTime();
+             final ClientboundSetTimePacket worldPacket = new ClientboundSetTimePacket(worldTime, dayTime, doDaylight);
+             for (Player entityhuman : level.players()) {
+-                if (!(entityhuman instanceof ServerPlayer) || (!level.isForceTime() && (tickCount + entityhuman.getId()) % 20 != 0)) { // Purpur - Configurable daylight cycle
++                if (!(entityhuman instanceof ServerPlayer entityplayer) || (!level.isForceTime() && (tickCount + entityhuman.getId()) % 20 != 0)) { // Purpur - Configurable daylight cycle // Plazma - Use modern method
+                     continue;
+                 }
+-                ServerPlayer entityplayer = (ServerPlayer) entityhuman;
+                 long playerTime = entityplayer.getPlayerTime();
+                 boolean relativeTime = entityplayer.relativeTime;
+                 ClientboundSetTimePacket packet = ((relativeTime || !doDaylight) && playerTime == dayTime) ? worldPacket :
+@@ -1757,13 +_,6 @@
+             net.minecraft.world.level.block.entity.HopperBlockEntity.skipHopperEvents = serverLevel.paperConfig().hopper.disableMoveEvent || org.bukkit.event.inventory.InventoryMoveItemEvent.getHandlerList().getRegisteredListeners().length == 0; // Paper - Perf: Optimize Hoppers
+             serverLevel.hasRidableMoveEvent = org.purpurmc.purpur.event.entity.RidableMoveEvent.getHandlerList().getRegisteredListeners().length > 0; // Purpur - Ridables
+             profilerFiller.push(() -> serverLevel + " " + serverLevel.dimension().location());
+-            /* Drop global time updates
+-            if (this.tickCount % 20 == 0) {
+-                profilerFiller.push("timeSync");
+-                this.synchronizeTime(serverLevel);
+-                profilerFiller.pop();
+-            }
+-            // CraftBukkit end */
+ 
+             profilerFiller.push("tick");
+ 
+@@ -1777,14 +_,14 @@
  
              profilerFiller.pop();
              profilerFiller.pop();
@@ -9,3 +533,174 @@
          }
          this.isIteratingOverLevels = false; // Paper - Throw exception on world create while being ticked
  
+         profilerFiller.popPush("connection");
+         this.tickConnection();
+         profilerFiller.popPush("players");
+-        this.playerList.tick();
++        this.getPlayerList().tick(); // Plazma - Null safety
+         if (SharedConstants.IS_RUNNING_IN_IDE && this.tickRateManager.runsNormally()) {
+             GameTestTicker.SINGLETON.tick();
+         }
+@@ -1797,7 +_,7 @@
+ 
+         profilerFiller.popPush("send chunks");
+ 
+-        for (ServerPlayer serverPlayer : this.playerList.getPlayers()) {
++        for (ServerPlayer serverPlayer : this.getPlayerList().getPlayers()) { // Plazma - Null safety
+             serverPlayer.connection.chunkSender.sendNextChunks(serverPlayer);
+             serverPlayer.connection.resumeFlushing();
+         }
+@@ -1810,7 +_,7 @@
+     }
+ 
+     private void synchronizeTime(ServerLevel level) {
+-        this.playerList
++        this.getPlayerList() // Plazma - Null safety
+             .broadcastAll(
+                 new ClientboundSetTimePacket(level.getGameTime(), level.getDayTime(), level.getGameRules().getBoolean(GameRules.RULE_DAYLIGHT)),
+                 level.dimension()
+@@ -1848,8 +_,9 @@
+         return this.getServerDirectory().resolve(path);
+     }
+ 
++    @Nullable // Plazma - Null safety
+     public final ServerLevel overworld() {
+-        return this.levels.get(Level.OVERWORLD);
++        return this.getLevel(Level.OVERWORLD); // Plazma
+     }
+ 
+     @Nullable
+@@ -1888,16 +_,16 @@
+ 
+     @Override
+     public int getPlayerCount() {
+-        return this.playerList.getPlayerCount();
++        return this.getPlayerList().getPlayerCount();
+     }
+ 
+     @Override
+     public int getMaxPlayers() {
+-        return this.playerList.getMaxPlayers();
++        return this.getPlayerList().getMaxPlayers();
+     }
+ 
+     public String[] getPlayerNames() {
+-        return this.playerList.getPlayerNamesArray();
++        return this.getPlayerList().getPlayerNamesArray();
+     }
+ 
+     @DontObfuscate
+@@ -1940,6 +_,7 @@
+         LOGGER.info(io.papermc.paper.adventure.PaperAdventure.ANSI_SERIALIZER.serialize(io.papermc.paper.adventure.PaperAdventure.asAdventure(component))); // Paper - Log message with colors
+     }
+ 
++    @Nullable // Plazma - Null safety
+     public KeyPair getKeyPair() {
+         return this.keyPair;
+     }
+@@ -1977,7 +_,7 @@
+ 
+     // Paper start - per level difficulty
+     public void setDifficulty(ServerLevel level, Difficulty difficulty, boolean forceUpdate) {
+-        net.minecraft.world.level.storage.PrimaryLevelData worldData = (net.minecraft.world.level.storage.PrimaryLevelData) level.serverLevelData;
++        net.minecraft.world.level.storage.PrimaryLevelData worldData = level.serverLevelData; // Plazma - Remove unnecessary type casting
+         if (forceUpdate || !worldData.isDifficultyLocked()) {
+             worldData.setDifficulty(worldData.isHardcore() ? Difficulty.HARD : difficulty);
+             level.setSpawnSettings(worldData.getDifficulty() != Difficulty.PEACEFUL && ((net.minecraft.server.dedicated.DedicatedServer) this).settings.getProperties().spawnMonsters);
+@@ -2068,7 +_,7 @@
+ 
+     @Override
+     public String getMotd() {
+-        return net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer.legacySection().serialize(this.motd); // Paper - Adventure
++        return net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer.legacySection().serialize(this.motd()); // Paper - Adventure
+     }
+ 
+     public void setMotd(String motd) {
+@@ -2077,7 +_,7 @@
+     }
+ 
+     public net.kyori.adventure.text.Component motd() {
+-        return this.motd;
++        return Objects.requireNonNullElse(this.motd, net.kyori.adventure.text.Component.empty());
+     }
+ 
+     public void motd(net.kyori.adventure.text.Component motd) {
+@@ -2090,7 +_,7 @@
+     }
+ 
+     public PlayerList getPlayerList() {
+-        return this.playerList;
++        return Objects.requireNonNull(this.playerList, "Server is not started yet");
+     }
+ 
+     public void setPlayerList(PlayerList list) {
+@@ -2151,6 +_,7 @@
+         this.playerIdleTimeout = idleTimeout;
+     }
+ 
++    @Nullable
+     public MinecraftSessionService getSessionService() {
+         return this.services.sessionService();
+     }
+@@ -2160,13 +_,13 @@
+         return this.services.profileKeySignatureValidator();
+     }
+ 
++    @Nullable
+     public GameProfileRepository getProfileRepository() {
+         return this.services.profileRepository();
+     }
+ 
+-    @Nullable
+     public GameProfileCache getProfileCache() {
+-        return this.services.profileCache();
++        return Objects.requireNonNull(this.services.profileCache(), "Profile cache is null");
+     }
+ 
+     @Nullable
+@@ -2236,7 +_,7 @@
+     }
+     public CompletableFuture<Void> reloadResources(Collection<String> selectedIds, io.papermc.paper.event.server.ServerResourcesReloadedEvent.Cause cause) {
+         // Paper end - Add ServerResourcesReloadedEvent
+-        CompletableFuture<Void> completableFuture = CompletableFuture.<ImmutableList>supplyAsync(
++        CompletableFuture<Void> completableFuture = CompletableFuture.supplyAsync( // Plazma - Remove unnecessary type parameter
+                 () -> selectedIds.stream().map(this.packRepository::getPack).filter(Objects::nonNull).map(Pack::open).collect(ImmutableList.toImmutableList()),
+                 this
+             )
+@@ -2277,7 +_,6 @@
+                     this.potionBrewing = this.potionBrewing.reload(this.worldData.enabledFeatures()); // Paper - Custom Potion Mixes
+                     if (Thread.currentThread() != this.serverThread) return; // Paper
+                     // Paper start - we don't need to save everything, just advancements
+-                    // this.getPlayerList().saveAll();
+                     for (final ServerPlayer player : this.getPlayerList().getPlayers()) {
+                         player.getAdvancements().save();
+                     }
+@@ -2478,7 +_,7 @@
+     }
+ 
+     public GameRules getGameRules() {
+-        return this.overworld().getGameRules();
++        return Objects.requireNonNull(this.overworld()).getGameRules();
+     }
+ 
+     public CustomBossEvents getCustomBossEvents() {
+@@ -2582,9 +_,8 @@
+     private void dumpClasspath(Path path) throws IOException {
+         try (Writer bufferedWriter = Files.newBufferedWriter(path)) {
+             String property = System.getProperty("java.class.path");
+-            String property1 = System.getProperty("path.separator");
+ 
+-            for (String string : Splitter.on(property1).split(property)) {
++            for (String string : Splitter.on(File.pathSeparator).split(property)) {
+                 bufferedWriter.write(string);
+                 bufferedWriter.write("\n");
+             }
+@@ -2636,7 +_,7 @@
+     }
+ 
+     public static MinecraftServer getServer() {
+-        return SERVER; // Paper
++        return Objects.requireNonNull(SERVER); // Paper
+     }
+ 
+     @Deprecated

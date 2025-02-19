@@ -1,0 +1,989 @@
+--- a/net/minecraft/server/level/ServerLevel.java
++++ b/net/minecraft/server/level/ServerLevel.java
+@@ -34,7 +_,7 @@
+ import java.util.stream.Collectors;
+ import java.util.stream.Stream;
+ import javax.annotation.Nonnull;
+-import javax.annotation.Nullable;
++import org.jspecify.annotations.Nullable; // Plazma
+ import net.minecraft.CrashReport;
+ import net.minecraft.CrashReportCategory;
+ import net.minecraft.ReportType;
+@@ -177,8 +_,8 @@
+     private static final IntProvider THUNDER_DELAY = UniformInt.of(12000, 180000);
+     public static final IntProvider THUNDER_DURATION = UniformInt.of(3600, 15600);
+     private static final Logger LOGGER = LogUtils.getLogger();
+-    private static final int EMPTY_TIME_NO_TICK = 300;
+-    private static final int MAX_SCHEDULED_TICKS_PER_TICK = 65536;
++    // private static final int EMPTY_TIME_NO_TICK = 300;
++    // private static final int MAX_SCHEDULED_TICKS_PER_TICK = 65536;
+     final List<ServerPlayer> players = Lists.newArrayList();
+     public final ServerChunkCache chunkSource;
+     private final MinecraftServer server;
+@@ -332,7 +_,7 @@
+ 
+     @Override
+     public final void moonrise$midTickTasks() {
+-        ((ca.spottedleaf.moonrise.patches.chunk_system.server.ChunkSystemMinecraftServer)this.server).moonrise$executeMidTickTasks();
++        this.server.moonrise$executeMidTickTasks(); // Plazma - Remove unnecessary type casting
+     }
+ 
+     @Override
+@@ -546,7 +_,7 @@
+ 
+     @Override
+     public final void moonrise$removePlayerTickingRequest(final int chunkX, final int chunkZ) {
+-        ca.spottedleaf.moonrise.common.util.TickThread.ensureTickThread((ServerLevel)(Object)this, chunkX, chunkZ, "Cannot remove ticking request async");
++        ca.spottedleaf.moonrise.common.util.TickThread.ensureTickThread(this, chunkX, chunkZ, "Cannot remove ticking request async"); // Plazma - Remove unnecessary type casting
+ 
+         final long chunkKey = ca.spottedleaf.moonrise.common.util.CoordinateUtils.getChunkKey(chunkX, chunkZ);
+         final int val = this.playerTickingRequests.addTo(chunkKey, -1);
+@@ -560,7 +_,7 @@
+             return;
+         }
+ 
+-        final ca.spottedleaf.moonrise.patches.chunk_system.scheduling.NewChunkHolder chunkHolder = ((ca.spottedleaf.moonrise.patches.chunk_system.level.ChunkSystemServerLevel)(ServerLevel)(Object)this).moonrise$getChunkTaskScheduler()
++        final ca.spottedleaf.moonrise.patches.chunk_system.scheduling.NewChunkHolder chunkHolder = ((ca.spottedleaf.moonrise.patches.chunk_system.level.ChunkSystemServerLevel) this).moonrise$getChunkTaskScheduler() // Plazma - Remove unnecessary type casting
+             .chunkHolderManager.getChunkHolder(chunkKey);
+ 
+         if (chunkHolder == null || !chunkHolder.isTickingReady()) {
+@@ -568,7 +_,7 @@
+         }
+ 
+         this.playerTickingChunks.remove(
+-            ((ca.spottedleaf.moonrise.patches.chunk_system.level.chunk.ChunkSystemLevelChunk)(LevelChunk)chunkHolder.getCurrentChunk()).moonrise$getChunkAndHolder()
++            ((ca.spottedleaf.moonrise.patches.chunk_system.level.chunk.ChunkSystemLevelChunk) chunkHolder.getCurrentChunk()).moonrise$getChunkAndHolder() // Plazma - Remove unnecessary type casting
+         );
+     }
+     // Paper end - chunk tick iteration
+@@ -587,11 +_,28 @@
+         boolean tickTime,
+         @Nullable RandomSequences randomSequences,
+         org.bukkit.World.Environment env, // CraftBukkit
+-        org.bukkit.generator.ChunkGenerator gen, // CraftBukkit
+-        org.bukkit.generator.BiomeProvider biomeProvider // CraftBukkit
++        org.bukkit.generator.@Nullable ChunkGenerator gen, // CraftBukkit
++        org.bukkit.generator.@Nullable BiomeProvider biomeProvider // CraftBukkit
+     ) {
+         // CraftBukkit start
+-        super(serverLevelData, dimension, server.registryAccess(), levelStem.type(), false, isDebug, biomeZoomSeed, server.getMaxChainedNeighborUpdates(), gen, biomeProvider, env, spigotConfig -> server.paperConfigurations.createWorldConfig(io.papermc.paper.configuration.PaperConfigurations.createWorldContextMap(levelStorageAccess.levelDirectory.path(), serverLevelData.getLevelName(), dimension.location(), spigotConfig, server.registryAccess(), serverLevelData.getGameRules())), dispatcher); // Paper - create paper world configs; Async-Anti-Xray: Pass executor
++        // Plazma start - Configurable Plazma
++        super(
++            serverLevelData,
++            dimension,
++            server.registryAccess(),
++            levelStem.type(),
++            false,
++            isDebug,
++            biomeZoomSeed,
++            server.getMaxChainedNeighborUpdates(),
++            gen,
++            biomeProvider,
++            env,
++            (spigotConfig) -> server.paperConfigurations.createWorldConfig(io.papermc.paper.configuration.PaperConfigurations.createWorldContextMap(levelStorageAccess.levelDirectory.path(), serverLevelData.getLevelName(), dimension.location(), spigotConfig, server.registryAccess(), serverLevelData.getGameRules())),
++            () -> server.plazmaConfigurations.createWorldConfig(io.papermc.paper.configuration.Configurations.ContextMap.builder().put(io.papermc.paper.configuration.Configurations.WORLD_DIRECTORY, levelStorageAccess.levelDirectory.path()).put(io.papermc.paper.configuration.Configurations.WORLD_NAME, serverLevelData.getLevelName()).put(io.papermc.paper.configuration.Configurations.WORLD_KEY, dimension.location()).build()),
++            dispatcher
++        ); // Paper - create paper world configs; Async-Anti-Xray: Pass executor
++        // Plazma end - Configurable Plazma
+         this.pvpMode = server.isPvpAllowed();
+         this.levelStorageAccess = levelStorageAccess;
+         this.uuid = org.bukkit.craftbukkit.util.WorldUUID.getUUID(levelStorageAccess.levelDirectory.path().toFile());
+@@ -816,32 +_,33 @@
+             }
+ 
+             io.papermc.paper.entity.activation.ActivationRange.activateEntities(this); // Paper - EAR
+-            this.entityTickList
+-                .forEach(
+-                    entity -> {
+-                        if (!entity.isRemoved()) {
+-                            if (!tickRateManager.isEntityFrozen(entity)) {
+-                                profilerFiller.push("checkDespawn");
+-                                entity.checkDespawn();
+-                                profilerFiller.pop();
+-                                if (true) { // Paper - rewrite chunk system
+-                                    Entity vehicle = entity.getVehicle();
+-                                    if (vehicle != null) {
+-                                        if (!vehicle.isRemoved() && vehicle.hasPassenger(entity)) {
+-                                            return;
+-                                        }
+-
+-                                        entity.stopRiding();
+-                                    }
+-
+-                                    profilerFiller.push("tick");
+-                                    this.guardEntityTick(this::tickNonPassenger, entity);
+-                                    profilerFiller.pop();
+-                                }
+-                            }
++            this.entityTickList.forEach(entity -> {
++                if (entity.isRemoved()) {
++                    return;
++                }
++
++                if (!tickRateManager.isEntityFrozen(entity)) {
++                    profilerFiller.push("checkDespawn");
++                    entity.checkDespawn();
++                    profilerFiller.pop();
++                    // Plazma start - Improve code styling
++                    // Paper start - Rewrite chunk system
++                    Entity vehicle = entity.getVehicle();
++                    if (vehicle != null) {
++                        if (!vehicle.isRemoved() && vehicle.hasPassenger(entity)) {
++                            return;
+                         }
++
++                        entity.stopRiding();
+                     }
+-                );
++
++                    profilerFiller.push("tick");
++                    this.guardEntityTick(this::tickNonPassenger, entity);
++                    profilerFiller.pop();
++                    // Paper end - Rewrite chunk system
++                    // Plazma end - Improve code styling
++                }
++            });
+             profilerFiller.pop();
+             this.tickBlockEntities();
+         }
+@@ -860,23 +_,25 @@
+     }
+ 
+     protected void tickTime() {
+-        if (this.tickTime) {
+-            long l = this.levelData.getGameTime() + 1L;
+-            this.serverLevelData.setGameTime(l);
+-            Profiler.get().push("scheduledFunctions");
+-            this.serverLevelData.getScheduledEvents().tick(this.server, l);
+-            Profiler.get().pop();
+-            if (this.serverLevelData.getGameRules().getBoolean(GameRules.RULE_DAYLIGHT)) {
+-                // Purpur start - Configurable daylight cycle
+-                int incrementTicks = isDay() ? this.purpurConfig.daytimeTicks : this.purpurConfig.nighttimeTicks;
+-                if (incrementTicks != 12000) {
+-                    this.preciseTime += 12000 / (double) incrementTicks;
+-                    this.setDayTime(this.preciseTime);
+-                } else
++        // Plazma start - Improve code quality
++        if (!this.tickTime) return;
++
++        long l = this.levelData.getGameTime() + 1L;
++        this.serverLevelData.setGameTime(l);
++        Profiler.get().push("scheduledFunctions");
++        this.serverLevelData.getScheduledEvents().tick(this.server, l);
++        Profiler.get().pop();
++        if (this.serverLevelData.getGameRules().getBoolean(GameRules.RULE_DAYLIGHT)) {
++            // Purpur start - Configurable daylight cycle
++            int incrementTicks = isDay() ? this.purpurConfig.daytimeTicks : this.purpurConfig.nighttimeTicks;
++            if (incrementTicks != 12000) {
++                this.preciseTime += 12000 / (double) incrementTicks;
++                this.setDayTime(this.preciseTime);
++            } else
+                 // Purpur end - Configurable daylight cycle
+                 this.setDayTime(this.levelData.getDayTime() + 1L);
+-            }
+         }
++        // Plazma end - Improve code quality
+     }
+ 
+     public void setDayTime(long time) {
+@@ -905,7 +_,7 @@
+ 
+     private void wakeUpAllPlayers() {
+         this.sleepStatus.removeAllSleepers();
+-        this.players.stream().filter(LivingEntity::isSleeping).collect(Collectors.toList()).forEach(player -> player.stopSleepInBed(false, false));
++        this.players.stream().filter(LivingEntity::isSleeping).toList().forEach(player -> player.stopSleepInBed(false, false)); // Plazma
+     }
+ 
+     // Paper start - optimise random ticking
+@@ -946,11 +_,11 @@
+                 // do not use a mutable pos, as some random tick implementations store the input without calling immutable()!
+                 final BlockPos pos = new BlockPos((location & 15) | offsetX, ((location >>> (4 + 4)) & 15) | offsetY, ((location >>> 4) & 15) | offsetZ);
+ 
+-                state.randomTick((ServerLevel)(Object)this, pos, simpleRandom);
++                state.randomTick(this, pos, simpleRandom); // Plazma - Remove unnecessary type casting
+                 if (doubleTickFluids) {
+                     final FluidState fluidState = state.getFluidState();
+                     if (fluidState.isRandomlyTicking()) {
+-                        fluidState.randomTick((ServerLevel)(Object)this, pos, simpleRandom);
++                        fluidState.randomTick(this, pos, simpleRandom); // Plazma - Remove unnecessary type casting
+                     }
+                 }
+             }
+@@ -1030,27 +_,29 @@
+             org.bukkit.craftbukkit.event.CraftEventFactory.handleBlockFormEvent(this, blockPos1, Blocks.ICE.defaultBlockState(), null); // CraftBukkit
+         }
+ 
+-        if (this.isRaining()) {
+-            int _int = this.getGameRules().getInt(GameRules.RULE_SNOW_ACCUMULATION_HEIGHT);
+-            if (_int > 0 && biome.shouldSnow(this, heightmapPos)) {
+-                BlockState blockState = this.getBlockState(heightmapPos);
+-                if (blockState.is(Blocks.SNOW)) {
+-                    int layersValue = blockState.getValue(SnowLayerBlock.LAYERS);
+-                    if (layersValue < Math.min(_int, 8)) {
+-                        BlockState blockState1 = blockState.setValue(SnowLayerBlock.LAYERS, Integer.valueOf(layersValue + 1));
+-                        Block.pushEntitiesUp(blockState, blockState1, this, heightmapPos);
+-                        org.bukkit.craftbukkit.event.CraftEventFactory.handleBlockFormEvent(this, heightmapPos, blockState1, null); // CraftBukkit
+-                    }
+-                } else {
+-                    org.bukkit.craftbukkit.event.CraftEventFactory.handleBlockFormEvent(this, heightmapPos, Blocks.SNOW.defaultBlockState(), null); // CraftBukkit
++        if (!this.isRaining()) {
++            return;
++        }
++
++        int _int = this.getGameRules().getInt(GameRules.RULE_SNOW_ACCUMULATION_HEIGHT);
++        if (_int > 0 && biome.shouldSnow(this, heightmapPos)) {
++            BlockState blockState = this.getBlockState(heightmapPos);
++            if (blockState.is(Blocks.SNOW)) {
++                int layersValue = blockState.getValue(SnowLayerBlock.LAYERS);
++                if (layersValue < Math.min(_int, 8)) {
++                    BlockState blockState1 = blockState.setValue(SnowLayerBlock.LAYERS, layersValue + 1); // Plazma
++                    Block.pushEntitiesUp(blockState, blockState1, this, heightmapPos);
++                    org.bukkit.craftbukkit.event.CraftEventFactory.handleBlockFormEvent(this, heightmapPos, blockState1, null); // CraftBukkit
+                 }
++            } else {
++                org.bukkit.craftbukkit.event.CraftEventFactory.handleBlockFormEvent(this, heightmapPos, Blocks.SNOW.defaultBlockState(), null); // CraftBukkit
+             }
++        }
+ 
+-            Biome.Precipitation precipitationAt = biome.getPrecipitationAt(blockPos1, this.getSeaLevel());
+-            if (precipitationAt != Biome.Precipitation.NONE) {
+-                BlockState blockState2 = this.getBlockState(blockPos1);
+-                blockState2.getBlock().handlePrecipitation(blockState2, this, blockPos1, precipitationAt);
+-            }
++        Biome.Precipitation precipitationAt = biome.getPrecipitationAt(blockPos1, this.getSeaLevel());
++        if (precipitationAt != Biome.Precipitation.NONE) {
++            BlockState blockState2 = this.getBlockState(blockPos1);
++            blockState2.getBlock().handlePrecipitation(blockState2, this, blockPos1, precipitationAt);
+         }
+     }
+ 
+@@ -1074,24 +_,25 @@
+         // Paper end - Add methods to find targets for lightning strikes
+         BlockPos heightmapPos = this.getHeightmapPos(Heightmap.Types.MOTION_BLOCKING, pos);
+         Optional<BlockPos> optional = this.findLightningRod(heightmapPos);
++        // Plazma start - Improve code quality
+         if (optional.isPresent()) {
+             return optional.get();
+-        } else {
+-            AABB aabb = AABB.encapsulatingFullBlocks(heightmapPos, heightmapPos.atY(this.getMaxY() + 1)).inflate(3.0);
+-            List<LivingEntity> entitiesOfClass = this.getEntitiesOfClass(
+-                LivingEntity.class, aabb, entity -> entity != null && entity.isAlive() && this.canSeeSky(entity.blockPosition()) && !entity.isSpectator() // Paper - Fix lightning being able to hit spectators (MC-262422)
+-            );
+-            if (!entitiesOfClass.isEmpty()) {
+-                return entitiesOfClass.get(this.random.nextInt(entitiesOfClass.size())).blockPosition();
+-            } else {
+-                if (returnNullWhenNoTarget) return null; // Paper - Add methods to find targets for lightning strikes
+-                if (heightmapPos.getY() == this.getMinY() - 1) {
+-                    heightmapPos = heightmapPos.above(2);
+-                }
+-
+-                return heightmapPos;
+-            }
+-        }
++        }
++
++        AABB aabb = AABB.encapsulatingFullBlocks(heightmapPos, heightmapPos.atY(this.getMaxY() + 1)).inflate(3.0);
++        List<LivingEntity> entitiesOfClass = this.getEntitiesOfClass(
++            LivingEntity.class, aabb, entity -> entity != null && entity.isAlive() && this.canSeeSky(entity.blockPosition()) && !entity.isSpectator() // Paper - Fix lightning being able to hit spectators (MC-262422)
++        );
++        if (!entitiesOfClass.isEmpty()) {
++            return entitiesOfClass.get(this.random.nextInt(entitiesOfClass.size())).blockPosition();
++        }
++        if (returnNullWhenNoTarget) return null; // Paper - Add methods to find targets for lightning strikes
++        if (heightmapPos.getY() == this.getMinY() - 1) {
++            heightmapPos = heightmapPos.above(2);
++        }
++
++        return heightmapPos;
++        // Plazma end - Improve code quality
+     }
+ 
+     public boolean isHandlingTick() {
+@@ -1103,39 +_,45 @@
+     }
+ 
+     private void announceSleepStatus() {
+-        if (this.canSleepThroughNights()) {
+-            if (!this.getServer().isSingleplayer() || this.getServer().isPublished()) {
+-                int _int = this.getGameRules().getInt(GameRules.RULE_PLAYERS_SLEEPING_PERCENTAGE);
+-                Component component;
+-                if (this.sleepStatus.areEnoughSleeping(_int)) {
+-                    // Purpur start - Customizable sleeping actionbar messages
+-                    if (org.purpurmc.purpur.PurpurConfig.sleepSkippingNight.isBlank()) {
+-                        return;
+-                    }
+-                    if (!org.purpurmc.purpur.PurpurConfig.sleepSkippingNight.equalsIgnoreCase("default")) {
+-                        component = io.papermc.paper.adventure.PaperAdventure.asVanilla(net.kyori.adventure.text.minimessage.MiniMessage.miniMessage().deserialize(org.purpurmc.purpur.PurpurConfig.sleepSkippingNight));
+-                    } else
+-                    // Purpur end - Customizable sleeping actionbar messages
+-                    component = Component.translatable("sleep.skipping_night");
+-                } else {
+-                    // Purpur start - Customizable sleeping actionbar messages
+-                    if (org.purpurmc.purpur.PurpurConfig.sleepingPlayersPercent.isBlank()) {
+-                        return;
+-                    }
+-                    if (!org.purpurmc.purpur.PurpurConfig.sleepingPlayersPercent.equalsIgnoreCase("default")) {
+-                        component = io.papermc.paper.adventure.PaperAdventure.asVanilla(net.kyori.adventure.text.minimessage.MiniMessage.miniMessage().deserialize(org.purpurmc.purpur.PurpurConfig.sleepingPlayersPercent,
+-                            net.kyori.adventure.text.minimessage.tag.resolver.Placeholder.parsed("count", Integer.toString(this.sleepStatus.amountSleeping())),
+-                            net.kyori.adventure.text.minimessage.tag.resolver.Placeholder.parsed("total", Integer.toString(this.sleepStatus.sleepersNeeded(_int)))));
+-                    } else
+-                    // Purpur end - Customizable sleeping actionbar messages
+-                    component = Component.translatable("sleep.players_sleeping", this.sleepStatus.amountSleeping(), this.sleepStatus.sleepersNeeded(_int));
+-                }
+-
+-                for (ServerPlayer serverPlayer : this.players) {
+-                    serverPlayer.displayClientMessage(component, true);
+-                }
+-            }
+-        }
++        // Plazma start - Improve code quality
++        if (!this.canSleepThroughNights()) {
++            return;
++        }
++
++        if (this.getServer().isSingleplayer() && !this.getServer().isPublished()) {
++            return;
++        }
++
++        int _int = this.getGameRules().getInt(GameRules.RULE_PLAYERS_SLEEPING_PERCENTAGE);
++        Component component;
++        if (this.sleepStatus.areEnoughSleeping(_int)) {
++            // Purpur start - Customizable sleeping actionbar messages
++            if (org.purpurmc.purpur.PurpurConfig.sleepSkippingNight.isBlank()) {
++                return;
++            }
++            if (!org.purpurmc.purpur.PurpurConfig.sleepSkippingNight.equalsIgnoreCase("default")) {
++                component = io.papermc.paper.adventure.PaperAdventure.asVanilla(net.kyori.adventure.text.minimessage.MiniMessage.miniMessage().deserialize(org.purpurmc.purpur.PurpurConfig.sleepSkippingNight));
++            } else
++                // Purpur end - Customizable sleeping actionbar messages
++                component = Component.translatable("sleep.skipping_night");
++        } else {
++            // Purpur start - Customizable sleeping actionbar messages
++            if (org.purpurmc.purpur.PurpurConfig.sleepingPlayersPercent.isBlank()) {
++                return;
++            }
++            if (!org.purpurmc.purpur.PurpurConfig.sleepingPlayersPercent.equalsIgnoreCase("default")) {
++                component = io.papermc.paper.adventure.PaperAdventure.asVanilla(net.kyori.adventure.text.minimessage.MiniMessage.miniMessage().deserialize(org.purpurmc.purpur.PurpurConfig.sleepingPlayersPercent,
++                    net.kyori.adventure.text.minimessage.tag.resolver.Placeholder.parsed("count", Integer.toString(this.sleepStatus.amountSleeping())),
++                    net.kyori.adventure.text.minimessage.tag.resolver.Placeholder.parsed("total", Integer.toString(this.sleepStatus.sleepersNeeded(_int)))));
++            } else
++                // Purpur end - Customizable sleeping actionbar messages
++                component = Component.translatable("sleep.players_sleeping", this.sleepStatus.amountSleeping(), this.sleepStatus.sleepersNeeded(_int));
++        }
++
++        for (ServerPlayer serverPlayer : this.players) {
++            serverPlayer.displayClientMessage(component, true);
++        }
++        // Plazma end - Improve code quality
+     }
+ 
+     public void updateSleepingPlayerList() {
+@@ -1211,30 +_,6 @@
+             this.rainLevel = Mth.clamp(this.rainLevel, 0.0F, 1.0F);
+         }
+ 
+-        /* CraftBukkit start
+-        if (this.oRainLevel != this.rainLevel) {
+-            this.server
+-                .getPlayerList()
+-                .broadcastAll(new ClientboundGameEventPacket(ClientboundGameEventPacket.RAIN_LEVEL_CHANGE, this.rainLevel), this.dimension());
+-        }
+-
+-        if (this.oThunderLevel != this.thunderLevel) {
+-            this.server
+-                .getPlayerList()
+-                .broadcastAll(new ClientboundGameEventPacket(ClientboundGameEventPacket.THUNDER_LEVEL_CHANGE, this.thunderLevel), this.dimension());
+-        }
+-
+-        if (isRaining != this.isRaining()) {
+-            if (isRaining) {
+-                this.server.getPlayerList().broadcastAll(new ClientboundGameEventPacket(ClientboundGameEventPacket.STOP_RAINING, 0.0F));
+-            } else {
+-                this.server.getPlayerList().broadcastAll(new ClientboundGameEventPacket(ClientboundGameEventPacket.START_RAINING, 0.0F));
+-            }
+-
+-            this.server.getPlayerList().broadcastAll(new ClientboundGameEventPacket(ClientboundGameEventPacket.RAIN_LEVEL_CHANGE, this.rainLevel));
+-            this.server.getPlayerList().broadcastAll(new ClientboundGameEventPacket(ClientboundGameEventPacket.THUNDER_LEVEL_CHANGE, this.thunderLevel));
+-        }
+-        */
+         for (ServerPlayer player : this.players) {
+             if (player.level() == this) {
+                 player.tickWeather();
+@@ -1291,7 +_,7 @@
+         }
+         // Paper start - rewrite chunk system
+         if ((++this.tickedBlocksOrFluids & 7L) != 0L) {
+-            ((ca.spottedleaf.moonrise.patches.chunk_system.server.ChunkSystemMinecraftServer)this.server).moonrise$executeMidTickTasks();
++            this.server.moonrise$executeMidTickTasks(); // Plazma - Remove unnecessary type casting
+         }
+         // Paper end - rewrite chunk system
+ 
+@@ -1304,7 +_,7 @@
+         }
+         // Paper start - rewrite chunk system
+         if ((++this.tickedBlocksOrFluids & 7L) != 0L) {
+-            ((ca.spottedleaf.moonrise.patches.chunk_system.server.ChunkSystemMinecraftServer)this.server).moonrise$executeMidTickTasks();
++            this.server.moonrise$executeMidTickTasks(); // Plazma - Remove unnecessary type casting
+         }
+         // Paper end - rewrite chunk system
+ 
+@@ -1316,9 +_,7 @@
+ 
+     public static List<Entity> getCurrentlyTickingEntities() {
+         Entity ticking = currentlyTickingEntity.get();
+-        List<Entity> ret = java.util.Arrays.asList(ticking == null ? new Entity[0] : new Entity[] { ticking });
+-
+-        return ret;
++        return java.util.Arrays.asList(ticking == null ? new Entity[0] : new Entity[] { ticking }); // Plazma
+     }
+     // Paper end - log detailed entity tick information
+ 
+@@ -1329,23 +_,27 @@
+             if (currentlyTickingEntity.get() == null) {
+                 currentlyTickingEntity.lazySet(entity);
+             }
++            // Plazma start - Improve code quality
+             // Paper end - log detailed entity tick information
+-        entity.setOldPosAndRot();
+-        ProfilerFiller profilerFiller = Profiler.get();
+-        entity.tickCount++;
+-        entity.totalEntityAge++; // Paper - age-like counter for all entities
+-        profilerFiller.push(() -> BuiltInRegistries.ENTITY_TYPE.getKey(entity.getType()).toString());
+-        profilerFiller.incrementCounter("tickNonPassenger");
+-        final boolean isActive = io.papermc.paper.entity.activation.ActivationRange.checkIfActive(entity); // Paper - EAR 2
+-        if (isActive) { // Paper - EAR 2
+-        entity.tick();
+-        entity.postTick(); // CraftBukkit
+-        } else {entity.inactiveTick();} // Paper - EAR 2
+-        profilerFiller.pop();
++            entity.setOldPosAndRot();
++            ProfilerFiller profilerFiller = Profiler.get();
++            entity.tickCount++;
++            entity.totalEntityAge++; // Paper - age-like counter for all entities
++            profilerFiller.push(() -> BuiltInRegistries.ENTITY_TYPE.getKey(entity.getType()).toString());
++            profilerFiller.incrementCounter("tickNonPassenger");
++            final boolean isActive = io.papermc.paper.entity.activation.ActivationRange.checkIfActive(entity); // Paper - EAR 2
++            if (isActive) { // Paper - EAR 2
++                entity.tick();
++                entity.postTick(); // CraftBukkit
++            } else {
++                entity.inactiveTick(); // Paper - EAR 2
++            }
++            profilerFiller.pop();
+ 
+-        for (Entity entity1 : entity.getPassengers()) {
+-            this.tickPassenger(entity, entity1, isActive); // Paper - EAR 2
+-        }
++            for (Entity entity1 : entity.getPassengers()) {
++                this.tickPassenger(entity, entity1, isActive); // Paper - EAR 2
++            }
++            // Plazma end - Improve code quality
+         // Paper start - log detailed entity tick information
+         } finally {
+             if (currentlyTickingEntity.get() == entity) {
+@@ -1358,29 +_,33 @@
+     private void tickPassenger(Entity ridingEntity, Entity passengerEntity, final boolean isActive) { // Paper - EAR 2
+         if (passengerEntity.isRemoved() || passengerEntity.getVehicle() != ridingEntity) {
+             passengerEntity.stopRiding();
+-        } else if (passengerEntity instanceof Player || this.entityTickList.contains(passengerEntity)) {
+-            passengerEntity.setOldPosAndRot();
+-            passengerEntity.tickCount++;
+-            passengerEntity.totalEntityAge++; // Paper - age-like counter for all entities
+-            ProfilerFiller profilerFiller = Profiler.get();
+-            profilerFiller.push(() -> BuiltInRegistries.ENTITY_TYPE.getKey(passengerEntity.getType()).toString());
+-            profilerFiller.incrementCounter("tickPassenger");
+-            // Paper start - EAR 2
+-            if (isActive) {
++            // Plazma start - Improve code quality
++        } else if (!(passengerEntity instanceof Player) && !this.entityTickList.contains(passengerEntity)) {
++            return;
++        }
++
++        passengerEntity.setOldPosAndRot();
++        passengerEntity.tickCount++;
++        passengerEntity.totalEntityAge++; // Paper - age-like counter for all entities
++        ProfilerFiller profilerFiller = Profiler.get();
++        profilerFiller.push(() -> BuiltInRegistries.ENTITY_TYPE.getKey(passengerEntity.getType()).toString());
++        profilerFiller.incrementCounter("tickPassenger");
++        // Paper start - EAR 2
++        if (isActive) {
+             passengerEntity.rideTick();
+             passengerEntity.postTick(); // CraftBukkit
+-            } else {
+-                passengerEntity.setDeltaMovement(Vec3.ZERO);
+-                passengerEntity.inactiveTick();
+-                // copied from inside of if (isPassenger()) of passengerTick, but that ifPassenger is unnecessary
+-                ridingEntity.positionRider(passengerEntity);
+-            }
+-            // Paper end - EAR 2
+-            profilerFiller.pop();
++        } else {
++            passengerEntity.setDeltaMovement(Vec3.ZERO);
++            passengerEntity.inactiveTick();
++            // copied from inside of if (isPassenger()) of passengerTick, but that ifPassenger is unnecessary
++            ridingEntity.positionRider(passengerEntity);
++        }
++        // Paper end - EAR 2
++        profilerFiller.pop();
+ 
+-            for (Entity entity : passengerEntity.getPassengers()) {
+-                this.tickPassenger(passengerEntity, entity, isActive); // Paper - EAR 2
+-            }
++        for (Entity entity : passengerEntity.getPassengers()) {
++            this.tickPassenger(passengerEntity, entity, isActive); // Paper - EAR 2
++            // Plazma end - Improve code quality
+         }
+     }
+ 
+@@ -1546,7 +_,7 @@
+         this.addDuringTeleport(entity, null);
+     }
+ 
+-    public void addDuringTeleport(Entity entity, org.bukkit.event.entity.CreatureSpawnEvent.SpawnReason reason) {
++    public void addDuringTeleport(Entity entity, org.bukkit.event.entity.CreatureSpawnEvent.@Nullable SpawnReason reason) {
+         // CraftBukkit end
+         if (entity instanceof ServerPlayer serverPlayer) {
+             this.addPlayer(serverPlayer);
+@@ -1575,7 +_,7 @@
+     }
+ 
+     // CraftBukkit start
+-    private boolean addEntity(Entity entity, org.bukkit.event.entity.CreatureSpawnEvent.SpawnReason spawnReason) {
++    private boolean addEntity(Entity entity, org.bukkit.event.entity.CreatureSpawnEvent.@Nullable SpawnReason spawnReason) { // Plazma - Null safety
+         org.spigotmc.AsyncCatcher.catchOp("entity add"); // Spigot
+         entity.generation = false; // Paper - Don't fire sync event during generation; Reset flag if it was added during a ServerLevel generation process
+         // Paper start - extra debug info
+@@ -1588,22 +_,26 @@
+         if (entity.isRemoved()) {
+             // LOGGER.warn("Tried to add entity {} but it was marked as removed already", EntityType.getKey(entity.getType())); // CraftBukkit - remove warning
+             return false;
+-        } else {
+-            if (entity instanceof net.minecraft.world.entity.item.ItemEntity itemEntity && itemEntity.getItem().isEmpty()) return false; // Paper - Prevent empty items from being added
+-            // Paper start - capture all item additions to the world
+-            if (captureDrops != null && entity instanceof net.minecraft.world.entity.item.ItemEntity) {
+-                captureDrops.add((net.minecraft.world.entity.item.ItemEntity) entity);
+-                return true;
+-            }
+-            // Paper end - capture all item additions to the world
+-            // SPIGOT-6415: Don't call spawn event when reason is null. For example when an entity teleports to a new world.
+-            if (spawnReason != null && !org.bukkit.craftbukkit.event.CraftEventFactory.doEntityAddEventCalling(this, entity, spawnReason)) {
+-                return false;
+-            }
+-            // CraftBukkit end
+-
+-            return this.moonrise$getEntityLookup().addNewEntity(entity); // Paper - rewrite chunk system
+-        }
++        }
++
++        // Plazma start - Improve code quality
++        if (entity instanceof net.minecraft.world.entity.item.ItemEntity itemEntity && itemEntity.getItem().isEmpty()) return false; // Paper - Prevent empty items from being added
++
++        // Paper start - capture all item additions to the world
++        if (captureDrops != null && entity instanceof net.minecraft.world.entity.item.ItemEntity) {
++            captureDrops.add((net.minecraft.world.entity.item.ItemEntity) entity);
++            return true;
++        }
++        // Paper end - capture all item additions to the world
++
++        // SPIGOT-6415: Don't call spawn event when reason is null. For example when an entity teleports to a new world.
++        if (spawnReason != null && !org.bukkit.craftbukkit.event.CraftEventFactory.doEntityAddEventCalling(this, entity, spawnReason)) {
++            return false;
++        }
++        // CraftBukkit end
++
++        return this.moonrise$getEntityLookup().addNewEntity(entity); // Paper - rewrite chunk system
++        // Plazma end - Improve code quality
+     }
+ 
+     public boolean tryAddFreshEntityWithPassengers(Entity entity) {
+@@ -1624,15 +_,17 @@
+     public void unload(LevelChunk chunk) {
+         // Spigot start
+         for (net.minecraft.world.level.block.entity.BlockEntity blockEntity : chunk.getBlockEntities().values()) {
+-            if (blockEntity instanceof net.minecraft.world.Container) {
+-                // Paper start - this area looks like it can load chunks, change the behavior
+-                // chests for example can apply physics to the world
+-                // so instead we just change the active container and call the event
+-                for (org.bukkit.entity.HumanEntity human : Lists.newArrayList(((net.minecraft.world.Container) blockEntity).getViewers())) {
+-                    ((org.bukkit.craftbukkit.entity.CraftHumanEntity) human).getHandle().closeUnloadedInventory(org.bukkit.event.inventory.InventoryCloseEvent.Reason.UNLOADED); // Paper - Inventory close reason
+-                }
+-                // Paper end - this area looks like it can load chunks, change the behavior
++            // Plazma start - Improve code quality
++            if (!(blockEntity instanceof net.minecraft.world.Container container)) continue;
++
++            // Paper start - this area looks like it can load chunks, change the behavior
++            // chests for example can apply physics to the world
++            // so instead we just change the active container and call the event
++            for (org.bukkit.entity.HumanEntity human : Lists.newArrayList(container.getViewers())) {
++                ((org.bukkit.craftbukkit.entity.CraftHumanEntity) human).getHandle().closeUnloadedInventory(org.bukkit.event.inventory.InventoryCloseEvent.Reason.UNLOADED); // Paper - Inventory close reason
+             }
++            // Paper end - this area looks like it can load chunks, change the behavior
++            // Plazma end - Improve code quality
+         }
+         // Spigot end
+         chunk.clearAllBlockEntities();
+@@ -1678,19 +_,25 @@
+         }
+         // Paper end - Add BlockBreakProgressUpdateEvent
+         for (ServerPlayer serverPlayer : this.server.getPlayerList().getPlayers()) {
+-            if (serverPlayer != null && serverPlayer.level() == this && serverPlayer.getId() != breakerId) {
+-                double d = pos.getX() - serverPlayer.getX();
+-                double d1 = pos.getY() - serverPlayer.getY();
+-                double d2 = pos.getZ() - serverPlayer.getZ();
+-                // CraftBukkit start
+-                if (breakerPlayer != null && !serverPlayer.getBukkitEntity().canSee(breakerPlayer.getBukkitEntity())) {
+-                    continue;
+-                }
+-                // CraftBukkit end
+-                if (d * d + d1 * d1 + d2 * d2 < 1024.0) {
+-                    serverPlayer.connection.send(new ClientboundBlockDestructionPacket(breakerId, pos, progress));
+-                }
+-            }
++            // Plazma start - Improve code quality
++            if (serverPlayer == null || serverPlayer.level() != this || serverPlayer.getId() == breakerId) {
++                continue;
++            }
++
++            double d = pos.getX() - serverPlayer.getX();
++            double d1 = pos.getY() - serverPlayer.getY();
++            double d2 = pos.getZ() - serverPlayer.getZ();
++
++            // CraftBukkit start
++            if (breakerPlayer != null && !serverPlayer.getBukkitEntity().canSee(breakerPlayer.getBukkitEntity())) {
++                continue;
++            }
++            // CraftBukkit end
++
++            if (d * d + d1 * d1 + d2 * d2 < 1024.0) {
++                serverPlayer.connection.send(new ClientboundBlockDestructionPacket(breakerId, pos, progress));
++            }
++            // Plazma end - Improve code quality
+         }
+     }
+ 
+@@ -1722,26 +_,29 @@
+ 
+     @Override
+     public void globalLevelEvent(int id, BlockPos pos, int data) {
+-        if (this.getGameRules().getBoolean(GameRules.RULE_GLOBAL_SOUND_EVENTS)) {
+-            this.server.getPlayerList().getPlayers().forEach(player -> {
+-                Vec3 vec31;
+-                if (player.level() == this) {
+-                    Vec3 vec3 = Vec3.atCenterOf(pos);
+-                    if (player.distanceToSqr(vec3) < Mth.square(32)) {
+-                        vec31 = vec3;
+-                    } else {
+-                        Vec3 vec32 = vec3.subtract(player.position()).normalize();
+-                        vec31 = player.position().add(vec32.scale(32.0));
+-                    }
+-                } else {
+-                    vec31 = player.position();
+-                }
+-
+-                player.connection.send(new ClientboundLevelEventPacket(id, BlockPos.containing(vec31), data, true));
+-            });
+-        } else {
++        // Plazma start - Improve code quality
++        if (!this.getGameRules().getBoolean(GameRules.RULE_GLOBAL_SOUND_EVENTS)) {
+             this.levelEvent(null, id, pos, data);
++            return;
+         }
++
++        this.server.getPlayerList().getPlayers().forEach(player -> {
++            Vec3 vec31;
++            if (player.level() == this) {
++                Vec3 vec3 = Vec3.atCenterOf(pos);
++                if (player.distanceToSqr(vec3) < Mth.square(32)) {
++                    vec31 = vec3;
++                } else {
++                    Vec3 vec32 = vec3.subtract(player.position()).normalize();
++                    vec31 = player.position().add(vec32.scale(32.0));
++                }
++            } else {
++                vec31 = player.position();
++            }
++
++            player.connection.send(new ClientboundLevelEventPacket(id, BlockPos.containing(vec31), data, true));
++        });
++        // Plazma end - Improve code quality
+     }
+ 
+     @Override
+@@ -1768,19 +_,21 @@
+     @Override
+     public void sendBlockUpdated(BlockPos pos, BlockState oldState, BlockState newState, int flags) {
+         if (this.isUpdatingNavigations) {
+-            String string = "recursive call to sendBlockUpdated";
++            //String string = "recursive call to sendBlockUpdated";
+             Util.logAndPauseIfInIde("recursive call to sendBlockUpdated", new IllegalStateException("recursive call to sendBlockUpdated"));
+         }
+ 
+         this.getChunkSource().blockChanged(pos);
+         this.pathTypesByPosCache.invalidate(pos);
+-        if (this.paperConfig().misc.updatePathfindingOnBlockUpdate) { // Paper - option to disable pathfinding updates
++        if (!this.paperConfig().misc.updatePathfindingOnBlockUpdate) return; // Paper - option to disable pathfinding updates // Plazma - Improve code quality
++
+         VoxelShape collisionShape = oldState.getCollisionShape(this, pos);
+         VoxelShape collisionShape1 = newState.getCollisionShape(this, pos);
+-        if (Shapes.joinIsNotEmpty(collisionShape, collisionShape1, BooleanOp.NOT_SAME)) {
+-            List<PathNavigation> list = new ObjectArrayList<>();
++        // Plazma start - Improve code quality
++        if (!Shapes.joinIsNotEmpty(collisionShape, collisionShape1, BooleanOp.NOT_SAME)) return;
++        List<PathNavigation> list = new ObjectArrayList<>();
+ 
+-            try { // Paper - catch CME see below why
++        try { // Paper - catch CME see below why
+             for (Mob mob : this.navigatingMobs) {
+                 PathNavigation navigation = mob.getNavigation();
+                 if (navigation.shouldRecomputePath(pos)) {
+@@ -1788,26 +_,24 @@
+                 }
+             }
+             // Paper start - catch CME see below why
+-            } catch (final java.util.ConcurrentModificationException concurrentModificationException) {
+-                // This can happen because the pathfinder update below may trigger a chunk load, which in turn may cause more navigators to register
+-                // In this case we just run the update again across all the iterators as the chunk will then be loaded
+-                // As this is a relative edge case it is much faster than copying navigators (on either read or write)
+-                this.sendBlockUpdated(pos, oldState, newState, flags);
+-                return;
+-            }
+-            // Paper end - catch CME see below why
+-
+-            try {
+-                this.isUpdatingNavigations = true;
+-
+-                for (PathNavigation pathNavigation : list) {
+-                    pathNavigation.recomputePath();
+-                }
+-            } finally {
+-                this.isUpdatingNavigations = false;
+-            }
+-        }
+-        } // Paper - option to disable pathfinding updates
++        } catch (final java.util.ConcurrentModificationException concurrentModificationException) {
++            // This can happen because the pathfinder update below may trigger a chunk load, which in turn may cause more navigators to register
++            // In this case we just run the update again across all the iterators as the chunk will then be loaded
++            // As this is a relative edge case it is much faster than copying navigators (on either read or write)
++            this.sendBlockUpdated(pos, oldState, newState, flags);
++            return;
++        }
++        // Paper end - catch CME see below why
++
++        try {
++            this.isUpdatingNavigations = true;
++
++            for (PathNavigation pathNavigation : list) {
++                pathNavigation.recomputePath();
++            }
++        } finally {
++            this.isUpdatingNavigations = false;
++        }
+     }
+ 
+     @Override
+@@ -1900,7 +_,7 @@
+         ParticleOptions smallExplosionParticles,
+         ParticleOptions largeExplosionParticles,
+         Holder<SoundEvent> explosionSound,
+-        @Nullable java.util.function.Consumer<ServerExplosion> configurator
++        java.util.function.@Nullable Consumer<ServerExplosion> configurator // Plazma - Null safety
+     ) {
+         // CraftBukkit end
+         Explosion.BlockInteraction blockInteraction = switch (explosionInteraction) {
+@@ -1948,23 +_,26 @@
+ 
+         while (!this.blockEvents.isEmpty()) {
+             BlockEventData blockEventData = this.blockEvents.removeFirst();
+-            if (this.shouldTickBlocksAt(blockEventData.pos())) {
+-                if (this.doBlockEvent(blockEventData)) {
+-                    this.server
+-                        .getPlayerList()
+-                        .broadcast(
+-                            null,
+-                            blockEventData.pos().getX(),
+-                            blockEventData.pos().getY(),
+-                            blockEventData.pos().getZ(),
+-                            64.0,
+-                            this.dimension(),
+-                            new ClientboundBlockEventPacket(blockEventData.pos(), blockEventData.block(), blockEventData.paramA(), blockEventData.paramB())
+-                        );
+-                }
+-            } else {
++            // Plazma start - Improve code quality
++            if (!this.shouldTickBlocksAt(blockEventData.pos())) {
+                 this.blockEventsToReschedule.add(blockEventData);
+-            }
++                return;
++            }
++
++            if (!this.doBlockEvent(blockEventData)) {
++                return;
++            }
++
++            this.server.getPlayerList().broadcast(
++                null,
++                blockEventData.pos().getX(),
++                blockEventData.pos().getY(),
++                blockEventData.pos().getZ(),
++                64.0,
++                this.dimension(),
++                new ClientboundBlockEventPacket(blockEventData.pos(), blockEventData.block(), blockEventData.paramA(), blockEventData.paramB())
++            );
++            // Plazma end - Improve code quality
+         }
+ 
+         this.blockEvents.addAll(this.blockEventsToReschedule);
+@@ -2058,8 +_,7 @@
+         );
+         int i = 0;
+ 
+-        for (int i1 = 0; i1 < receivers.size(); i1++) { // Paper - particle API
+-            ServerPlayer serverPlayer = receivers.get(i1); // Paper - particle API
++        for (ServerPlayer serverPlayer : receivers) { // Paper - particle API // Plazma
+             if (sender != null && !serverPlayer.getBukkitEntity().canSee(sender.getBukkitEntity())) continue; // CraftBukkit
+             if (this.sendParticles(serverPlayer, overrideLimiter, posX, posY, posZ, clientboundLevelParticlesPacket)) {
+                 i++;
+@@ -2090,17 +_,19 @@
+     }
+ 
+     private boolean sendParticles(ServerPlayer player, boolean longDistance, double posX, double posY, double posZ, Packet<?> packet) {
++        // Plazma start - Improve code quality
+         if (player.level() != this) {
+             return false;
+-        } else {
+-            BlockPos blockPos = player.blockPosition();
+-            if (blockPos.closerToCenterThan(new Vec3(posX, posY, posZ), longDistance ? 512.0 : 32.0)) {
+-                player.connection.send(packet);
+-                return true;
+-            } else {
+-                return false;
+-            }
+-        }
++        }
++
++        BlockPos blockPos = player.blockPosition();
++        if (blockPos.closerToCenterThan(new Vec3(posX, posY, posZ), longDistance ? 512.0 : 32.0)) {
++            player.connection.send(packet);
++            return true;
++        }
++
++        return false;
++        // Plazma end - Improve code quality
+     }
+ 
+     @Nullable
+@@ -2128,19 +_,21 @@
+ 
+     @Nullable
+     public BlockPos findNearestMapStructure(TagKey<Structure> structureTag, BlockPos pos, int radius, boolean skipExistingChunks) {
++        // Plazma start - Improve code quality
+         if (!this.serverLevelData.worldGenOptions().generateStructures()) { // CraftBukkit
+             return null;
+-        } else {
+-            Optional<HolderSet.Named<Structure>> optional = this.registryAccess().lookupOrThrow(Registries.STRUCTURE).get(structureTag);
+-            if (optional.isEmpty()) {
+-                return null;
+-            } else {
+-                Pair<BlockPos, Holder<Structure>> pair = this.getChunkSource()
+-                    .getGenerator()
+-                    .findNearestMapStructure(this, optional.get(), pos, radius, skipExistingChunks);
+-                return pair != null ? pair.getFirst() : null;
+-            }
+-        }
++        }
++
++        Optional<HolderSet.Named<Structure>> optional = this.registryAccess().lookupOrThrow(Registries.STRUCTURE).get(structureTag);
++        if (optional.isEmpty()) {
++            return null;
++        }
++
++        Pair<BlockPos, Holder<Structure>> pair = this.getChunkSource()
++            .getGenerator()
++            .findNearestMapStructure(this, optional.get(), pos, radius, skipExistingChunks);
++        return pair != null ? pair.getFirst() : null;
++        // Plazma end - Improve code quality
+     }
+ 
+     @Nullable
+@@ -2247,7 +_,7 @@
+ 
+     public LongSet getForcedChunks() {
+         ForcedChunksSavedData forcedChunksSavedData = this.getDataStorage().get(ForcedChunksSavedData.factory(), "chunks");
+-        return (LongSet)(forcedChunksSavedData != null ? LongSets.unmodifiable(forcedChunksSavedData.getChunks()) : LongSets.EMPTY_SET);
++        return (forcedChunksSavedData != null ? LongSets.unmodifiable(forcedChunksSavedData.getChunks()) : LongSets.EMPTY_SET); // Plazma - Remove unnecessary type casting
+     }
+ 
+     public boolean setChunkForced(int chunkX, int chunkZ, boolean add) {
+@@ -2363,27 +_,11 @@
+             bufferedWriter1.write(crashReport.getFriendlyReport(ReportType.TEST));
+         }
+ 
+-        Path path1 = path.resolve("chunks.csv");
+-
+-        try (Writer bufferedWriter2 = Files.newBufferedWriter(path1)) {
+-            //chunkMap.dumpChunks(bufferedWriter2); // Paper - rewrite chunk system
+-        }
+-
+-        Path path2 = path.resolve("entity_chunks.csv");
+-
+-        try (Writer bufferedWriter3 = Files.newBufferedWriter(path2)) {
+-            //this.entityManager.dumpSections(bufferedWriter3); // Paper - rewrite chunk system
+-        }
+-
+-        Path path3 = path.resolve("entities.csv");
+-
+-        try (Writer bufferedWriter4 = Files.newBufferedWriter(path3)) {
++        try (Writer bufferedWriter4 = Files.newBufferedWriter(path.resolve("entities.csv"))) {
+             dumpEntities(bufferedWriter4, this.getEntities().getAll());
+         }
+ 
+-        Path path4 = path.resolve("block_entities.csv");
+-
+-        try (Writer bufferedWriter5 = Files.newBufferedWriter(path4)) {
++        try (Writer bufferedWriter5 = Files.newBufferedWriter(path.resolve("block_entities.csv"))) {
+             this.dumpBlockEntityTickers(bufferedWriter5);
+         }
+     }
+@@ -2688,20 +_,12 @@
+         @Override
+         public void onTrackingStart(Entity entity) {
+             org.spigotmc.AsyncCatcher.catchOp("entity register"); // Spigot
+-            // ServerLevel.this.getChunkSource().addEntity(entity); // Paper - ignore and warn about illegal addEntity calls instead of crashing server; moved down below valid=true
+             if (entity instanceof ServerPlayer serverPlayer) {
+                 ServerLevel.this.players.add(serverPlayer);
+                 ServerLevel.this.updateSleepingPlayerList();
+             }
+ 
+             if (entity instanceof Mob mob) {
+-                if (false && ServerLevel.this.isUpdatingNavigations) { // Paper - Remove unnecessary onTrackingStart during navigation warning
+-                    String string = "onTrackingStart called during navigation iteration";
+-                    Util.logAndPauseIfInIde(
+-                        "onTrackingStart called during navigation iteration", new IllegalStateException("onTrackingStart called during navigation iteration")
+-                    );
+-                }
+-
+                 ServerLevel.this.navigatingMobs.add(mob);
+             }
+ 
+@@ -2746,6 +_,7 @@
+                 }
+             }
+             // Spigot end
++
+             // Spigot start
+             if (entity.getBukkitEntity() instanceof org.bukkit.inventory.InventoryHolder && (!(entity instanceof ServerPlayer) || entity.getRemovalReason() != Entity.RemovalReason.KILLED)) { // SPIGOT-6876: closeInventory clears death message
+                 // Paper start - Fix merchant inventory not closing on entity removal
+@@ -2765,13 +_,6 @@
+             }
+ 
+             if (entity instanceof Mob mob) {
+-                if (false && ServerLevel.this.isUpdatingNavigations) { // Paper - Remove unnecessary onTrackingStart during navigation warning
+-                    String string = "onTrackingStart called during navigation iteration";
+-                    Util.logAndPauseIfInIde(
+-                        "onTrackingStart called during navigation iteration", new IllegalStateException("onTrackingStart called during navigation iteration")
+-                    );
+-                }
+-
+                 ServerLevel.this.navigatingMobs.remove(mob);
+             }
+ 
