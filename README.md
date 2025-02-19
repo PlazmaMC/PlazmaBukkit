@@ -33,6 +33,10 @@
 
 </div>
 
+> [!IMPORTANT]
+The hardfork process is taking longer than expected. We are working to release a dev build as soon as possible.<br>
+하드포크 작업이 예상보다 길어지고 있습니다. 최대한 빨리 테스트 빌드를 공개할 수 있도록 노력하고 있습니다.
+
 > [!WARNING]
 Plazma may cause **<u>unexpected problems</u>**, so be sure to test it thoroughly before using it on a public server.<br>
 플라즈마는 **<u>예기치 못한 문제를</u>** 일으킬 수 있으므로, 공개 서버에서 사용하기 전 충분한 테스트를 거친 후 사용하시기 바랍니다.
@@ -58,13 +62,14 @@ Plazma may cause **<u>unexpected problems</u>**, so be sure to test it thoroughl
    Plazma에 포함된 [Purpur](https://github.com/PurpurMC/Purpur)는 게임의 전반적인 속성을 수정할 수 있게 해줍니다.
 4. **안전하게 플레이하는 서버**\
    [FreedomChat](https://github.com/ocelotpotpie/FreedomChat/)[^ncr]이 포함되어 있어 1.19부터 추가된 Mojang의 채팅 신고 시스템을 비활성화 할 수 있으며, 진단 정보 수집기가 완전 제거되어 추적 없는 안전한 서버를 플레이 할 수 있습니다.
-5. **가장 빠른 업데이트**\
-   [AlwaysUpToDate](https://github.com/PlazmaMC/AlwaysUpToDate)는 Plazma의 포함 패치가 항상 최신으로 유지될 수 있도록 해서, Paper 기반 서버 플랫폼 중에서 가장 빠른 업데이트를 제공하고 있습니다.
-6. **기본 구성 파일 최적화**\
+5. ~~**가장 빠른 업데이트**~~\
+   ~~[AlwaysUpToDate](https://github.com/PlazmaMC/AlwaysUpToDate)는 Plazma의 포함 패치가 항상 최신으로 유지될 수 있도록 해서, Paper 기반 서버 플랫폼 중에서 가장 빠른 업데이트를 제공하고 있습니다.~~
+   Paper의 [하드포크](https://forums.papermc.io/threads/the-future-of-paper-hard-fork.1451/)로 인하여 잠시동안 비활성화 됩니다.
+7. **기본 구성 파일 최적화**\
    기본 적용되는 구성 파일이 최적화되어 있어, 직접 구성 파일을 최적화 하지 않아도 됩니다.
-7. **체계적으로 작동하는 멀티스레드**\
+8. **체계적으로 작동하는 멀티스레드**\
    게임의 메커니즘과 관계 없는 시스템 메커니즘을 비동기화 하여, 지연 시간을 줄여 서버를 최적화 합니다.
-8. **불필요한 공간의 사용 차단**\
+9. **불필요한 공간의 사용 차단**\
    비슷한 값을 가진 데이터를 모두 하나로 합쳐 메모리 사용량을 줄입니다.
 - **[Plazma에 대해 더 알아보고 싶다면?](https://docs.plazmamc.org/v/ko/plazma/about/patches-list)**
 
@@ -93,13 +98,14 @@ Plazma may cause **<u>unexpected problems</u>**, so be sure to test it thoroughl
    [Purpur](https://github.com/PurpurMC/Purpur) included in Plazma allows modification of various game attributes.
 4. **Secure server gameplay**\
    Includes [FreedomChat](https://github.com/ocelotpotpie/FreedomChat/)[^ncr] to disable Mojang's chat reporting feature introduced in 1.19, and completely removes diagnostic information collectors for a traceless, secure server gameplay.
-5. **Fastest updates**\
-   [AlwaysUpToDate](https://github.com/PlazmaMC/AlwaysUpToDate) ensures that Plazma's included patches are always kept up to date, providing the fastest updates among Paper-based server platforms.
-6. **Optimized default configuration files**\
+5. ~~**Fastest updates**~~\
+   ~~[AlwaysUpToDate](https://github.com/PlazmaMC/AlwaysUpToDate) ensures that Plazma's included patches are always kept up to date, providing the fastest updates among Paper-based server platforms.~~
+   Due to Paper's [Hardfork](https://forums.papermc.io/threads/the-future-of-paper-hard-fork.1451/), this feature is disabled temporary
+7. **Optimized default configuration files**\
    The default configuration files are optimized, eliminating the need for manual optimization.
-7. **Systematically functioning multithreading**\
+8. **Systematically functioning multithreading**\
    Asynchronously synchronizing system mechanisms unrelated to game mechanics to reduce latencry and optimize the server.
-8. **Blocking unnecessary space usage**\
+9. **Blocking unnecessary space usage**\
    Consolidating data with similar values reduces memory usage.
 - **[Want to learn more about Plazma?](https://docs.plazmamc.org/plazma/about/patches-list)**
 
