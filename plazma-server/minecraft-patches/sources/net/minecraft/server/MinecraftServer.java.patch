@@ -1,13 +1,5 @@
 --- a/net/minecraft/server/MinecraftServer.java
 +++ b/net/minecraft/server/MinecraftServer.java
-@@ -18,6 +_,7 @@
- import it.unimi.dsi.fastutil.objects.ObjectArraySet;
- import java.awt.image.BufferedImage;
- import java.io.ByteArrayOutputStream;
-+import java.io.File;
- import java.io.IOException;
- import java.io.Writer;
- import java.lang.management.ManagementFactory;
 @@ -174,24 +_,26 @@
  import org.slf4j.Logger;
  
@@ -237,7 +229,7 @@
          Runtime.getRuntime().addShutdownHook(new org.bukkit.craftbukkit.util.ServerShutdownThread(this));
          // CraftBukkit end
          this.paperConfigurations = services.paperConfigurations(); // Paper - add paper configuration files
-+        this.plazmaConfigurations = services.plazmaConfigurations();
++        this.plazmaConfigurations = services.plazmaConfigurations(); // Plazma - Configurable Plazma
      }
  
      private void readScoreboard(DimensionDataStorage dataStorage) {
@@ -383,7 +375,7 @@
  
      public String getLocalIp() {
 -        return this.localIp;
-+        return (this.localIp == null) ? "" : this.localIp;
++        return (this.localIp == null) ? "" : this.localIp; // Plazma - Null safety
      }
  
      public void setLocalIp(String localIp) {
@@ -392,10 +384,10 @@
      // Paper start - Further improve server tick loop
      private static final long SEC_IN_NANO = 1000000000;
 -    private static final long MAX_CATCHUP_BUFFER = TICK_TIME * TPS * 60L;
-+    //private static final long MAX_CATCHUP_BUFFER = TICK_TIME * TPS * 60L;
++    //private static final long MAX_CATCHUP_BUFFER = TICK_TIME * TPS * 60L; // Plazma
      private long lastTick = 0;
 -    private long catchupTime = 0;
-+    //private long catchupTime = 0;
++    //private long catchupTime = 0; // Plazma
      public final RollingAverage tps5s = new RollingAverage(5); // Purpur - Add 5 second tps average in /tps
      public final RollingAverage tps1 = new RollingAverage(60);
      public final RollingAverage tps5 = new RollingAverage(60 * 5);
@@ -430,8 +422,8 @@
          Optional<Path> optional = Optional.of(this.getFile("server-icon.png"))
 -            .filter(path -> Files.isRegularFile(path))
 -            .or(() -> this.storageSource.getIconFile().filter(path -> Files.isRegularFile(path)));
-+            .filter(Files::isRegularFile)
-+            .or(() -> this.storageSource.getIconFile().filter(Files::isRegularFile));
++            .filter(Files::isRegularFile) // Plazma - Use modern method
++            .or(() -> this.storageSource.getIconFile().filter(Files::isRegularFile)); // Plazma - Use modern method
          return optional.flatMap(path -> {
              try {
                  BufferedImage bufferedImage = ImageIO.read(path.toFile());
@@ -575,18 +567,18 @@
      @Override
      public int getPlayerCount() {
 -        return this.playerList.getPlayerCount();
-+        return this.getPlayerList().getPlayerCount();
++        return this.getPlayerList().getPlayerCount(); // Plazma - Null safety
      }
  
      @Override
      public int getMaxPlayers() {
 -        return this.playerList.getMaxPlayers();
-+        return this.getPlayerList().getMaxPlayers();
++        return this.getPlayerList().getMaxPlayers(); // Plazma - Null safety
      }
  
      public String[] getPlayerNames() {
 -        return this.playerList.getPlayerNamesArray();
-+        return this.getPlayerList().getPlayerNamesArray();
++        return this.getPlayerList().getPlayerNamesArray(); // Plazma - Null safety
      }
  
      @DontObfuscate
@@ -621,7 +613,7 @@
  
      public net.kyori.adventure.text.Component motd() {
 -        return this.motd;
-+        return Objects.requireNonNullElse(this.motd, net.kyori.adventure.text.Component.empty());
++        return Objects.requireNonNullElse(this.motd, net.kyori.adventure.text.Component.empty()); // Plazma - Null safety
      }
  
      public void motd(net.kyori.adventure.text.Component motd) {
@@ -630,7 +622,7 @@
  
      public PlayerList getPlayerList() {
 -        return this.playerList;
-+        return Objects.requireNonNull(this.playerList, "Server is not started yet");
++        return Objects.requireNonNull(this.playerList, "Server is not started yet"); // Plazma - Null safety
      }
  
      public void setPlayerList(PlayerList list) {
@@ -638,7 +630,7 @@
          this.playerIdleTimeout = idleTimeout;
      }
  
-+    @Nullable
++    @Nullable // Plazma - Null safety
      public MinecraftSessionService getSessionService() {
          return this.services.sessionService();
      }
@@ -646,7 +638,7 @@
          return this.services.profileKeySignatureValidator();
      }
  
-+    @Nullable
++    @Nullable // Plazma - Null safety
      public GameProfileRepository getProfileRepository() {
          return this.services.profileRepository();
      }
@@ -654,7 +646,7 @@
 -    @Nullable
      public GameProfileCache getProfileCache() {
 -        return this.services.profileCache();
-+        return Objects.requireNonNull(this.services.profileCache(), "Profile cache is null");
++        return Objects.requireNonNull(this.services.profileCache(), "Profile cache is null"); // Plazma - Null safety
      }
  
      @Nullable
@@ -680,7 +672,7 @@
  
      public GameRules getGameRules() {
 -        return this.overworld().getGameRules();
-+        return Objects.requireNonNull(this.overworld()).getGameRules();
++        return Objects.requireNonNull(this.overworld()).getGameRules(); // Plazma - Null safety
      }
  
      public CustomBossEvents getCustomBossEvents() {
@@ -691,7 +683,7 @@
 -            String property1 = System.getProperty("path.separator");
  
 -            for (String string : Splitter.on(property1).split(property)) {
-+            for (String string : Splitter.on(File.pathSeparator).split(property)) {
++            for (String string : Splitter.on(java.io.File.pathSeparator).split(property)) { // Plazma - Use modern method
                  bufferedWriter.write(string);
                  bufferedWriter.write("\n");
              }
