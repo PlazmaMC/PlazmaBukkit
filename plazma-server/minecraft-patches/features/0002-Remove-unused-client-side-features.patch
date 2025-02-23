@@ -353,6 +353,21 @@ index 626e9feb6a6e7a2cbc7c63e30ba4fb6b923e85c7..22050e61506e1f3c2f4998ac1e3de4a3
  
          return item;
      }
+diff --git a/net/minecraft/gametest/framework/GameTestServer.java b/net/minecraft/gametest/framework/GameTestServer.java
+index 54ca624a8194e7d1c0f3b1c0ddba81165523382c..4e5d6a16fbe6af3ff91c40ac0e639c685de10168 100644
+--- a/net/minecraft/gametest/framework/GameTestServer.java
++++ b/net/minecraft/gametest/framework/GameTestServer.java
+@@ -320,8 +320,10 @@ public class GameTestServer extends MinecraftServer {
+     }
+     // Paper end
+ 
++    /* // Plazma - Remove isClientSide on DedicatedServer
+     @Override
+     public boolean isSingleplayerOwner(GameProfile profile) {
+         return false;
+     }
++     */ // Plazma - Remove isClientSide on DedicatedServer
+ }
 diff --git a/net/minecraft/server/Main.java b/net/minecraft/server/Main.java
 index 6c54e929f87dd873e0713f5178c05e9c25eaa4c3..2012a1be002fadbbbc2ba75e184a8bdce56649a1 100644
 --- a/net/minecraft/server/Main.java
@@ -375,6 +390,48 @@ index 6c54e929f87dd873e0713f5178c05e9c25eaa4c3..2012a1be002fadbbbc2ba75e184a8bdc
              }
  
              // Purpur start - Add toggle for enchant level clamping - load config files early
+diff --git a/net/minecraft/server/MinecraftServer.java b/net/minecraft/server/MinecraftServer.java
+index ef5f1131e594036e318e2e1bdb0bf3d0abf8c0ab..9b5e0caf856d491e1062271bc190d26cbbb5302f 100644
+--- a/net/minecraft/server/MinecraftServer.java
++++ b/net/minecraft/server/MinecraftServer.java
+@@ -1896,6 +1896,7 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
+         this.port = port;
+     }
+ 
++    /* // Plazma - Remove isClientSide on DedicatedServer
+     @Nullable
+     public GameProfile getSingleplayerProfile() {
+         return this.singleplayerProfile;
+@@ -1908,6 +1909,7 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
+     public boolean isSingleplayer() {
+         return this.singleplayerProfile != null;
+     }
++     */ // Plazma - Remove isClientSide on DedicatedServer
+ 
+     protected void initializeKeyPair() {
+         LOGGER.info("Generating keypair");
+@@ -2450,10 +2452,12 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
+             ServerOpListEntry serverOpListEntry = this.getPlayerList().getOps().get(profile);
+             if (serverOpListEntry != null) {
+                 return serverOpListEntry.getLevel();
++                /* // Plazma - Remove isClientSide on DedicatedServer
+             } else if (this.isSingleplayerOwner(profile)) {
+                 return 4;
+             } else if (this.isSingleplayer()) {
+                 return this.getPlayerList().isAllowCommandsForAllPlayers() ? 4 : 0;
++                 */ // Plazma - Remove isClientSide on DedicatedServer
+             } else {
+                 return this.getOperatorUserPermissionLevel();
+             }
+@@ -2462,7 +2466,7 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
+         }
+     }
+ 
+-    public abstract boolean isSingleplayerOwner(GameProfile profile);
++    //public abstract boolean isSingleplayerOwner(GameProfile profile); // Plazma - Remove isClientSide on DedicatedServer
+ 
+     public void dumpServerProperties(Path path) throws IOException {
+     }
 diff --git a/net/minecraft/server/commands/JfrCommand.java b/net/minecraft/server/commands/JfrCommand.java
 index 5b32584379d946dc424c9d716fd0d9be5ddfdd64..cda646e0487087bd78a9bae64a2baa297e8f6094 100644
 --- a/net/minecraft/server/commands/JfrCommand.java
@@ -398,8 +455,62 @@ index 5b32584379d946dc424c9d716fd0d9be5ddfdd64..cda646e0487087bd78a9bae64a2baa29
              throw START_FAILED.create();
          } else {
              source.sendSuccess(() -> Component.translatable("commands.jfr.started"), false);
+diff --git a/net/minecraft/server/commands/KickCommand.java b/net/minecraft/server/commands/KickCommand.java
+index 96a85803ceae7054a60067de4ec2116a35720e66..7e2bca85bc6a0d20c1f7ba6605b56b29deb09914 100644
+--- a/net/minecraft/server/commands/KickCommand.java
++++ b/net/minecraft/server/commands/KickCommand.java
+@@ -47,11 +47,11 @@ public class KickCommand {
+             int i = 0;
+ 
+             for (ServerPlayer serverPlayer : players) {
+-                if (!source.getServer().isSingleplayerOwner(serverPlayer.getGameProfile())) {
++                //if (!source.getServer().isSingleplayerOwner(serverPlayer.getGameProfile())) { // Plazma - Remove isClientSide on DedicatedServer
+                     serverPlayer.connection.disconnect(reason, org.bukkit.event.player.PlayerKickEvent.Cause.KICK_COMMAND); // Paper - kick event cause
+                     source.sendSuccess(() -> Component.translatable("commands.kick.success", serverPlayer.getDisplayName(), reason), true);
+                     i++;
+-                }
++                //} // Plazma - Remove isClientSide on DedicatedServer
+             }
+ 
+             if (i == 0) {
+diff --git a/net/minecraft/server/dedicated/DedicatedServer.java b/net/minecraft/server/dedicated/DedicatedServer.java
+index a1fdae645d1c7a8716690546c360b4dfa01c7c47..1621a15229cf6baff9c062600a7c83cc6c6eec60 100644
+--- a/net/minecraft/server/dedicated/DedicatedServer.java
++++ b/net/minecraft/server/dedicated/DedicatedServer.java
+@@ -136,13 +136,11 @@ public class DedicatedServer extends MinecraftServer implements ServerInterface
+ 
+         LOGGER.info("Loading properties");
+         DedicatedServerProperties properties = this.settings.getProperties();
+-        if (this.isSingleplayer()) {
+-            this.setLocalIp("127.0.0.1");
+-        } else {
+-            this.setUsesAuthentication(properties.onlineMode);
+-            this.setPreventProxyConnections(properties.preventProxyConnections);
+-            this.setLocalIp(properties.serverIp);
+-        }
++        // Plazma start - Remove isClientSide on DedicatedServer
++        this.setUsesAuthentication(properties.onlineMode);
++        this.setPreventProxyConnections(properties.preventProxyConnections);
++        this.setLocalIp(properties.serverIp);
++        // Plazma end - Remove isClientSide on DedicatedServer
+ 
+         // Spigot start
+         this.setPlayerList(new DedicatedPlayerList(this, this.registries(), this.playerDataStorage));
+@@ -730,10 +728,12 @@ public class DedicatedServer extends MinecraftServer implements ServerInterface
+         SkullBlockEntity.clear();
+     }
+ 
++    /* // Plazma - Remove isClientSide on DedicatedServer
+     @Override
+     public boolean isSingleplayerOwner(GameProfile profile) {
+         return false;
+     }
++     */ // Plazma - Remove isClientSide on DedicatedServer
+ 
+     @Override
+     public int getScaledTrackingDistance(int trackingDistance) {
 diff --git a/net/minecraft/server/level/ServerLevel.java b/net/minecraft/server/level/ServerLevel.java
-index 1b983393fcb170829f981cf0ab1620d92c80ab1d..be4e3533590cd36bbed6f17f3be5941e70f40b8a 100644
+index 1b983393fcb170829f981cf0ab1620d92c80ab1d..6cfc57fbaea4203630fea50bba0441efcb97da2c 100644
 --- a/net/minecraft/server/level/ServerLevel.java
 +++ b/net/minecraft/server/level/ServerLevel.java
 @@ -597,7 +597,7 @@ public class ServerLevel extends Level implements ServerEntityGetter, WorldGenLe
@@ -411,6 +522,29 @@ index 1b983393fcb170829f981cf0ab1620d92c80ab1d..be4e3533590cd36bbed6f17f3be5941e
              isDebug,
              biomeZoomSeed,
              server.getMaxChainedNeighborUpdates(),
+@@ -674,9 +674,7 @@ public class ServerLevel extends Level implements ServerEntityGetter, WorldGenLe
+         this.prepareWeather();
+         this.getWorldBorder().setAbsoluteMaxSize(server.getAbsoluteMaxWorldSize());
+         this.raids = this.getDataStorage().computeIfAbsent(Raids.factory(this), Raids.getFileId(this.dimensionTypeRegistration()));
+-        if (!server.isSingleplayer()) {
+-            serverLevelData.setGameType(server.getDefaultGameType());
+-        }
++        serverLevelData.setGameType(server.getDefaultGameType()); // Plazma - Remove isClientSide on DedicatedServer
+ 
+         long seed = server.getWorldData().worldGenOptions().seed();
+         this.structureCheck = new StructureCheck(
+@@ -1131,9 +1129,11 @@ public class ServerLevel extends Level implements ServerEntityGetter, WorldGenLe
+             return;
+         }
+ 
++        /* // Plazma - Remove isClientSide on DedicatedServer
+         if (this.getServer().isSingleplayer() && !this.getServer().isPublished()) {
+             return;
+         }
++         */ // Plazma - Remove isClientSide on DedicatedServer
+ 
+         int _int = this.getGameRules().getInt(GameRules.RULE_PLAYERS_SLEEPING_PERCENTAGE);
+         Component component;
 diff --git a/net/minecraft/server/level/WorldGenRegion.java b/net/minecraft/server/level/WorldGenRegion.java
 index 3ba4b970c3781ab89a60687ec41ffb1e6297c9f9..c3f9c65052713c177169a6367d2b5e306af2209c 100644
 --- a/net/minecraft/server/level/WorldGenRegion.java
@@ -428,6 +562,183 @@ index 3ba4b970c3781ab89a60687ec41ffb1e6297c9f9..c3f9c65052713c177169a6367d2b5e30
  
      @Deprecated
      @Override
+diff --git a/net/minecraft/server/network/ServerCommonPacketListenerImpl.java b/net/minecraft/server/network/ServerCommonPacketListenerImpl.java
+index 398c1733824b689520170de0be94006731afa5cd..1e433543ad0e364ca4a18565aa22d48d9ca8a49c 100644
+--- a/net/minecraft/server/network/ServerCommonPacketListenerImpl.java
++++ b/net/minecraft/server/network/ServerCommonPacketListenerImpl.java
+@@ -106,10 +106,12 @@ public abstract class ServerCommonPacketListenerImpl implements ServerCommonPack
+ 
+     public void onDisconnect(DisconnectionDetails info, @Nullable net.kyori.adventure.text.Component quitMessage) {
+         // Paper end - Fix kick event leave message not being sent
++        /* // Plazma - Remove isClientSide on DedicatedServer
+         if (this.isSingleplayerOwner()) {
+             LOGGER.info("Stopping singleplayer server as player logged out");
+             this.server.halt(false);
+         }
++         */ // Plazma - Remove isClientSide on DedicatedServer
+     }
+ 
+     @Override
+@@ -134,7 +136,7 @@ public abstract class ServerCommonPacketListenerImpl implements ServerCommonPack
+             int i = (int)(Util.getMillis() - this.keepAliveTime);
+             this.latency = (this.latency * 3 + i) / 4;
+             this.keepAlivePending = false;
+-        } else if (!this.isSingleplayerOwner()) {
++        } else { //if (!this.isSingleplayerOwner()) { // Plazma - Remove isClientSide on DedicatedServer
+             this.disconnectAsync(TIMEOUT_DISCONNECTION_MESSAGE, org.bukkit.event.player.PlayerKickEvent.Cause.TIMEOUT); // Paper - add proper async disconnect
+         }
+     }
+@@ -273,7 +275,7 @@ public abstract class ServerCommonPacketListenerImpl implements ServerCommonPack
+         } else
+         // Purpur end - Alternative Keepalive Handling
+ 
+-        if (!this.isSingleplayerOwner() && elapsedTime >= 15000L) { // use vanilla's 15000L between keep alive packets
++        if (/*!this.isSingleplayerOwner() &&*/ elapsedTime >= 15000L) { // use vanilla's 15000L between keep alive packets // Plazma - Remove isClientSide on DedicatedServer
+             if (this.keepAlivePending) {
+                 if (!this.processedDisconnect && elapsedTime >= KEEPALIVE_LIMIT) { // check keepalive limit, don't fire if already disconnected
+                     this.disconnect(TIMEOUT_DISCONNECTION_MESSAGE, org.bukkit.event.player.PlayerKickEvent.Cause.TIMEOUT); // Paper - kick event cause
+@@ -442,9 +444,11 @@ public abstract class ServerCommonPacketListenerImpl implements ServerCommonPack
+     }
+     // Paper end - add proper async disconnect
+ 
++    /* // Plazma - Remove isClientSide on DedicatedServer
+     protected boolean isSingleplayerOwner() {
+         return this.server.isSingleplayerOwner(this.playerProfile());
+     }
++     */ // Plazma - Remove isClientSide on DedicatedServer
+ 
+     protected abstract GameProfile playerProfile();
+ 
+diff --git a/net/minecraft/server/network/ServerGamePacketListenerImpl.java b/net/minecraft/server/network/ServerGamePacketListenerImpl.java
+index 43b541df2ce2441dd6383e23768b98caeaacfb11..836a900df1b3e3aac57ef06d59901793d923866a 100644
+--- a/net/minecraft/server/network/ServerGamePacketListenerImpl.java
++++ b/net/minecraft/server/network/ServerGamePacketListenerImpl.java
+@@ -808,7 +808,7 @@ public class ServerGamePacketListenerImpl
+     public void handleCustomCommandSuggestions(ServerboundCommandSuggestionPacket packet) {
+         // PacketUtils.ensureRunningOnSameThread(packet, this, this.player.serverLevel()); // Paper - AsyncTabCompleteEvent; run this async
+         // CraftBukkit start
+-        if (!this.tabSpamThrottler.isIncrementAndUnderThreshold() && !this.server.getPlayerList().isOp(this.player.getGameProfile()) && !this.server.isSingleplayerOwner(this.player.getGameProfile())) { // Paper - configurable tab spam limits
++        if (!this.tabSpamThrottler.isIncrementAndUnderThreshold() && !this.server.getPlayerList().isOp(this.player.getGameProfile()) /*&& !this.server.isSingleplayerOwner(this.player.getGameProfile())*/) { // Paper - configurable tab spam limits // Plazma - Remove isClientSide on DedicatedServer
+             this.disconnectAsync(Component.translatable("disconnect.spam"), org.bukkit.event.player.PlayerKickEvent.Cause.SPAM); // Paper - Kick event cause // Paper - add proper async disconnect
+             return;
+         }
+@@ -2600,7 +2600,7 @@ public class ServerGamePacketListenerImpl
+         if (!this.chatSpamThrottler.isIncrementAndUnderThreshold()
+             // CraftBukkit end
+             && !this.server.getPlayerList().isOp(this.player.getGameProfile())
+-            && !this.server.isSingleplayerOwner(this.player.getGameProfile())) {
++            /*&& !this.server.isSingleplayerOwner(this.player.getGameProfile())*/) { // Plazma - Remove isClientSide on DedicatedServer
+             this.disconnectAsync(Component.translatable("disconnect.spam"), org.bukkit.event.player.PlayerKickEvent.Cause.SPAM); // Paper - kick event cause & add proper async disconnect
+         }
+     }
+@@ -3597,15 +3597,17 @@ public class ServerGamePacketListenerImpl
+     @Override
+     public void handleChangeDifficulty(ServerboundChangeDifficultyPacket packet) {
+         PacketUtils.ensureRunningOnSameThread(packet, this, this.player.serverLevel());
++        /* // Plazma - Remove isClientSide on DedicatedServer
+         if (this.player.hasPermissions(2) || this.isSingleplayerOwner()) {
+             // this.server.setDifficulty(packet.getDifficulty(), false); // Paper - per level difficulty; don't allow clients to change this
+         }
++         */ // Plazma - Remove isClientSide on DedicatedServer
+     }
+ 
+     @Override
+     public void handleLockDifficulty(ServerboundLockDifficultyPacket packet) {
+         PacketUtils.ensureRunningOnSameThread(packet, this, this.player.serverLevel());
+-        if (this.player.hasPermissions(2) || this.isSingleplayerOwner()) {
++        if (this.player.hasPermissions(2) /*|| this.isSingleplayerOwner()*/) { // Plazma - Remove isClientSide on DedicatedServer
+             this.server.setDifficultyLocked(packet.isLocked());
+         }
+     }
+diff --git a/net/minecraft/server/network/ServerLoginPacketListenerImpl.java b/net/minecraft/server/network/ServerLoginPacketListenerImpl.java
+index 45ea5fa0ef57724acce46008c53f7fa216cf78ee..d530c9492dcb7a9eac2470ff8bfcb922dd6d3155 100644
+--- a/net/minecraft/server/network/ServerLoginPacketListenerImpl.java
++++ b/net/minecraft/server/network/ServerLoginPacketListenerImpl.java
+@@ -179,10 +179,11 @@ public class ServerLoginPacketListenerImpl implements ServerLoginPacketListener,
+         }
+         // Paper end - Validate usernames
+         this.requestedUsername = packet.name();
++        /* // Plazma - Remove isClientSide on DedicatedServer
+         GameProfile singleplayerProfile = this.server.getSingleplayerProfile();
+         if (singleplayerProfile != null && this.requestedUsername.equalsIgnoreCase(singleplayerProfile.getName())) {
+             this.startClientVerification(singleplayerProfile);
+-        } else {
++        } else*/ { // Plazma - Remove isClientSide on DedicatedServer
+             if (this.server.usesAuthentication() && !this.connection.isMemoryConnection()) {
+                 this.state = ServerLoginPacketListenerImpl.State.KEY;
+                 this.connection.send(new ClientboundHelloPacket("", this.server.getKeyPair().getPublic().getEncoded(), this.challenge, true));
+@@ -303,21 +304,25 @@ public class ServerLoginPacketListenerImpl implements ServerLoginPacketListener,
+                         // CraftBukkit end
+                         ServerLoginPacketListenerImpl.LOGGER.info("UUID of player {} is {}", gameProfile.getName(), gameProfile.getId());
+                         ServerLoginPacketListenerImpl.this.startClientVerification(gameProfile);
++                        /* // Plazma - Remove isClientSide on DedicatedServer
+                     } else if (ServerLoginPacketListenerImpl.this.server.isSingleplayer()) {
+                         ServerLoginPacketListenerImpl.LOGGER.warn("Failed to verify username but will let them in anyway!");
+                         ServerLoginPacketListenerImpl.this.startClientVerification(ServerLoginPacketListenerImpl.this.createOfflineProfile(string1)); // Spigot
++                         */ // Plazma - Remove isClientSide on DedicatedServer
+                     } else {
+                         ServerLoginPacketListenerImpl.this.disconnect(org.purpurmc.purpur.PurpurConfig.unverifiedUsername.equals("default") ? Component.translatable("multiplayer.disconnect.unverified_username") : io.papermc.paper.adventure.PaperAdventure.asVanilla(net.kyori.adventure.text.minimessage.MiniMessage.miniMessage().deserialize(org.purpurmc.purpur.PurpurConfig.unverifiedUsername))); // Purpur - Config for unverified username message
+                         ServerLoginPacketListenerImpl.LOGGER.error("Username '{}' tried to join with an invalid session", string1);
+                     }
+                 } catch (AuthenticationUnavailableException var4) {
++                    /* // Plazma - Remove isClientSide on DedicatedServer
+                     if (ServerLoginPacketListenerImpl.this.server.isSingleplayer()) {
+                         ServerLoginPacketListenerImpl.LOGGER.warn("Authentication servers are down but will let them in anyway!");
+                         ServerLoginPacketListenerImpl.this.startClientVerification(ServerLoginPacketListenerImpl.this.createOfflineProfile(string1)); // Spigot
+                     } else {
++                     */ // Plazma - Remove isClientSide on DedicatedServer
+                         ServerLoginPacketListenerImpl.this.disconnect(io.papermc.paper.adventure.PaperAdventure.asVanilla(io.papermc.paper.configuration.GlobalConfiguration.get().messages.kick.authenticationServersDown)); // Paper - Configurable kick message
+                         ServerLoginPacketListenerImpl.LOGGER.error("Couldn't verify username because servers are unavailable");
+-                    }
++                    //} // Plazma - Remove isClientSide on DedicatedServer
+                     // CraftBukkit start - catch all exceptions
+                 } catch (Exception ex) {
+                     ServerLoginPacketListenerImpl.this.disconnect("Failed to verify username!");
+diff --git a/net/minecraft/server/players/OldUsersConverter.java b/net/minecraft/server/players/OldUsersConverter.java
+index 7dbcd9d96f052bb10127ad2b061154c23cc9ffd4..a1c72fe770cbbd02822eef073b9862ddd040c993 100644
+--- a/net/minecraft/server/players/OldUsersConverter.java
++++ b/net/minecraft/server/players/OldUsersConverter.java
+@@ -247,7 +247,7 @@ public class OldUsersConverter {
+             Optional<UUID> optional = server.getProfileCache().get(username).map(GameProfile::getId);
+             if (optional.isPresent()) {
+                 return optional.get();
+-            } else if (!server.isSingleplayer() && server.usesAuthentication()) {
++            } else if (/*!server.isSingleplayer() &&*/ server.usesAuthentication()) { // Plazma - Remove isClientSide on DedicatedServer
+                 final List<GameProfile> list = Lists.newArrayList();
+                 ProfileLookupCallback profileLookupCallback = new ProfileLookupCallback() {
+                     @Override
+diff --git a/net/minecraft/server/players/PlayerList.java b/net/minecraft/server/players/PlayerList.java
+index e8ff6e79ce7ba0ec8b2a90bcb81283f52106c535..89c9333f39885c842c267c7609929c2ed79d6b5d 100644
+--- a/net/minecraft/server/players/PlayerList.java
++++ b/net/minecraft/server/players/PlayerList.java
+@@ -468,17 +468,7 @@ public abstract class PlayerList {
+     }
+ 
+     public Optional<CompoundTag> load(ServerPlayer player) {
+-        CompoundTag loadedPlayerTag = this.server.getWorldData().getLoadedPlayerTag();
+-        Optional<CompoundTag> optional;
+-        if (this.server.isSingleplayerOwner(player.getGameProfile()) && loadedPlayerTag != null) {
+-            optional = Optional.of(loadedPlayerTag);
+-            player.load(loadedPlayerTag);
+-            LOGGER.debug("loading single player");
+-        } else {
+-            optional = this.playerIo.load(player);
+-        }
+-
+-        return optional;
++        return this.playerIo.load(player); // Plazma - Remove isClientSide on DedicatedServer
+     }
+ 
+     protected void save(ServerPlayer player) {
+@@ -1074,7 +1064,7 @@ public abstract class PlayerList {
+ 
+     public boolean isOp(GameProfile profile) {
+         return this.ops.contains(profile)
+-            || this.server.isSingleplayerOwner(profile) && this.server.getWorldData().isAllowCommands()
++            //|| this.server.isSingleplayerOwner(profile) && this.server.getWorldData().isAllowCommands() // Plazma - Remove isClientSide on DedicatedServer
+             || this.allowCommandsForAllPlayers;
+     }
+ 
 diff --git a/net/minecraft/util/profiling/jfr/Environment.java b/net/minecraft/util/profiling/jfr/Environment.java
 deleted file mode 100644
 index 2b27173c700dbd9f418d470ca5ce81eadf0bb8ce..0000000000000000000000000000000000000000
@@ -993,7 +1304,7 @@ index f003a65b34027dff14455860815c7d719c5289fa..89a360c1121418d650b2749621f94595
  
          this.life--;
 diff --git a/net/minecraft/world/entity/LivingEntity.java b/net/minecraft/world/entity/LivingEntity.java
-index f37d77c98f6bc0a6113ff5896c7ee6e401df6e30..70f848346a13b3aedb4c0787b7bdc62b8733f885 100644
+index f3e93fa5ff257701ea909c7f4d4a8555fcda1f60..6e9fdb286efacd5e0310316d9f07e0ed3bab40b8 100644
 --- a/net/minecraft/world/entity/LivingEntity.java
 +++ b/net/minecraft/world/entity/LivingEntity.java
 @@ -450,7 +450,7 @@ public abstract class LivingEntity extends Entity implements Attackable {
@@ -1132,7 +1443,7 @@ index f37d77c98f6bc0a6113ff5896c7ee6e401df6e30..70f848346a13b3aedb4c0787b7bdc62b
      }
  
      private void refreshDirtyAttributes() {
-@@ -1736,6 +1736,7 @@ public abstract class LivingEntity extends Entity implements Attackable {
+@@ -1737,6 +1737,7 @@ public abstract class LivingEntity extends Entity implements Attackable {
  
      private void breakItem(ItemStack stack) {
          if (!stack.isEmpty()) {
@@ -1140,7 +1451,7 @@ index f37d77c98f6bc0a6113ff5896c7ee6e401df6e30..70f848346a13b3aedb4c0787b7bdc62b
              if (!this.isSilent()) {
                  this.level()
                      .playLocalSound(
-@@ -1749,6 +1750,7 @@ public abstract class LivingEntity extends Entity implements Attackable {
+@@ -1750,6 +1751,7 @@ public abstract class LivingEntity extends Entity implements Attackable {
                          false
                      );
              }
@@ -1148,7 +1459,7 @@ index f37d77c98f6bc0a6113ff5896c7ee6e401df6e30..70f848346a13b3aedb4c0787b7bdc62b
  
              this.spawnItemParticles(stack, 5);
          }
-@@ -1795,7 +1797,7 @@ public abstract class LivingEntity extends Entity implements Attackable {
+@@ -1796,7 +1798,7 @@ public abstract class LivingEntity extends Entity implements Attackable {
                          this.stopSleeping();
                      }
  
@@ -1157,7 +1468,7 @@ index f37d77c98f6bc0a6113ff5896c7ee6e401df6e30..70f848346a13b3aedb4c0787b7bdc62b
                          if (org.spigotmc.SpigotConfig.logNamedDeaths) LivingEntity.LOGGER.info("Named entity {} died: {}", this, this.getCombatTracker().getDeathMessage().getString()); // Spigot
                      }
  
-@@ -2626,9 +2628,11 @@ public abstract class LivingEntity extends Entity implements Attackable {
+@@ -2627,9 +2629,11 @@ public abstract class LivingEntity extends Entity implements Attackable {
              case 52:
                  this.breakItem(this.getItemBySlot(EquipmentSlot.FEET));
                  break;
@@ -1169,7 +1480,7 @@ index f37d77c98f6bc0a6113ff5896c7ee6e401df6e30..70f848346a13b3aedb4c0787b7bdc62b
              case 55:
                  this.swapHandItems();
                  break;
-@@ -2945,13 +2949,15 @@ public abstract class LivingEntity extends Entity implements Attackable {
+@@ -2948,13 +2952,15 @@ public abstract class LivingEntity extends Entity implements Attackable {
          MobEffectInstance effect = this.getEffect(MobEffects.LEVITATION);
          if (effect != null) {
              d += (0.05 * (effect.getAmplifier() + 1) - vec3.y) * 0.2;
@@ -1186,7 +1497,7 @@ index f37d77c98f6bc0a6113ff5896c7ee6e401df6e30..70f848346a13b3aedb4c0787b7bdc62b
  
          if (this.shouldDiscardFriction()) {
              this.setDeltaMovement(vec3.x, d, vec3.z);
-@@ -3019,10 +3025,10 @@ public abstract class LivingEntity extends Entity implements Attackable {
+@@ -3022,10 +3028,10 @@ public abstract class LivingEntity extends Entity implements Attackable {
          double d = deltaMovement.horizontalDistance();
          this.setDeltaMovement(this.updateFallFlyingMovement(deltaMovement));
          this.move(MoverType.SELF, this.getDeltaMovement());
@@ -1199,7 +1510,7 @@ index f37d77c98f6bc0a6113ff5896c7ee6e401df6e30..70f848346a13b3aedb4c0787b7bdc62b
      }
  
      private Vec3 updateFallFlyingMovement(Vec3 deltaMovement) {
-@@ -3179,41 +3185,41 @@ public abstract class LivingEntity extends Entity implements Attackable {
+@@ -3182,41 +3188,41 @@ public abstract class LivingEntity extends Entity implements Attackable {
          super.tick();
          this.updatingUsingItem();
          this.updateSwimAmount();
@@ -1267,7 +1578,7 @@ index f37d77c98f6bc0a6113ff5896c7ee6e401df6e30..70f848346a13b3aedb4c0787b7bdc62b
          if (!this.isRemoved()) {
              this.aiStep();
          }
-@@ -3535,14 +3541,12 @@ public abstract class LivingEntity extends Entity implements Attackable {
+@@ -3538,14 +3544,12 @@ public abstract class LivingEntity extends Entity implements Attackable {
              this.travel(vec3);
          }
  
@@ -1284,7 +1595,7 @@ index f37d77c98f6bc0a6113ff5896c7ee6e401df6e30..70f848346a13b3aedb4c0787b7bdc62b
              int ticksFrozen = this.getTicksFrozen();
              if (this.isInPowderSnow && this.canFreeze()) {
                  this.setTicksFrozen(Math.min(this.getTicksRequiredToFreeze(), ticksFrozen + 1));
-@@ -3634,36 +3638,40 @@ public abstract class LivingEntity extends Entity implements Attackable {
+@@ -3637,36 +3641,40 @@ public abstract class LivingEntity extends Entity implements Attackable {
  
      protected void updateFallFlying() {
          this.checkSlowFallDistance();
@@ -1348,7 +1659,7 @@ index f37d77c98f6bc0a6113ff5896c7ee6e401df6e30..70f848346a13b3aedb4c0787b7bdc62b
      }
  
      public boolean canGlide() {
-@@ -3751,7 +3759,7 @@ public abstract class LivingEntity extends Entity implements Attackable {
+@@ -3754,7 +3762,7 @@ public abstract class LivingEntity extends Entity implements Attackable {
              this.autoSpinAttackTicks = 0;
          }
  
@@ -1357,7 +1668,7 @@ index f37d77c98f6bc0a6113ff5896c7ee6e401df6e30..70f848346a13b3aedb4c0787b7bdc62b
              this.setLivingEntityFlag(4, false);
              this.autoSpinAttackDmg = 0.0F;
              this.autoSpinAttackItemStack = null;
-@@ -3780,7 +3788,7 @@ public abstract class LivingEntity extends Entity implements Attackable {
+@@ -3783,7 +3791,7 @@ public abstract class LivingEntity extends Entity implements Attackable {
          // Paper end - Force entity dismount during teleportation
          Entity vehicle = this.getVehicle();
          super.stopRiding(suppressCancellation); // Paper - Force entity dismount during teleportation
@@ -1366,7 +1677,7 @@ index f37d77c98f6bc0a6113ff5896c7ee6e401df6e30..70f848346a13b3aedb4c0787b7bdc62b
              this.dismountVehicle(vehicle);
          }
      }
-@@ -3852,7 +3860,7 @@ public abstract class LivingEntity extends Entity implements Attackable {
+@@ -3855,7 +3863,7 @@ public abstract class LivingEntity extends Entity implements Attackable {
  
      public void take(Entity entity, int amount) {
          if (!entity.isRemoved()
@@ -1375,7 +1686,7 @@ index f37d77c98f6bc0a6113ff5896c7ee6e401df6e30..70f848346a13b3aedb4c0787b7bdc62b
              && (entity instanceof ItemEntity || entity instanceof AbstractArrow || entity instanceof ExperienceOrb)) {
              ((ServerLevel)this.level()).getChunkSource().broadcastAndSend(this, new ClientboundTakeItemEntityPacket(entity.getId(), this.getId(), amount)); // Paper - broadcast with collector as source
          }
-@@ -3992,7 +4000,7 @@ public abstract class LivingEntity extends Entity implements Attackable {
+@@ -3995,7 +4003,7 @@ public abstract class LivingEntity extends Entity implements Attackable {
          // Paper start - lag compensate eating
          // we add 1 to the expected time to avoid lag compensating when we should not
          final boolean shouldLagCompensate = this.useItem.has(DataComponents.FOOD) && this.eatStartTime != -1 && (System.nanoTime() - this.eatStartTime) > ((1L + this.totalEatTimeTicks) * 50L * (1000L * 1000L));
@@ -1384,7 +1695,7 @@ index f37d77c98f6bc0a6113ff5896c7ee6e401df6e30..70f848346a13b3aedb4c0787b7bdc62b
              this.useItemRemaining = 0;
              // Paper end - lag compensate eating
              this.completeUsingItem();
-@@ -4032,22 +4040,23 @@ public abstract class LivingEntity extends Entity implements Attackable {
+@@ -4035,22 +4043,23 @@ public abstract class LivingEntity extends Entity implements Attackable {
              this.useItemRemaining = this.totalEatTimeTicks = itemInHand.getUseDuration(this);
              this.eatStartTime = System.nanoTime();
              // Paper end - lag compensate eating
@@ -1412,7 +1723,7 @@ index f37d77c98f6bc0a6113ff5896c7ee6e401df6e30..70f848346a13b3aedb4c0787b7bdc62b
              if (this.isUsingItem() && this.useItem.isEmpty()) {
                  this.useItem = this.getItemInHand(this.getUsedItemHand());
                  if (!this.useItem.isEmpty()) {
-@@ -4061,6 +4070,7 @@ public abstract class LivingEntity extends Entity implements Attackable {
+@@ -4064,6 +4073,7 @@ public abstract class LivingEntity extends Entity implements Attackable {
                  // Paper end - lag compensate eating
              }
          }
@@ -1420,7 +1731,7 @@ index f37d77c98f6bc0a6113ff5896c7ee6e401df6e30..70f848346a13b3aedb4c0787b7bdc62b
      }
  
      @Override
-@@ -4091,58 +4101,66 @@ public abstract class LivingEntity extends Entity implements Attackable {
+@@ -4094,58 +4104,66 @@ public abstract class LivingEntity extends Entity implements Attackable {
      }
  
      public void completeUsingItem() {
@@ -1533,7 +1844,7 @@ index f37d77c98f6bc0a6113ff5896c7ee6e401df6e30..70f848346a13b3aedb4c0787b7bdc62b
      }
  
      public void handleExtraItemsCreatedOnUse(ItemStack stack) {
-@@ -4173,13 +4191,13 @@ public abstract class LivingEntity extends Entity implements Attackable {
+@@ -4176,13 +4194,13 @@ public abstract class LivingEntity extends Entity implements Attackable {
      }
  
      public void stopUsingItem() {
@@ -1549,7 +1860,7 @@ index f37d77c98f6bc0a6113ff5896c7ee6e401df6e30..70f848346a13b3aedb4c0787b7bdc62b
  
          this.useItem = ItemStack.EMPTY;
          // Paper start - lag compensate eating
-@@ -4594,7 +4612,7 @@ public abstract class LivingEntity extends Entity implements Attackable {
+@@ -4597,7 +4615,7 @@ public abstract class LivingEntity extends Entity implements Attackable {
  
      @Override
      public boolean isCurrentlyGlowing() {
@@ -1559,7 +1870,7 @@ index f37d77c98f6bc0a6113ff5896c7ee6e401df6e30..70f848346a13b3aedb4c0787b7bdc62b
  
      @Override
 diff --git a/net/minecraft/world/entity/Mob.java b/net/minecraft/world/entity/Mob.java
-index 70ee86993d381445855ac7e7290da384d6675987..b786fef4c0e8c1c4ec043904a574b445deae695a 100644
+index deecd0894f1f4a12188f46a80690a57c2d9d94c8..1719945797b7f98d307135591805cd869c4acd21 100644
 --- a/net/minecraft/world/entity/Mob.java
 +++ b/net/minecraft/world/entity/Mob.java
 @@ -399,11 +399,7 @@ public abstract class Mob extends LivingEntity implements EquipmentUser, Leashab
@@ -10166,7 +10477,7 @@ index 481cb46973acb9785fdee5732e98aac560c6ec08..27ca4de54e03ca58a6aa675688113eef
      public boolean is(TagKey<Fluid> tag) {
          return this.getType().builtInRegistryHolder().is(tag);
 diff --git a/net/minecraft/world/level/material/LavaFluid.java b/net/minecraft/world/level/material/LavaFluid.java
-index f748c2af98a8dcd3d73023957c32957dfc70e426..4cc354be3e1cb7c8105fb3597f551f8209502231 100644
+index b5ff7828f3d56153934e51bd8e2722b260fae4cd..9d759bb9e832eba344550978d14d65c4f0f35d2b 100644
 --- a/net/minecraft/world/level/material/LavaFluid.java
 +++ b/net/minecraft/world/level/material/LavaFluid.java
 @@ -43,6 +43,7 @@ public abstract class LavaFluid extends FlowingFluid {
@@ -10186,7 +10497,7 @@ index f748c2af98a8dcd3d73023957c32957dfc70e426..4cc354be3e1cb7c8105fb3597f551f82
      @Override
      public void randomTick(ServerLevel level, BlockPos pos, FluidState state, RandomSource random) {
 diff --git a/net/minecraft/world/level/material/WaterFluid.java b/net/minecraft/world/level/material/WaterFluid.java
-index 9a59e23f8038e3ae539e35545a45eeb8ed710c8e..fe62c8f9905e256aaac0374f94926f306e4714a2 100644
+index eb233843183f2aaa3d58432a8eac8e3be94f95c8..ba0fb7aa9a3e87391089dc5ead349a611d1283df 100644
 --- a/net/minecraft/world/level/material/WaterFluid.java
 +++ b/net/minecraft/world/level/material/WaterFluid.java
 @@ -42,6 +42,7 @@ public abstract class WaterFluid extends FlowingFluid {
