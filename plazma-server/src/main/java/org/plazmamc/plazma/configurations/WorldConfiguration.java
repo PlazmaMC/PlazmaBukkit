@@ -5,7 +5,7 @@ import io.papermc.paper.configuration.Configurations;
 import net.minecraft.resources.ResourceLocation;
 import org.spongepowered.configurate.objectmapping.meta.Setting;
 
-@SuppressWarnings({"unused", "FieldCanBeLocal"})
+@SuppressWarnings({"unused", "InnerClassMayBeStatic", "FieldCanBeLocal"})
 public final class WorldConfiguration extends ConfigurationPart {
 
     static final int VERSION = 2;
@@ -17,5 +17,12 @@ public final class WorldConfiguration extends ConfigurationPart {
 
     @Setting(Configurations.VERSION_FIELD)
     int version = VERSION;
+
+    public Entity entity;
+    public class Entity extends ConfigurationPart {
+
+        public boolean populateLootTableOnlyForPlayerInteraction = OPTIMIZE;
+
+    }
 
 }

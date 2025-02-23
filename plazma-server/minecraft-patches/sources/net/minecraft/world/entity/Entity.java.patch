@@ -9,3 +9,78 @@
  
      public boolean collisionLoadChunks = false; // Paper
      private @Nullable org.bukkit.craftbukkit.entity.CraftEntity bukkitEntity;
+@@ -2187,35 +_,45 @@
+     }
+ 
+     public void push(Entity entity) {
+-        if (!this.isPassengerOfSameVehicle(entity)) {
+-            if (!entity.noPhysics && !this.noPhysics) {
+-                if (this.level.paperConfig().collisions.onlyPlayersCollide && !(entity instanceof ServerPlayer || this instanceof ServerPlayer)) return; // Paper - Collision option for requiring a player participant
+-                double d = entity.getX() - this.getX();
+-                double d1 = entity.getZ() - this.getZ();
+-                double max = Mth.absMax(d, d1);
+-                if (max >= 0.01F) {
+-                    max = Math.sqrt(max);
+-                    d /= max;
+-                    d1 /= max;
+-                    double d2 = 1.0 / max;
+-                    if (d2 > 1.0) {
+-                        d2 = 1.0;
+-                    }
+-
+-                    d *= d2;
+-                    d1 *= d2;
+-                    d *= 0.05F;
+-                    d1 *= 0.05F;
+-                    if (!this.isVehicle() && this.isPushable()) {
+-                        this.push(-d, 0.0, -d1);
+-                    }
+-
+-                    if (!entity.isVehicle() && entity.isPushable()) {
+-                        entity.push(d, 0.0, d1);
+-                    }
+-                }
+-            }
+-        }
++        // Plazma start - Swaps the predicate order of collision - Based on Akarin
++        if (entity.noPhysics || this.noPhysics || this.isPassengerOfSameVehicle(entity)) {
++            return;
++        }
++
++        if (this.level.paperConfig().collisions.onlyPlayersCollide && !(entity instanceof ServerPlayer || this instanceof ServerPlayer)) { // Paper - Collision option for requiring a player participant
++            return;
++        }
++
++        double dX = entity.getX() - this.getX();
++        double dZ = entity.getZ() - this.getZ();
++        double max = Mth.absMax(dX, dZ);
++        if (max < 0.01F) {
++            return;
++        }
++
++        max = Math.sqrt(max);
++        dX /= max;
++        dZ /= max;
++
++        double maxPercent = 1.0 / max;
++        if (maxPercent > 1.0) {
++            maxPercent = 1.0;
++        }
++
++        dX *= maxPercent;
++        dZ *= maxPercent;
++        dX *= 0.05F;
++        dZ *= 0.05F;
++
++        if (!this.isVehicle() && this.isPushable()) {
++            this.push(-dX, 0.0, -dZ);
++        }
++
++        if (!entity.isVehicle() && entity.isPushable()) {
++            entity.push(dX, 0.0, dZ);
++        }
++
++        // Plazma end - Swaps the predicate order of collision
+     }
+ 
+     public void push(Vec3 vector) {

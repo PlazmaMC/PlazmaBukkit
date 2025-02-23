@@ -86,6 +86,23 @@
  
          System.setOut(org.apache.logging.log4j.io.IoBuilder.forLogger(logger).setLevel(org.apache.logging.log4j.Level.INFO).buildPrintStream());
          System.setErr(org.apache.logging.log4j.io.IoBuilder.forLogger(logger).setLevel(org.apache.logging.log4j.Level.WARN).buildPrintStream());
+@@ -183,16 +_,6 @@
+             LOGGER.warn("To start the server with more ram, launch it as \"java -Xmx1024M -Xms1024M -jar minecraft_server.jar\"");
+         }
+ 
+-        // Paper start - detect running as root
+-        if (io.papermc.paper.util.ServerEnvironment.userIsRootOrAdmin()) {
+-            LOGGER.warn("****************************");
+-            LOGGER.warn("YOU ARE RUNNING THIS SERVER AS AN ADMINISTRATIVE OR ROOT USER. THIS IS NOT ADVISED.");
+-            LOGGER.warn("YOU ARE OPENING YOURSELF UP TO POTENTIAL RISKS WHEN DOING THIS.");
+-            LOGGER.warn("FOR MORE INFORMATION, SEE https://madelinemiller.dev/blog/root-minecraft-server/");
+-            LOGGER.warn("****************************");
+-        }
+-        // Paper end - detect running as root
+-
+         LOGGER.info("Loading properties");
+         DedicatedServerProperties properties = this.settings.getProperties();
+         if (this.isSingleplayer()) {
 @@ -208,6 +_,8 @@
          org.spigotmc.SpigotConfig.init((java.io.File) this.options.valueOf("spigot-settings"));
          org.spigotmc.SpigotConfig.registerCommands();
@@ -95,7 +112,7 @@
          io.papermc.paper.util.ObfHelper.INSTANCE.getClass(); // Paper - load mappings for stacktrace deobf and etc.
          // Purpur start - Configurable void damage height and damage
          try {
-@@ -218,10 +_,17 @@
+@@ -218,10 +_,27 @@
          }
          org.purpurmc.purpur.PurpurConfig.registerCommands();
          // Purpur end - Configurable void damage height and damage
@@ -109,6 +126,16 @@
 +        this.plazmaConfigurations.initializeGlobalConfiguration(this.registryAccess());
 +        this.plazmaConfigurations.initializeWorldDefaultsConfiguration(this.registryAccess());
 +        // Plazma end - Configurable Plazma
++
++        // Paper start - detect running as root // Plazma start - Tweak console logging (moved down)
++        if (org.plazmamc.plazma.Options.global().consoleLogs.rootUserWarning && io.papermc.paper.util.ServerEnvironment.userIsRootOrAdmin()) {
++            LOGGER.warn("****************************");
++            LOGGER.warn("YOU ARE RUNNING THIS SERVER AS AN ADMINISTRATIVE OR ROOT USER. THIS IS NOT ADVISED.");
++            LOGGER.warn("YOU ARE OPENING YOURSELF UP TO POTENTIAL RISKS WHEN DOING THIS.");
++            LOGGER.warn("FOR MORE INFORMATION, SEE https://madelinemiller.dev/blog/root-minecraft-server/");
++            LOGGER.warn("****************************");
++        }
++        // Paper end - detect running as root // Plazma end - Tweak console logging (moved down)
 +
          this.server.spark.enableEarlyIfRequested(); // Paper - spark
          // Paper start - fix converting txt to json file; convert old users earlier after PlayerList creation but before file load/save
@@ -140,7 +167,7 @@
          }
          // Purpur start - UPnP Port Forwarding
          if (org.purpurmc.purpur.PurpurConfig.useUPnP) {
-@@ -316,7 +_,6 @@
+@@ -316,44 +_,33 @@
          // Purpur end - UPnP Port Forwarding
  
          // CraftBukkit start
@@ -148,10 +175,38 @@
          this.server.loadPlugins();
          this.server.enablePlugins(org.bukkit.plugin.PluginLoadOrder.STARTUP);
          // CraftBukkit end
-@@ -342,18 +_,9 @@
-             LOGGER.warn("To change this, set \"online-mode\" to \"true\" in the server.properties file.");
-         }
  
+-        // Paper start - Add Velocity IP Forwarding Support
+-        boolean usingProxy = org.spigotmc.SpigotConfig.bungee || io.papermc.paper.configuration.GlobalConfiguration.get().proxies.velocity.enabled;
+-        String proxyFlavor = (io.papermc.paper.configuration.GlobalConfiguration.get().proxies.velocity.enabled) ? "Velocity" : "BungeeCord";
+-        String proxyLink = (io.papermc.paper.configuration.GlobalConfiguration.get().proxies.velocity.enabled) ? "https://docs.papermc.io/velocity/security" : "http://www.spigotmc.org/wiki/firewall-guide/";
+-        // Paper end - Add Velocity IP Forwarding Support
+-        if (!this.usesAuthentication()) {
+-            LOGGER.warn("**** SERVER IS RUNNING IN OFFLINE/INSECURE MODE!");
++        // Plazma start - Tweak console logging
++        final boolean usingVelocity = io.papermc.paper.configuration.GlobalConfiguration.get().proxies.velocity.enabled;
++        if (!this.usesAuthentication()
++            && org.plazmamc.plazma.Options.global().consoleLogs.offlineWarnings
++            && (!usingVelocity || !io.papermc.paper.configuration.GlobalConfiguration.get().proxies.velocity.onlineMode)
++        ) {
++            LOGGER.warn("********** SERVER IS RUNNING IN OFFLINE/INSECURE MODE! **********");
+             LOGGER.warn("The server will make no attempt to authenticate usernames. Beware.");
+-            // Spigot start
+-            // Paper start - Add Velocity IP Forwarding Support
+-            if (usingProxy) {
+-                LOGGER.warn("Whilst this makes it possible to use {}, unless access to your server is properly restricted, it also opens up the ability for hackers to connect with any username they choose.", proxyFlavor);
+-                LOGGER.warn("Please see {} for further information.", proxyLink);
+-                // Paper end - Add Velocity IP Forwarding Support
++            if (usingVelocity || org.spigotmc.SpigotConfig.bungee) {
++                LOGGER.warn("Whilst this makes it possible to use {}, unless access to your server is properly restricted, it also opens up the ability for hackers to connect with any username they choose.", usingVelocity ? "Velocity" : "BungeeCord");
++                LOGGER.warn("Please see {} for further information.", usingVelocity ? "https://docs.papermc.io/velocity/security" : "https://www.spigotmc.org/wiki/firewall-guide/");
+             } else {
+                 LOGGER.warn("While this makes the game possible to play without internet access, it also opens up the ability for hackers to connect with any username they choose.");
+             }
+-            // Spigot end
+             LOGGER.warn("To change this, set \"online-mode\" to \"true\" in the server.properties file.");
+-        }
+-
 -        // CraftBukkit start
 -        /*
 -        if (this.convertOldUsers()) {
@@ -159,7 +214,11 @@
 -        }
 -        */
 -        // CraftBukkit end
--
++            LOGGER.warn("Or, if you understand exactly about this problem, and if you are prepared measures for it, change the \"console-logs.offline-warnings\" to \"false\" in the config/plazma-global.yml file.");
++            LOGGER.warn("This can suppress this warning, but you still need to be careful about related issues.");
++        }
++        // Plazma end - Tweak console logging
+ 
          if (!OldUsersConverter.serverReadyAfterUserconversion(this)) {
              return false;
          } else {

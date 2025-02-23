@@ -65,9 +65,135 @@
  
              Path path = (Path) optionSet.valueOf("pidFile"); // CraftBukkit
              if (path != null) {
-@@ -243,12 +_,12 @@
+@@ -118,16 +_,20 @@
+             Bootstrap.bootStrap();
+             Bootstrap.validate();
+             Util.startTimerHackThread();
+-            Path path1 = Paths.get("server.properties");
++
++            Path serverProperties = Paths.get("server.properties"); // Plazma
+             DedicatedServerSettings dedicatedServerSettings = new DedicatedServerSettings(optionSet); // CraftBukkit - CLI argument support
+             dedicatedServerSettings.forceSave();
+             RegionFileVersion.configure(dedicatedServerSettings.getProperties().regionFileComression);
+-            Path path2 = Paths.get("eula.txt");
+-            Eula eula = new Eula(path2);
++
++            Path eulaTxt = Paths.get("eula.txt"); // Plazma
++            Eula eula = new Eula(eulaTxt); // Plazma
++
+             // Paper start - load config files early for access below if needed
+             org.bukkit.configuration.file.YamlConfiguration bukkitConfiguration = io.papermc.paper.configuration.PaperConfigurations.loadLegacyConfigFile((File) optionSet.valueOf("bukkit-settings"));
+             org.bukkit.configuration.file.YamlConfiguration spigotConfiguration = io.papermc.paper.configuration.PaperConfigurations.loadLegacyConfigFile((File) optionSet.valueOf("spigot-settings"));
+             // Paper end - load config files early for access below if needed
++
+             if (optionSet.has("initSettings")) { // CraftBukkit
+                 // CraftBukkit start - SPIGOT-5761: Create bukkit.yml and commands.yml if not present
+                 File configFile = (File) optionSet.valueOf("bukkit-settings");
+@@ -142,7 +_,7 @@
+                 commandsConfiguration.setDefaults(org.bukkit.configuration.file.YamlConfiguration.loadConfiguration(new java.io.InputStreamReader(Main.class.getClassLoader().getResourceAsStream("configurations/commands.yml"), com.google.common.base.Charsets.UTF_8)));
+                 commandsConfiguration.save(commandFile);
+                 // CraftBukkit end
+-                LOGGER.info("Initialized '{}' and '{}'", path1.toAbsolutePath(), path2.toAbsolutePath());
++                LOGGER.info("Initialized '{}' and '{}'", serverProperties.toAbsolutePath(), eulaTxt.toAbsolutePath()); // Plazma
+                 return;
              }
-             File mcMeta = new File(bukkitDataPackFolder, "pack.mcmeta");
+ 
+@@ -152,8 +_,7 @@
+                 LOGGER.error("You have used the Spigot command line EULA agreement flag.");
+                 LOGGER.error("By using this setting you are indicating your agreement to Mojang's EULA (https://aka.ms/MinecraftEULA).");
+                 LOGGER.error("If you do not agree to the above EULA please stop your server and remove this flag immediately.");
+-            }
+-            if (!eula.hasAgreedToEULA() && !eulaAgreed) {
++            } else if (!eula.hasAgreedToEULA()) { // Plazma
+                 // Spigot end
+                 LOGGER.info("You need to agree to the EULA in order to run the server. Go to eula.txt for more info.");
+                 return;
+@@ -171,27 +_,43 @@
+             }
+             // Paper end - Detect headless JRE
+ 
+-            org.spigotmc.SpigotConfig.disabledAdvancements = spigotConfiguration.getStringList("advancements.disabled"); // Paper - fix SPIGOT-5885, must be set early in init
+-
+             // Paper start - fix SPIGOT-5824
+-            File file;
+-            File userCacheFile = new File(Services.USERID_CACHE_FILE);
++            final File worldDir; // Plazma
+             if (optionSet.has("universe")) {
+-                file = (File) optionSet.valueOf("universe"); // CraftBukkit
+-                userCacheFile = new File(file, Services.USERID_CACHE_FILE);
++                worldDir = (File) optionSet.valueOf("universe"); // CraftBukkit // Plazma
+             } else {
+-                file = new File(bukkitConfiguration.getString("settings.world-container", "."));
++                worldDir = new File(bukkitConfiguration.getString("settings.world-container", ".")); // Plazma
+             }
+             // Paper end - fix SPIGOT-5824
+-            Services services = Services.create(new com.destroystokyo.paper.profile.PaperAuthenticationService(Proxy.NO_PROXY), file, userCacheFile, optionSet); // Paper - pass OptionSet to load paper config files; override authentication service; fix world-container
+-            // CraftBukkit start
+-            String string = Optional.ofNullable((String) optionSet.valueOf("world")).orElse(dedicatedServerSettings.getProperties().levelName);
+-            LevelStorageSource levelStorageSource = LevelStorageSource.createDefault(file.toPath());
+-            LevelStorageSource.LevelStorageAccess levelStorageAccess = levelStorageSource.validateAndCreateAccess(string, LevelStem.OVERWORLD);
+-            // CraftBukkit end
+-            Dynamic<?> dataTag;
++
++            // Plazma start - Configurable usercache.json file path
++            final File userCacheFile; // Plazma - Moved down
++            if (optionSet.has("usercache")) {
++                userCacheFile = (File) optionSet.valueOf("usercache");
++            } else {
++                final @Nullable String bukkit = bukkitConfiguration.getString("settings.user-cache");
++                if (bukkit != null && !bukkit.isBlank()) {
++                    userCacheFile = new File(bukkit);
++                } else {
++                    userCacheFile = new File(worldDir, Services.USERID_CACHE_FILE);
++                }
++            }
++            // Plazma end - Configurable usercache.json file path
++
++            org.spigotmc.SpigotConfig.disabledAdvancements = spigotConfiguration.getStringList("advancements.disabled"); // Paper - fix SPIGOT-5885, must be set early in init // Plazma - moved down
++            final Services services = Services.create(new com.destroystokyo.paper.profile.PaperAuthenticationService(Proxy.NO_PROXY), worldDir, userCacheFile, optionSet); // Paper - pass OptionSet to load paper config files; override authentication service; fix world-container // Plazma
++
++            // CraftBukkit start // Plazma start - Improve variable name
++            final String levelPrefix = Optional.ofNullable((String) optionSet.valueOf("world")).orElse(dedicatedServerSettings.getProperties().levelName);
++            final LevelStorageSource levelStorageSource = LevelStorageSource.createDefault(worldDir.toPath());
++            final LevelStorageSource.LevelStorageAccess levelStorageAccess = levelStorageSource.validateAndCreateAccess(levelPrefix, LevelStem.OVERWORLD);
++            // CraftBukkit end // Plazma end - Improve variable name
++
++            final Dynamic<?> dynamic; // Plazma - Moved up
+             if (levelStorageAccess.hasWorldData()) {
++                Dynamic<?> dataTag; // Plazma
+                 LevelSummary summary;
++
+                 try {
+                     dataTag = levelStorageAccess.getDataTag();
+                     summary = levelStorageAccess.getSummary(dataTag);
+@@ -225,163 +_,130 @@
+                     LOGGER.info("This world was created by an incompatible version.");
+                     return;
+                 }
++
++                dynamic = dataTag; // Plazma
+             } else {
+-                dataTag = null;
++                dynamic = null; // Plazma
+             }
+ 
+-            Dynamic<?> dynamic = dataTag;
+-            boolean hasOptionSpec = optionSet.has("safeMode"); // CraftBukkit
+-            if (hasOptionSpec) {
++            final PackRepository packRepository = ServerPacksSource.createPackRepository(levelStorageAccess); // Plazma - moved up
++            final boolean safeMode = optionSet.has("safeMode"); // CraftBukkit // Plazma
++            if (safeMode) { // Plazma
+                 LOGGER.warn("Safe mode active, only vanilla datapack will be loaded");
+             }
+ 
+-            PackRepository packRepository = ServerPacksSource.createPackRepository(levelStorageAccess);
+-            // CraftBukkit start
+-            File bukkitDataPackFolder = new File(levelStorageAccess.getLevelPath(net.minecraft.world.level.storage.LevelResource.DATAPACK_DIR).toFile(), "bukkit");
+-            if (!bukkitDataPackFolder.exists()) {
+-                bukkitDataPackFolder.mkdirs();
+-            }
+-            File mcMeta = new File(bukkitDataPackFolder, "pack.mcmeta");
++            // CraftBukkit start // Plazma start - Improve code quality
              try {
 -                com.google.common.io.Files.write("{\n"
 -                        + "    \"pack\": {\n"
@@ -75,19 +201,32 @@
 -                        + "        \"pack_format\": " + SharedConstants.getCurrentVersion().getPackVersion(net.minecraft.server.packs.PackType.SERVER_DATA) + "\n"
 -                        + "    }\n"
 -                        + "}\n", mcMeta, com.google.common.base.Charsets.UTF_8);
-+                com.google.common.io.Files.asCharSink(mcMeta, com.google.common.base.Charsets.UTF_8).write("{\n"
-+                    + "    \"pack\": {\n"
-+                    + "        \"description\": \"Data pack for resources provided by Bukkit plugins\",\n"
-+                    + "        \"pack_format\": " + SharedConstants.getCurrentVersion().getPackVersion(net.minecraft.server.packs.PackType.SERVER_DATA) + "\n"
-+                    + "    }\n"
-+                    + "}\n");
++                final File packDir = new File(levelStorageAccess.getLevelPath(net.minecraft.world.level.storage.LevelResource.DATAPACK_DIR).toFile(), "bukkit"); // Plazma
++                if (!packDir.exists() && !packDir.mkdirs()) {
++                    throw new IOException("Unable to create Bukkit datapack folder");
++                }
++
++                final File mcMeta = new File(packDir, "pack.mcmeta");
++                com.google.common.io.Files.asCharSink(mcMeta, com.google.common.base.Charsets.UTF_8).write(String.format("""
++                    {
++                        "pack": {
++                            "description": "Data pack for resources provided by Bukkit plugins",
++                            "pack_format": %s
++                        }
++                    }
++                    """, SharedConstants.getCurrentVersion().getPackVersion(net.minecraft.server.packs.PackType.SERVER_DATA)));
              } catch (java.io.IOException ex) {
                  throw new RuntimeException("Could not initialize Bukkit datapack", ex);
              }
-@@ -258,75 +_,53 @@
-             WorldStem worldStem;
+-            java.util.concurrent.atomic.AtomicReference<WorldLoader.DataLoadContext> worldLoader = new java.util.concurrent.atomic.AtomicReference<>();
+-            // CraftBukkit end
++            // CraftBukkit end // Plazma end - Improve code quality
+ 
+-            WorldStem worldStem;
++            final WorldStem worldStem; // Plazma
++            final java.util.concurrent.atomic.AtomicReference<WorldLoader.DataLoadContext> worldLoader = new java.util.concurrent.atomic.AtomicReference<>(); // Plazma - moved down
              try {
-                 WorldLoader.InitConfig initConfig = loadOrCreateConfig(dedicatedServerSettings.getProperties(), dynamic, hasOptionSpec, packRepository);
+-                WorldLoader.InitConfig initConfig = loadOrCreateConfig(dedicatedServerSettings.getProperties(), dynamic, hasOptionSpec, packRepository);
 -                worldStem = Util.<WorldStem>blockUntilDone(
 -                        executor -> WorldLoader.load(
 -                            initConfig,
@@ -144,6 +283,35 @@
 -                    "Failed to load datapacks, can't proceed with server load. You can either fix your datapacks or reset to vanilla with --safeMode",
 -                    (Throwable)var39
 -                );
+-                return;
+-            }
+-
+-            /*
+-            RegistryAccess.Frozen frozen = worldStem.registries().compositeAccess();
+-            boolean hasOptionSpec1 = optionSet.has(optionSpec6);
+-            if (optionSet.has(optionSpec4) || hasOptionSpec1) {
+-                forceUpgrade(levelStorageAccess, DataFixers.getDataFixer(), optionSet.has(optionSpec5), () -> true, frozen, hasOptionSpec1);
+-            }
+-
+-            WorldData worldData = worldStem.worldData();
+-            levelStorageAccess.saveDataTag(frozen, worldData);
+-            */
+-            Class.forName(net.minecraft.world.entity.npc.VillagerTrades.class.getName()); // Paper - load this sync so it won't fail later async
+-            final DedicatedServer dedicatedServer = MinecraftServer.spin(
+-                thread1 -> {
+-                    DedicatedServer dedicatedServer1 = new DedicatedServer(
+-                        // CraftBukkit start
+-                        optionSet,
+-                        worldLoader.get(),
+-                        thread1,
+-                        levelStorageAccess,
+-                        packRepository,
+-                        worldStem,
+-                        dedicatedServerSettings,
+-                        DataFixers.getDataFixer(),
+-                        services,
+-                        LoggerChunkProgressListener::createFromGameruleRadius
++                WorldLoader.InitConfig initConfig = loadOrCreateConfig(dedicatedServerSettings.getProperties(), dynamic, safeMode, packRepository); // Plazma
 +                worldStem = Util.blockUntilDone((executor) -> WorldLoader.load(initConfig, (context) -> {
 +                    worldLoader.set(context); // CraftBukkit
 +                    Registry<LevelStem> registry = context.datapackDimensions().lookupOrThrow(Registries.LEVEL_STEM);
@@ -184,49 +352,34 @@
 +                    return new WorldLoader.DataLoadOutput<>(
 +                        new PrimaryLevelData(levelSettings, worldOptions, complete.specialWorldProperty(), lifecycle),
 +                        complete.dimensionsRegistryAccess()
-+                    );
-+                }, WorldStem::new, Util.backgroundExecutor(), executor)).get();
-+            } catch (final Exception e) { // Plazma
-+                LOGGER.warn("Failed to load datapacks, can't proceed with server load. You can either fix your datapacks or reset to vanilla with --safeMode", e); // Plazma
-                 return;
-             }
- 
--            /*
--            RegistryAccess.Frozen frozen = worldStem.registries().compositeAccess();
--            boolean hasOptionSpec1 = optionSet.has(optionSpec6);
--            if (optionSet.has(optionSpec4) || hasOptionSpec1) {
--                forceUpgrade(levelStorageAccess, DataFixers.getDataFixer(), optionSet.has(optionSpec5), () -> true, frozen, hasOptionSpec1);
--            }
--
--            WorldData worldData = worldStem.worldData();
--            levelStorageAccess.saveDataTag(frozen, worldData);
--            */
-             Class.forName(net.minecraft.world.entity.npc.VillagerTrades.class.getName()); // Paper - load this sync so it won't fail later async
-             final DedicatedServer dedicatedServer = MinecraftServer.spin(
-                 thread1 -> {
-@@ -343,18 +_,12 @@
-                         services,
-                         LoggerChunkProgressListener::createFromGameruleRadius
                      );
 -                    /*
 -                    dedicatedServer1.setPort(optionSet.valueOf(optionSpec11));
 -                     */
-                     // Paper start
-                     if (optionSet.has("serverId")) {
-                         dedicatedServer1.setId((String) optionSet.valueOf("serverId"));
-                     }
-                     dedicatedServer1.setDemo(optionSet.has("demo"));
-                     // Paper end
+-                    // Paper start
+-                    if (optionSet.has("serverId")) {
+-                        dedicatedServer1.setId((String) optionSet.valueOf("serverId"));
+-                    }
+-                    dedicatedServer1.setDemo(optionSet.has("demo"));
+-                    // Paper end
 -                    /*
 -                    dedicatedServer1.setId(optionSet.valueOf(optionSpec12));
 -                     */
-                     boolean flag = !optionSet.has("nogui") && !optionSet.nonOptionArguments().contains("nogui");
-                     if (flag && !GraphicsEnvironment.isHeadless()) {
-                         dedicatedServer1.showGui();
-@@ -370,16 +_,6 @@
-                     return dedicatedServer1;
-                 }
-             );
+-                    boolean flag = !optionSet.has("nogui") && !optionSet.nonOptionArguments().contains("nogui");
+-                    if (flag && !GraphicsEnvironment.isHeadless()) {
+-                        dedicatedServer1.showGui();
+-                    }
+-
+-                    if (optionSet.has("port")) {
+-                        int port = (Integer) optionSet.valueOf("port");
+-                        if (port > 0) {
+-                            dedicatedServer1.setPort(port);
+-                        }
+-                    }
+-
+-                    return dedicatedServer1;
+-                }
+-            );
 -            /* CraftBukkit start
 -            Thread thread = new Thread("Server Shutdown Thread") {
 -                @Override
@@ -237,9 +390,56 @@
 -            thread.setUncaughtExceptionHandler(new DefaultUncaughtExceptionHandler(LOGGER));
 -            Runtime.getRuntime().addShutdownHook(thread);
 -            */ // CraftBukkit end
++                }, WorldStem::new, Util.backgroundExecutor(), executor)).get();
++            } catch (final Exception e) { // Plazma
++                LOGGER.warn("Failed to load datapacks, can't proceed with server load. You can either fix your datapacks or reset to vanilla with --safeMode", e); // Plazma
++                return;
++            }
++
++            Class.forName(net.minecraft.world.entity.npc.VillagerTrades.class.getName()); // Paper - load this sync so it won't fail later async
++
++            // Plazma start - Improve code quality
++            // noinspection resource
++            MinecraftServer.spin(thread -> {
++                final DedicatedServer server = new DedicatedServer(
++                    // CraftBukkit start
++                    optionSet,
++                    worldLoader.get(),
++                    thread,
++                    levelStorageAccess,
++                    packRepository,
++                    worldStem,
++                    dedicatedServerSettings,
++                    DataFixers.getDataFixer(),
++                    services,
++                    LoggerChunkProgressListener::createFromGameruleRadius
++                );
++
++                // Paper start
++                if (optionSet.has("serverId")) {
++                    server.setId((String) optionSet.valueOf("serverId"));
++                }
++                dedicatedServer1.setDemo(optionSet.has("demo"));
++                // Paper end
++
++                if (!optionSet.has("nogui") && !optionSet.nonOptionArguments().contains("nogui") && !GraphicsEnvironment.isHeadless()) {
++                    server.showGui();
++                }
++
++                if (optionSet.has("port")) {
++                    int port = (Integer) optionSet.valueOf("port");
++                    if (port > 0) server.setPort(port);
++                }
++
++                return server;
++            });
++            // Plazma end - Improve code quality
          } catch (Exception var42) {
-             LOGGER.error(LogUtils.FATAL_MARKER, "Failed to start the minecraft server", (Throwable)var42);
+-            LOGGER.error(LogUtils.FATAL_MARKER, "Failed to start the minecraft server", (Throwable)var42);
++            LOGGER.error(LogUtils.FATAL_MARKER, "Failed to start the minecraft server", var42); // Plazma - Remove unnecessary type casting
          }
+     }
+ 
 @@ -443,7 +_,7 @@
                  } else {
                      try {

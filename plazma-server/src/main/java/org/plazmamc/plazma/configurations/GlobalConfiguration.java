@@ -6,7 +6,7 @@ import org.jetbrains.annotations.Contract;
 import org.jspecify.annotations.NonNull;
 import org.spongepowered.configurate.objectmapping.meta.Setting;
 
-@SuppressWarnings("unused")
+@SuppressWarnings({"unused", "InnerClassMayBeStatic"})
 public final class GlobalConfiguration extends ConfigurationPart {
 
     static GlobalConfiguration INSTANCE;
@@ -19,5 +19,14 @@ public final class GlobalConfiguration extends ConfigurationPart {
 
     @Setting(Configurations.VERSION_FIELD)
     int version = VERSION;
+
+    public ConsoleLogs consoleLogs;
+    public class ConsoleLogs extends ConfigurationPart {
+
+        public boolean offlineWarnings = true;
+        public boolean rootUserWarning = true;
+        public boolean notSecurePrefix = true;
+
+    }
 
 }
