@@ -1,0 +1,67 @@
+--- a/ca/spottedleaf/moonrise/patches/chunk_system/scheduling/ChunkHolderManager.java
++++ b/ca/spottedleaf/moonrise/patches/chunk_system/scheduling/ChunkHolderManager.java
+@@ -1059,7 +_,7 @@
+     public void processUnloads() {
+         TickThread.ensureTickThread("Cannot unload chunks off-main");
+ 
+-        if (BLOCK_TICKET_UPDATES.get() == Boolean.TRUE) {
++        if (BLOCK_TICKET_UPDATES.get() == true) {
+             throw new IllegalStateException("Cannot unload chunks recursively");
+         }
+         final int sectionShift = this.unloadQueue.coordinateShift; // sectionShift <= lock shift
+@@ -1306,12 +_,12 @@
+     }
+ 
+     private final ThreadLocal<Boolean> BLOCK_TICKET_UPDATES = ThreadLocal.withInitial(() -> {
+-        return Boolean.FALSE;
++        return false;
+     });
+ 
+     public Boolean blockTicketUpdates() {
+         final Boolean ret = BLOCK_TICKET_UPDATES.get();
+-        BLOCK_TICKET_UPDATES.set(Boolean.TRUE);
++        BLOCK_TICKET_UPDATES.set(true);
+         return ret;
+     }
+ 
+@@ -1330,7 +_,7 @@
+     }
+ 
+     private boolean processTicketUpdates(final boolean processFullUpdates, List<ChunkProgressionTask> scheduledTasks) {
+-        if (BLOCK_TICKET_UPDATES.get() == Boolean.TRUE) {
++        if (BLOCK_TICKET_UPDATES.get() == true) {
+             throw new IllegalStateException("Cannot update ticket level while unloading chunks or updating entity manager");
+         }
+         if (!PlatformHooks.get().allowAsyncTicketUpdates() && !TickThread.isTickThread()) {
+@@ -1358,7 +_,7 @@
+                     scheduledTasks, changedFullStatus
+                 );
+             } finally {
+-                this.unblockTicketUpdates(Boolean.FALSE);
++                this.unblockTicketUpdates(false);
+             }
+         }
+ 
+@@ -1426,8 +_,8 @@
+             final JsonObject coordinateJson = new JsonObject();
+             allTicketsJson.add(coordinateJson);
+ 
+-            coordinateJson.addProperty("chunkX", Long.valueOf(CoordinateUtils.getChunkX(coordinate)));
+-            coordinateJson.addProperty("chunkZ", Long.valueOf(CoordinateUtils.getChunkZ(coordinate)));
++            coordinateJson.addProperty("chunkX", (long) CoordinateUtils.getChunkX(coordinate));
++            coordinateJson.addProperty("chunkZ", (long) CoordinateUtils.getChunkZ(coordinate));
+ 
+             final JsonArray ticketsSerialized = new JsonArray();
+             coordinateJson.add("tickets", ticketsSerialized);
+@@ -1445,9 +_,9 @@
+                 ticketsSerialized.add(ticketSerialized);
+ 
+                 ticketSerialized.addProperty("type", ticket.getType().toString());
+-                ticketSerialized.addProperty("level", Integer.valueOf(ticket.getTicketLevel()));
++                ticketSerialized.addProperty("level", ticket.getTicketLevel());
+                 ticketSerialized.addProperty("identifier", Objects.toString(ticket.key));
+-                ticketSerialized.addProperty("remove_tick", Long.valueOf(((ChunkSystemTicket<?>)(Object)ticket).moonrise$getRemoveDelay()));
++                ticketSerialized.addProperty("remove_tick", ((ChunkSystemTicket<?>) (Object) ticket).moonrise$getRemoveDelay());
+             }
+         }
+ 

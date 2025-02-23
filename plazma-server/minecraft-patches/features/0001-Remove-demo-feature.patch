@@ -1,0 +1,127 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: AlphaKR93 <dev@alpha93.kr>
+Date: Wed, 19 Feb 2025 22:54:37 +0900
+Subject: [PATCH] Remove demo feature
+
+
+diff --git a/net/minecraft/server/Main.java b/net/minecraft/server/Main.java
+index 57a3bc6c47468b40bb448a41cb6bb3d5eaecb5af..abfcde5bd61bd031ab555e70ce10f8d0df6e9bcd 100644
+--- a/net/minecraft/server/Main.java
++++ b/net/minecraft/server/Main.java
+@@ -271,25 +271,25 @@ public class Main {
+                     LevelSettings levelSettings;
+                     WorldOptions worldOptions;
+                     WorldDimensions worldDimensions;
++                    // Plazma start - Remove demo feature
+                     if (optionSet.has("demo")) { // CraftBukkit
+-                        levelSettings = MinecraftServer.DEMO_SETTINGS;
+-                        worldOptions = WorldOptions.DEMO_OPTIONS;
+-                        worldDimensions = WorldPresets.createNormalWorldDimensions(context.datapackWorldgen());
+-                    } else {
+-                        DedicatedServerProperties properties = dedicatedServerSettings.getProperties();
+-                        levelSettings = new LevelSettings(
+-                            properties.levelName,
+-                            properties.gamemode,
+-                            properties.hardcore,
+-                            properties.difficulty,
+-                            false,
+-                            new GameRules(context.dataConfiguration().enabledFeatures()),
+-                            context.dataConfiguration()
+-                        );
+-                        worldOptions = optionSet.has("bonusChest") ? properties.worldOptions.withBonusChest(true) : properties.worldOptions; // CraftBukkit
+-                        worldDimensions = properties.createDimensions(context.datapackWorldgen());
++                        LOGGER.warn("Demo feature is removed since Plazma 1.21.4, defaulting to normal generation...");
+                     }
+ 
++                    DedicatedServerProperties properties = dedicatedServerSettings.getProperties();
++                    levelSettings = new LevelSettings(
++                        properties.levelName,
++                        properties.gamemode,
++                        properties.hardcore,
++                        properties.difficulty,
++                        false,
++                        new GameRules(context.dataConfiguration().enabledFeatures()),
++                        context.dataConfiguration()
++                    );
++                    worldOptions = optionSet.has("bonusChest") ? properties.worldOptions.withBonusChest(true) : properties.worldOptions; // CraftBukkit
++                    worldDimensions = properties.createDimensions(context.datapackWorldgen());
++                    // Plazma end - Remove demo feature
++
+                     WorldDimensions.Complete complete = worldDimensions.bake(registry);
+                     Lifecycle lifecycle = complete.lifecycle().add(context.datapackWorldgen().allRegistriesLifecycle());
+                     return new WorldLoader.DataLoadOutput<>(
+@@ -322,7 +322,6 @@ public class Main {
+                     if (optionSet.has("serverId")) {
+                         dedicatedServer1.setId((String) optionSet.valueOf("serverId"));
+                     }
+-                    dedicatedServer1.setDemo(optionSet.has("demo"));
+                     // Paper end
+                     boolean flag = !optionSet.has("nogui") && !optionSet.nonOptionArguments().contains("nogui");
+                     if (flag && !GraphicsEnvironment.isHeadless()) {
+diff --git a/net/minecraft/server/MinecraftServer.java b/net/minecraft/server/MinecraftServer.java
+index 74203ebce0f370a05014a7cf19e23be3a878b44d..4c3d5fab206a923dab0d8956bf74eae1f7e60625 100644
+--- a/net/minecraft/server/MinecraftServer.java
++++ b/net/minecraft/server/MinecraftServer.java
+@@ -603,24 +603,20 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
+                 LevelSettings levelSettings;
+                 WorldOptions worldOptions;
+                 net.minecraft.world.level.levelgen.WorldDimensions worldDimensions;
+-                if (this.isDemo()) {
+-                    levelSettings = MinecraftServer.DEMO_SETTINGS;
+-                    worldOptions = WorldOptions.DEMO_OPTIONS;
+-                    worldDimensions = net.minecraft.world.level.levelgen.presets.WorldPresets.createNormalWorldDimensions(context.datapackWorldgen());
+-                } else {
+-                    net.minecraft.server.dedicated.DedicatedServerProperties properties = ((net.minecraft.server.dedicated.DedicatedServer) this).getProperties();
+-                    levelSettings = new LevelSettings(
+-                        properties.levelName,
+-                        properties.gamemode,
+-                        properties.hardcore,
+-                        properties.difficulty,
+-                        false,
+-                        new GameRules(context.dataConfiguration().enabledFeatures()),
+-                        context.dataConfiguration()
+-                    );
+-                    worldOptions = this.options.has("bonusChest") ? properties.worldOptions.withBonusChest(true) : properties.worldOptions; // CraftBukkit
+-                    worldDimensions = properties.createDimensions(context.datapackWorldgen());
+-                }
++                // Plazma start - Remove demo feature
++                net.minecraft.server.dedicated.DedicatedServerProperties properties = ((net.minecraft.server.dedicated.DedicatedServer) this).getProperties();
++                levelSettings = new LevelSettings(
++                    properties.levelName,
++                    properties.gamemode,
++                    properties.hardcore,
++                    properties.difficulty,
++                    false,
++                    new GameRules(context.dataConfiguration().enabledFeatures()),
++                    context.dataConfiguration()
++                );
++                worldOptions = this.options.has("bonusChest") ? properties.worldOptions.withBonusChest(true) : properties.worldOptions; // CraftBukkit
++                worldDimensions = properties.createDimensions(context.datapackWorldgen());
++                // Plazma end - Remove demo feature
+ 
+                 net.minecraft.world.level.levelgen.WorldDimensions.Complete complete = worldDimensions.bake(contextLevelStemRegistry);
+                 com.mojang.serialization.Lifecycle lifecycle = complete.lifecycle().add(context.datapackWorldgen().allRegistriesLifecycle());
+@@ -1958,14 +1954,6 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
+         return this.worldData.getDifficulty() != Difficulty.PEACEFUL;
+     }
+ 
+-    public boolean isDemo() {
+-        return this.isDemo;
+-    }
+-
+-    public void setDemo(boolean demo) {
+-        this.isDemo = demo;
+-    }
+-
+     public Optional<MinecraftServer.ServerResourcePackInfo> getServerResourcePack() {
+         return Optional.empty();
+     }
+@@ -2674,7 +2662,7 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
+     }
+ 
+     public ServerPlayerGameMode createGameModeForPlayer(ServerPlayer player) {
+-        return (ServerPlayerGameMode)(this.isDemo() ? new DemoMode(player) : new ServerPlayerGameMode(player));
++        return new ServerPlayerGameMode(player); // Plazma - Remove demo feature
+     }
+ 
+     @Nullable

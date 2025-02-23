@@ -1,0 +1,55 @@
+--- a/net/minecraft/world/level/block/CampfireBlock.java
++++ b/net/minecraft/world/level/block/CampfireBlock.java
+@@ -84,9 +_,9 @@
+         this.registerDefaultState(
+             this.stateDefinition
+                 .any()
+-                .setValue(LIT, Boolean.valueOf(true))
+-                .setValue(SIGNAL_FIRE, Boolean.valueOf(false))
+-                .setValue(WATERLOGGED, Boolean.valueOf(false))
++                .setValue(LIT, true)
++                .setValue(SIGNAL_FIRE, false)
++                .setValue(WATERLOGGED, false)
+                 .setValue(FACING, Direction.NORTH)
+         );
+     }
+@@ -139,9 +_,9 @@
+         BlockPos clickedPos = context.getClickedPos();
+         boolean flag = level.getFluidState(clickedPos).getType() == Fluids.WATER;
+         return this.defaultBlockState()
+-            .setValue(WATERLOGGED, Boolean.valueOf(flag))
+-            .setValue(SIGNAL_FIRE, Boolean.valueOf(this.isSmokeSource(level.getBlockState(clickedPos.below()))))
+-            .setValue(LIT, Boolean.valueOf(level.getMinecraftWorld().purpurConfig.campFireLitWhenPlaced && !flag)) // Purpur - Campfire option for lit when placed
++            .setValue(WATERLOGGED, flag)
++            .setValue(SIGNAL_FIRE, this.isSmokeSource(level.getBlockState(clickedPos.below())))
++            .setValue(LIT, level.getMinecraftWorld().purpurConfig.campFireLitWhenPlaced && !flag) // Purpur - Campfire option for lit when placed
+             .setValue(FACING, context.getHorizontalDirection());
+     }
+ 
+@@ -161,7 +_,7 @@
+         }
+ 
+         return direction == Direction.DOWN
+-            ? state.setValue(SIGNAL_FIRE, Boolean.valueOf(this.isSmokeSource(neighborState)))
++            ? state.setValue(SIGNAL_FIRE, this.isSmokeSource(neighborState))
+             : super.updateShape(state, level, scheduledTickAccess, pos, direction, neighborPos, neighborState, random);
+     }
+ 
+@@ -227,7 +_,7 @@
+                 dowse(null, level, pos, state);
+             }
+ 
+-            level.setBlock(pos, state.setValue(WATERLOGGED, Boolean.valueOf(true)).setValue(LIT, Boolean.valueOf(false)), 3);
++            level.setBlock(pos, state.setValue(WATERLOGGED, true).setValue(LIT, false), 3);
+             level.scheduleTick(pos, fluidState.getType(), fluidState.getType().getTickDelay(level));
+             return true;
+         } else {
+@@ -248,7 +_,7 @@
+                 return;
+             }
+             // CraftBukkit end
+-            level.setBlock(blockPos, state.setValue(BlockStateProperties.LIT, Boolean.valueOf(true)), 11);
++            level.setBlock(blockPos, state.setValue(BlockStateProperties.LIT, true), 11);
+         }
+     }
+ 

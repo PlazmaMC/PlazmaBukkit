@@ -1,0 +1,47 @@
+--- a/net/minecraft/world/level/block/LightningRodBlock.java
++++ b/net/minecraft/world/level/block/LightningRodBlock.java
+@@ -39,7 +_,7 @@
+     public LightningRodBlock(BlockBehaviour.Properties properties) {
+         super(properties);
+         this.registerDefaultState(
+-            this.stateDefinition.any().setValue(FACING, Direction.UP).setValue(WATERLOGGED, Boolean.valueOf(false)).setValue(POWERED, Boolean.valueOf(false))
++            this.stateDefinition.any().setValue(FACING, Direction.UP).setValue(WATERLOGGED, false).setValue(POWERED, false)
+         );
+     }
+ 
+@@ -47,7 +_,7 @@
+     public BlockState getStateForPlacement(BlockPlaceContext context) {
+         FluidState fluidState = context.getLevel().getFluidState(context.getClickedPos());
+         boolean flag = fluidState.getType() == Fluids.WATER;
+-        return this.defaultBlockState().setValue(FACING, context.getClickedFace()).setValue(WATERLOGGED, Boolean.valueOf(flag));
++        return this.defaultBlockState().setValue(FACING, context.getClickedFace()).setValue(WATERLOGGED, flag);
+     }
+ 
+     @Override
+@@ -96,7 +_,7 @@
+             return;
+         }
+         // CraftBukkit end
+-        level.setBlock(pos, state.setValue(POWERED, Boolean.valueOf(true)), 3);
++        level.setBlock(pos, state.setValue(POWERED, true), 3);
+         this.updateNeighbours(state, level, pos);
+         level.scheduleTick(pos, this, 8);
+         level.levelEvent(3002, pos, state.getValue(FACING).getAxis().ordinal());
+@@ -109,7 +_,7 @@
+ 
+     @Override
+     protected void tick(BlockState state, ServerLevel level, BlockPos pos, RandomSource random) {
+-        level.setBlock(pos, state.setValue(POWERED, Boolean.valueOf(false)), 3);
++        level.setBlock(pos, state.setValue(POWERED, false), 3);
+         this.updateNeighbours(state, level, pos);
+     }
+ 
+@@ -137,7 +_,7 @@
+     protected void onPlace(BlockState state, Level level, BlockPos pos, BlockState oldState, boolean movedByPiston) {
+         if (!state.is(oldState.getBlock())) {
+             if (state.getValue(POWERED) && !level.getBlockTicks().hasScheduledTick(pos, this)) {
+-                level.setBlock(pos, state.setValue(POWERED, Boolean.valueOf(false)), 18);
++                level.setBlock(pos, state.setValue(POWERED, false), 18);
+             }
+         }
+     }

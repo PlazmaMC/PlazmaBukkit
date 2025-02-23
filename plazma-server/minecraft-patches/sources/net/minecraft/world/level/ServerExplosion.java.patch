@@ -1,5 +1,32 @@
 --- a/net/minecraft/world/level/ServerExplosion.java
 +++ b/net/minecraft/world/level/ServerExplosion.java
+@@ -101,7 +_,7 @@
+ 
+     // resistance = (res + 0.3F) * 0.3F;
+     // so for resistance = 0, we need res = -0.3F
+-    private static final Float ZERO_RESISTANCE = Float.valueOf(-0.3f);
++    private static final Float ZERO_RESISTANCE = -0.3f;
+     private it.unimi.dsi.fastutil.longs.Long2ObjectOpenHashMap<ca.spottedleaf.moonrise.patches.collisions.ExplosionBlockCache> blockCache = null;
+     private long[] chunkPosCache = null;
+     private net.minecraft.world.level.chunk.LevelChunk[] chunkCache = null;
+@@ -137,7 +_,7 @@
+ 
+             ret = new ca.spottedleaf.moonrise.patches.collisions.ExplosionBlockCache(
+                     key, pos, blockState, fluidState,
+-                    (resistance.orElse(ZERO_RESISTANCE).floatValue() + 0.3f) * 0.3f,
++                    (resistance.orElse(ZERO_RESISTANCE) + 0.3f) * 0.3f,
+                     false
+             );
+         }
+@@ -446,7 +_,7 @@
+                     // note: we expect shouldBlockExplode to be pure with respect to power, as Vanilla currently is.
+                     // basically, it is unused, which allows us to cache the result
+                     final boolean shouldExplode = iblockdata.isDestroyable() && this.damageCalculator.shouldBlockExplode((Explosion)(Object)this, this.level, cachedBlock.immutablePos, cachedBlock.blockState, power); // Paper - Protect Bedrock and End Portal/Frames from being destroyed
+-                    cachedBlock.shouldExplode = shouldExplode ? Boolean.TRUE : Boolean.FALSE;
++                    cachedBlock.shouldExplode = shouldExplode ? true : false;
+                     if (shouldExplode) {
+                         if (this.fire || !cachedBlock.blockState.isAir()) {
+                             ret.add(cachedBlock.immutablePos);
 @@ -791,10 +_,10 @@
              return this.getSeenFraction(vec3d, entity, this.directMappedBlockCache, this.mutablePos); // Paper - collision optimisations
          }

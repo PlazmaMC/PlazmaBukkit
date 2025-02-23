@@ -1,0 +1,29 @@
+--- a/net/minecraft/world/level/material/FlowingFluid.java
++++ b/net/minecraft/world/level/material/FlowingFluid.java
+@@ -50,7 +_,7 @@
+     private FluidState sourceNotFalling;
+ 
+     private static final int TOTAL_FLOWING_STATES = FALLING.getPossibleValues().size() * LEVEL.getPossibleValues().size();
+-    private static final int MIN_LEVEL = LEVEL.getPossibleValues().stream().sorted().findFirst().get().intValue();
++    private static final int MIN_LEVEL = LEVEL.getPossibleValues().stream().sorted().findFirst().get();
+ 
+     // index = (falling ? 1 : 0) + level*2
+     private FluidState[] flowingLookUp;
+@@ -74,13 +_,13 @@
+                 final int falling = i & 1;
+                 final int level = (i >>> 1) + MIN_LEVEL;
+ 
+-                this.flowingLookUp[i] = defaultFlowState.setValue(FALLING, falling == 1 ? Boolean.TRUE : Boolean.FALSE)
+-                    .setValue(LEVEL, Integer.valueOf(level));
++                this.flowingLookUp[i] = defaultFlowState.setValue(FALLING, falling == 1 ? true : false)
++                    .setValue(LEVEL, level);
+             }
+ 
+             final FluidState defaultFallState = this.getSource().defaultFluidState();
+-            this.sourceFalling = defaultFallState.setValue(FALLING, Boolean.TRUE);
+-            this.sourceNotFalling = defaultFallState.setValue(FALLING, Boolean.FALSE);
++            this.sourceFalling = defaultFallState.setValue(FALLING, true);
++            this.sourceNotFalling = defaultFallState.setValue(FALLING, false);
+ 
+             this.init = true;
+         }

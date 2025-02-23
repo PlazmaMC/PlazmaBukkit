@@ -1,0 +1,37 @@
+--- a/net/minecraft/world/level/block/SweetBerryBushBlock.java
++++ b/net/minecraft/world/level/block/SweetBerryBushBlock.java
+@@ -43,7 +_,7 @@
+ 
+     public SweetBerryBushBlock(BlockBehaviour.Properties properties) {
+         super(properties);
+-        this.registerDefaultState(this.stateDefinition.any().setValue(AGE, Integer.valueOf(0)));
++        this.registerDefaultState(this.stateDefinition.any().setValue(AGE, 0));
+     }
+ 
+     @Override
+@@ -69,7 +_,7 @@
+     protected void randomTick(BlockState state, ServerLevel level, BlockPos pos, RandomSource random) {
+         int ageValue = state.getValue(AGE);
+         if (ageValue < 3 && random.nextFloat() < (level.spigotConfig.sweetBerryModifier / (100.0f * 5)) && level.getRawBrightness(pos.above(), 0) >= 9) { // Spigot - SPIGOT-7159: Better modifier resolution
+-            BlockState blockState = state.setValue(AGE, Integer.valueOf(ageValue + 1));
++            BlockState blockState = state.setValue(AGE, ageValue + 1);
+             if (!org.bukkit.craftbukkit.event.CraftEventFactory.handleBlockGrowEvent(level, pos, blockState, 2)) return; // CraftBukkit
+             level.gameEvent(GameEvent.BLOCK_CHANGE, pos, GameEvent.Context.of(blockState));
+         }
+@@ -120,7 +_,7 @@
+             }
+             // CraftBukkit end
+             level.playSound(null, pos, SoundEvents.SWEET_BERRY_BUSH_PICK_BERRIES, SoundSource.BLOCKS, 1.0F, 0.8F + level.random.nextFloat() * 0.4F);
+-            BlockState blockState = state.setValue(AGE, Integer.valueOf(1));
++            BlockState blockState = state.setValue(AGE, 1);
+             level.setBlock(pos, blockState, 2);
+             level.gameEvent(GameEvent.BLOCK_CHANGE, pos, GameEvent.Context.of(player, blockState));
+             return InteractionResult.SUCCESS;
+@@ -147,6 +_,6 @@
+     @Override
+     public void performBonemeal(ServerLevel level, RandomSource random, BlockPos pos, BlockState state) {
+         int min = Math.min(3, state.getValue(AGE) + 1);
+-        level.setBlock(pos, state.setValue(AGE, Integer.valueOf(min)), 2);
++        level.setBlock(pos, state.setValue(AGE, min), 2);
+     }
+ }

@@ -1,0 +1,89 @@
+--- a/ca/spottedleaf/moonrise/patches/chunk_system/scheduling/NewChunkHolder.java
++++ b/ca/spottedleaf/moonrise/patches/chunk_system/scheduling/NewChunkHolder.java
+@@ -1893,10 +_,10 @@
+             return ret;
+         }
+ 
+-        ret.addProperty("valid", Boolean.TRUE);
++        ret.addProperty("valid", true);
+ 
+         final boolean isCompleted = completable.isCompleted();
+-        ret.addProperty("completed", Boolean.valueOf(isCompleted));
++        ret.addProperty("completed", isCompleted);
+ 
+         if (isCompleted) {
+             final Throwable throwable = completable.getThrowable();
+@@ -1924,8 +_,8 @@
+         final ChunkEntitySlices slices = this.entityChunk;
+         final PoiChunk poiChunk = this.poiChunk;
+ 
+-        ret.addProperty("chunkX", Integer.valueOf(this.chunkX));
+-        ret.addProperty("chunkZ", Integer.valueOf(this.chunkZ));
++        ret.addProperty("chunkX", this.chunkX);
++        ret.addProperty("chunkZ", this.chunkZ);
+         ret.addProperty("entity_chunk", slices == null ? "null" : "transient=" + slices.isTransient());
+         ret.addProperty("poi_chunk", "null=" + (poiChunk == null));
+         ret.addProperty("completed_chunk_class", lastCompletion == null ? "null" : lastCompletion.chunk().getClass().getName());
+@@ -1934,9 +_,9 @@
+         ret.addProperty("neighbour_requested_priority", Objects.toString(this.neighbourRequestedPriority));
+         ret.addProperty("generation_task", Objects.toString(this.generationTask));
+         ret.addProperty("is_safe_unload", Objects.toString(this.isSafeToUnload()));
+-        ret.addProperty("old_ticket_level", Integer.valueOf(this.oldTicketLevel));
+-        ret.addProperty("current_ticket_level", Integer.valueOf(this.currentTicketLevel));
+-        ret.addProperty("neighbours_using_chunk", Integer.valueOf(this.totalNeighboursUsingThisChunk));
++        ret.addProperty("old_ticket_level", this.oldTicketLevel);
++        ret.addProperty("current_ticket_level", this.currentTicketLevel);
++        ret.addProperty("neighbours_using_chunk", this.totalNeighboursUsingThisChunk);
+ 
+         final JsonObject neighbourWaitState = new JsonObject();
+         ret.add("neighbour_state", neighbourWaitState);
+@@ -1947,8 +_,8 @@
+             final JsonObject neighbour = new JsonObject();
+             blockingGenNeighbours.add(neighbour);
+ 
+-            neighbour.addProperty("chunkX", Integer.valueOf(blockingGenNeighbour.chunkX));
+-            neighbour.addProperty("chunkZ", Integer.valueOf(blockingGenNeighbour.chunkZ));
++            neighbour.addProperty("chunkX", blockingGenNeighbour.chunkX);
++            neighbour.addProperty("chunkZ", blockingGenNeighbour.chunkZ);
+         }
+ 
+         final JsonArray neighboursWaitingForUs = new JsonArray();
+@@ -1961,8 +_,8 @@
+             neighboursWaitingForUs.add(neighbour);
+ 
+ 
+-            neighbour.addProperty("chunkX", Integer.valueOf(holder.chunkX));
+-            neighbour.addProperty("chunkZ", Integer.valueOf(holder.chunkZ));
++            neighbour.addProperty("chunkX", holder.chunkX);
++            neighbour.addProperty("chunkZ", holder.chunkZ);
+             neighbour.addProperty("waiting_for", Objects.toString(status));
+         }
+ 
+@@ -1970,8 +_,8 @@
+         ret.addProperty("current_chunk_full_status", Objects.toString(this.currentFullChunkStatus));
+         ret.addProperty("generation_task", Objects.toString(this.generationTask));
+         ret.addProperty("requested_generation", Objects.toString(this.requestedGenStatus));
+-        ret.addProperty("has_entity_load_task", Boolean.valueOf(this.entityDataLoadTask != null));
+-        ret.addProperty("has_poi_load_task", Boolean.valueOf(this.poiDataLoadTask != null));
++        ret.addProperty("has_entity_load_task", this.entityDataLoadTask != null);
++        ret.addProperty("has_poi_load_task", this.poiDataLoadTask != null);
+ 
+         final UnloadTask entityDataUnload = this.entityDataUnload;
+         final UnloadTask poiDataUnload = this.poiDataUnload;
+@@ -1984,13 +_,13 @@
+         final PrioritisedExecutor.PrioritisedTask unloadTask = chunkDataUnload == null ? null : chunkDataUnload.task();
+         if (unloadTask == null) {
+             ret.addProperty("unload_task_priority", "null");
+-            ret.addProperty("unload_task_suborder", Long.valueOf(0L));
++            ret.addProperty("unload_task_suborder", 0L);
+         } else {
+             ret.addProperty("unload_task_priority", Objects.toString(unloadTask.getPriority()));
+-            ret.addProperty("unload_task_suborder", Long.valueOf(unloadTask.getSubOrder()));
++            ret.addProperty("unload_task_suborder", unloadTask.getSubOrder());
+         }
+ 
+-        ret.addProperty("killed", Boolean.valueOf(this.unloaded));
++        ret.addProperty("killed", this.unloaded);
+ 
+         return ret;
+     }

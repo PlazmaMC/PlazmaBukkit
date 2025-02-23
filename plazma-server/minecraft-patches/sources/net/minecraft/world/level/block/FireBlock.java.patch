@@ -1,0 +1,57 @@
+--- a/net/minecraft/world/level/block/FireBlock.java
++++ b/net/minecraft/world/level/block/FireBlock.java
+@@ -70,12 +_,12 @@
+         this.registerDefaultState(
+             this.stateDefinition
+                 .any()
+-                .setValue(AGE, Integer.valueOf(0))
+-                .setValue(NORTH, Boolean.valueOf(false))
+-                .setValue(EAST, Boolean.valueOf(false))
+-                .setValue(SOUTH, Boolean.valueOf(false))
+-                .setValue(WEST, Boolean.valueOf(false))
+-                .setValue(UP, Boolean.valueOf(false))
++                .setValue(AGE, 0)
++                .setValue(NORTH, false)
++                .setValue(EAST, false)
++                .setValue(SOUTH, false)
++                .setValue(WEST, false)
++                .setValue(UP, false)
+         );
+         this.shapesCache = ImmutableMap.copyOf(
+             this.stateDefinition
+@@ -145,7 +_,7 @@
+ 
+     @Override
+     protected VoxelShape getShape(BlockState state, BlockGetter level, BlockPos pos, CollisionContext context) {
+-        return this.shapesCache.get(state.setValue(AGE, Integer.valueOf(0)));
++        return this.shapesCache.get(state.setValue(AGE, 0));
+     }
+ 
+     @Override
+@@ -162,7 +_,7 @@
+             for (Direction direction : Direction.values()) {
+                 BooleanProperty booleanProperty = PROPERTY_BY_DIRECTION.get(direction);
+                 if (booleanProperty != null) {
+-                    blockState1 = blockState1.setValue(booleanProperty, Boolean.valueOf(this.canBurn(level.getBlockState(pos.relative(direction)))));
++                    blockState1 = blockState1.setValue(booleanProperty, this.canBurn(level.getBlockState(pos.relative(direction))));
+                 }
+             }
+ 
+@@ -194,7 +_,7 @@
+             } else {
+                 int min = Math.min(15, ageValue + random.nextInt(3) / 2);
+                 if (ageValue != min) {
+-                    state = state.setValue(AGE, Integer.valueOf(min));
++                    state = state.setValue(AGE, min);
+                     level.setBlock(pos, state, 4);
+                 }
+ 
+@@ -327,7 +_,7 @@
+ 
+     private BlockState getStateWithAge(LevelReader level, BlockPos pos, int age) {
+         BlockState state = getState(level, pos);
+-        return state.is(Blocks.FIRE) ? state.setValue(AGE, Integer.valueOf(age)) : state;
++        return state.is(Blocks.FIRE) ? state.setValue(AGE, age) : state;
+     }
+ 
+     private boolean isValidFireLocation(BlockGetter level, BlockPos pos) {

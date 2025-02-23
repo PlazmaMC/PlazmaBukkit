@@ -1,0 +1,73 @@
+--- a/net/minecraft/world/level/block/FenceGateBlock.java
++++ b/net/minecraft/world/level/block/FenceGateBlock.java
+@@ -66,9 +_,9 @@
+         this.registerDefaultState(
+             this.stateDefinition
+                 .any()
+-                .setValue(OPEN, Boolean.valueOf(false))
+-                .setValue(POWERED, Boolean.valueOf(false))
+-                .setValue(IN_WALL, Boolean.valueOf(false))
++                .setValue(OPEN, false)
++                .setValue(POWERED, false)
++                .setValue(IN_WALL, false)
+         );
+     }
+ 
+@@ -97,7 +_,7 @@
+             return super.updateShape(state, level, scheduledTickAccess, pos, direction, neighborPos, neighborState, random);
+         } else {
+             boolean flag = this.isWall(neighborState) || this.isWall(level.getBlockState(pos.relative(direction.getOpposite())));
+-            return state.setValue(IN_WALL, Boolean.valueOf(flag));
++            return state.setValue(IN_WALL, flag);
+         }
+     }
+ 
+@@ -153,9 +_,9 @@
+             || axis == Direction.Axis.X && (this.isWall(level.getBlockState(clickedPos.north())) || this.isWall(level.getBlockState(clickedPos.south())));
+         return this.defaultBlockState()
+             .setValue(FACING, horizontalDirection)
+-            .setValue(OPEN, Boolean.valueOf(hasNeighborSignal))
+-            .setValue(POWERED, Boolean.valueOf(hasNeighborSignal))
+-            .setValue(IN_WALL, Boolean.valueOf(flag));
++            .setValue(OPEN, hasNeighborSignal)
++            .setValue(POWERED, hasNeighborSignal)
++            .setValue(IN_WALL, flag);
+     }
+ 
+     private boolean isWall(BlockState state) {
+@@ -165,7 +_,7 @@
+     @Override
+     protected InteractionResult useWithoutItem(BlockState state, Level level, BlockPos pos, Player player, BlockHitResult hitResult) {
+         if (state.getValue(OPEN)) {
+-            state = state.setValue(OPEN, Boolean.valueOf(false));
++            state = state.setValue(OPEN, false);
+             level.setBlock(pos, state, 10);
+         } else {
+             Direction direction = player.getDirection();
+@@ -173,7 +_,7 @@
+                 state = state.setValue(FACING, direction);
+             }
+ 
+-            state = state.setValue(OPEN, Boolean.valueOf(true));
++            state = state.setValue(OPEN, true);
+             level.setBlock(pos, state, 10);
+         }
+ 
+@@ -194,7 +_,7 @@
+     protected void onExplosionHit(BlockState state, ServerLevel level, BlockPos pos, Explosion explosion, BiConsumer<ItemStack, BlockPos> dropConsumer) {
+         if (explosion.canTriggerBlocks() && !state.getValue(POWERED)) {
+             boolean openValue = state.getValue(OPEN);
+-            level.setBlockAndUpdate(pos, state.setValue(OPEN, Boolean.valueOf(!openValue)));
++            level.setBlockAndUpdate(pos, state.setValue(OPEN, !openValue));
+             level.playSound(
+                 null,
+                 pos,
+@@ -225,7 +_,7 @@
+             }
+             // CraftBukkit end
+             if (state.getValue(POWERED) != hasNeighborSignal) {
+-                level.setBlock(pos, state.setValue(POWERED, Boolean.valueOf(hasNeighborSignal)).setValue(OPEN, Boolean.valueOf(hasNeighborSignal)), 2);
++                level.setBlock(pos, state.setValue(POWERED, hasNeighborSignal).setValue(OPEN, hasNeighborSignal), 2);
+                 if (state.getValue(OPEN) != hasNeighborSignal) {
+                     level.playSound(
+                         null,

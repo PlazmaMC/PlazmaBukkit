@@ -1,0 +1,42 @@
+--- a/net/minecraft/world/level/block/DecoratedPotBlock.java
++++ b/net/minecraft/world/level/block/DecoratedPotBlock.java
+@@ -73,8 +_,8 @@
+             this.stateDefinition
+                 .any()
+                 .setValue(HORIZONTAL_FACING, Direction.NORTH)
+-                .setValue(WATERLOGGED, Boolean.valueOf(false))
+-                .setValue(CRACKED, Boolean.valueOf(false))
++                .setValue(WATERLOGGED, false)
++                .setValue(CRACKED, false)
+         );
+     }
+ 
+@@ -101,8 +_,8 @@
+         FluidState fluidState = context.getLevel().getFluidState(context.getClickedPos());
+         return this.defaultBlockState()
+             .setValue(HORIZONTAL_FACING, context.getHorizontalDirection())
+-            .setValue(WATERLOGGED, Boolean.valueOf(fluidState.getType() == Fluids.WATER))
+-            .setValue(CRACKED, Boolean.valueOf(false));
++            .setValue(WATERLOGGED, fluidState.getType() == Fluids.WATER)
++            .setValue(CRACKED, false);
+     }
+ 
+     @Override
+@@ -203,7 +_,7 @@
+         ItemStack mainHandItem = player.getMainHandItem();
+         BlockState blockState = state;
+         if (mainHandItem.is(ItemTags.BREAKS_DECORATED_POTS) && !EnchantmentHelper.hasTag(mainHandItem, EnchantmentTags.PREVENTS_DECORATED_POT_SHATTERING)) {
+-            blockState = state.setValue(CRACKED, Boolean.valueOf(true));
++            blockState = state.setValue(CRACKED, true);
+             level.setBlock(pos, blockState, 4);
+         }
+ 
+@@ -242,7 +_,7 @@
+                 return;
+             }
+             // CraftBukkit end
+-            level.setBlock(blockPos, state.setValue(CRACKED, Boolean.valueOf(true)), 4);
++            level.setBlock(blockPos, state.setValue(CRACKED, true), 4);
+             level.destroyBlock(blockPos, true, projectile);
+         }
+     }
