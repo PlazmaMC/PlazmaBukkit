@@ -1,0 +1,49 @@
+--- a/net/minecraft/world/level/block/SculkSensorBlock.java
++++ b/net/minecraft/world/level/block/SculkSensorBlock.java
+@@ -68,8 +_,8 @@
+             this.stateDefinition
+                 .any()
+                 .setValue(PHASE, SculkSensorPhase.INACTIVE)
+-                .setValue(POWER, Integer.valueOf(0))
+-                .setValue(WATERLOGGED, Boolean.valueOf(false))
++                .setValue(POWER, 0)
++                .setValue(WATERLOGGED, false)
+         );
+     }
+ 
+@@ -78,7 +_,7 @@
+     public BlockState getStateForPlacement(BlockPlaceContext context) {
+         BlockPos clickedPos = context.getClickedPos();
+         FluidState fluidState = context.getLevel().getFluidState(clickedPos);
+-        return this.defaultBlockState().setValue(WATERLOGGED, Boolean.valueOf(fluidState.getType() == Fluids.WATER));
++        return this.defaultBlockState().setValue(WATERLOGGED, fluidState.getType() == Fluids.WATER);
+     }
+ 
+     @Override
+@@ -130,7 +_,7 @@
+     protected void onPlace(BlockState state, Level level, BlockPos pos, BlockState oldState, boolean movedByPiston) {
+         if (!level.isClientSide() && !state.is(oldState.getBlock())) {
+             if (state.getValue(POWER) > 0 && !level.getBlockTicks().hasScheduledTick(pos, this)) {
+-                level.setBlock(pos, state.setValue(POWER, Integer.valueOf(0)), 18);
++                level.setBlock(pos, state.setValue(POWER, 0), 18);
+             }
+         }
+     }
+@@ -225,7 +_,7 @@
+             return;
+         }
+         // CraftBukkit end
+-        level.setBlock(pos, state.setValue(PHASE, SculkSensorPhase.COOLDOWN).setValue(POWER, Integer.valueOf(0)), 3);
++        level.setBlock(pos, state.setValue(PHASE, SculkSensorPhase.COOLDOWN).setValue(POWER, 0), 3);
+         level.scheduleTick(pos, state.getBlock(), 10);
+         updateNeighbours(level, pos, state);
+     }
+@@ -245,7 +_,7 @@
+         }
+         power = eventRedstone.getNewCurrent();
+         // CraftBukkit end
+-        level.setBlock(pos, state.setValue(PHASE, SculkSensorPhase.ACTIVE).setValue(POWER, Integer.valueOf(power)), 3);
++        level.setBlock(pos, state.setValue(PHASE, SculkSensorPhase.ACTIVE).setValue(POWER, power), 3);
+         level.scheduleTick(pos, state.getBlock(), this.getActiveTicks());
+         updateNeighbours(level, pos, state);
+         tryResonateVibration(entity, level, pos, frequency);

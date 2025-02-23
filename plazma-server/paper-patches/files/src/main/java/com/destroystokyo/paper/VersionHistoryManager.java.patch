@@ -1,0 +1,42 @@
+--- a/src/main/java/com/destroystokyo/paper/VersionHistoryManager.java
++++ b/src/main/java/com/destroystokyo/paper/VersionHistoryManager.java
+@@ -19,8 +_,26 @@
+ import javax.annotation.Nonnull;
+ import javax.annotation.Nullable;
+ 
+-public enum VersionHistoryManager {
+-    INSTANCE;
++public final class VersionHistoryManager { // Plazma - Add options to modify configuration paths
++
++    // Plazma start - Add options to modify configuration paths
++    private static VersionHistoryManager INSTANCE;
++
++    @org.jetbrains.annotations.Contract(pure = true)
++    public static @org.jspecify.annotations.NonNull VersionHistoryManager getInstance() {
++        if (INSTANCE == null) {
++            throw new IllegalStateException("VersionHistoryManager has not been initialized yet");
++        }
++        return INSTANCE;
++    }
++
++    public static void initialize(final joptsimple.@org.jspecify.annotations.NonNull OptionSet options) {
++        if (INSTANCE != null) {
++            throw new IllegalStateException("VersionHistoryManager has already been initialized");
++        }
++        INSTANCE = new VersionHistoryManager(((java.io.File) options.valueOf("version-history")).toPath());
++    }
++    // Plazma end - Add options to modify configuration paths
+ 
+     private final Gson gson = new Gson();
+ 
+@@ -28,9 +_,7 @@
+ 
+     private VersionData currentData = null;
+ 
+-    VersionHistoryManager() {
+-        final Path path = Paths.get("version_history.json");
+-
++    private VersionHistoryManager(final @org.jspecify.annotations.NonNull Path path) { // Plazma - Add options to modify configuration paths
+         if (Files.exists(path)) {
+             // Basic file santiy checks
+             if (!Files.isRegularFile(path)) {

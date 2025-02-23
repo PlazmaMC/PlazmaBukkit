@@ -1,0 +1,44 @@
+--- a/net/minecraft/world/level/block/CrafterBlock.java
++++ b/net/minecraft/world/level/block/CrafterBlock.java
+@@ -56,8 +_,8 @@
+             this.stateDefinition
+                 .any()
+                 .setValue(ORIENTATION, FrontAndTop.NORTH_UP)
+-                .setValue(TRIGGERED, Boolean.valueOf(false))
+-                .setValue(CRAFTING, Boolean.valueOf(false))
++                .setValue(TRIGGERED, false)
++                .setValue(CRAFTING, false)
+         );
+     }
+ 
+@@ -83,10 +_,10 @@
+         BlockEntity blockEntity = level.getBlockEntity(pos);
+         if (hasNeighborSignal && !triggeredValue) {
+             level.scheduleTick(pos, this, 4);
+-            level.setBlock(pos, state.setValue(TRIGGERED, Boolean.valueOf(true)), 2);
++            level.setBlock(pos, state.setValue(TRIGGERED, true), 2);
+             this.setBlockEntityTriggered(blockEntity, true);
+         } else if (!hasNeighborSignal && triggeredValue) {
+-            level.setBlock(pos, state.setValue(TRIGGERED, Boolean.valueOf(false)).setValue(CRAFTING, Boolean.valueOf(false)), 2);
++            level.setBlock(pos, state.setValue(TRIGGERED, false).setValue(CRAFTING, false), 2);
+             this.setBlockEntityTriggered(blockEntity, false);
+         }
+     }
+@@ -126,7 +_,7 @@
+         };
+         return this.defaultBlockState()
+             .setValue(ORIENTATION, FrontAndTop.fromFrontAndTop(opposite, direction))
+-            .setValue(TRIGGERED, Boolean.valueOf(context.getLevel().hasNeighborSignal(context.getClickedPos())));
++            .setValue(TRIGGERED, context.getLevel().hasNeighborSignal(context.getClickedPos()));
+     }
+ 
+     @Override
+@@ -171,7 +_,7 @@
+                     level.levelEvent(1050, pos, 0);
+                 } else {
+                     crafterBlockEntity.setCraftingTicksRemaining(6);
+-                    level.setBlock(pos, state.setValue(CRAFTING, Boolean.valueOf(true)), 2);
++                    level.setBlock(pos, state.setValue(CRAFTING, true), 2);
+                     itemStack.onCraftedBySystem(level);
+                     this.dispenseItem(level, pos, crafterBlockEntity, itemStack, state, recipeHolder);
+ 

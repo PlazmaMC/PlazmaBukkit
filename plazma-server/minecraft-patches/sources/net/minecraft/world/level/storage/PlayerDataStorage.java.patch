@@ -1,0 +1,39 @@
+--- a/net/minecraft/world/level/storage/PlayerDataStorage.java
++++ b/net/minecraft/world/level/storage/PlayerDataStorage.java
+@@ -62,27 +_,30 @@
+ 
+     private Optional<CompoundTag> load(String name, String stringUuid, String suffix) { // CraftBukkit
+         File file = new File(this.playerDir, stringUuid + suffix); // CraftBukkit
++        final boolean exists = file.exists(); // Plazma - Avoid double I/O operation - Based on Akarin
++
+         // Spigot start
+         boolean usingWrongFile = false;
+-        if (org.bukkit.Bukkit.getOnlineMode() && !file.exists()) { // Paper - Check online mode first
+-            file = new File(this.playerDir, java.util.UUID.nameUUIDFromBytes(("OfflinePlayer:" + name).getBytes(java.nio.charset.StandardCharsets.UTF_8)).toString() + suffix);
++        if (org.bukkit.Bukkit.getOnlineMode() && !exists) { // Paper - Check online mode first // Plazma - Avoid double I/O operation - Based on Akarin
++            file = new File(this.playerDir, java.util.UUID.nameUUIDFromBytes(("OfflinePlayer:" + name).getBytes(java.nio.charset.StandardCharsets.UTF_8)) + suffix); // Plazma - Remove unnecessary type casting
+             if (file.exists()) {
+                 usingWrongFile = true;
+                 LOGGER.warn("Using offline mode UUID file for player {} as it is the only copy we can find.", name);
+             }
+         }
+         // Spigot end
+-        if (file.exists() && file.isFile()) {
++
++        if ((usingWrongFile || exists) && file.isFile()) { // Plazma - Avoid double I/O operation - Based on Akarin
+             try {
+                 // Spigot start
+                 Optional<CompoundTag> optional = Optional.of(NbtIo.readCompressed(file.toPath(), NbtAccounter.unlimitedHeap()));
+-                if (usingWrongFile) {
+-                    file.renameTo(new File(file.getPath() + ".offline-read"));
++                if (usingWrongFile && !file.renameTo(new File(file.getPath() + ".offline-read"))) { // Plazma - Throw if rename failed
++                    throw new java.io.IOException("Failed to rename"); // Plazma - Throw if rename failed
+                 }
+                 return optional;
+                 // Spigot end
+             } catch (Exception var5) {
+-                LOGGER.warn("Failed to load player data for {}", name); // CraftBukkit
++                LOGGER.warn("Failed to load player data for {}", name, var5); // CraftBukkit // Plazma - Log exception
+             }
+         }
+ 

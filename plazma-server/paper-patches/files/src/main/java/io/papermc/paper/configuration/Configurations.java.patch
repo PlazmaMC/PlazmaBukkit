@@ -1,0 +1,385 @@
+--- a/src/main/java/io/papermc/paper/configuration/Configurations.java
++++ b/src/main/java/io/papermc/paper/configuration/Configurations.java
+@@ -31,33 +_,65 @@
+ import org.spongepowered.configurate.util.CheckedFunction;
+ import org.spongepowered.configurate.yaml.YamlConfigurationLoader;
+ 
+-public abstract class Configurations<G, W> {
++public abstract class Configurations<G extends ConfigurationPart, W extends ConfigurationPart> { // Plazma
++
++    public static final String CONFIG_DIR = "config";
+ 
+     private static final Logger LOGGER = LogUtils.getClassLogger();
+     public static final String WORLD_DEFAULTS = "__world_defaults__";
+     public static final ResourceLocation WORLD_DEFAULTS_KEY = ResourceLocation.fromNamespaceAndPath("configurations", WORLD_DEFAULTS);
+     protected final Path globalFolder;
++
+     protected final Class<G> globalConfigClass;
+-    protected final Class<W> worldConfigClass;
+     protected final String globalConfigFileName;
++    protected final String globalConfigHeader;
++    protected final int globalConfigVersion;
++
++    protected final Class<W> worldConfigClass;
+     protected final String defaultWorldConfigFileName;
++    protected final String defaultWorldConfigHeader;
+     protected final String worldConfigFileName;
++    protected final java.util.function.Function<ContextMap, String> worldConfigHeader;
++    protected final int worldConfigVersion;
+ 
+-    public Configurations(
++    protected Configurations( // Plazma
+         final Path globalFolder,
+-        final Class<G> globalConfigType,
+-        final Class<W> worldConfigClass,
++        final Class<G> globalConfigClass,
+         final String globalConfigFileName,
++        final String globalConfigHeader,
++        final int globalConfigVersion,
++        final Class<W> worldConfigClass,
+         final String defaultWorldConfigFileName,
+-        final String worldConfigFileName
++        final String defaultWorldConfigHeader,
++        final String worldConfigFileName,
++        final java.util.function.Function<ContextMap, String> worldConfigHeader,
++        final int worldConfigVersion
+     ) {
++        try {
++            if (!Files.isDirectory(globalFolder)) {
++                Files.createDirectories(globalFolder);
++            }
++        } catch (final IOException ex) {
++            throw new RuntimeException("Could not setup configurations", ex);
++        }
++
+         this.globalFolder = globalFolder;
+-        this.globalConfigClass = globalConfigType;
+-        this.worldConfigClass = worldConfigClass;
++
++        this.globalConfigClass = globalConfigClass;
+         this.globalConfigFileName = globalConfigFileName;
++        this.globalConfigHeader = globalConfigHeader;
++        this.globalConfigVersion = globalConfigVersion;
++
++        this.worldConfigClass = worldConfigClass;
+         this.defaultWorldConfigFileName = defaultWorldConfigFileName;
++        this.defaultWorldConfigHeader = defaultWorldConfigHeader;
+         this.worldConfigFileName = worldConfigFileName;
++        this.worldConfigHeader = worldConfigHeader;
++        this.worldConfigVersion = worldConfigVersion;
+     }
++
++    protected abstract G globalConfigInstance();
++    protected abstract W worldConfigInstance(final ServerLevel level);
+ 
+     protected ObjectMapper.Factory.Builder createObjectMapper() {
+         return ObjectMapper.factoryBuilder()
+@@ -66,56 +_,34 @@
+     }
+ 
+     protected YamlConfigurationLoader.Builder createLoaderBuilder() {
+-        return ConfigurationLoaders.naturallySorted();
+-    }
+-
+-    protected abstract boolean isConfigType(final Type type);
+-
+-    protected abstract int globalConfigVersion();
+-
+-    protected abstract int worldConfigVersion();
++        return ConfigurationLoaders.naturallySorted().defaultOptions(this::defaultOptions);
++    }
++
++    protected abstract ConfigurationOptions defaultOptions(final ConfigurationOptions options);
++
++    protected boolean isConfigType(final Type type) {
++        return ConfigurationPart.class.isAssignableFrom(io.leangen.geantyref.GenericTypeReflector.erase(type));
++    }
+ 
+     protected ObjectMapper.Factory.Builder createGlobalObjectMapperFactoryBuilder() {
+-        return this.createObjectMapper();
++        return this.createObjectMapper().addDiscoverer(io.papermc.paper.configuration.mapping.InnerClassFieldDiscoverer.globalConfig());
+     }
+ 
+     @MustBeInvokedByOverriders
+-    protected YamlConfigurationLoader.Builder createGlobalLoaderBuilder(RegistryAccess registryAccess) {
+-        return this.createLoaderBuilder();
+-    }
+-
+-    static <T> CheckedFunction<ConfigurationNode, T, SerializationException> creator(final Class<? extends T> type, final boolean refreshNode) {
+-        return node -> {
+-            final T instance = node.require(type);
+-            if (refreshNode) {
+-                node.set(type, instance);
+-            }
+-            return instance;
+-        };
+-    }
+-
+-    static <T> CheckedFunction<ConfigurationNode, T, SerializationException> reloader(Class<T> type, T instance) {
+-        return node -> {
+-            ObjectMapper.Factory factory = (ObjectMapper.Factory) Objects.requireNonNull(node.options().serializers().get(type));
+-            ObjectMapper.Mutable<T> mutable = (ObjectMapper.Mutable<T>) factory.get(type);
+-            mutable.load(instance, node);
+-            return instance;
+-        };
+-    }
+-
+-    public G initializeGlobalConfiguration(final RegistryAccess registryAccess) throws ConfigurateException {
+-        return this.initializeGlobalConfiguration(registryAccess, creator(this.globalConfigClass, true));
+-    }
+-
+-    private void trySaveFileNode(YamlConfigurationLoader loader, ConfigurationNode node, String filename) throws ConfigurateException {
+-        try {
+-            loader.save(node);
+-        } catch (ConfigurateException ex) {
+-            if (ex.getCause() instanceof AccessDeniedException) {
+-                LOGGER.warn("Could not save {}: Paper could not persist the full set of configuration settings in the configuration file. Any setting missing from the configuration file will be set with its default value in memory. Admins should make sure to review the configuration documentation at https://docs.papermc.io/paper/configuration for more details.", filename, ex);
+-            } else throw ex;
+-        }
+-    }
++    protected YamlConfigurationLoader.Builder createGlobalLoaderBuilder(final RegistryAccess registryAccess) {
++        return this.createLoaderBuilder().defaultOptions((options) ->
++            defaultGlobalOptions(options.header(this.globalConfigHeader), registryAccess)
++        );
++    }
++
++    protected abstract ConfigurationOptions defaultGlobalOptions(final ConfigurationOptions options, final RegistryAccess registryAccess);
++
++    public void initializeGlobalConfiguration(final RegistryAccess registryAccess) throws ConfigurateException {
++        final G instance = this.initializeGlobalConfiguration(registryAccess, creator(this.globalConfigClass, true));
++        this.setGlobalConfigInstance(instance);
++    }
++
++    protected abstract void setGlobalConfigInstance(final G instance);
+ 
+     protected G initializeGlobalConfiguration(final RegistryAccess registryAccess, final CheckedFunction<ConfigurationNode, G, SerializationException> creator) throws ConfigurateException {
+         final Path configFile = this.globalFolder.resolve(this.globalConfigFileName);
+@@ -126,7 +_,7 @@
+         final ConfigurationNode node;
+         if (Files.notExists(configFile)) {
+             node = CommentedConfigurationNode.root(loader.defaultOptions());
+-            node.node(Configuration.VERSION_FIELD).raw(this.globalConfigVersion());
++            node.node(Configuration.VERSION_FIELD).raw(this.globalConfigVersion);
+             GlobalConfiguration.isFirstStart = true;
+         } else {
+             node = loader.load();
+@@ -142,9 +_,9 @@
+         final ConfigurationNode version = globalNode.node(Configuration.VERSION_FIELD);
+         if (version.virtual()) {
+             LOGGER.warn("The global config file didn't have a version set, assuming latest");
+-            version.raw(this.globalConfigVersion());
+-        } else if (version.getInt() > this.globalConfigVersion()) {
+-            LOGGER.error("Loading a newer configuration than is supported ({} > {})! You may have to backup & delete your global config file to start the server.", version.getInt(), this.globalConfigVersion());
++            version.raw(this.globalConfigVersion);
++        } else if (version.getInt() > this.globalConfigVersion) {
++            LOGGER.error("Loading a newer configuration than is supported ({} > {})! You may have to backup & delete your global config file to start the server.", version.getInt(), this.globalConfigVersion);
+         }
+     }
+ 
+@@ -159,6 +_,36 @@
+             .put(REGISTRY_ACCESS, registryAccess);
+     }
+ 
++    protected ObjectMapper.Factory.Builder createWorldObjectMapperFactoryBuilder(final ContextMap contextMap) {
++        return this.createObjectMapper()
++            .addDiscoverer(io.papermc.paper.configuration.mapping.InnerClassFieldDiscoverer.worldConfig(this.worldConfigClass, createWorldConfigInstance(contextMap)));
++    }
++
++    protected abstract W createWorldConfigInstance(final ContextMap contextMap);
++
++    @MustBeInvokedByOverriders
++    protected YamlConfigurationLoader.Builder createWorldConfigLoaderBuilder(final ContextMap contextMap) {
++        return this.createLoaderBuilder().defaultOptions((options) ->
++            defaultWorldOptions(options.header(contextMap.require(WORLD_NAME).equals(WORLD_DEFAULTS) ? this.defaultWorldConfigHeader : this.worldConfigHeader.apply(contextMap)), contextMap)
++        );
++    }
++
++    protected abstract ConfigurationOptions defaultWorldOptions(final ConfigurationOptions options, final ContextMap contextMap);
++
++    private DefaultWorldLoader createDefaultWorldLoader(final boolean requireFile, final ContextMap contextMap, final Path configFile) {
++        boolean willCreate = Files.notExists(configFile);
++        if (requireFile && willCreate) {
++            throw new IllegalStateException("World defaults configuration file '" + configFile + "' doesn't exist");
++        }
++        return new DefaultWorldLoader(
++            this.createWorldConfigLoaderBuilder(contextMap)
++                .defaultOptions(this.applyObjectMapperFactory(this.createWorldObjectMapperFactoryBuilder(contextMap).build()))
++                .path(configFile)
++                .build(),
++            willCreate
++        );
++    }
++
+     public void initializeWorldDefaultsConfiguration(final RegistryAccess registryAccess) throws ConfigurateException {
+         final ContextMap contextMap = this.createDefaultContextMap(registryAccess)
+             .put(FIRST_DEFAULT)
+@@ -168,7 +_,7 @@
+         final YamlConfigurationLoader loader = result.loader();
+         final ConfigurationNode node = loader.load();
+         if (result.isNewFile()) { // add version to new files
+-            node.node(Configuration.VERSION_FIELD).raw(this.worldConfigVersion());
++            node.node(Configuration.VERSION_FIELD).raw(this.worldConfigVersion);
+         } else {
+             this.verifyWorldConfigVersion(contextMap, node);
+         }
+@@ -178,38 +_,17 @@
+         this.trySaveFileNode(loader, node, configFile.toString());
+     }
+ 
+-    private DefaultWorldLoader createDefaultWorldLoader(final boolean requireFile, final ContextMap contextMap, final Path configFile) {
+-        boolean willCreate = Files.notExists(configFile);
+-        if (requireFile && willCreate) {
+-            throw new IllegalStateException("World defaults configuration file '" + configFile + "' doesn't exist");
+-        }
+-        return new DefaultWorldLoader(
+-            this.createWorldConfigLoaderBuilder(contextMap)
+-                .defaultOptions(this.applyObjectMapperFactory(this.createWorldObjectMapperFactoryBuilder(contextMap).build()))
+-                .path(configFile)
+-                .build(),
+-            willCreate
+-        );
+-    }
+-
+-    private record DefaultWorldLoader(YamlConfigurationLoader loader, boolean isNewFile) {
+-    }
+-
+-    protected ObjectMapper.Factory.Builder createWorldObjectMapperFactoryBuilder(final ContextMap contextMap) {
+-        return this.createObjectMapper();
+-    }
+-
+-    @MustBeInvokedByOverriders
+-    protected YamlConfigurationLoader.Builder createWorldConfigLoaderBuilder(final ContextMap contextMap) {
+-        return this.createLoaderBuilder();
+-    }
+-
+     // Make sure to run version transforms on the default world config first via #setupWorldDefaultsConfig
+-    public W createWorldConfig(final ContextMap contextMap) throws IOException {
+-        return this.createWorldConfig(contextMap, creator(this.worldConfigClass, false));
++    public W createWorldConfig(final ContextMap contextMap) {
++        final String levelName = contextMap.require(WORLD_NAME);
++        try {
++            return this.createWorldConfig(contextMap, creator(this.worldConfigClass, false));
++        } catch (IOException exception) {
++            throw new RuntimeException("Could not create world config for " + levelName, exception);
++        }
+     }
+ 
+-    protected W createWorldConfig(final ContextMap contextMap, final CheckedFunction<ConfigurationNode, W, SerializationException> creator) throws IOException {
++    private W createWorldConfig(final ContextMap contextMap, final CheckedFunction<ConfigurationNode, W, SerializationException> creator) throws IOException {
+         Preconditions.checkArgument(!contextMap.isDefaultWorldContext(), "cannot create world map with default world context");
+         final Path defaultsConfigFile = this.globalFolder.resolve(this.defaultWorldConfigFileName);
+         final YamlConfigurationLoader defaultsLoader = this.createDefaultWorldLoader(true, this.createDefaultContextMap(contextMap.require(REGISTRY_ACCESS)).build(), defaultsConfigFile).loader();
+@@ -219,7 +_,9 @@
+         final Path dir = contextMap.require(WORLD_DIRECTORY);
+         final Path worldConfigFile = dir.resolve(this.worldConfigFileName);
+         if (Files.notExists(worldConfigFile)) {
+-            PaperConfigurations.createDirectoriesSymlinkAware(dir);
++            if (!Files.isDirectory(dir)) {
++                Files.createDirectories(dir);
++            }
+             Files.createFile(worldConfigFile); // create empty file as template
+             newFile = true;
+         }
+@@ -230,7 +_,7 @@
+             .build();
+         final ConfigurationNode worldNode = worldLoader.load();
+         if (newFile) { // set the version field if new file
+-            worldNode.node(Configuration.VERSION_FIELD).set(this.worldConfigVersion());
++            worldNode.node(Configuration.VERSION_FIELD).set(this.worldConfigVersion);
+         } else {
+             this.verifyWorldConfigVersion(contextMap, worldNode);
+         }
+@@ -248,17 +_,17 @@
+             if (worldName.equals(WORLD_DEFAULTS)) {
+                 LOGGER.warn("The world defaults config file didn't have a version set, assuming latest");
+             } else {
+-                LOGGER.warn("The world config file for " + worldName + " didn't have a version set, assuming latest");
++                LOGGER.warn("The world config file for {} didn't have a version set, assuming latest", worldName);
+             }
+-            version.raw(this.worldConfigVersion());
+-        } else if (version.getInt() > this.worldConfigVersion()) {
++            version.raw(this.worldConfigVersion);
++        } else if (version.getInt() > this.worldConfigVersion) {
+             String msg = "Loading a newer configuration than is supported ({} > {})! ";
+             if (worldName.equals(WORLD_DEFAULTS)) {
+                 msg += "You may have to backup & delete the world defaults config file to start the server.";
+             } else {
+                 msg += "You may have to backup & delete the " + worldName + " config file to start the server.";
+             }
+-            LOGGER.error(msg, version.getInt(), this.worldConfigVersion());
++            LOGGER.error(msg, version.getInt(), this.worldConfigVersion);
+         }
+     }
+ 
+@@ -278,6 +_,63 @@
+         return level.levelStorageAccess.levelDirectory.path().resolve(this.worldConfigFileName);
+     }
+ 
++    protected abstract ContextMap createWorldContextMap(final ServerLevel level);
++
++    public void reloadConfigs(final net.minecraft.server.MinecraftServer server) {
++        try {
++            this.initializeGlobalConfiguration(server.registryAccess(), reloader(this.globalConfigClass, this.globalConfigInstance()));
++            this.initializeWorldDefaultsConfiguration(server.registryAccess());
++            for (ServerLevel level : server.getAllLevels()) {
++                this.createWorldConfig(createWorldContextMap(level), reloader(this.worldConfigClass, this.worldConfigInstance(level)));
++            }
++        } catch (Exception ex) {
++            throw new RuntimeException("Could not reload paper configuration files", ex);
++        }
++    }
++
++    @Deprecated
++    public final org.bukkit.configuration.file.YamlConfiguration createLegacyObject(final net.minecraft.server.MinecraftServer server) {
++        final org.bukkit.configuration.file.YamlConfiguration global = org.bukkit.configuration.file.YamlConfiguration.loadConfiguration(this.globalFolder.resolve(this.globalConfigFileName).toFile());
++        final org.bukkit.configuration.ConfigurationSection worlds = global.createSection("__________WORLDS__________");
++        worlds.set("__defaults__", org.bukkit.configuration.file.YamlConfiguration.loadConfiguration(this.globalFolder.resolve(this.defaultWorldConfigFileName).toFile()));
++        for (ServerLevel level : server.getAllLevels()) {
++            worlds.set(level.getWorld().getName(), org.bukkit.configuration.file.YamlConfiguration.loadConfiguration(getWorldConfigFile(level).toFile()));
++        }
++        return global;
++    }
++
++    private void trySaveFileNode(YamlConfigurationLoader loader, ConfigurationNode node, String filename) throws ConfigurateException {
++        try {
++            loader.save(node);
++        } catch (ConfigurateException ex) {
++            if (ex.getCause() instanceof AccessDeniedException) {
++                LOGGER.warn("Could not save {}: {} could not persist the full set of configuration settings in the configuration file. Any setting missing from the configuration file will be set with its default value in memory. Admins should make sure to review the configuration documentation at https://docs.papermc.io/paper/configuration for more details.", io.papermc.paper.ServerBuildInfo.buildInfo().brandName(), filename, ex);
++            } else throw ex;
++        }
++    }
++
++    private static <T extends ConfigurationPart> CheckedFunction<ConfigurationNode, T, SerializationException> creator(final Class<? extends T> type, final boolean refreshNode) {
++        return node -> {
++            final T instance = node.require(type);
++            if (refreshNode) {
++                node.set(type, instance);
++            }
++            return instance;
++        };
++    }
++
++    private static <T extends ConfigurationPart> CheckedFunction<ConfigurationNode, T, SerializationException> reloader(Class<T> type, T instance) {
++        return node -> {
++            ObjectMapper.Factory factory = (ObjectMapper.Factory) Objects.requireNonNull(node.options().serializers().get(type));
++            ObjectMapper.Mutable<T> mutable = (ObjectMapper.Mutable<T>) factory.get(type);
++            mutable.load(instance, node);
++            return instance;
++        };
++    }
++
++    private record DefaultWorldLoader(YamlConfigurationLoader loader, boolean isNewFile) {
++    }
++
+     public static class ContextMap {
+         private static final Object VOID = new Object();
+ 
+@@ -344,6 +_,7 @@
+     public static final ContextKey<Void> FIRST_DEFAULT = new ContextKey<>(Void.class, "first default");
+     public static final ContextKey<RegistryAccess> REGISTRY_ACCESS = new ContextKey<>(RegistryAccess.class, "registry access");
+     public static final ContextKey<GameRules> GAME_RULES = new ContextKey<>(GameRules.class, "game rules");
++    public static final String VERSION_FIELD = "_version";
+ 
+     public record ContextKey<T>(TypeToken<T> type, String name) {
+ 

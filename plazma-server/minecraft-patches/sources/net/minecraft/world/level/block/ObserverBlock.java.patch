@@ -1,0 +1,46 @@
+--- a/net/minecraft/world/level/block/ObserverBlock.java
++++ b/net/minecraft/world/level/block/ObserverBlock.java
+@@ -29,7 +_,7 @@
+ 
+     public ObserverBlock(BlockBehaviour.Properties properties) {
+         super(properties);
+-        this.registerDefaultState(this.stateDefinition.any().setValue(FACING, Direction.SOUTH).setValue(POWERED, Boolean.valueOf(false)));
++        this.registerDefaultState(this.stateDefinition.any().setValue(FACING, Direction.SOUTH).setValue(POWERED, false));
+     }
+ 
+     @Override
+@@ -55,14 +_,14 @@
+                 return;
+             }
+             // CraftBukkit end
+-            level.setBlock(pos, state.setValue(POWERED, Boolean.valueOf(false)), 2);
++            level.setBlock(pos, state.setValue(POWERED, false), 2);
+         } else {
+             // CraftBukkit start
+             if (org.bukkit.craftbukkit.event.CraftEventFactory.callRedstoneChange(level, pos, 0, 15).getNewCurrent() != 15) {
+                 return;
+             }
+             // CraftBukkit end
+-            level.setBlock(pos, state.setValue(POWERED, Boolean.valueOf(true)), 2);
++            level.setBlock(pos, state.setValue(POWERED, true), 2);
+             level.scheduleTick(pos, this, 2);
+         }
+ 
+@@ -121,7 +_,7 @@
+     protected void onPlace(BlockState state, Level level, BlockPos pos, BlockState oldState, boolean isMoving) {
+         if (!state.is(oldState.getBlock())) {
+             if (!level.isClientSide() && state.getValue(POWERED) && !level.getBlockTicks().hasScheduledTick(pos, this)) {
+-                BlockState blockState = state.setValue(POWERED, Boolean.valueOf(false));
++                BlockState blockState = state.setValue(POWERED, false);
+                 level.setBlock(pos, blockState, 18);
+                 this.updateNeighborsInFront(level, pos, blockState);
+             }
+@@ -132,7 +_,7 @@
+     protected void onRemove(BlockState state, Level level, BlockPos pos, BlockState newState, boolean isMoving) {
+         if (!state.is(newState.getBlock())) {
+             if (!level.isClientSide && state.getValue(POWERED) && level.getBlockTicks().hasScheduledTick(pos, this)) {
+-                this.updateNeighborsInFront(level, pos, state.setValue(POWERED, Boolean.valueOf(false)));
++                this.updateNeighborsInFront(level, pos, state.setValue(POWERED, false));
+             }
+         }
+     }

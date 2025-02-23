@@ -1,0 +1,74 @@
+--- a/net/minecraft/CrashReportCategory.java
++++ b/net/minecraft/CrashReportCategory.java
+@@ -133,7 +_,7 @@
+ 
+     public int fillInStackTrace(int size) {
+         StackTraceElement[] stackTrace = Thread.currentThread().getStackTrace();
+-        if (stackTrace.length <= 0) {
++        if (stackTrace.length == 0) { // Plazma - Fix IDE warning
+             return 0;
+         } else {
+             this.stackTrace = new StackTraceElement[stackTrace.length - 3 - size];
+@@ -143,28 +_,32 @@
+         }
+     }
+ 
+-    public boolean validateStackTrace(StackTraceElement s1, StackTraceElement s2) {
+-        if (this.stackTrace.length != 0 && s1 != null) {
+-            StackTraceElement stackTraceElement = this.stackTrace[0];
+-            if (stackTraceElement.isNativeMethod() == s1.isNativeMethod()
+-                && stackTraceElement.getClassName().equals(s1.getClassName())
+-                && stackTraceElement.getFileName().equals(s1.getFileName())
+-                && stackTraceElement.getMethodName().equals(s1.getMethodName())) {
+-                if (s2 != null != this.stackTrace.length > 1) {
+-                    return false;
+-                } else if (s2 != null && !this.stackTrace[1].equals(s2)) {
+-                    return false;
+-                } else {
+-                    this.stackTrace[0] = s1;
+-                    return true;
+-                }
+-            } else {
+-                return false;
+-            }
+-        } else {
+-            return false;
+-        }
++    // Plazma start - Improve code style/safety
++    public boolean validateStackTrace(@Nullable StackTraceElement s1, @Nullable StackTraceElement s2) {
++        if (this.stackTrace.length == 0 || s1 == null) {
++            return false;
++        }
++
++        StackTraceElement element = this.stackTrace[0];
++        if (element.isNativeMethod() != s1.isNativeMethod()
++            || !element.getClassName().equals(s1.getClassName())
++            || (element.getFileName() != null && !element.getFileName().equals(s1.getFileName()))
++            || !element.getMethodName().equals(s1.getMethodName())) {
++            return false;
++        }
++
++        if (s2 == null == this.stackTrace.length > 1) {
++            return false;
++        }
++
++        if (s2 != null && !this.stackTrace[1].equals(s2)) {
++            return false;
++        }
++
++        this.stackTrace[0] = s1;
++        return true;
+     }
++    // Plazma end - Improve code style/safety
+ 
+     public void trimStacktrace(int amount) {
+         StackTraceElement[] stackTraceElements = new StackTraceElement[this.stackTrace.length - amount];
+@@ -183,7 +_,7 @@
+             builder.append(entry.getValue());
+         }
+ 
+-        if (this.stackTrace != null && this.stackTrace.length > 0) {
++        if (this.stackTrace.length > 0) { // Plazma - Remove unnecessary null check
+             builder.append("\nStacktrace:");
+ 
+             for (StackTraceElement stackTraceElement : this.stackTrace) {

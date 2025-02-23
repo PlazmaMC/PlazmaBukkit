@@ -1,0 +1,119 @@
+--- a/net/minecraft/world/phys/shapes/VoxelShape.java
++++ b/net/minecraft/world/phys/shapes/VoxelShape.java
+@@ -181,12 +_,12 @@
+ 
+     private boolean computeOccludesFullBlock() {
+         if (this.isEmpty) {
+-            this.occludesFullBlock = Boolean.FALSE;
++            this.occludesFullBlock = false;
+             return false;
+         }
+ 
+         if (this.moonrise$isFullBlock()) {
+-            this.occludesFullBlock = Boolean.TRUE;
++            this.occludesFullBlock = true;
+             return true;
+         }
+ 
+@@ -197,12 +_,12 @@
+                 (singleAABB.minY <= ca.spottedleaf.moonrise.patches.collisions.CollisionUtil.COLLISION_EPSILON && singleAABB.maxY >= (1 - ca.spottedleaf.moonrise.patches.collisions.CollisionUtil.COLLISION_EPSILON)) &&
+                     (singleAABB.minX <= ca.spottedleaf.moonrise.patches.collisions.CollisionUtil.COLLISION_EPSILON && singleAABB.maxX >= (1 - ca.spottedleaf.moonrise.patches.collisions.CollisionUtil.COLLISION_EPSILON)) &&
+                     (singleAABB.minZ <= ca.spottedleaf.moonrise.patches.collisions.CollisionUtil.COLLISION_EPSILON && singleAABB.maxZ >= (1 - ca.spottedleaf.moonrise.patches.collisions.CollisionUtil.COLLISION_EPSILON));
+-            this.occludesFullBlock = Boolean.valueOf(ret);
++            this.occludesFullBlock = ret;
+             return ret;
+         }
+ 
+         final boolean ret = !Shapes.joinIsNotEmpty(Shapes.block(), ((VoxelShape)(Object)this), BooleanOp.ONLY_FIRST);
+-        this.occludesFullBlock = Boolean.valueOf(ret);
++        this.occludesFullBlock = ret;
+         return ret;
+     }
+ 
+@@ -210,7 +_,7 @@
+     public final boolean moonrise$occludesFullBlock() {
+         final Boolean ret = this.occludesFullBlock;
+         if (ret != null) {
+-            return ret.booleanValue();
++            return ret;
+         }
+ 
+         return this.computeOccludesFullBlock();
+@@ -219,7 +_,7 @@
+     @Override
+     public final boolean moonrise$occludesFullBlockIfCached() {
+         final Boolean ret = this.occludesFullBlock;
+-        return ret != null ? ret.booleanValue() : false;
++        return ret != null ? ret : false;
+     }
+ 
+     private static int hash(final VoxelShape key) {
+@@ -323,9 +_,9 @@
+     private boolean computeFullBlock() {
+         Boolean ret;
+         if (this.isEmpty) {
+-            ret = Boolean.FALSE;
++            ret = false;
+         } else if ((VoxelShape)(Object)this == Shapes.block()) {
+-            ret = Boolean.TRUE;
++            ret = true;
+         } else {
+             final AABB singleAABB = this.singleAABBRepresentation;
+             if (singleAABB == null) {
+@@ -353,37 +_,35 @@
+ 
+                     final long[] bitset = shapeData.voxelSet();
+ 
+-                    ret = Boolean.TRUE;
++                    ret = true;
+ 
+                     check_full:
+                     for (int x = sMinX; x < sMaxX; ++x) {
+                         for (int y = sMinY; y < sMaxY; ++y) {
+                             final int baseIndex = y*sizeZ + x*(sizeZ*sizeY);
+                             if (!ca.spottedleaf.moonrise.common.util.FlatBitsetUtil.isRangeSet(bitset, baseIndex + sMinZ, baseIndex + sMaxZ)) {
+-                                ret = Boolean.FALSE;
++                                ret = false;
+                                 break check_full;
+                             }
+                         }
+                     }
+                 } else {
+-                    ret = Boolean.FALSE;
++                    ret = false;
+                 }
+             } else {
+-                ret = Boolean.valueOf(
+-                    Math.abs(singleAABB.minX) <= ca.spottedleaf.moonrise.patches.collisions.CollisionUtil.COLLISION_EPSILON &&
+-                        Math.abs(singleAABB.minY) <= ca.spottedleaf.moonrise.patches.collisions.CollisionUtil.COLLISION_EPSILON &&
+-                        Math.abs(singleAABB.minZ) <= ca.spottedleaf.moonrise.patches.collisions.CollisionUtil.COLLISION_EPSILON &&
++                ret = Math.abs(singleAABB.minX) <= ca.spottedleaf.moonrise.patches.collisions.CollisionUtil.COLLISION_EPSILON &&
++                    Math.abs(singleAABB.minY) <= ca.spottedleaf.moonrise.patches.collisions.CollisionUtil.COLLISION_EPSILON &&
++                    Math.abs(singleAABB.minZ) <= ca.spottedleaf.moonrise.patches.collisions.CollisionUtil.COLLISION_EPSILON &&
+ 
+-                        Math.abs(1.0 - singleAABB.maxX) <= ca.spottedleaf.moonrise.patches.collisions.CollisionUtil.COLLISION_EPSILON &&
+-                        Math.abs(1.0 - singleAABB.maxY) <= ca.spottedleaf.moonrise.patches.collisions.CollisionUtil.COLLISION_EPSILON &&
+-                        Math.abs(1.0 - singleAABB.maxZ) <= ca.spottedleaf.moonrise.patches.collisions.CollisionUtil.COLLISION_EPSILON
+-                );
++                    Math.abs(1.0 - singleAABB.maxX) <= ca.spottedleaf.moonrise.patches.collisions.CollisionUtil.COLLISION_EPSILON &&
++                    Math.abs(1.0 - singleAABB.maxY) <= ca.spottedleaf.moonrise.patches.collisions.CollisionUtil.COLLISION_EPSILON &&
++                    Math.abs(1.0 - singleAABB.maxZ) <= ca.spottedleaf.moonrise.patches.collisions.CollisionUtil.COLLISION_EPSILON;
+             }
+         }
+ 
+         this.isFullBlock = ret;
+ 
+-        return ret.booleanValue();
++        return ret;
+     }
+ 
+     @Override
+@@ -391,7 +_,7 @@
+         final Boolean ret = this.isFullBlock;
+ 
+         if (ret != null) {
+-            return ret.booleanValue();
++            return ret;
+         }
+ 
+         return this.computeFullBlock();

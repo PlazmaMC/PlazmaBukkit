@@ -1,0 +1,38 @@
+--- a/net/minecraft/world/level/block/piston/PistonMovingBlockEntity.java
++++ b/net/minecraft/world/level/block/piston/PistonMovingBlockEntity.java
+@@ -101,7 +_,7 @@
+         return !this.isExtending() && this.isSourcePiston() && this.movedState.getBlock() instanceof PistonBaseBlock
+             ? Blocks.PISTON_HEAD
+                 .defaultBlockState()
+-                .setValue(PistonHeadBlock.SHORT, Boolean.valueOf(this.progress > 0.25F))
++                .setValue(PistonHeadBlock.SHORT, this.progress > 0.25F)
+                 .setValue(PistonHeadBlock.TYPE, this.movedState.is(Blocks.STICKY_PISTON) ? PistonType.STICKY : PistonType.DEFAULT)
+                 .setValue(PistonHeadBlock.FACING, this.movedState.getValue(PistonBaseBlock.FACING))
+             : this.movedState;
+@@ -307,7 +_,7 @@
+                         Block.updateOrDestroy(blockEntity.movedState, blockState, level, pos, 3);
+                     } else {
+                         if (blockState.hasProperty(BlockStateProperties.WATERLOGGED) && blockState.getValue(BlockStateProperties.WATERLOGGED)) {
+-                            blockState = blockState.setValue(BlockStateProperties.WATERLOGGED, Boolean.valueOf(false));
++                            blockState = blockState.setValue(BlockStateProperties.WATERLOGGED, false);
+                         }
+ 
+                         level.setBlock(pos, blockState, 67);
+@@ -353,7 +_,7 @@
+     public VoxelShape getCollisionShape(BlockGetter level, BlockPos pos) {
+         VoxelShape collisionShape;
+         if (!this.extending && this.isSourcePiston && this.movedState.getBlock() instanceof PistonBaseBlock) {
+-            collisionShape = this.movedState.setValue(PistonBaseBlock.EXTENDED, Boolean.valueOf(true)).getCollisionShape(level, pos);
++            collisionShape = this.movedState.setValue(PistonBaseBlock.EXTENDED, true).getCollisionShape(level, pos);
+         } else {
+             collisionShape = Shapes.empty();
+         }
+@@ -367,7 +_,7 @@
+                 blockState = Blocks.PISTON_HEAD
+                     .defaultBlockState()
+                     .setValue(PistonHeadBlock.FACING, this.direction)
+-                    .setValue(PistonHeadBlock.SHORT, Boolean.valueOf(this.extending != 1.0F - this.progress < 0.25F));
++                    .setValue(PistonHeadBlock.SHORT, this.extending != 1.0F - this.progress < 0.25F);
+             } else {
+                 blockState = this.movedState;
+             }

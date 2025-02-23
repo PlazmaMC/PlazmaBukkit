@@ -1,0 +1,24 @@
+--- a/net/minecraft/server/commands/TickCommand.java
++++ b/net/minecraft/server/commands/TickCommand.java
+@@ -21,6 +_,8 @@
+         dispatcher.register(
+             Commands.literal("tick")
+                 .requires(commandSourceStack -> commandSourceStack.hasPermission(3))
++                .executes(context -> toggleFreeze(context.getSource()))
++                .then(Commands.literal("toggle").executes(context -> toggleFreeze(context.getSource())))
+                 .then(Commands.literal("query").executes(commandContext -> tickQuery(commandContext.getSource())))
+                 .then(
+                     Commands.literal("rate")
+@@ -113,6 +_,12 @@
+         source.sendSuccess(() -> Component.translatable("commands.tick.status.sprinting"), true);
+         return 1;
+     }
++
++    // Plazma start - /tick toggle
++    private static int toggleFreeze(final CommandSourceStack source) {
++        return setFreeze(source, !source.getServer().tickRateManager().isFrozen());
++    }
++    // Plazma end - /tick toggle
+ 
+     private static int setFreeze(CommandSourceStack source, boolean frozen) {
+         ServerTickRateManager serverTickRateManager = source.getServer().tickRateManager();

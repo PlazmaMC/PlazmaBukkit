@@ -1,0 +1,37 @@
+--- a/net/minecraft/world/level/block/ScaffoldingBlock.java
++++ b/net/minecraft/world/level/block/ScaffoldingBlock.java
+@@ -45,9 +_,9 @@
+         this.registerDefaultState(
+             this.stateDefinition
+                 .any()
+-                .setValue(DISTANCE, Integer.valueOf(7))
+-                .setValue(WATERLOGGED, Boolean.valueOf(false))
+-                .setValue(BOTTOM, Boolean.valueOf(false))
++                .setValue(DISTANCE, 7)
++                .setValue(WATERLOGGED, false)
++                .setValue(BOTTOM, false)
+         );
+     }
+ 
+@@ -81,9 +_,9 @@
+         Level level = context.getLevel();
+         int distance = getDistance(level, clickedPos);
+         return this.defaultBlockState()
+-            .setValue(WATERLOGGED, Boolean.valueOf(level.getFluidState(clickedPos).getType() == Fluids.WATER))
+-            .setValue(DISTANCE, Integer.valueOf(distance))
+-            .setValue(BOTTOM, Boolean.valueOf(this.isBottom(level, clickedPos, distance)));
++            .setValue(WATERLOGGED, level.getFluidState(clickedPos).getType() == Fluids.WATER)
++            .setValue(DISTANCE, distance)
++            .setValue(BOTTOM, this.isBottom(level, clickedPos, distance));
+     }
+ 
+     @Override
+@@ -118,7 +_,7 @@
+     @Override
+     protected void tick(BlockState state, ServerLevel level, BlockPos pos, RandomSource random) {
+         int distance = getDistance(level, pos);
+-        BlockState blockState = state.setValue(DISTANCE, Integer.valueOf(distance)).setValue(BOTTOM, Boolean.valueOf(this.isBottom(level, pos, distance)));
++        BlockState blockState = state.setValue(DISTANCE, distance).setValue(BOTTOM, this.isBottom(level, pos, distance));
+         if (blockState.getValue(DISTANCE) == 7 && !org.bukkit.craftbukkit.event.CraftEventFactory.callBlockFadeEvent(level, pos, blockState.getFluidState().createLegacyBlock()).isCancelled()) { // CraftBukkit - BlockFadeEvent // Paper - fix wrong block state
+             if (state.getValue(DISTANCE) == 7) {
+                 FallingBlockEntity.fall(level, pos, blockState);

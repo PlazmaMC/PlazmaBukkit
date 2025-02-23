@@ -1,0 +1,96 @@
+--- a/net/minecraft/world/level/block/VineBlock.java
++++ b/net/minecraft/world/level/block/VineBlock.java
+@@ -54,11 +_,11 @@
+         this.registerDefaultState(
+             this.stateDefinition
+                 .any()
+-                .setValue(UP, Boolean.valueOf(false))
+-                .setValue(NORTH, Boolean.valueOf(false))
+-                .setValue(EAST, Boolean.valueOf(false))
+-                .setValue(SOUTH, Boolean.valueOf(false))
+-                .setValue(WEST, Boolean.valueOf(false))
++                .setValue(UP, false)
++                .setValue(NORTH, false)
++                .setValue(EAST, false)
++                .setValue(SOUTH, false)
++                .setValue(WEST, false)
+         );
+         this.shapesCache = ImmutableMap.copyOf(
+             this.stateDefinition.getPossibleStates().stream().collect(Collectors.toMap(Function.identity(), VineBlock::calculateShape))
+@@ -145,7 +_,7 @@
+     private BlockState getUpdatedState(BlockState state, BlockGetter level, BlockPos pos) {
+         BlockPos blockPos = pos.above();
+         if (state.getValue(UP)) {
+-            state = state.setValue(UP, Boolean.valueOf(isAcceptableNeighbour(level, blockPos, Direction.DOWN)));
++            state = state.setValue(UP, isAcceptableNeighbour(level, blockPos, Direction.DOWN));
+         }
+ 
+         BlockState blockState = null;
+@@ -162,7 +_,7 @@
+                     canSupportAtFace = blockState.is(this) && blockState.getValue(propertyForFace);
+                 }
+ 
+-                state = state.setValue(propertyForFace, Boolean.valueOf(canSupportAtFace));
++                state = state.setValue(propertyForFace, canSupportAtFace);
+             }
+         }
+ 
+@@ -208,17 +_,17 @@
+                             // CraftBukkit start - Call BlockSpreadEvent
+                             BlockPos source = pos;
+                             if (value && isAcceptableNeighbour(level, blockPos2, clockWise)) {
+-                                org.bukkit.craftbukkit.event.CraftEventFactory.handleBlockSpreadEvent(level, source, blockPos1, this.defaultBlockState().setValue(getPropertyForFace(clockWise), Boolean.valueOf(true)), 2);
++                                org.bukkit.craftbukkit.event.CraftEventFactory.handleBlockSpreadEvent(level, source, blockPos1, this.defaultBlockState().setValue(getPropertyForFace(clockWise), true), 2);
+                             } else if (value1 && isAcceptableNeighbour(level, blockPos3, counterClockWise)) {
+-                                org.bukkit.craftbukkit.event.CraftEventFactory.handleBlockSpreadEvent(level, source, blockPos1, this.defaultBlockState().setValue(getPropertyForFace(counterClockWise), Boolean.valueOf(true)), 2);
++                                org.bukkit.craftbukkit.event.CraftEventFactory.handleBlockSpreadEvent(level, source, blockPos1, this.defaultBlockState().setValue(getPropertyForFace(counterClockWise), true), 2);
+                             } else {
+                                 Direction opposite = random1.getOpposite();
+                                 if (value && level.isEmptyBlock(blockPos2) && isAcceptableNeighbour(level, pos.relative(clockWise), opposite)) {
+-                                    org.bukkit.craftbukkit.event.CraftEventFactory.handleBlockSpreadEvent(level, source, blockPos2, this.defaultBlockState().setValue(getPropertyForFace(opposite), Boolean.valueOf(true)), 2);
++                                    org.bukkit.craftbukkit.event.CraftEventFactory.handleBlockSpreadEvent(level, source, blockPos2, this.defaultBlockState().setValue(getPropertyForFace(opposite), true), 2);
+                                 } else if (value1 && level.isEmptyBlock(blockPos3) && isAcceptableNeighbour(level, pos.relative(counterClockWise), opposite)) {
+-                                    org.bukkit.craftbukkit.event.CraftEventFactory.handleBlockSpreadEvent(level, source, blockPos3, this.defaultBlockState().setValue(getPropertyForFace(opposite), Boolean.valueOf(true)), 2);
++                                    org.bukkit.craftbukkit.event.CraftEventFactory.handleBlockSpreadEvent(level, source, blockPos3, this.defaultBlockState().setValue(getPropertyForFace(opposite), true), 2);
+                                 } else if (random.nextFloat() < 0.05 && isAcceptableNeighbour(level, blockPos1.above(), Direction.UP)) {
+-                                    org.bukkit.craftbukkit.event.CraftEventFactory.handleBlockSpreadEvent(level, source, blockPos1, this.defaultBlockState().setValue(UP, Boolean.valueOf(true)), 2);
++                                    org.bukkit.craftbukkit.event.CraftEventFactory.handleBlockSpreadEvent(level, source, blockPos1, this.defaultBlockState().setValue(UP, true), 2);
+                                 }
+                                 // CraftBukkit end
+                             }
+@@ -229,7 +_,7 @@
+                 } else {
+                     if (random1 == Direction.UP && pos.getY() < level.getMaxY()) {
+                         if (this.canSupportAtFace(level, pos, random1)) {
+-                            org.bukkit.craftbukkit.event.CraftEventFactory.handleBlockGrowEvent(level, pos, state.setValue(UP, Boolean.valueOf(true)), 2); // CraftBukkit
++                            org.bukkit.craftbukkit.event.CraftEventFactory.handleBlockGrowEvent(level, pos, state.setValue(UP, true), 2); // CraftBukkit
+                             return;
+                         }
+ 
+@@ -242,7 +_,7 @@
+ 
+                             for (Direction clockWise : Direction.Plane.HORIZONTAL) {
+                                 if (random.nextBoolean() || !isAcceptableNeighbour(level, blockPos.relative(clockWise), clockWise)) {
+-                                    blockState1 = blockState1.setValue(getPropertyForFace(clockWise), Boolean.valueOf(false));
++                                    blockState1 = blockState1.setValue(getPropertyForFace(clockWise), false);
+                                 }
+                             }
+ 
+@@ -275,7 +_,7 @@
+             if (random.nextBoolean()) {
+                 BooleanProperty propertyForFace = getPropertyForFace(direction);
+                 if (sourceState.getValue(propertyForFace)) {
+-                    spreadState = spreadState.setValue(propertyForFace, Boolean.valueOf(true));
++                    spreadState = spreadState.setValue(propertyForFace, true);
+                 }
+             }
+         }
+@@ -321,7 +_,7 @@
+                 BooleanProperty propertyForFace = getPropertyForFace(direction);
+                 boolean flag = isBlock && blockState.getValue(propertyForFace);
+                 if (!flag && this.canSupportAtFace(context.getLevel(), context.getClickedPos(), direction)) {
+-                    return blockState1.setValue(propertyForFace, Boolean.valueOf(true));
++                    return blockState1.setValue(propertyForFace, true);
+                 }
+             }
+         }

@@ -1,0 +1,59 @@
+--- a/src/main/java/com/destroystokyo/paper/MaterialTags.java
++++ b/src/main/java/com/destroystokyo/paper/MaterialTags.java
+@@ -37,10 +_,16 @@
+ @SuppressWarnings({"NonFinalUtilityClass", "unused", "WeakerAccess"})
+ public class MaterialTags {
+ 
+-    private static NamespacedKey keyFor(String key) {
+-        //noinspection deprecation
++    @org.jetbrains.annotations.Contract("_ -> new") // Plazma
++    private static @org.jspecify.annotations.NonNull NamespacedKey keyFor(final @org.jspecify.annotations.NonNull String key) { // Plazma
+         return new NamespacedKey("paper", key + "_settag");
+     }
++
++    // Plazma start - Add missing docs
++    /**
++     * Covers all variants of arrows.
++     */
++    // Plazma end - Add missing docs
+     public static final MaterialSetTag ARROWS = new MaterialSetTag(keyFor("arrows"))
+         .endsWith("ARROW")
+         .ensureSize("ARROWS", 3).lock();
+@@ -591,6 +_,22 @@
+         .add(material -> material.name().startsWith("DEEPSLATE_") && material.name().endsWith("_ORE"))
+         .ensureSize("DEEPSLATE_ORES", 8).lock();
+ 
++    // Plazma start - Add more ores entries
++    /**
++     * Covers the variants of stone ores.
++     */
++    public static final MaterialSetTag STONE_ORES = new MaterialSetTag(keyFor("stone_ores"))
++        .add(material -> material.name().endsWith("_ORE") && !material.name().startsWith("DEEPSLATE_") && !material.name().startsWith("NETHER_"))
++        .ensureSize("STONE_ORES", 8).lock();
++
++    /**
++     * Covers the variants of nether ores.
++     */
++    public static final MaterialSetTag NETHER_ORES = new MaterialSetTag(keyFor("nether_ores"))
++        .add(material -> material.name().startsWith("NETHER_") && material.name().endsWith("_ORE"))
++        .ensureSize("NETHER_ORES", 2).lock();
++    // Plazma end - Add more ores entries
++
+     /**
+      * Covers the variants of raw ore blocks.
+      */
+@@ -720,5 +_,14 @@
+     public static final MaterialSetTag NETHERITE_TOOLS = new MaterialSetTag(keyFor("netherite_tools"))
+         .add(Material.NETHERITE_AXE, Material.NETHERITE_HOE, Material.NETHERITE_PICKAXE, Material.NETHERITE_SHOVEL, Material.NETHERITE_SWORD)
+         .ensureSize("NETHERITE_TOOLS", 5).lock();
++
++    // Plazma start - Add amethyst
++    /**
++     * Covers all amethyst buds/cluster.
++     */
++    public static final MaterialSetTag AMETHYST_BUDS = new MaterialSetTag(keyFor("amethyst_buds"))
++        .add(Material.AMETHYST_CLUSTER).add(material -> material.name().endsWith("_AMETHYST_BUD"))
++        .ensureSize("AMETHYST_BUDS", 4).lock();
++    // Plazma end - Add amethyst
+ 
+ }

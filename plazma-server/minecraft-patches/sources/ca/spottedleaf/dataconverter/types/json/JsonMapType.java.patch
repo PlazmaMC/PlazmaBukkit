@@ -1,0 +1,129 @@
+--- a/ca/spottedleaf/dataconverter/types/json/JsonMapType.java
++++ b/ca/spottedleaf/dataconverter/types/json/JsonMapType.java
+@@ -15,8 +_,8 @@
+ 
+ public final class JsonMapType implements MapType<String> {
+ 
+-    protected final JsonObject map;
+-    protected final boolean compressed;
++    final JsonObject map; // Plazma - AT (protected -> package-private)
++    final boolean compressed; // Plazma - AT (protected -> package-private)
+ 
+     public JsonMapType(final boolean compressed) {
+         this.map = new JsonObject();
+@@ -124,23 +_,18 @@
+             return type == ObjectType.STRING || (this.compressed && type == ObjectType.NUMBER);
+         } else if (primitive.isBoolean()) {
+             return type.isNumber();
+-        } else {
+-            // is number
+-            final Number number = primitive.getAsNumber();
+-            if (number instanceof Byte) {
+-                return type == ObjectType.BYTE || (this.compressed && type == ObjectType.STRING);
+-            } else if (number instanceof Short) {
+-                return type == ObjectType.SHORT || (this.compressed && type == ObjectType.STRING);
+-            } else if (number instanceof Integer) {
+-                return type == ObjectType.INT || (this.compressed && type == ObjectType.STRING);
+-            } else if (number instanceof Long) {
+-                return type == ObjectType.LONG || (this.compressed && type == ObjectType.STRING);
+-            } else if (number instanceof Float) {
+-                return type == ObjectType.FLOAT || (this.compressed && type == ObjectType.STRING);
+-            } else {
+-                return type == ObjectType.DOUBLE || (this.compressed && type == ObjectType.STRING);
+-            }
+         }
++
++        // Plazma start - Remove unnecessary boxing
++        return switch (primitive.getAsNumber()) {
++            case Byte ignored -> type == ObjectType.BYTE || (this.compressed && type == ObjectType.STRING);
++            case Short ignored -> type == ObjectType.SHORT || (this.compressed && type == ObjectType.STRING);
++            case Integer ignored -> type == ObjectType.INT || (this.compressed && type == ObjectType.STRING);
++            case Long ignored -> type == ObjectType.LONG || (this.compressed && type == ObjectType.STRING);
++            case Float ignored -> type == ObjectType.FLOAT || (this.compressed && type == ObjectType.STRING);
++            case null, default -> type == ObjectType.DOUBLE || (this.compressed && type == ObjectType.STRING);
++        };
++        // Plazma end - Remove unnecessary boxing
+     }
+ 
+     @Override
+@@ -165,7 +_,7 @@
+             } else if (primitive.isString()) {
+                 return primitive.getAsString();
+             } else if (primitive.isBoolean()) {
+-                return Boolean.valueOf(primitive.getAsBoolean());
++                return primitive.getAsBoolean();
+             } else {
+                 throw new IllegalStateException("Unknown json object " + element);
+             }
+@@ -188,7 +_,7 @@
+                 return primitive.getAsBoolean() ? Byte.valueOf((byte)1) : Byte.valueOf((byte)0);
+             } else if (this.compressed && primitive.isString()) {
+                 try {
+-                    return Integer.valueOf(Integer.parseInt(primitive.getAsString()));
++                    return Integer.parseInt(primitive.getAsString());
+                 } catch (final NumberFormatException ex) {
+                     return null;
+                 }
+@@ -220,7 +_,7 @@
+ 
+     @Override
+     public void setBoolean(final String key, final boolean val) {
+-        this.map.addProperty(key, Boolean.valueOf(val));
++        this.map.addProperty(key, val);
+     }
+ 
+     @Override
+@@ -236,7 +_,7 @@
+ 
+     @Override
+     public void setByte(final String key, final byte val) {
+-        this.map.addProperty(key, Byte.valueOf(val));
++        this.map.addProperty(key, val);
+     }
+ 
+     @Override
+@@ -252,7 +_,7 @@
+ 
+     @Override
+     public void setShort(final String key, final short val) {
+-        this.map.addProperty(key, Short.valueOf(val));
++        this.map.addProperty(key, val);
+     }
+ 
+     @Override
+@@ -268,7 +_,7 @@
+ 
+     @Override
+     public void setInt(final String key, final int val) {
+-        this.map.addProperty(key, Integer.valueOf(val));
++        this.map.addProperty(key, val);
+     }
+ 
+     @Override
+@@ -284,7 +_,7 @@
+ 
+     @Override
+     public void setLong(final String key, final long val) {
+-        this.map.addProperty(key, Long.valueOf(val));
++        this.map.addProperty(key, val);
+     }
+ 
+     @Override
+@@ -300,7 +_,7 @@
+ 
+     @Override
+     public void setFloat(final String key, final float val) {
+-        this.map.addProperty(key, Float.valueOf(val));
++        this.map.addProperty(key, val);
+     }
+ 
+     @Override
+@@ -316,7 +_,7 @@
+ 
+     @Override
+     public void setDouble(final String key, final double val) {
+-        this.map.addProperty(key, Double.valueOf(val));
++        this.map.addProperty(key, val);
+     }
+ 
+     @Override
