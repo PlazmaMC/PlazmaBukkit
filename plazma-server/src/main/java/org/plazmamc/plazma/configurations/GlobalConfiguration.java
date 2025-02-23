@@ -24,10 +24,16 @@ public final class GlobalConfiguration extends ConfigurationPart {
     public Player player;
     public class Player extends ConfigurationPart {
 
+        boolean useMovedToQuicklyBypassPerm = OPTIMIZE;
+        boolean checkSpectatorMovedToQuickly = !OPTIMIZE;
+
         int advancementCriterionTriggerIdleTick = OPTIMIZE ? 5 : 0;
 
         @PostProcess
         void postProcess() {
+            net.minecraft.server.network.ServerGamePacketListenerImpl.useMovedToQuicklyBypassPermission = this.useMovedToQuicklyBypassPerm;
+            net.minecraft.server.network.ServerGamePacketListenerImpl.checkSpectatorMovedToQuickly = this.checkSpectatorMovedToQuickly;
+
             net.minecraft.advancements.critereon.InventoryChangeTrigger.idleTick = this.advancementCriterionTriggerIdleTick;
         }
 

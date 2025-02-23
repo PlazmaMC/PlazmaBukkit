@@ -9,3 +9,41 @@
                  if (blockState2 != blockState) {
                      this.player.level().setBlock(pos, blockState2, 2);
                      blockEntity.setBlockState(blockState2);
+@@ -1673,17 +_,28 @@
+         }
+     }
+ 
++    // Plazma start - Add option to bypass moved to quickly check
++    public static boolean useMovedToQuicklyBypassPermission;
++    public static boolean checkSpectatorMovedToQuickly;
++
+     private boolean shouldCheckPlayerMovement(boolean isElytraMovement) {
+-        if (this.isSingleplayerOwner()) {
+-            return false;
+-        } else if (this.player.isChangingDimension()) {
+-            return false;
+-        } else {
+-            GameRules gameRules = this.player.serverLevel().getGameRules();
+-            return !gameRules.getBoolean(GameRules.RULE_DISABLE_PLAYER_MOVEMENT_CHECK)
+-                && (!isElytraMovement || !gameRules.getBoolean(GameRules.RULE_DISABLE_ELYTRA_MOVEMENT_CHECK));
+-        }
++        if (this.player.isChangingDimension()) {
++            return false;
++        }
++
++        if (checkSpectatorMovedToQuickly && this.player.isSpectator()) {
++            return false;
++        }
++
++        if (useMovedToQuicklyBypassPermission && this.player.getBukkitEntity().hasPermission("plazma.bypass-moved-to-quickly-check")) {
++            return false;
++        }
++
++        final GameRules gameRules = this.player.serverLevel().getGameRules();
++        return !gameRules.getBoolean(GameRules.RULE_DISABLE_PLAYER_MOVEMENT_CHECK)
++            && (!isElytraMovement || !gameRules.getBoolean(GameRules.RULE_DISABLE_ELYTRA_MOVEMENT_CHECK));
+     }
++    // Plazma end - Add option to bypass moved to quickly check
+ 
+     private boolean updateAwaitingTeleport() {
+         if (this.awaitingPositionFromClient != null) {
