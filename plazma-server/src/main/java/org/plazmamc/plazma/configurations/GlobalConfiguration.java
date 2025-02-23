@@ -39,6 +39,21 @@ public final class GlobalConfiguration extends ConfigurationPart {
 
     }
 
+    public Messages messages;
+    public class Messages extends ConfigurationPart {
+
+        public String runGc = "Executed garbage collectors";
+
+        public Heal heal;
+        public class Heal extends ConfigurationPart {
+
+            public String healed = "Healed <targets>";
+            public String noTargets = "No targets matched selector";
+
+        }
+
+    }
+
     public ConsoleLogs consoleLogs;
     public class ConsoleLogs extends ConfigurationPart {
 
