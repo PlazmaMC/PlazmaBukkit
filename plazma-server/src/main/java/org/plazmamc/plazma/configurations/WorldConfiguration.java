@@ -21,6 +21,7 @@ public final class WorldConfiguration extends ConfigurationPart {
     public Entity entity;
     public class Entity extends ConfigurationPart {
 
+        public boolean suppressErrorsFromDirtyAttributes = OPTIMIZE;
         public boolean populateLootTableOnlyForPlayerInteraction = OPTIMIZE;
 
     }

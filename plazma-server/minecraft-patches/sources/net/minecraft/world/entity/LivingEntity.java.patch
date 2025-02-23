@@ -1,5 +1,31 @@
 --- a/net/minecraft/world/entity/LivingEntity.java
 +++ b/net/minecraft/world/entity/LivingEntity.java
+@@ -1309,13 +_,14 @@
+     }
+ 
+     private void refreshDirtyAttributes() {
+-        Set<AttributeInstance> attributesToUpdate = this.getAttributes().getAttributesToUpdate();
++        final Set<AttributeInstance> attributeInstances = this.getAttributes().getAttributesToUpdate(); // Plazma - Suppress errors from drity attributes
++        final Set<AttributeInstance> attributesToUpdate = this.level().plazmaConfig().entity.suppressErrorsFromDirtyAttributes ? java.util.Collections.synchronizedSet(attributeInstances) : attributeInstances; // Plazma - Suppress errors from drity attributes
+ 
+         for (AttributeInstance attributeInstance : attributesToUpdate) {
+             this.onAttributeUpdated(attributeInstance.getAttribute());
+         }
+ 
+-        attributesToUpdate.clear();
++        attributeInstances.clear(); // Plazma - Suppress errors from drity attributes
+     }
+ 
+     protected void onAttributeUpdated(Holder<Attribute> attribute) {
+@@ -2666,6 +_,8 @@
+     }
+ 
+     protected void updateSwingTime() {
++        if (!this.swinging && this.swingTime == 0) return; // Plazma - Improve swing time ticking
++
+         int currentSwingDuration = this.getCurrentSwingDuration();
+         if (this.swinging) {
+             this.swingTime++;
 @@ -4421,7 +_,7 @@
  
          BlockState blockState = this.level().getBlockState(pos);

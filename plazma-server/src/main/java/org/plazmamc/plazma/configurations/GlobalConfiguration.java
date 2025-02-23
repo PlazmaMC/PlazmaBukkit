@@ -4,6 +4,7 @@ import io.papermc.paper.configuration.ConfigurationPart;
 import io.papermc.paper.configuration.Configurations;
 import org.jetbrains.annotations.Contract;
 import org.jspecify.annotations.NonNull;
+import org.spongepowered.configurate.objectmapping.meta.PostProcess;
 import org.spongepowered.configurate.objectmapping.meta.Setting;
 
 @SuppressWarnings({"unused", "InnerClassMayBeStatic"})
@@ -19,6 +20,18 @@ public final class GlobalConfiguration extends ConfigurationPart {
 
     @Setting(Configurations.VERSION_FIELD)
     int version = VERSION;
+
+    public Player player;
+    public class Player extends ConfigurationPart {
+
+        int advancementCriterionTriggerIdleTick = OPTIMIZE ? 5 : 0;
+
+        @PostProcess
+        void postProcess() {
+            net.minecraft.advancements.critereon.InventoryChangeTrigger.idleTick = this.advancementCriterionTriggerIdleTick;
+        }
+
+    }
 
     public ConsoleLogs consoleLogs;
     public class ConsoleLogs extends ConfigurationPart {

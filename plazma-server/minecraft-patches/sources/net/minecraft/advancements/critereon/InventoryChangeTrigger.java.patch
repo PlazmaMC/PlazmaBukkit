@@ -1,0 +1,25 @@
+--- a/net/minecraft/advancements/critereon/InventoryChangeTrigger.java
++++ b/net/minecraft/advancements/critereon/InventoryChangeTrigger.java
+@@ -22,7 +_,22 @@
+         return InventoryChangeTrigger.TriggerInstance.CODEC;
+     }
+ 
++    // Plazma start - Optimize advancement criterion triggering (Based on https://github.com/bigenergy/achievement-optimizer/tree/1f956f1)
++    public static int idleTick;
++    private int ticksSkipped;
++
++    @org.jetbrains.annotations.Contract(mutates = "this")
++    private boolean shouldTick() {
++        if (++this.ticksSkipped <= idleTick) return false;
++
++        this.ticksSkipped = 0;
++        return true;
++    }
++    // Plazma end - Optimize advancement criterion triggering
++
+     public void trigger(ServerPlayer player, Inventory inventory, ItemStack stack) {
++        if (idleTick > 0 && !this.shouldTick()) return; // Plazma - Optimize advancement criterion triggering
++
+         int i = 0;
+         int i1 = 0;
+         int i2 = 0;
