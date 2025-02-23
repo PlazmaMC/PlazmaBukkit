@@ -1,0 +1,55 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: AlphaKR93 <dev@alpha93.kr>
+Date: Sun, 23 Feb 2025 19:54:00 +0900
+Subject: [PATCH] Completely remove Timings
+
+
+diff --git a/src/main/java/io/papermc/paper/plugin/manager/PaperEventManager.java b/src/main/java/io/papermc/paper/plugin/manager/PaperEventManager.java
+index 7ce9ebba8ce304d1f3f21d4f15ee5f3560d7700b..7db570ec86a18566131f2df61a64971510fad2ba 100644
+--- a/src/main/java/io/papermc/paper/plugin/manager/PaperEventManager.java
++++ b/src/main/java/io/papermc/paper/plugin/manager/PaperEventManager.java
+@@ -1,6 +1,6 @@
+ package io.papermc.paper.plugin.manager;
+ 
+-import co.aikar.timings.TimedEventExecutor;
++//import co.aikar.timings.TimedEventExecutor; // Plazma - Completely remove timings
+ import com.destroystokyo.paper.event.server.ServerExceptionEvent;
+ import com.destroystokyo.paper.exception.ServerEventException;
+ import com.google.common.collect.Sets;
+@@ -95,7 +95,7 @@ class PaperEventManager {
+             throw new IllegalPluginAccessException("Plugin attempted to register " + event + " while not enabled");
+         }
+ 
+-        executor = new TimedEventExecutor(executor, plugin, null, event);
++        //executor = new TimedEventExecutor(executor, plugin, null, event); // Plazma - Completely remove timings
+         this.getEventListeners(event).register(new RegisteredListener(listener, executor, priority, plugin, ignoreCancelled));
+     }
+ 
+@@ -182,8 +182,8 @@ class PaperEventManager {
+                 }
+             }
+ 
+-            EventExecutor executor = new TimedEventExecutor(EventExecutor.create(method, eventClass), plugin, method, eventClass);
+-            eventSet.add(new RegisteredListener(listener, executor, eh.priority(), plugin, eh.ignoreCancelled()));
++            //EventExecutor executor = new TimedEventExecutor(EventExecutor.create(method, eventClass), plugin, method, eventClass); // Plazma - Completely remove timings
++            eventSet.add(new RegisteredListener(listener, EventExecutor.create(method, eventClass), eh.priority(), plugin, eh.ignoreCancelled())); // Plazma - Completely remove timings
+         }
+         return ret;
+     }
+diff --git a/src/main/java/io/papermc/paper/plugin/manager/PaperPluginManagerImpl.java b/src/main/java/io/papermc/paper/plugin/manager/PaperPluginManagerImpl.java
+index 097500a59336db1bbfffcd1aa4cff7a8586e46ec..ed3e37bba8941ddb4398243db543c5d8ab4f4472 100644
+--- a/src/main/java/io/papermc/paper/plugin/manager/PaperPluginManagerImpl.java
++++ b/src/main/java/io/papermc/paper/plugin/manager/PaperPluginManagerImpl.java
+@@ -230,10 +230,12 @@ public class PaperPluginManagerImpl implements PluginManager, DependencyContext
+ 
+     // Etc
+ 
++    /* // Plazma - Completely remove timings
+     @Override
+     public boolean useTimings() {
+         return co.aikar.timings.Timings.isTimingsEnabled();
+     }
++     */ // Plazma - Completely remove timings
+ 
+     @Override
+     public void registerInterface(@NotNull Class<? extends PluginLoader> loader) throws IllegalArgumentException {

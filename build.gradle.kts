@@ -28,7 +28,7 @@ paperweight {
         patchDir("purpurApi") {
             upstreamPath = "purpur-api"
             excludes = listOf("build.gradle.kts", "build.gradle.kts.patch", "paper-patches")
-            patchesDir = file("plazma-api/fork-patches")
+            patchesDir = file("plazma-api/purpur-patches")
             outputDir = file("purpur-api")
         }
     }
