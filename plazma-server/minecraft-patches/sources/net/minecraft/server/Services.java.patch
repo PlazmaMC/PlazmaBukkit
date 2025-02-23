@@ -1,6 +1,6 @@
 --- a/net/minecraft/server/Services.java
 +++ b/net/minecraft/server/Services.java
-@@ -6,26 +_,42 @@
+@@ -6,35 +_,55 @@
  import com.mojang.authlib.yggdrasil.ServicesKeyType;
  import com.mojang.authlib.yggdrasil.YggdrasilAuthenticationService;
  import java.io.File;
@@ -47,11 +47,14 @@
      public static Services create(YggdrasilAuthenticationService authenticationService, File profileRepository, File userCacheFile, joptsimple.OptionSet optionSet) throws Exception { // Paper - add optionset to load paper config files; add userCacheFile parameter
          MinecraftSessionService minecraftSessionService = authenticationService.createMinecraftSessionService();
          GameProfileRepository gameProfileRepository = authenticationService.createProfileRepository();
-@@ -34,7 +_,11 @@
-         final java.nio.file.Path legacyConfigPath = ((File) optionSet.valueOf("paper-settings")).toPath();
+         GameProfileCache gameProfileCache = new GameProfileCache(gameProfileRepository, userCacheFile); // Paper - use specified user cache file
+         // Paper start - load paper config files from cli options
+-        final java.nio.file.Path legacyConfigPath = ((File) optionSet.valueOf("paper-settings")).toPath();
++        //final java.nio.file.Path legacyConfigPath = ((File) optionSet.valueOf("paper-settings")).toPath(); // Plazma - Remove legacy paper config transformation
          final java.nio.file.Path configDirPath = ((File) optionSet.valueOf("paper-settings-directory")).toPath();
-         io.papermc.paper.configuration.PaperConfigurations paperConfigurations = io.papermc.paper.configuration.PaperConfigurations.setup(legacyConfigPath, configDirPath, profileRepository.toPath(), (File) optionSet.valueOf("spigot-settings"));
+-        io.papermc.paper.configuration.PaperConfigurations paperConfigurations = io.papermc.paper.configuration.PaperConfigurations.setup(legacyConfigPath, configDirPath, profileRepository.toPath(), (File) optionSet.valueOf("spigot-settings"));
 -        return new Services(minecraftSessionService, authenticationService.getServicesKeySet(), gameProfileRepository, gameProfileCache, paperConfigurations);
++        io.papermc.paper.configuration.PaperConfigurations paperConfigurations = io.papermc.paper.configuration.PaperConfigurations.setup(configDirPath, profileRepository.toPath(), (File) optionSet.valueOf("spigot-settings")); // Plazma - Remove legacy paper config transformation
 +
 +        // Plazma start - Configurable Plazma
 +        final org.plazmamc.plazma.configurations.PlazmaConfigurations plazmaConfigurations = org.plazmamc.plazma.configurations.PlazmaConfigurations.create(optionSet);

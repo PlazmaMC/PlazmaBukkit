@@ -1,6 +1,19 @@
 --- a/src/main/java/io/papermc/paper/configuration/PaperConfigurations.java
 +++ b/src/main/java/io/papermc/paper/configuration/PaperConfigurations.java
-@@ -83,62 +_,6 @@
+@@ -18,10 +_,10 @@
+ import io.papermc.paper.configuration.serializer.registry.RegistryHolderSerializer;
+ import io.papermc.paper.configuration.serializer.registry.RegistryValueSerializer;
+ import io.papermc.paper.configuration.transformation.Transformations;
+-import io.papermc.paper.configuration.transformation.global.LegacyPaperConfig;
++//import io.papermc.paper.configuration.transformation.global.LegacyPaperConfig; // Plazma - Remove legacy paper config transformations
+ import io.papermc.paper.configuration.transformation.global.versioned.V29_LogIPs;
+ import io.papermc.paper.configuration.transformation.world.FeatureSeedsGeneration;
+-import io.papermc.paper.configuration.transformation.world.LegacyPaperWorldConfig;
++//import io.papermc.paper.configuration.transformation.world.LegacyPaperWorldConfig; // Plazma - Remove legacy paper config transformations
+ import io.papermc.paper.configuration.transformation.world.versioned.V29_ZeroWorldHeight;
+ import io.papermc.paper.configuration.transformation.world.versioned.V30_RenameFilterNbtFromSpawnEgg;
+ import io.papermc.paper.configuration.transformation.world.versioned.V31_SpawnLoadedRangeToGameRule;
+@@ -83,64 +_,8 @@
  @SuppressWarnings("Convert2Diamond")
  public class PaperConfigurations extends Configurations<GlobalConfiguration, WorldConfiguration> {
  
@@ -61,8 +74,11 @@
 -        """;
 -
      @VisibleForTesting
-     public static final Supplier<SpigotWorldConfig> SPIGOT_WORLD_DEFAULTS = Suppliers.memoize(() -> new SpigotWorldConfig(RandomStringUtils.randomAlphabetic(255)) {
+-    public static final Supplier<SpigotWorldConfig> SPIGOT_WORLD_DEFAULTS = Suppliers.memoize(() -> new SpigotWorldConfig(RandomStringUtils.randomAlphabetic(255)) {
++    public static final Supplier<SpigotWorldConfig> SPIGOT_WORLD_DEFAULTS = Suppliers.memoize(() -> new SpigotWorldConfig(java.util.UUID.randomUUID().toString()) { // Plazma - Use modern method
          @Override // override to ensure "verbose" is false
+         public void init() {
+             SpigotConfig.readConfig(SpigotWorldConfig.class, this);
 @@ -148,28 +_,71 @@
      });
      public static final ContextKey<Supplier<SpigotWorldConfig>> SPIGOT_WORLD_CONFIG_CONTEXT_KEY = new ContextKey<>(new TypeToken<Supplier<SpigotWorldConfig>>() {}, "spigot world config");
@@ -286,10 +302,11 @@
          return createWorldContextMap(level.levelStorageAccess.levelDirectory.path(), level.serverLevelData.getLevelName(), level.dimension().location(), level.spigotConfig, level.registryAccess(), level.getGameRules());
      }
  
-@@ -347,102 +_,10 @@
+@@ -346,103 +_,8 @@
+             .build();
      }
  
-     public static PaperConfigurations setup(final Path legacyConfig, final Path configDir, final Path worldFolder, final File spigotConfig) throws Exception {
+-    public static PaperConfigurations setup(final Path legacyConfig, final Path configDir, final Path worldFolder, final File spigotConfig) throws Exception {
 -        final Path legacy = Files.isSymbolicLink(legacyConfig) ? Files.readSymbolicLink(legacyConfig) : legacyConfig;
 -        if (needsConverting(legacyConfig)) {
 -            final String legacyFileName = legacyConfig.getFileName().toString();
@@ -386,9 +403,7 @@
 -            worlds.set(level.getWorld().getName(), YamlConfiguration.loadConfiguration(getWorldConfigFile(level).toFile()));
 -        }
 -        return global;
-+        if (Files.exists(legacyConfig) && Files.isRegularFile(legacyConfig)) {
-+            throw new RuntimeException("Since Plazma 1.21.4, support for the conversion of legacy paper configuration has been terminated. Remove the legacy paper configuration file or use the previous version of Plazma and convert the configuration first.");
-+        }
++    public static PaperConfigurations setup(/*final Path legacyConfig,*/ final Path configDir, final Path worldFolder, final File spigotConfig) throws Exception { // Plazma - Remove legacy paper config transformation
 +        return new PaperConfigurations(configDir);
      }
  

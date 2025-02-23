@@ -1,5 +1,39 @@
 --- a/src/main/java/org/bukkit/craftbukkit/CraftServer.java
 +++ b/src/main/java/org/bukkit/craftbukkit/CraftServer.java
+@@ -278,13 +_,13 @@
+     private final ServicesManager servicesManager = new SimpleServicesManager();
+     private final CraftScheduler scheduler = new CraftScheduler();
+     private final CraftCommandMap commandMap; // Paper - Move down
+-    private final SimpleHelpMap helpMap = new SimpleHelpMap(this);
++    private final SimpleHelpMap helpMap; // Plazma - Add options to modify configuration paths
+     private final StandardMessenger messenger = new StandardMessenger();
+     private final SimplePluginManager pluginManager; // Paper - Move down
+     public final io.papermc.paper.plugin.manager.PaperPluginManagerImpl paperPluginManager; // Paper
+     private final StructureManager structureManager;
+-    protected final DedicatedServer console;
+-    protected final DedicatedPlayerList playerList;
++    private final DedicatedServer console; // Plazma - AT (protected -> private)
++    private final DedicatedPlayerList playerList; // Plazma - AT (protected -> private)
+     private final Map<String, World> worlds = new LinkedHashMap<String, World>();
+     // private final Map<Class<?>, Registry<?>> registries = new HashMap<>(); // Paper - replace with RegistryAccess
+     private YamlConfiguration configuration;
+@@ -295,7 +_,7 @@
+     private final PlayerMetadataStore playerMetadata = new PlayerMetadataStore();
+     private final WorldMetadataStore worldMetadata = new WorldMetadataStore();
+     private final Object2IntOpenHashMap<SpawnCategory> spawnCategoryLimit = new Object2IntOpenHashMap<>();
+-    private File container;
++    //private File container; // Plazma - Remove unused variables
+     private WarningState warningState = WarningState.DEFAULT;
+     public ApiVersion minimumAPI;
+     public CraftScoreboardManager scoreboardManager;
+@@ -408,6 +_,7 @@
+ 
+     public CraftServer(DedicatedServer console, PlayerList playerList) {
+         this.console = console;
++        this.helpMap = new SimpleHelpMap(this); // Plazma - Add options to modify configuration paths
+         this.playerList = (DedicatedPlayerList) playerList;
+         this.playerView = Collections.unmodifiableList(Lists.transform(playerList.players, new Function<ServerPlayer, CraftPlayer>() {
+             @Override
 @@ -1102,6 +_,7 @@
  
          org.spigotmc.SpigotConfig.init((File) this.console.options.valueOf("spigot-settings")); // Spigot

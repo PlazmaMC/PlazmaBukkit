@@ -1,0 +1,39 @@
+--- a/src/main/java/org/bukkit/craftbukkit/CraftOfflinePlayer.java
++++ b/src/main/java/org/bukkit/craftbukkit/CraftOfflinePlayer.java
+@@ -45,8 +_,7 @@
+     protected CraftOfflinePlayer(CraftServer server, GameProfile profile) {
+         this.server = server;
+         this.profile = profile;
+-        this.storage = server.console.playerDataStorage;
+-
++        this.storage = server.getServer().playerDataStorage; // Plazma
+     }
+ 
+     @Override
+@@ -415,7 +_,7 @@
+             if (data.contains("SpawnDimension")) {
+                 com.mojang.serialization.DataResult<net.minecraft.resources.ResourceKey<net.minecraft.world.level.Level>> result = net.minecraft.world.level.Level.RESOURCE_KEY_CODEC.parse(net.minecraft.nbt.NbtOps.INSTANCE, data.get("SpawnDimension"));
+                 net.minecraft.resources.ResourceKey<net.minecraft.world.level.Level> levelKey = result.resultOrPartial(LOGGER::error).orElse(net.minecraft.world.level.Level.OVERWORLD);
+-                net.minecraft.server.level.ServerLevel level = this.server.console.getLevel(levelKey);
++                net.minecraft.server.level.ServerLevel level = this.server.getServer().getLevel(levelKey); // Plazma
+                 spawnWorld = level != null ? level.getWorld() : spawnWorld;
+             }
+             if (spawnWorld == null) {
+@@ -813,7 +_,7 @@
+      * @param compoundTag
+      */
+     private void save(CompoundTag compoundTag) {
+-        File playerDir = server.console.playerDataStorage.getPlayerDir();
++        File playerDir = server.getServer().playerDataStorage.getPlayerDir(); // Plazma
+         try {
+             File tempFile = File.createTempFile(this.getUniqueId()+"-", ".dat", playerDir);
+             net.minecraft.nbt.NbtIo.writeCompressed(compoundTag, tempFile.toPath());
+@@ -821,7 +_,7 @@
+             File playerDataFileOld = new File(playerDir, this.getUniqueId()+".dat_old");
+             net.minecraft.Util.safeReplaceFile(playerDataFile.toPath(), tempFile.toPath(), playerDataFileOld.toPath());
+         } catch (java.io.IOException e) {
+-            e.printStackTrace();
++            LOGGER.error("Failed to save player data for " + this.getUniqueId(), e);
+         }
+     }
+     // Purpur end - OfflinePlayer API
