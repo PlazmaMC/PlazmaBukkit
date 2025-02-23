@@ -610,9 +610,18 @@ index 398c1733824b689520170de0be94006731afa5cd..1e433543ad0e364ca4a18565aa22d48d
      protected abstract GameProfile playerProfile();
  
 diff --git a/net/minecraft/server/network/ServerGamePacketListenerImpl.java b/net/minecraft/server/network/ServerGamePacketListenerImpl.java
-index 43b541df2ce2441dd6383e23768b98caeaacfb11..836a900df1b3e3aac57ef06d59901793d923866a 100644
+index 43b541df2ce2441dd6383e23768b98caeaacfb11..0c3bd5e5a0da6cb2b848659a9c6e835960f65e64 100644
 --- a/net/minecraft/server/network/ServerGamePacketListenerImpl.java
 +++ b/net/minecraft/server/network/ServerGamePacketListenerImpl.java
+@@ -572,7 +572,7 @@ public class ServerGamePacketListenerImpl
+                     return;
+                 }
+                 // Paper end - Prevent moving into unloaded chunks
+-                if (d7 - d6 > Math.max(100.0, Math.pow((double) (org.spigotmc.SpigotConfig.movedTooQuicklyMultiplier * (float) i * speed), 2)) && !this.isSingleplayerOwner()) {
++                if (d7 - d6 > Math.max(100.0, Math.pow(org.spigotmc.SpigotConfig.movedTooQuicklyMultiplier * ((float) i) * speed, 2)) /*&& !this.isSingleplayerOwner()*/) { // Plazma - Remove isClientSide on DedicatedServer
+                     // CraftBukkit end
+                     LOGGER.warn(
+                         "{} (vehicle of {}) moved too quickly! {},{},{}", rootVehicle.getName().getString(), this.player.getName().getString(), d3, d4, d5
 @@ -808,7 +808,7 @@ public class ServerGamePacketListenerImpl
      public void handleCustomCommandSuggestions(ServerboundCommandSuggestionPacket packet) {
          // PacketUtils.ensureRunningOnSameThread(packet, this, this.player.serverLevel()); // Paper - AsyncTabCompleteEvent; run this async
