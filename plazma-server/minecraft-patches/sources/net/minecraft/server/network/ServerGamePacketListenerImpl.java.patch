@@ -1,5 +1,50 @@
 --- a/net/minecraft/server/network/ServerGamePacketListenerImpl.java
 +++ b/net/minecraft/server/network/ServerGamePacketListenerImpl.java
+@@ -574,11 +_,16 @@
+                 // Paper end - Prevent moving into unloaded chunks
+                 if (d7 - d6 > Math.max(100.0, Math.pow((double) (org.spigotmc.SpigotConfig.movedTooQuicklyMultiplier * (float) i * speed), 2)) && !this.isSingleplayerOwner()) {
+                     // CraftBukkit end
+-                    LOGGER.warn(
+-                        "{} (vehicle of {}) moved too quickly! {},{},{}", rootVehicle.getName().getString(), this.player.getName().getString(), d3, d4, d5
+-                    );
+-                    this.send(ClientboundMoveVehiclePacket.fromEntity(rootVehicle));
+-                    return;
++                    // Plazma start - PlayerVehicleMovedIncorrectlyEvent
++                    final org.plazmamc.plazma.event.player.PlayerVehicleMovedIncorrectlyEvent event = createIncorrectMoveEvent(true, rootVehicle, toX, toY, toZ, f, f1);
++                    if (!event.callEvent()) {
++                        if (event.shouldLogWarnings()) {
++                            LOGGER.warn("{} (vehicle of {}) moved too quickly! {},{},{}", rootVehicle.getName().getString(), this.player.getName().getString(), d3, d4, d5);
++                        }
++                        this.send(ClientboundMoveVehiclePacket.fromEntity(rootVehicle));
++                        return;
++                    }
++                    // Plazma end - PlayerVehicleMovedIncorrectlyEvent
+                 }
+ 
+                 AABB oldBox = rootVehicle.getBoundingBox(); // Paper - copy from player movement packet
+@@ -601,16 +_,18 @@
+ 
+                 d5 = d2 - rootVehicle.getZ();
+                 d7 = d3 * d3 + d4 * d4 + d5 * d5;
+-                boolean flag2 = false;
++                boolean teleportBack = false; // Plazma - PlayerVehicleMovedIncorrectlyEvent
+                 if (d7 > org.spigotmc.SpigotConfig.movedWronglyThreshold) { // Spigot
+-                    flag2 = true; // Paper - diff on change, this should be moved wrongly
+-                    LOGGER.warn("{} (vehicle of {}) moved wrongly! {}", rootVehicle.getName().getString(), this.player.getName().getString(), Math.sqrt(d7));
++                    // Plazma start - PlayerVehicleMovedIncorrectlyEvent
++                    final org.plazmamc.plazma.event.player.PlayerVehicleMovedIncorrectlyEvent event = createIncorrectMoveEvent(true, rootVehicle, toX, toY, toZ, f, f1);
++                    teleportBack = !event.callEvent(); // Paper - diff on change, this should be moved wrongly
++                    if (event.shouldLogWarnings()) LOGGER.warn("{} (vehicle of {}) moved wrongly! {}", rootVehicle.getName().getString(), this.player.getName().getString(), Math.sqrt(d7));
++                    // Plazma end - PlayerVehicleMovedIncorrectlyEvent
+                 }
+ 
+                 rootVehicle.absMoveTo(d, d1, d2, f, f1);
+                 this.player.absMoveTo(d, d1, d2, this.player.getYRot(), this.player.getXRot()); // CraftBukkit
+                 // Paper start - optimise out extra getCubes
+-                boolean teleportBack = flag2; // violating this is always a fail
+                 if (!teleportBack) {
+                     // note: only call after setLocation, or else getBoundingBox is wrong
+                     AABB newBox = rootVehicle.getBoundingBox();
 @@ -937,7 +_,7 @@
                      default -> Blocks.COMMAND_BLOCK.defaultBlockState();
                  };
@@ -47,3 +92,21 @@
  
      private boolean updateAwaitingTeleport() {
          if (this.awaitingPositionFromClient != null) {
+@@ -3714,4 +_,17 @@
+         return event;
+     }
+     // Paper end - Add fail move event
++
++    // Plazma start - PlayerVehicleMovedIncorrectlyEvent
++    private org.plazmamc.plazma.event.player.@org.jspecify.annotations.NonNull PlayerVehicleMovedIncorrectlyEvent createIncorrectMoveEvent(
++        boolean movedQuickly, @org.jspecify.annotations.NonNull Entity vehicle, double toX, double toY, double toZ, float toYaw, float toPitch
++    ) {
++        final org.bukkit.entity.Player player = this.getCraftPlayer();
++        final Location from = new Location(player.getWorld(), vehicle.getX(), vehicle.getY(), vehicle.getZ(), vehicle.getXRot(), vehicle.getYRot());
++        final Location to = new Location(player.getWorld(), toX, toY, toZ, toYaw, toPitch);
++
++        final org.plazmamc.plazma.event.player.PlayerVehicleMovedIncorrectlyEvent.Reason reason = movedQuickly ? org.plazmamc.plazma.event.player.PlayerVehicleMovedIncorrectlyEvent.Reason.MOVED_TOO_QUICKLY : org.plazmamc.plazma.event.player.PlayerVehicleMovedIncorrectlyEvent.Reason.MOVED_WRONGLY;
++        return new org.plazmamc.plazma.event.player.PlayerVehicleMovedIncorrectlyEvent(player, (org.bukkit.entity.Vehicle) vehicle.getBukkitEntity(), from, to, reason, true);
++    }
++    // Plazma end - PlayerVehicleMovedIncorrectlyEvent
+ }
