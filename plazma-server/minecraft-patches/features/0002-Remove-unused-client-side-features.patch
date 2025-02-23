@@ -353,8 +353,53 @@ index 626e9feb6a6e7a2cbc7c63e30ba4fb6b923e85c7..22050e61506e1f3c2f4998ac1e3de4a3
  
          return item;
      }
+diff --git a/net/minecraft/server/Main.java b/net/minecraft/server/Main.java
+index 97a70f372756e283810921ad39f4d0a7ba840afc..eb2316e5915e973675c75b4358d20f5ef4124503 100644
+--- a/net/minecraft/server/Main.java
++++ b/net/minecraft/server/Main.java
+@@ -41,7 +41,7 @@ import net.minecraft.server.packs.repository.PackRepository;
+ import net.minecraft.server.packs.repository.ServerPacksSource;
+ import net.minecraft.util.Mth;
+ import net.minecraft.util.datafix.DataFixers;
+-import net.minecraft.util.profiling.jfr.Environment;
++//import net.minecraft.util.profiling.jfr.Environment; // Plazma - Remove isClientSide on DedicatedServer
+ import net.minecraft.util.profiling.jfr.JvmProfiler;
+ import net.minecraft.util.worldupdate.WorldUpgrader;
+ import net.minecraft.world.flag.FeatureFlags;
+@@ -102,7 +102,7 @@ public class Main {
+ 
+             CrashReport.preload();
+             if (optionSet.has("jfrProfile")) { // CraftBukkit
+-                JvmProfiler.INSTANCE.start(Environment.SERVER);
++                JvmProfiler.INSTANCE.start(/*Environment.SERVER*/); // Plazma - Remove isClientSide on DedicatedServer
+             }
+ 
+             // Purpur start - Add toggle for enchant level clamping - load config files early
+diff --git a/net/minecraft/server/commands/JfrCommand.java b/net/minecraft/server/commands/JfrCommand.java
+index 5b32584379d946dc424c9d716fd0d9be5ddfdd64..cda646e0487087bd78a9bae64a2baa297e8f6094 100644
+--- a/net/minecraft/server/commands/JfrCommand.java
++++ b/net/minecraft/server/commands/JfrCommand.java
+@@ -13,7 +13,7 @@ import net.minecraft.commands.Commands;
+ import net.minecraft.network.chat.ClickEvent;
+ import net.minecraft.network.chat.Component;
+ import net.minecraft.network.chat.HoverEvent;
+-import net.minecraft.util.profiling.jfr.Environment;
++//import net.minecraft.util.profiling.jfr.Environment; // Plazma - Remove isClientSide on DedicatedServer
+ import net.minecraft.util.profiling.jfr.JvmProfiler;
+ 
+ public class JfrCommand {
+@@ -35,8 +35,7 @@ public class JfrCommand {
+     }
+ 
+     private static int startJfr(CommandSourceStack source) throws CommandSyntaxException {
+-        Environment environment = Environment.from(source.getServer());
+-        if (!JvmProfiler.INSTANCE.start(environment)) {
++        if (!JvmProfiler.INSTANCE.start()) { // Plazma - Remove isClientSide on DedicatedServer
+             throw START_FAILED.create();
+         } else {
+             source.sendSuccess(() -> Component.translatable("commands.jfr.started"), false);
 diff --git a/net/minecraft/server/level/ServerLevel.java b/net/minecraft/server/level/ServerLevel.java
-index bfc88babf6f3c1884713723d6094303550097363..7c2ce601dc60b100b47d050f5e3b525263ccd91e 100644
+index 1b983393fcb170829f981cf0ab1620d92c80ab1d..be4e3533590cd36bbed6f17f3be5941e70f40b8a 100644
 --- a/net/minecraft/server/level/ServerLevel.java
 +++ b/net/minecraft/server/level/ServerLevel.java
 @@ -597,7 +597,7 @@ public class ServerLevel extends Level implements ServerEntityGetter, WorldGenLe
@@ -383,6 +428,101 @@ index 3ba4b970c3781ab89a60687ec41ffb1e6297c9f9..c3f9c65052713c177169a6367d2b5e30
  
      @Deprecated
      @Override
+diff --git a/net/minecraft/util/profiling/jfr/Environment.java b/net/minecraft/util/profiling/jfr/Environment.java
+deleted file mode 100644
+index 2b27173c700dbd9f418d470ca5ce81eadf0bb8ce..0000000000000000000000000000000000000000
+--- a/net/minecraft/util/profiling/jfr/Environment.java
++++ /dev/null
+@@ -1,22 +0,0 @@
+-package net.minecraft.util.profiling.jfr;
+-
+-import net.minecraft.server.MinecraftServer;
+-
+-public enum Environment {
+-    CLIENT("client"),
+-    SERVER("server");
+-
+-    private final String description;
+-
+-    private Environment(final String description) {
+-        this.description = description;
+-    }
+-
+-    public static Environment from(MinecraftServer server) {
+-        return server.isDedicatedServer() ? SERVER : CLIENT;
+-    }
+-
+-    public String getDescription() {
+-        return this.description;
+-    }
+-}
+diff --git a/net/minecraft/util/profiling/jfr/JfrProfiler.java b/net/minecraft/util/profiling/jfr/JfrProfiler.java
+index 5dfddd59f8f9ce4c5991e8e3ff14d6fdbdbbf6cb..29468480d9a0edf661bbfecfea7b8c3265b3f5ab 100644
+--- a/net/minecraft/util/profiling/jfr/JfrProfiler.java
++++ b/net/minecraft/util/profiling/jfr/JfrProfiler.java
+@@ -97,7 +97,7 @@ public class JfrProfiler implements JvmProfiler {
+     }
+ 
+     @Override
+-    public boolean start(Environment environment) {
++    public boolean start(/*Environment environment*/) { // Plazma - Remove isClientSide on DedicatedServer
+         URL resource = JfrProfiler.class.getResource("/flightrecorder-config.jfc");
+         if (resource == null) {
+             LOGGER.warn("Could not find default flight recorder config at {}", "/flightrecorder-config.jfc");
+@@ -106,7 +106,7 @@ public class JfrProfiler implements JvmProfiler {
+             try {
+                 boolean var4;
+                 try (BufferedReader bufferedReader = new BufferedReader(new InputStreamReader(resource.openStream()))) {
+-                    var4 = this.start(bufferedReader, environment);
++                    var4 = this.start(bufferedReader/*, environment*/); // Plazma - Remove isClientSide on DedicatedServer
+                 }
+ 
+                 return var4;
+@@ -139,7 +139,7 @@ public class JfrProfiler implements JvmProfiler {
+         return FlightRecorder.isAvailable();
+     }
+ 
+-    private boolean start(Reader reader, Environment environment) {
++    private boolean start(final Reader reader/*, Environment environment*/) { // Plazma - Remove isClientSide on DedicatedServer
+         if (this.isRunning()) {
+             LOGGER.warn("Profiling already in progress");
+             return false;
+@@ -154,11 +154,11 @@ public class JfrProfiler implements JvmProfiler {
+                         recording.setDumpOnExit(true);
+                         recording.setToDisk(true);
+                         recording.setName(
+-                            String.format(Locale.ROOT, "%s-%s-%s", environment.getDescription(), SharedConstants.getCurrentVersion().getName(), string)
++                            String.format(Locale.ROOT, "server-%s-%s", SharedConstants.getCurrentVersion().getName(), string) // Plazma - Remove isClientSide on DedicatedServer
+                         );
+                     }
+                 );
+-                Path path = Paths.get(String.format(Locale.ROOT, "debug/%s-%s.jfr", environment.getDescription(), string));
++                Path path = Paths.get(String.format(Locale.ROOT, "debug/server-%s.jfr", string)); // Plazma - Remove isClientSide on DedicatedServer
+                 FileUtil.createDirectoriesSafe(path.getParent());
+                 this.recording.setDestination(path);
+                 this.recording.start();
+diff --git a/net/minecraft/util/profiling/jfr/JvmProfiler.java b/net/minecraft/util/profiling/jfr/JvmProfiler.java
+index 607e176893bbbf2d98f35c413d5d2de82fbe529d..85ca32441df08ac6f404cce6e549e4e1c46b065a 100644
+--- a/net/minecraft/util/profiling/jfr/JvmProfiler.java
++++ b/net/minecraft/util/profiling/jfr/JvmProfiler.java
+@@ -21,7 +21,7 @@ public interface JvmProfiler {
+         ? JfrProfiler.getInstance()
+         : new JvmProfiler.NoOpProfiler());
+ 
+-    boolean start(Environment environment);
++    boolean start(/*Environment environment*/); // Plazma - Remove isClientSide on DedicatedServer
+ 
+     Path stop();
+ 
+@@ -53,7 +53,7 @@ public interface JvmProfiler {
+         static final ProfiledDuration noOpCommit = success -> {};
+ 
+         @Override
+-        public boolean start(Environment environment) {
++        public boolean start(/*Environment environment*/) { // Plazma - Remove isClientSide on DedicatedServer
+             LOGGER.warn("Attempted to start Flight Recorder, but it's not supported on this JVM");
+             return false;
+         }
 diff --git a/net/minecraft/world/entity/AgeableMob.java b/net/minecraft/world/entity/AgeableMob.java
 index 179f4e4b9b1eb57f78bbb2f9fa34b11ea79b7a88..1c8c2e246b48c2e76e5805eb7ba4132e8699191c 100644
 --- a/net/minecraft/world/entity/AgeableMob.java
@@ -6377,7 +6517,7 @@ index 8de482367f3d9d91048b7c85cbaefcda9f9fbcdc..05f1d1590d87c3548c724970eb82afda
  
      public void setNextSpawnData(@Nullable Level level, BlockPos pos, SpawnData nextSpawnData) {
 diff --git a/net/minecraft/world/level/Level.java b/net/minecraft/world/level/Level.java
-index d350909d37966ecb9e55bf7706b675a18c76e49d..a8375d783280a1b6635ca2bd1768553cdc3d023d 100644
+index d350909d37966ecb9e55bf7706b675a18c76e49d..df28a59ef9f233916d5d32aea7aa1b6bedb36a58 100644
 --- a/net/minecraft/world/level/Level.java
 +++ b/net/minecraft/world/level/Level.java
 @@ -126,7 +126,7 @@ public abstract class Level implements LevelAccessor, AutoCloseable, ca.spottedl
@@ -6445,37 +6585,23 @@ index d350909d37966ecb9e55bf7706b675a18c76e49d..a8375d783280a1b6635ca2bd1768553c
                  this.updateNeighbourForOutputSignal(blockPos, newBlock.getBlock());
              }
          }
-@@ -1445,15 +1447,26 @@ public abstract class Level implements LevelAccessor, AutoCloseable, ca.spottedl
+@@ -1445,6 +1447,7 @@ public abstract class Level implements LevelAccessor, AutoCloseable, ca.spottedl
          this.playSeededSound(player, entity, BuiltInRegistries.SOUND_EVENT.wrapAsHolder(event), category, volume, pitch, this.threadSafeRandom.nextLong());
      }
  
--    public void playLocalSound(BlockPos pos, SoundEvent sound, SoundSource category, float volume, float pitch, boolean distanceDelay) {
-+    // /* // Plazma - Remove isClientSide on DedicatedServer
-+    @Deprecated(forRemoval = true)
-+    @org.jetbrains.annotations.ApiStatus.Experimental
-+    @io.papermc.paper.annotation.DoNotUse
-+    public void playLocalSound(BlockPos pos, SoundEvent sound, SoundSource category, float volume, float pitch, boolean distanceDelay) throws IOException {
++    /* // Plazma - Remove isClientSide on DedicatedServer
+     public void playLocalSound(BlockPos pos, SoundEvent sound, SoundSource category, float volume, float pitch, boolean distanceDelay) {
          this.playLocalSound(pos.getX() + 0.5, pos.getY() + 0.5, pos.getZ() + 0.5, sound, category, volume, pitch, distanceDelay);
      }
+@@ -1454,6 +1457,7 @@ public abstract class Level implements LevelAccessor, AutoCloseable, ca.spottedl
  
--    public void playLocalSound(Entity entity, SoundEvent sound, SoundSource category, float volume, float pitch) {
-+    @Deprecated(forRemoval = true)
-+    @org.jetbrains.annotations.ApiStatus.Experimental
-+    @io.papermc.paper.annotation.DoNotUse
-+    public void playLocalSound(Entity entity, SoundEvent sound, SoundSource category, float volume, float pitch) throws IOException {
+     public void playLocalSound(double x, double y, double z, SoundEvent sound, SoundSource category, float volume, float pitch, boolean distanceDelay) {
      }
- 
--    public void playLocalSound(double x, double y, double z, SoundEvent sound, SoundSource category, float volume, float pitch, boolean distanceDelay) {
-+    @Deprecated(forRemoval = true)
-+    @org.jetbrains.annotations.ApiStatus.Experimental
-+    @io.papermc.paper.annotation.DoNotUse
-+    public void playLocalSound(double x, double y, double z, SoundEvent sound, SoundSource category, float volume, float pitch, boolean distanceDelay) throws IOException {
-     }
-+    // */ // Plazma - Remove isClientSide on DedicatedServer
++     */ // Plazma - Remove isClientSide on DedicatedServer
  
      @Override
      public void addParticle(ParticleOptions particleData, double x, double y, double z, double xSpeed, double ySpeed, double zSpeed) {
-@@ -1680,7 +1693,7 @@ public abstract class Level implements LevelAccessor, AutoCloseable, ca.spottedl
+@@ -1680,7 +1684,7 @@ public abstract class Level implements LevelAccessor, AutoCloseable, ca.spottedl
          if (this.isOutsideBuildHeight(pos)) {
              return null;
          } else {
@@ -6484,7 +6610,7 @@ index d350909d37966ecb9e55bf7706b675a18c76e49d..a8375d783280a1b6635ca2bd1768553c
                  ? null
                  : this.getChunkAt(pos).getBlockEntity(pos, LevelChunk.EntityCreationType.IMMEDIATE);
          }
-@@ -2037,9 +2050,11 @@ public abstract class Level implements LevelAccessor, AutoCloseable, ca.spottedl
+@@ -2037,9 +2041,11 @@ public abstract class Level implements LevelAccessor, AutoCloseable, ca.spottedl
          return this.worldBorder;
      }
  
