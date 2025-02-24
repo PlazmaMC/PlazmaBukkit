@@ -474,12 +474,14 @@ index 96a85803ceae7054a60067de4ec2116a35720e66..7e2bca85bc6a0d20c1f7ba6605b56b29
  
              if (i == 0) {
 diff --git a/net/minecraft/server/dedicated/DedicatedServer.java b/net/minecraft/server/dedicated/DedicatedServer.java
-index a1fdae645d1c7a8716690546c360b4dfa01c7c47..1621a15229cf6baff9c062600a7c83cc6c6eec60 100644
+index 3fa734b754f122cac42d636e60aec7ade3b3ff47..39e5f1a6fee90a819700acd0c8a459a984b283cf 100644
 --- a/net/minecraft/server/dedicated/DedicatedServer.java
 +++ b/net/minecraft/server/dedicated/DedicatedServer.java
-@@ -136,13 +136,11 @@ public class DedicatedServer extends MinecraftServer implements ServerInterface
+@@ -135,14 +135,12 @@ public class DedicatedServer extends MinecraftServer implements ServerInterface
+         }
  
          LOGGER.info("Loading properties");
++        // Plazma start - Remove isClientSide on DedicatedServer
          DedicatedServerProperties properties = this.settings.getProperties();
 -        if (this.isSingleplayer()) {
 -            this.setLocalIp("127.0.0.1");
@@ -488,7 +490,6 @@ index a1fdae645d1c7a8716690546c360b4dfa01c7c47..1621a15229cf6baff9c062600a7c83cc
 -            this.setPreventProxyConnections(properties.preventProxyConnections);
 -            this.setLocalIp(properties.serverIp);
 -        }
-+        // Plazma start - Remove isClientSide on DedicatedServer
 +        this.setUsesAuthentication(properties.onlineMode);
 +        this.setPreventProxyConnections(properties.preventProxyConnections);
 +        this.setLocalIp(properties.serverIp);
@@ -610,7 +611,7 @@ index 398c1733824b689520170de0be94006731afa5cd..1e433543ad0e364ca4a18565aa22d48d
      protected abstract GameProfile playerProfile();
  
 diff --git a/net/minecraft/server/network/ServerGamePacketListenerImpl.java b/net/minecraft/server/network/ServerGamePacketListenerImpl.java
-index 43b541df2ce2441dd6383e23768b98caeaacfb11..0c3bd5e5a0da6cb2b848659a9c6e835960f65e64 100644
+index b333653af0c001160a1dfc061b8c21d051cef594..471bcdc0abe8319901a42032f6d4a653afa17640 100644
 --- a/net/minecraft/server/network/ServerGamePacketListenerImpl.java
 +++ b/net/minecraft/server/network/ServerGamePacketListenerImpl.java
 @@ -572,7 +572,7 @@ public class ServerGamePacketListenerImpl
@@ -620,9 +621,9 @@ index 43b541df2ce2441dd6383e23768b98caeaacfb11..0c3bd5e5a0da6cb2b848659a9c6e8359
 -                if (d7 - d6 > Math.max(100.0, Math.pow((double) (org.spigotmc.SpigotConfig.movedTooQuicklyMultiplier * (float) i * speed), 2)) && !this.isSingleplayerOwner()) {
 +                if (d7 - d6 > Math.max(100.0, Math.pow(org.spigotmc.SpigotConfig.movedTooQuicklyMultiplier * ((float) i) * speed, 2)) /*&& !this.isSingleplayerOwner()*/) { // Plazma - Remove isClientSide on DedicatedServer
                      // CraftBukkit end
-                     LOGGER.warn(
-                         "{} (vehicle of {}) moved too quickly! {},{},{}", rootVehicle.getName().getString(), this.player.getName().getString(), d3, d4, d5
-@@ -808,7 +808,7 @@ public class ServerGamePacketListenerImpl
+                     // Plazma start - PlayerVehicleMovedIncorrectlyEvent
+                     final org.plazmamc.plazma.event.player.PlayerVehicleMovedIncorrectlyEvent event = createIncorrectMoveEvent(true, rootVehicle, toX, toY, toZ, f, f1);
+@@ -815,7 +815,7 @@ public class ServerGamePacketListenerImpl
      public void handleCustomCommandSuggestions(ServerboundCommandSuggestionPacket packet) {
          // PacketUtils.ensureRunningOnSameThread(packet, this, this.player.serverLevel()); // Paper - AsyncTabCompleteEvent; run this async
          // CraftBukkit start
@@ -631,7 +632,7 @@ index 43b541df2ce2441dd6383e23768b98caeaacfb11..0c3bd5e5a0da6cb2b848659a9c6e8359
              this.disconnectAsync(Component.translatable("disconnect.spam"), org.bukkit.event.player.PlayerKickEvent.Cause.SPAM); // Paper - Kick event cause // Paper - add proper async disconnect
              return;
          }
-@@ -2600,7 +2600,7 @@ public class ServerGamePacketListenerImpl
+@@ -2607,7 +2607,7 @@ public class ServerGamePacketListenerImpl
          if (!this.chatSpamThrottler.isIncrementAndUnderThreshold()
              // CraftBukkit end
              && !this.server.getPlayerList().isOp(this.player.getGameProfile())
@@ -640,7 +641,7 @@ index 43b541df2ce2441dd6383e23768b98caeaacfb11..0c3bd5e5a0da6cb2b848659a9c6e8359
              this.disconnectAsync(Component.translatable("disconnect.spam"), org.bukkit.event.player.PlayerKickEvent.Cause.SPAM); // Paper - kick event cause & add proper async disconnect
          }
      }
-@@ -3597,15 +3597,17 @@ public class ServerGamePacketListenerImpl
+@@ -3604,15 +3604,17 @@ public class ServerGamePacketListenerImpl
      @Override
      public void handleChangeDifficulty(ServerboundChangeDifficultyPacket packet) {
          PacketUtils.ensureRunningOnSameThread(packet, this, this.player.serverLevel());
