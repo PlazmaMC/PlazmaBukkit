@@ -33,10 +33,6 @@
 
 </div>
 
-> [!IMPORTANT]
-The hardfork process is taking longer than expected. We are working to release a dev build as soon as possible.<br>
-하드포크 작업이 예상보다 길어지고 있습니다. 최대한 빨리 테스트 빌드를 공개할 수 있도록 노력하고 있습니다.
-
 > [!WARNING]
 Plazma may cause **<u>unexpected problems</u>**, so be sure to test it thoroughly before using it on a public server.<br>
 플라즈마는 **<u>예기치 못한 문제를</u>** 일으킬 수 있으므로, 공개 서버에서 사용하기 전 충분한 테스트를 거친 후 사용하시기 바랍니다.
