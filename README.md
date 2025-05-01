@@ -93,19 +93,19 @@ Plazma may cause **<u>unexpected problems</u>**, so be sure to test it thoroughl
 3. **Customizable gameplay**\
    [Purpur](https://github.com/PurpurMC/Purpur) included in Plazma allows modification of various game attributes.
 4. **Secure server gameplay**\
-   Includes [FreedomChat](https://github.com/ocelotpotpie/FreedomChat/)[^ncr] to disable Mojang's chat reporting feature introduced in 1.19, and completely removes diagnostic information collectors for a traceless, secure server gameplay.
+   Includes [FreedomChat](https://github.com/ocelotpotpie/FreedomChat/)[^ncr] to disable Mojang's chat reporting feature introduced in 1.19 and completely removes diagnostic information collectors for traceless, secure server gameplay.
 5. ~~**Fastest updates**~~\
    ~~[AlwaysUpToDate](https://github.com/PlazmaMC/AlwaysUpToDate) ensures that Plazma's included patches are always kept up to date, providing the fastest updates among Paper-based server platforms.~~
-   Due to Paper's [Hardfork](https://forums.papermc.io/threads/the-future-of-paper-hard-fork.1451/), this feature is disabled temporary
+   Due to Paper's [Hardfork](https://forums.papermc.io/threads/the-future-of-paper-hard-fork.1451/), this feature is disabled temporarily.
 7. **Optimized default configuration files**\
    The default configuration files are optimized, eliminating the need for manual optimization.
 8. **Systematically functioning multithreading**\
-   Asynchronously synchronizing system mechanisms unrelated to game mechanics to reduce latencry and optimize the server.
+   Asynchronously synchronizing system mechanisms unrelated to game mechanics to reduce latency and optimize the server.
 9. **Blocking unnecessary space usage**\
    Consolidating data with similar values reduces memory usage.
 - **[Want to learn more about Plazma?](https://docs.plazmamc.org/plazma/about/patches-list)**
 
-[^ncr]: Before 1.20.4 used [NoChatReports](https://github.com/Aizistral-Studios/No-Chat-Reports/)
+[^ncr]: Before 1.20.4, used [NoChatReports](https://github.com/Aizistral-Studios/No-Chat-Reports/)
 
 ## ⚖️ License
 - This project and all patches are licensed under the [MIT license](LICENSE.md) unless otherwise noted in the patch headers.
