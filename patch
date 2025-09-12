@@ -1,0 +1,78 @@
+#!/usr/bin/env bash
+
+COMMAND=$1
+COMMIT_MSG=$2
+
+if [ -z "$COMMAND" ]; then
+  echo "Usage: $0 <command> [\"Commit message\"]"
+  exit 1
+fi
+
+ROOT_DIR=$(pwd)
+
+build_single() {
+  local DIR=$1
+  local BUILD_CMD=$2
+  cd "$ROOT_DIR/$DIR" || exit
+  git add .
+  if [ -n "$COMMIT_MSG" ]; then
+    git commit -m "$COMMIT_MSG" || echo "No changes to commit in $DIR"
+  fi
+  cd "$ROOT_DIR" || exit
+  ./gradlew "$BUILD_CMD"
+}
+
+merge_single() {
+  local DIR=$1
+  local BUILD_CMD=$2
+  cd "$ROOT_DIR/$DIR" || exit
+  LAST_MSG=$(git log -n 1 --pretty=format:"%s")
+  git reset --soft HEAD~1
+  git commit -m "$LAST_MSG"
+  cd "$ROOT_DIR" || exit
+  ./gradlew "$BUILD_CMD"
+}
+
+case $COMMAND in
+  buildPaperAPI)
+    build_single "paper-api" "rebuildPaperApiPatches"
+    ;;
+  buildPurpurAPI)
+    build_single "purpur-api" "rebuildPurpurApiPatches"
+    ;;
+  buildPaperServer)
+    build_single "paper-server" "rebuildPaperServerPatches"
+    ;;
+  buildPurpurServer)
+    build_single "purpur-server" "rebuildPurpurServerPatches"
+    ;;
+  buildMinecraftServer)
+    build_single "plazma-server/src/minecraft/java" "rebuildMinecraftPatches"
+    ;;
+  build)
+    build_single "paper-api" "rebuildPaperApiPatches"
+    build_single "purpur-api" "rebuildPurpurApiPatches"
+    build_single "paper-server" "rebuildPaperServerPatches"
+    build_single "purpur-server" "rebuildPurpurServerPatches"
+    build_single "plazma-server/src/minecraft/java" "rebuildMinecraftPatches"
+    ;;
+  mergePaperAPI)
+    merge_single "paper-api" "rebuildPaperApiPatches"
+    ;;
+  mergePurpurAPI)
+    merge_single "purpur-api" "rebuildPurpurApiPatches"
+    ;;
+  mergePaperServer)
+    merge_single "paper-server" "rebuildPaperServerPatches"
+    ;;
+  mergePurpurServer)
+    merge_single "purpur-server" "rebuildPurpurServerPatches"
+    ;;
+  mergeMinecraftServer)
+    merge_single "plazma-server/src/minecraft/java" "rebuildMinecraftPatches"
+    ;;
+  *)
+    echo "Unknown command: $COMMAND"
+    exit 1
+    ;;
+esac
