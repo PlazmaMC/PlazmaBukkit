@@ -1,9 +1,8 @@
 <div align="center">
 
-[![image](src/resources/title-400.png)](https://github.com/PlazmaMC/Plazma)
+[![image](src/resources/title-1024.png)](https://github.com/PlazmaMC/Plazma)
 
-### A Server Platform for Minecraft: Java Edition based on [Paper](https://github.com/PaperMC/Paper), which provides the fastest performance
-
+### A Minecraft Server Platform based on [Purpur](https://github.com/PurpurMC/Purpur), which provides enhanced stability and performance.
 <!---
 [![Discord](https://cdn.plazmamc.org/discord)](https://plazmamc.org/discord)
 [![License](https://cdn.plazmamc.org/license)](LICENSE.md)
@@ -14,106 +13,79 @@
 [![Forks](https://cdn.plazmamc.org/forks)](https://github.com/PlazmaMC/Plazma/forks)
 [![Watchers](https://cdn.plazmamc.org/watches)](https://github.com/PlazmaMC/Plazma/watchers)
 --->
-
-[![Discord](https://api.plazmamc.org/internal/cdn/discord)](https://plazmamc.org/discord)
+---
 [![License](https://api.plazmamc.org/internal/cdn/license)](LICENSE.md)
 [![Downloads](https://api.plazmamc.org/internal/cdn/downloads)](https://plazmamc.org/downloads)
 [![Stargazers](https://api.plazmamc.org/internal/cdn/stars)](https://github.com/PlazmaMC/Plazma/stargazers)
 
-[![Upstream Status](https://api.plazmamc.org/internal/cdn/upstreams)](https://github.com/PlazmaMC/AlwaysUpToDate/actions)
-[![Forks](https://api.plazmamc.org/internal/cdn/forks)](https://github.com/PlazmaMC/Plazma/forks)
-[![Watchers](https://api.plazmamc.org/internal/cdn/watches)](https://github.com/PlazmaMC/Plazma/watchers)
-
-[^warn]: In most cases, it works fine, but it can sometimes cause errors, so it should be used after sufficient testing.<br>대부분의 경우 정상적으로 작동하지만 때때로 오류를 일으킬 수 있으므로, 충분한 테스트를 거친 후 사용해야 합니다.
-[^missing]: Some patches are still in development. There may be differences in functionality compared to stable versions.<br>일부 패치가 아직 개발중이므로, 안정 버전과 기능 차이가 있을 수 있습니다.
-
-### [📑 Document](https://docs.plazmamc.org/) | [⬇️ Downloads](https://plazmamc.org/downloads)
-
-#
-
+[![Discord](https://api.plazmamc.org/internal/cdn/discord)](https://plazmamc.org/discord)
+[![Document](https://api.plazmamc.org/internal/cdn/document)](https://docs.plazmamc.org)
+---
 </div>
 
 > [!WARNING]
-Plazma may cause **<u>unexpected problems</u>**, so be sure to test it thoroughly before using it on a public server.<br>
-플라즈마는 **<u>예기치 못한 문제를</u>** 일으킬 수 있으므로, 공개 서버에서 사용하기 전 충분한 테스트를 거친 후 사용하시기 바랍니다.
+<u>Unexpected behavior</u> may occur. Please thoroughly test and back up before using on public servers.  
+<u>예상치 못한 동작</u>이 발생할 수 있으므로, 공용 서버에서 사용하기 전에 충분히 테스트하고 백업하시기 바랍니다.
 
-<details><summary><b>:kr: 한국어</b></summary>
+<details><summary><b>한국어 버전</b></summary>
 
 ## 💬 플라즈마란?
-* **Plazma**는 [Andromeda](https://github.com/EarendelArchived/Andromeda)와 [Fusion](https://github.com/RuinedTechnologyUnify/Fusion)에서 장점만을 가져온 [Paper](https://github.com/PaperMC/Paper) 기반의 서버 플랫폼 입니다.
-* 항상 높은 안정성과 강력한 성능, 빠른 업데이트, 방대한 기능을 제공하기 위하여 노력하고 있습니다.
+* **Plazma**는 개발자 **Alpha93**와 **IPECTER 이팩터**가 개발한 [Purpur](https://github.com/PurpurMC/Purpur) 기반의 서버 플랫폼입니다.
+* 향상된 안정성과 강력한 성능, 방대한 기능을 제공하기 위하여 노력하고 있습니다.
+* 안정적인 운영을 위한 반복 테스트와 실전 테스트를 진행합니다.
 
-## 📋 Plazma의 목표
-
-* 빠른 업데이트, 높은 안정성을 가진 서버 플랫폼이 되기 위해 노력하고 있습니다.
-* 모드 플랫폼 못지 않은 방대한 기능과 강력한 성능을 제공하기 위해 노력하고 있습니다.
-* 바닐라의 패치도 사용자화 할 수 있는 자유로운 플랫폼을 만들기 위해 노력하고 있습니다.
-
-## ⚙️ 주요 기능
-1. **강력한 플러그인 생태계**\
-   [Paper](https://github.com/PaperMC/Paper)를 기반으로 하고 있어, 인터넷에서 다운로드 가능한 대부분의 최신 플러그인인이 정상 작동합니다.
-2. **설정이 필요 없는 최적화**\
+## ⚙️ 기능
+ - **강력한 플러그인 생태계**\
+   [Paper](https://github.com/PaperMC/Paper)와 [Purpur](https://github.com/PurpurMC/Purpur)를 기반으로 하고 있어, 인터넷에서 다운로드 가능한 대부분의 최신 플러그인들이 정상 작동합니다.
+ - **설정이 필요 없는 최적화**\
    [Pufferfish](https://github.com/pufferfish-gg/Pufferfish)의 모든 패치가 포함되어 있으며, 일부 자체 최적화와 모드가 내장되어 있어 최고의 성능을 제공합니다.
-3. **원하는 대로 사용자화하는 게임**\
+ - **원하는 대로 사용자화하는 게임**\
    Plazma에 포함된 [Purpur](https://github.com/PurpurMC/Purpur)는 게임의 전반적인 속성을 수정할 수 있게 해줍니다.
-4. **안전하게 플레이하는 서버**\
-   [FreedomChat](https://github.com/ocelotpotpie/FreedomChat/)[^ncr]이 포함되어 있어 1.19부터 추가된 Mojang의 채팅 신고 시스템을 비활성화 할 수 있으며, 진단 정보 수집기가 완전 제거되어 추적 없는 안전한 서버를 플레이 할 수 있습니다.
-5. ~~**가장 빠른 업데이트**~~\
-   ~~[AlwaysUpToDate](https://github.com/PlazmaMC/AlwaysUpToDate)는 Plazma의 포함 패치가 항상 최신으로 유지될 수 있도록 해서, Paper 기반 서버 플랫폼 중에서 가장 빠른 업데이트를 제공하고 있습니다.~~
-   Paper의 [하드포크](https://forums.papermc.io/threads/the-future-of-paper-hard-fork.1451/)로 인하여 잠시동안 비활성화 됩니다.
-7. **기본 구성 파일 최적화**\
-   기본 적용되는 구성 파일이 최적화되어 있어, 직접 구성 파일을 최적화 하지 않아도 됩니다.
-8. **체계적으로 작동하는 멀티스레드**\
-   게임의 메커니즘과 관계 없는 시스템 메커니즘을 비동기화 하여, 지연 시간을 줄여 서버를 최적화 합니다.
-9. **불필요한 공간의 사용 차단**\
+ - **안전하게 플레이하는 서버**\
+   [FreedomChat](https://github.com/ocelotpotpie/FreedomChat/)이 포함되어 있어 1.19부터 추가된 Mojang의 채팅 신고 시스템을 비활성화할 수 있으며, 진단 정보 수집기가 완전히 제거되어 추적 없이 안전한 서버에서 플레이할 수 있습니다.
+ - **기본 구성 파일 최적화**\
+   기본 적용되는 구성 파일이 최적화되어 있어, 직접 구성 파일을 최적화하지 않아도 됩니다.
+ - **체계적으로 작동하는 멀티스레드**\
+   게임의 메커니즘과 관계없는 시스템 메커니즘을 비동기화하여 지연 시간을 줄이고 서버를 최적화합니다.
+ - **불필요한 공간의 사용 차단**\
    비슷한 값을 가진 데이터를 모두 하나로 합쳐 메모리 사용량을 줄입니다.
 - **[Plazma에 대해 더 알아보고 싶다면?](https://docs.plazmamc.org/v/ko/plazma/about/patches-list)**
 
 ## ⚖️ License
-- 패치 파일 상단에 명시되지 않은 한 **본 프로젝트 및 모든 패치는 [MIT 라이선스](LICENSE.md)에 따라 허가됩니다.**
+패치 파일 상단에 명시되지 않은 한 **본 프로젝트 및 모든 패치는 [MIT 라이선스](LICENSE.md)에 따라 허가됩니다.**
 </details>
 
-## 💬 About Plazma...
+## 💬 About Plazma
+* **Plazma** is a server platform based on [Paper](https://github.com/PaperMC/Paper) and [Purpur](https://github.com/PurpurMC/Purpur), developed by **Alpha93** and **IPECTER**.
+* It is designed to provide enhanced stability, powerful performance, and a wide range of features.
+* We conduct repeated testing and real-world trials to ensure stable and reliable operation.
 
-- **Plazma** is a server platform based on [Paper](https://github.com/PaperMC/Paper) that takes only the advantages of [Andromeda](https://github.com/EarendelArchived/Andromeda) and [Fusion](https://github.com/RuinedTechnologyUnify/Fusion).
-- We are always striving to provide high stability, powerful performance, fast updates, and extensive features.
+## ⚙️ Features
 
-## 📋 Goals of Plazma
-
-- We are working hard to become a server platform with fast updates and high stability.
-- We are striving to provide extensive features and powerful performance comparable to mod platforms.
-- We are working towards creating a free platform that allows customization of vanilla patches.
-
-## ⚙️ Key Features
-
-1. **Powerful Plugin Ecosystem**\
+ - **Powerful Plugin Ecosystem**\
    Based on [Paper](https://github.com/PaperMC/Paper), most of the latest plugins available on the internet work seamlessly.
-2. **Optimization without the need for settings**\
+ - **Optimization without the need for settings**\
    Includes all patches from [Pufferfish](https://github.com/pufferfish-gg/Pufferfish), with some internal optimizations and modes for optimal performance.
-3. **Customizable gameplay**\
+ - **Customizable gameplay**\
    [Purpur](https://github.com/PurpurMC/Purpur) included in Plazma allows modification of various game attributes.
-4. **Secure server gameplay**\
-   Includes [FreedomChat](https://github.com/ocelotpotpie/FreedomChat/)[^ncr] to disable Mojang's chat reporting feature introduced in 1.19, and completely removes diagnostic information collectors for a traceless, secure server gameplay.
-5. ~~**Fastest updates**~~\
-   ~~[AlwaysUpToDate](https://github.com/PlazmaMC/AlwaysUpToDate) ensures that Plazma's included patches are always kept up to date, providing the fastest updates among Paper-based server platforms.~~
-   Due to Paper's [Hardfork](https://forums.papermc.io/threads/the-future-of-paper-hard-fork.1451/), this feature is disabled temporary
-7. **Optimized default configuration files**\
+ - **Secure server gameplay**\
+   Includes [FreedomChat](https://github.com/ocelotpotpie/FreedomChat/) to disable Mojang's chat reporting feature introduced in 1.19, and completely removes diagnostic information collectors for secure, privacy‑friendly server gameplay.
+ - **Optimized default configuration files**\
    The default configuration files are optimized, eliminating the need for manual optimization.
-8. **Systematically functioning multithreading**\
-   Asynchronously synchronizing system mechanisms unrelated to game mechanics to reduce latencry and optimize the server.
-9. **Blocking unnecessary space usage**\
+ - **Systematically functioning multithreading**\
+   Asynchronously processing system mechanisms unrelated to game mechanics to reduce latency and optimize the server.
+ - **Blocking unnecessary space usage**\
    Consolidating data with similar values reduces memory usage.
 - **[Want to learn more about Plazma?](https://docs.plazmamc.org/plazma/about/patches-list)**
 
-[^ncr]: Before 1.20.4 used [NoChatReports](https://github.com/Aizistral-Studios/No-Chat-Reports/)
-
 ## ⚖️ License
-- This project and all patches are licensed under the [MIT license](LICENSE.md) unless otherwise noted in the patch headers.
+This project and all patches are licensed under the [MIT license](LICENSE.md) unless otherwise noted in the patch headers.
 
-## 🌀 Sponsorship - Minecraft Development Dictionary (KOREAN)
-[![Minecraft Development Dictionary](https://img.shields.io/discord/911980670123905054?color=%239c91fd&label=MDD%20%28CLICK%20TO%20JOIN%29&logo=discord&style=for-the-badge&logoColor=ffffff)](https://discord.gg/AZwXTA9Pgx)
-- 한글로 번역&정리된 Minecraft와 서드파티 버킷들의 소식들을 빠르게 만나볼 수 있습니다.
-- Skript와 Plugin등 서버 개발과 관련된 질문에 대한 답변을 받으실 수 있습니다.
+## 🌀 Sponsorships
+### Minecraft Development Dictionary (Korea)
+한글로 번역&정리된 Minecraft와 서드파티 버킷들의 소식들을 빠르게 만나볼 수 있습니다.<br>
+Skript와 Plugin등 서버 개발과 관련된 질문에 대한 답변을 받으실 수 있습니다.<br><br>
+[![Minecraft Development Dictionary](https://img.shields.io/discord/911980670123905054?color=%239c91fd&label=MDD%20Discord&logo=discord&style=for-the-badge&logoColor=ffffff)](https://discord.gg/AZwXTA9Pgx)
 
 ## 📈 bStats
 [![bStats](https://api.plazmamc.org/internal/cdn/bstats)](https://bstats.org/plugin/server-implementation/Plazma)
