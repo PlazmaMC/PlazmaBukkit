@@ -3,29 +3,19 @@
 [![image](src/resources/title-1024.png)](https://github.com/PlazmaMC/Plazma)
 
 ### A Minecraft Server Platform based on [Purpur](https://github.com/PurpurMC/Purpur), which provides enhanced stability and performance.
-<!---
-[![Discord](https://cdn.plazmamc.org/discord)](https://plazmamc.org/discord)
-[![License](https://cdn.plazmamc.org/license)](LICENSE.md)
-[![Downloads](https://cdn.plazmamc.org/downloads)](https://plazmamc.org/downloads)
-[![Stargazers](https://cdn.plazmamc.org/stars)](https://github.com/PlazmaMC/Plazma/stargazers)
-
-[![Upstream Status](https://cdn.plazmamc.org/upstreams)](https://github.com/PlazmaMC/AlwaysUpToDate/actions)
-[![Forks](https://cdn.plazmamc.org/forks)](https://github.com/PlazmaMC/Plazma/forks)
-[![Watchers](https://cdn.plazmamc.org/watches)](https://github.com/PlazmaMC/Plazma/watchers)
---->
----
 [![License](https://api.plazmamc.org/internal/cdn/license)](LICENSE.md)
 [![Downloads](https://api.plazmamc.org/internal/cdn/downloads)](https://plazmamc.org/downloads)
 [![Stargazers](https://api.plazmamc.org/internal/cdn/stars)](https://github.com/PlazmaMC/Plazma/stargazers)
-
 [![Discord](https://api.plazmamc.org/internal/cdn/discord)](https://plazmamc.org/discord)
 [![Document](https://api.plazmamc.org/internal/cdn/document)](https://docs.plazmamc.org)
----
+
 </div>
+<br>
 
 > [!WARNING]
 <u>Unexpected behavior</u> may occur. Please thoroughly test and back up before using on public servers.  
 <u>예상치 못한 동작</u>이 발생할 수 있으므로, 공용 서버에서 사용하기 전에 충분히 테스트하고 백업하시기 바랍니다.
+<br>
 
 <details><summary><b>한국어 버전</b></summary>
 
