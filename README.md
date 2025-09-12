@@ -1,11 +1,11 @@
 <div align="center">
 
-[![image](src/resources/title-1024.png)](https://github.com/PlazmaMC/Plazma)
+[![image](src/resources/title-1024.png)](https://github.com/PlazmaMC/PlazmaBukkit)
 
 ### A Minecraft Server based on [Purpur](https://github.com/PurpurMC/Purpur), which provides enhanced stability and performance.
 [![License](https://api.plazmamc.org/internal/cdn/license)](LICENSE.md)
 [![Downloads](https://api.plazmamc.org/internal/cdn/downloads)](https://plazmamc.org/downloads)
-[![Stargazers](https://api.plazmamc.org/internal/cdn/stars)](https://github.com/PlazmaMC/Plazma/stargazers)
+[![Stargazers](https://api.plazmamc.org/internal/cdn/stars)](https://github.com/PlazmaMC/PlazmaBukkit/stargazers)
 [![Discord](https://api.plazmamc.org/internal/cdn/discord)](https://plazmamc.org/discord)
 [![Document](https://api.plazmamc.org/internal/cdn/document)](https://docs.plazmamc.org)
 
