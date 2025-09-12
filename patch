@@ -1,4 +1,4 @@
-#!/usr/bin/env bash
+#!/bin/sh
 
 COMMAND=$1
 COMMIT_MSG=$2
@@ -10,6 +10,7 @@ fi
 
 ROOT_DIR=$(pwd)
 
+# Build a single target
 build_single() {
   local DIR=$1
   local BUILD_CMD=$2
@@ -22,14 +23,44 @@ build_single() {
   ./gradlew "$BUILD_CMD"
 }
 
+# Merge a single target
 merge_single() {
   local DIR=$1
   local BUILD_CMD=$2
   cd "$ROOT_DIR/$DIR" || exit
   LAST_MSG=$(git log -n 1 --pretty=format:"%s")
-  git reset --soft HEAD~1
-  git commit -m "$LAST_MSG"
+  git reset --soft HEAD~1      # 이전 커밋으로 이동
+  git add .                     # 모든 변경 사항을 스테이징
+  git commit -m "$LAST_MSG"     # 이전 커밋 메시지로 commit
   cd "$ROOT_DIR" || exit
+  ./gradlew "$BUILD_CMD"
+}
+
+
+# Build Minecraft server patches (java + resources)
+build_minecraft_server() {
+  local BUILD_CMD=$1
+  for DIR in "plazma-server/src/minecraft/java" "plazma-server/src/minecraft/resources"; do
+    cd "$ROOT_DIR/$DIR" || exit
+    git add .
+    if [ -n "$COMMIT_MSG" ]; then
+      git commit -m "$COMMIT_MSG" || echo "No changes to commit in $DIR"
+    fi
+    cd "$ROOT_DIR" || exit
+  done
+  ./gradlew "$BUILD_CMD"
+}
+
+# Merge Minecraft server patches (java + resources)
+merge_minecraft_server() {
+  local BUILD_CMD=$1
+  for DIR in "plazma-server/src/minecraft/java" "plazma-server/src/minecraft/resources"; do
+    cd "$ROOT_DIR/$DIR" || exit
+    LAST_MSG=$(git log -n 1 --pretty=format:"%s")
+    git reset --soft HEAD~1
+    git commit -m "$LAST_MSG"
+    cd "$ROOT_DIR" || exit
+  done
   ./gradlew "$BUILD_CMD"
 }
 
@@ -47,14 +78,14 @@ case $COMMAND in
     build_single "purpur-server" "rebuildPurpurServerPatches"
     ;;
   buildMinecraftServer)
-    build_single "plazma-server/src/minecraft/java" "rebuildMinecraftPatches"
+    build_minecraft_server "rebuildMinecraftPatches"
     ;;
   build)
     build_single "paper-api" "rebuildPaperApiPatches"
     build_single "purpur-api" "rebuildPurpurApiPatches"
     build_single "paper-server" "rebuildPaperServerPatches"
     build_single "purpur-server" "rebuildPurpurServerPatches"
-    build_single "plazma-server/src/minecraft/java" "rebuildMinecraftPatches"
+    build_minecraft_server "rebuildMinecraftPatches"
     ;;
   mergePaperAPI)
     merge_single "paper-api" "rebuildPaperApiPatches"
@@ -69,7 +100,7 @@ case $COMMAND in
     merge_single "purpur-server" "rebuildPurpurServerPatches"
     ;;
   mergeMinecraftServer)
-    merge_single "plazma-server/src/minecraft/java" "rebuildMinecraftPatches"
+    merge_minecraft_server "rebuildMinecraftPatches"
     ;;
   *)
     echo "Unknown command: $COMMAND"
