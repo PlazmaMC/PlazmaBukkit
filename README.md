@@ -2,7 +2,7 @@
 
 [![image](src/resources/title-1024.png)](https://github.com/PlazmaMC/Plazma)
 
-### A Minecraft Server Platform based on [Purpur](https://github.com/PurpurMC/Purpur), which provides enhanced stability and performance.
+### A Minecraft Server based on [Purpur](https://github.com/PurpurMC/Purpur), which provides enhanced stability and performance.
 [![License](https://api.plazmamc.org/internal/cdn/license)](LICENSE.md)
 [![Downloads](https://api.plazmamc.org/internal/cdn/downloads)](https://plazmamc.org/downloads)
 [![Stargazers](https://api.plazmamc.org/internal/cdn/stars)](https://github.com/PlazmaMC/Plazma/stargazers)
