@@ -77,14 +77,14 @@ subprojects {
         }
     }
 
-    extensions.configure<PublishingExtension> {
-        repositories {
-            maven("https://repo.purpurmc.org/snapshots") {
-                name = "plazma"
-                credentials(PasswordCredentials::class)
-            }
-        }
-    }
+//    extensions.configure<PublishingExtension> {
+//        repositories {
+//            maven("https://repo.purpurmc.org/snapshots") {
+//                name = "plazma"
+//                credentials(PasswordCredentials::class)
+//            }
+//        }
+//    }
 }
 
 tasks.register("printMinecraftVersion") {
