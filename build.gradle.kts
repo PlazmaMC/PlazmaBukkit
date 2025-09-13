@@ -3,14 +3,10 @@ import org.gradle.api.tasks.testing.logging.TestLogEvent
 
 plugins {
     java
-    `maven-publish`
     id("io.papermc.paperweight.patcher") version "2.0.0-beta.17"
 }
 
 val paperMavenPublicUrl = "https://repo.papermc.io/repository/maven-public/"
-
-val brandName: String by project
-val providerRepo: String by project
 
 paperweight {
     upstreams.register("purpur") {
@@ -19,30 +15,27 @@ paperweight {
 
         patchFile {
             path = "purpur-server/build.gradle.kts"
-            outputFile = file("$brandName-server/build.gradle.kts")
-            patchFile = file("$brandName-server/build.gradle.kts.patch")
+            outputFile = file("plazma-server/build.gradle.kts")
+            patchFile = file("plazma-server/build.gradle.kts.patch")
         }
         patchFile {
             path = "purpur-api/build.gradle.kts"
-            outputFile = file("$brandName-api/build.gradle.kts")
-            patchFile = file("$brandName-api/build.gradle.kts.patch")
+            outputFile = file("plazma-api/build.gradle.kts")
+            patchFile = file("plazma-api/build.gradle.kts.patch")
         }
         patchRepo("paperApi") {
             upstreamPath = "paper-api"
-            patchesDir = file("$brandName-api/paper-patches")
+            patchesDir = file("plazma-api/paper-patches")
             outputDir = file("paper-api")
         }
         patchDir("purpurApi") {
             upstreamPath = "purpur-api"
             excludes = listOf("build.gradle.kts", "build.gradle.kts.patch", "paper-patches")
-            patchesDir = file("$brandName-api/purpur-patches")
+            patchesDir = file("plazma-api/purpur-patches")
             outputDir = file("purpur-api")
         }
     }
 }
-
-val mavenUsername: String? by project
-val mavenPassword: String? by project
 
 subprojects {
     apply(plugin = "java-library")
@@ -81,29 +74,6 @@ subprojects {
             showStackTraces = true
             exceptionFormat = TestExceptionFormat.FULL
             events(TestLogEvent.STANDARD_OUT)
-        }
-    }
-
-    extensions.configure<PublishingExtension> {
-        repositories {
-            maven("https://maven.pkg.github.com/$providerRepo") {
-                name = "github"
-                credentials {
-                    username = mavenUsername ?: System.getenv("GRADLE_PROPERTY_MAVEN_USERNAME")
-                            ?: System.getenv("MAVEN_USERNAME")
-                    password = mavenPassword ?: System.getenv("GRADLE_PROPERTY_MAVEN_PASSWORD")
-                            ?: System.getenv("MAVEN_PASSWORD")
-                }
-            }
-            maven("https://repo.codemc.io/repository/maven-snapshots/") {
-                name = "codemc"
-                credentials {
-                    username = mavenUsername ?: System.getenv("GRADLE_PROPERTY_MAVEN_USERNAME")
-                            ?: System.getenv("MAVEN_USERNAME")
-                    password = mavenPassword ?: System.getenv("GRADLE_PROPERTY_MAVEN_PASSWORD")
-                            ?: System.getenv("MAVEN_PASSWORD")
-                }
-            }
         }
     }
 }
