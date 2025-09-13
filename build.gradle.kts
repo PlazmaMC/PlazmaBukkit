@@ -40,8 +40,8 @@ paperweight {
     }
 }
 
-val mavenUsername: String? by project
-val mavenPassword: String? by project
+//val mavenUsername: String? by project
+//val mavenPassword: String? by project
 
 subprojects {
     apply(plugin = "java-library")
