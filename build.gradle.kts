@@ -8,8 +8,8 @@ plugins {
 
 val paperMavenPublicUrl = "https://repo.papermc.io/repository/maven-public/"
 
-//val brandName: String by project
-//val providerRepo: String by project
+val brandName: String by project
+val providerRepo: String by project
 
 paperweight {
     upstreams.register("purpur") {
@@ -18,23 +18,23 @@ paperweight {
 
         patchFile {
             path = "purpur-server/build.gradle.kts"
-            outputFile = file("plazma-server/build.gradle.kts")
-            patchFile = file("plazma-server/build.gradle.kts.patch")
+            outputFile = file("${brandName}-server/build.gradle.kts")
+            patchFile = file("${brandName}-server/build.gradle.kts.patch")
         }
         patchFile {
             path = "purpur-api/build.gradle.kts"
-            outputFile = file("plazma-api/build.gradle.kts")
-            patchFile = file("plazma-api/build.gradle.kts.patch")
+            outputFile = file("${brandName}-api/build.gradle.kts")
+            patchFile = file("${brandName}-api/build.gradle.kts.patch")
         }
         patchRepo("paperApi") {
             upstreamPath = "paper-api"
-            patchesDir = file("plazma-api/paper-patches")
+            patchesDir = file("${brandName}-api/paper-patches")
             outputDir = file("paper-api")
         }
         patchDir("purpurApi") {
             upstreamPath = "purpur-api"
             excludes = listOf("build.gradle.kts", "build.gradle.kts.patch", "paper-patches")
-            patchesDir = file("plazma-api/purpur-patches")
+            patchesDir = file("${brandName}-api/purpur-patches")
             outputDir = file("purpur-api")
         }
     }
