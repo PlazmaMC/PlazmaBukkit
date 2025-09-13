@@ -76,15 +76,6 @@ subprojects {
             events(TestLogEvent.STANDARD_OUT)
         }
     }
-
-//    extensions.configure<PublishingExtension> {
-//        repositories {
-//            maven("https://repo.purpurmc.org/snapshots") {
-//                name = "plazma"
-//                credentials(PasswordCredentials::class)
-//            }
-//        }
-//    }
 }
 
 tasks.register("printMinecraftVersion") {
