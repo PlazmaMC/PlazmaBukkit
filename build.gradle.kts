@@ -83,28 +83,28 @@ subprojects {
         }
     }
 
-    extensions.configure<PublishingExtension> {
-        repositories {
-            maven("https://maven.pkg.github.com/$providerRepo") {
-                name = "github"
-                credentials {
-                    username = mavenUsername ?: System.getenv("GRADLE_PROPERTY_MAVEN_USERNAME")
-                            ?: System.getenv("MAVEN_USERNAME")
-                    password = mavenPassword ?: System.getenv("GRADLE_PROPERTY_MAVEN_PASSWORD")
-                            ?: System.getenv("MAVEN_PASSWORD")
-                }
-            }
-            maven("https://repo.codemc.io/repository/maven-snapshots/") {
-                name = "codemc"
-                credentials {
-                    username = mavenUsername ?: System.getenv("GRADLE_PROPERTY_MAVEN_USERNAME")
-                            ?: System.getenv("MAVEN_USERNAME")
-                    password = mavenPassword ?: System.getenv("GRADLE_PROPERTY_MAVEN_PASSWORD")
-                            ?: System.getenv("MAVEN_PASSWORD")
-                }
-            }
-        }
-    }
+//    extensions.configure<PublishingExtension> {
+//        repositories {
+//            maven("https://maven.pkg.github.com/$providerRepo") {
+//                name = "github"
+//                credentials {
+//                    username = mavenUsername ?: System.getenv("GRADLE_PROPERTY_MAVEN_USERNAME")
+//                            ?: System.getenv("MAVEN_USERNAME")
+//                    password = mavenPassword ?: System.getenv("GRADLE_PROPERTY_MAVEN_PASSWORD")
+//                            ?: System.getenv("MAVEN_PASSWORD")
+//                }
+//            }
+//            maven("https://repo.codemc.io/repository/maven-snapshots/") {
+//                name = "codemc"
+//                credentials {
+//                    username = mavenUsername ?: System.getenv("GRADLE_PROPERTY_MAVEN_USERNAME")
+//                            ?: System.getenv("MAVEN_USERNAME")
+//                    password = mavenPassword ?: System.getenv("GRADLE_PROPERTY_MAVEN_PASSWORD")
+//                            ?: System.getenv("MAVEN_PASSWORD")
+//                }
+//            }
+//        }
+//    }
 }
 
 tasks.register("printMinecraftVersion") {
