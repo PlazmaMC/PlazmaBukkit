@@ -1,0 +1,52 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: IPECTER <ipectert@gmail.com>
+Date: Sun, 14 Sep 2025 00:24:07 +0900
+Subject: [PATCH] Rebrand message
+
+
+diff --git a/net/minecraft/CrashReport.java b/net/minecraft/CrashReport.java
+index 394443d00e661715439be1e56dddc129947699a4..3a80eb074a69babb7b8430192fcdb1ef6c56a0ec 100644
+--- a/net/minecraft/CrashReport.java
++++ b/net/minecraft/CrashReport.java
+@@ -30,13 +30,13 @@ public class CrashReport {
+     private boolean trackingStackTrace = true;
+     private StackTraceElement[] uncategorizedStackTrace = new StackTraceElement[0];
+     private final SystemReport systemReport = new SystemReport();
+-    private List<String> extraInfo = List.of("", "DO NOT REPORT THIS TO PAPER! REPORT TO PURPUR INSTEAD!", ""); // Purpur - Rebrand
++    private List<String> extraInfo = List.of("", "DO NOT REPORT THIS TO PAPER OR PURPUR! REPORT TO " + org.plazmamc.plazma.ServerBrandConstants.BRAND_NAME.toUpperCase() + " INSTEAD!", ""); // Purpur - Rebrand // Plazma - Rebrand message
+ 
+     public CrashReport(String title, Throwable exception) {
+         io.papermc.paper.util.StacktraceDeobfuscator.INSTANCE.deobfuscateThrowable(exception); // Paper
+         this.title = title;
+         this.exception = exception;
+-        this.systemReport.setDetail("CraftBukkit Information", new org.bukkit.craftbukkit.CraftCrashReport()); // CraftBukkit
++        this.systemReport.setDetail(org.plazmamc.plazma.ServerBrandConstants.BRAND_NAME + " Information", new org.bukkit.craftbukkit.CraftCrashReport()); // CraftBukkit // Plazma - Rebrand message
+     }
+ 
+     public String getTitle() {
+diff --git a/net/minecraft/server/MinecraftServer.java b/net/minecraft/server/MinecraftServer.java
+index 9dbf05636429821b17c4269e3981a0bedbc6e6a3..7412b4aaf20a6f87f8b62c9e5ed78ea56e152ee9 100644
+--- a/net/minecraft/server/MinecraftServer.java
++++ b/net/minecraft/server/MinecraftServer.java
+@@ -1209,7 +1209,7 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
+                 LOGGER.info("*************************************************************************************");
+                 LOGGER.info("This is the first time you're starting this server.");
+                 LOGGER.info("It's recommended you read our 'Getting Started' documentation for guidance.");
+-                LOGGER.info("View this and more helpful information here: https://docs.papermc.io/paper/next-steps");
++                LOGGER.info("View this and more helpful information here: {}", org.plazmamc.plazma.ServerBrandConstants.START_GUIDE); // Plazma - Rebrand message
+                 LOGGER.info("*************************************************************************************");
+             }
+             // Paper end - Add onboarding message for initial server start
+diff --git a/net/minecraft/server/dedicated/DedicatedServer.java b/net/minecraft/server/dedicated/DedicatedServer.java
+index 670553243d26e2faab8a21f099a846d4d1df7927..f05ae12c0b93e8ad41dfbdf5034bf8d5b6e4be96 100644
+--- a/net/minecraft/server/dedicated/DedicatedServer.java
++++ b/net/minecraft/server/dedicated/DedicatedServer.java
+@@ -695,7 +695,7 @@ public class DedicatedServer extends MinecraftServer implements ServerInterface
+         org.bukkit.plugin.Plugin[] plugins = this.server.getPluginManager().getPlugins();
+ 
+         result.append(this.server.getName());
+-        result.append(" on Bukkit ");
++        result.append(" on ").append(org.plazmamc.plazma.ServerBrandConstants.BRAND_NAME).append(" "); // Plazma - Rebrand message
+         result.append(this.server.getBukkitVersion());
+ 
+         if (plugins.length > 0 && this.server.getQueryPlugins()) {
