@@ -18,23 +18,23 @@ paperweight {
 
         patchFile {
             path = "purpur-server/build.gradle.kts"
-            outputFile = file("$brandName-server/build.gradle.kts")
-            patchFile = file("$brandName-server/build.gradle.kts.patch")
+            outputFile = file("${brandName}-server/build.gradle.kts")
+            patchFile = file("${brandName}-server/build.gradle.kts.patch")
         }
         patchFile {
             path = "purpur-api/build.gradle.kts"
-            outputFile = file("$brandName-api/build.gradle.kts")
-            patchFile = file("$brandName-api/build.gradle.kts.patch")
+            outputFile = file("${brandName}-api/build.gradle.kts")
+            patchFile = file("${brandName}-api/build.gradle.kts.patch")
         }
         patchRepo("paperApi") {
             upstreamPath = "paper-api"
-            patchesDir = file("$brandName-api/paper-patches")
+            patchesDir = file("${brandName}-api/paper-patches")
             outputDir = file("paper-api")
         }
         patchDir("purpurApi") {
             upstreamPath = "purpur-api"
             excludes = listOf("build.gradle.kts", "build.gradle.kts.patch", "paper-patches")
-            patchesDir = file("$brandName-api/purpur-patches")
+            patchesDir = file("${brandName}-api/purpur-patches")
             outputDir = file("purpur-api")
         }
     }
