@@ -18,30 +18,30 @@ paperweight {
 
         patchFile {
             path = "purpur-server/build.gradle.kts"
-            outputFile = file("${brandName}-server/build.gradle.kts")
-            patchFile = file("${brandName}-server/build.gradle.kts.patch")
+            outputFile = file("${brandName.lowercase()}-server/build.gradle.kts")
+            patchFile = file("${brandName.lowercase()}-server/build.gradle.kts.patch")
         }
         patchFile {
             path = "purpur-api/build.gradle.kts"
-            outputFile = file("${brandName}-api/build.gradle.kts")
-            patchFile = file("${brandName}-api/build.gradle.kts.patch")
+            outputFile = file("${brandName.lowercase()}-api/build.gradle.kts")
+            patchFile = file("${brandName.lowercase()}-api/build.gradle.kts.patch")
         }
         patchRepo("paperApi") {
             upstreamPath = "paper-api"
-            patchesDir = file("${brandName}-api/paper-patches")
+            patchesDir = file("${brandName.lowercase()}-api/paper-patches")
             outputDir = file("paper-api")
         }
         patchDir("purpurApi") {
             upstreamPath = "purpur-api"
             excludes = listOf("build.gradle.kts", "build.gradle.kts.patch", "paper-patches")
-            patchesDir = file("${brandName}-api/purpur-patches")
+            patchesDir = file("${brandName.lowercase()}-api/purpur-patches")
             outputDir = file("purpur-api")
         }
     }
 }
 
-//val mavenUsername: String? by project
-//val mavenPassword: String? by project
+val mavenUsername: String? by project
+val mavenPassword: String? by project
 
 subprojects {
     apply(plugin = "java-library")
@@ -83,28 +83,28 @@ subprojects {
         }
     }
 
-//    extensions.configure<PublishingExtension> {
-//        repositories {
-//            maven("https://maven.pkg.github.com/$providerRepo") {
-//                name = "github"
-//                credentials {
-//                    username = mavenUsername ?: System.getenv("GRADLE_PROPERTY_MAVEN_USERNAME")
-//                            ?: System.getenv("MAVEN_USERNAME")
-//                    password = mavenPassword ?: System.getenv("GRADLE_PROPERTY_MAVEN_PASSWORD")
-//                            ?: System.getenv("MAVEN_PASSWORD")
-//                }
-//            }
-//            maven("https://repo.codemc.io/repository/maven-snapshots/") {
-//                name = "codemc"
-//                credentials {
-//                    username = mavenUsername ?: System.getenv("GRADLE_PROPERTY_MAVEN_USERNAME")
-//                            ?: System.getenv("MAVEN_USERNAME")
-//                    password = mavenPassword ?: System.getenv("GRADLE_PROPERTY_MAVEN_PASSWORD")
-//                            ?: System.getenv("MAVEN_PASSWORD")
-//                }
-//            }
-//        }
-//    }
+    extensions.configure<PublishingExtension> {
+        repositories {
+            maven("https://maven.pkg.github.com/$providerRepo") {
+                name = "github"
+                credentials {
+                    username = mavenUsername ?: System.getenv("GRADLE_PROPERTY_MAVEN_USERNAME")
+                            ?: System.getenv("MAVEN_USERNAME")
+                    password = mavenPassword ?: System.getenv("GRADLE_PROPERTY_MAVEN_PASSWORD")
+                            ?: System.getenv("MAVEN_PASSWORD")
+                }
+            }
+            maven("https://repo.codemc.io/repository/maven-snapshots/") {
+                name = "codemc"
+                credentials {
+                    username = mavenUsername ?: System.getenv("GRADLE_PROPERTY_MAVEN_USERNAME")
+                            ?: System.getenv("MAVEN_USERNAME")
+                    password = mavenPassword ?: System.getenv("GRADLE_PROPERTY_MAVEN_PASSWORD")
+                            ?: System.getenv("MAVEN_PASSWORD")
+                }
+            }
+        }
+    }
 }
 
 tasks.register("printMinecraftVersion") {
