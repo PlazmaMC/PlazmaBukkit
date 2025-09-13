@@ -1,6 +1,6 @@
 From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
 From: IPECTER <ipectert@gmail.com>
-Date: Sat, 13 Sep 2025 16:43:41 +0900
+Date: Sat, 13 Sep 2025 18:34:08 +0900
 Subject: [PATCH] Rebrand
 
 
@@ -27,143 +27,27 @@ index 212e0df38ae3ed0b06d147fb5e7e93ef556a0bdd..7439e51cd6215729cc5abdfd9c374f33
                  metrics.addCustomChart(new Metrics.DrilldownPie("java_version", () -> {
                      Map<String, Map<String, Integer>> map = new HashMap<>();
 diff --git a/src/main/java/com/destroystokyo/paper/PaperVersionFetcher.java b/src/main/java/com/destroystokyo/paper/PaperVersionFetcher.java
-index a5a7334f7a1f147945079f20aa04b4f317d9e94c..a9e8a3642d7846cef4d039835596d27a4baf7115 100644
+index a5a7334f7a1f147945079f20aa04b4f317d9e94c..67d15fdcb546447b3f722b1029f1b7d6bef5d114 100644
 --- a/src/main/java/com/destroystokyo/paper/PaperVersionFetcher.java
 +++ b/src/main/java/com/destroystokyo/paper/PaperVersionFetcher.java
-@@ -36,9 +36,27 @@ public class PaperVersionFetcher implements VersionFetcher {
+@@ -36,7 +36,7 @@ public class PaperVersionFetcher implements VersionFetcher {
      private static final int DISTANCE_ERROR = -1;
      private static final int DISTANCE_UNKNOWN = -2;
      // Purpur start - Rebrand
 -    private static final String DOWNLOAD_PAGE = "https://purpurmc.org/downloads";
-+    //private static final String DOWNLOAD_PAGE = "https://purpurmc.org/downloads"; // Plazma - Version Fetcher Jenkins Integration
++    private static final String DOWNLOAD_PAGE = org.plazmamc.plazma.ServerBrandConstants.DOWNLOAD_PAGE; // Plazma - Rebrand
      private static int distance = DISTANCE_UNKNOWN; public int distance() { return distance; }
      // Purpur end - Rebrand
-+    // Plazma start - Version Fetcher Jenkins Integration
-+    private static int latestBuildNumber = -1;
-+    private static int currentBuildNumber = -1;
-+
-+    private static final String JENKINS_BASE = "https://ci.codemc.io/job/PlazmaMC/job/Plazma";
-+    private static String jenkinsJobUrlForVersion(final String mcVersion) {
-+        try {
-+            // Jenkins multibranch encodes branch "ver/1.21.8" as job path segment "ver%252F1.21.8"
-+            final String branch = "ver/" + mcVersion;
-+            final String once = java.net.URLEncoder.encode(branch, StandardCharsets.UTF_8);
-+            final String twice = once.replace("%", "%25");
-+            return JENKINS_BASE + "/job/" + twice + "/";
-+        } catch (final Exception e) {
-+            LOGGER.error("Error building Jenkins job URL for version {}", mcVersion, e);
-+            return JENKINS_BASE + "/"; // fallback to base
-+        }
-+    }
-+    // Plazma end - Version Fetcher Jenkins Integration
  
-     @Override
-     public long getCacheTime() {
-@@ -52,7 +70,7 @@ public class PaperVersionFetcher implements VersionFetcher {
+@@ -52,7 +52,7 @@ public class PaperVersionFetcher implements VersionFetcher {
          if (build.buildNumber().isEmpty() && build.gitCommit().isEmpty()) {
              updateMessage = text("You are running a development version without access to version information", color(0xFF5300));
          } else {
 -            updateMessage = getUpdateStatusMessage("PurpurMC/Purpur", build); // Purpur - Rebrand
-+            updateMessage = getUpdateStatusMessage("PlazmaMC/Plazma", build); // Purpur - Rebrand // Plazma - Version Fetcher Jenkins Integration
++            updateMessage = getUpdateStatusMessage("PlazmaMC/Plazma", build); // Purpur - Rebrand // Plazma - Rebrand
          }
          final @Nullable Component history = this.getHistory();
  
-@@ -61,9 +79,16 @@ public class PaperVersionFetcher implements VersionFetcher {
- 
-     private static Component getUpdateStatusMessage(final String repo, final ServerBuildInfo build) {
-         //int distance = DISTANCE_ERROR; // Purpur - use field - Rebrand
-+        // Plazma start - Version Fetcher Jenkins Integration
-+        String downloadPage = jenkinsJobUrlForVersion(build.minecraftVersionId());
- 
-         final OptionalInt buildNumber = build.buildNumber();
-         if (buildNumber.isPresent()) {
-+            // Plazma start - Version Fetcher Jenkins Integration
-+            currentBuildNumber = buildNumber.getAsInt();
-+            latestBuildNumber = -1; // reset before fetch
-+            // Plazma end - Version Fetcher Jenkins Integration
-+            // Prefer Jenkins (integrated) via fetchDistanceFromSiteApi
-             distance = fetchDistanceFromSiteApi(build, buildNumber.getAsInt());
-         } else {
-             final Optional<String> gitBranch = build.gitBranch();
-@@ -72,38 +97,65 @@ public class PaperVersionFetcher implements VersionFetcher {
-                 distance = fetchDistanceFromGitHub(repo, gitBranch.get(), gitCommit.get());
-             }
-         }
-+        // Plazma end - Version Fetcher Jenkins Integration
- 
--        return switch (distance) {
-+        Component base = switch (distance) {
-             case DISTANCE_ERROR -> text("* Error obtaining version information", NamedTextColor.RED); // Purpur - Rebrand
-             case 0 -> text("* You are running the latest version", NamedTextColor.GREEN); // Purpur - Rebrand
-             case DISTANCE_UNKNOWN -> text("* Unknown version", NamedTextColor.YELLOW); // Purpur - Rebrand
-             default -> text("* You are " + distance + " version(s) behind", NamedTextColor.YELLOW) // Purpur - Rebrand
-                 .append(Component.newline())
-                 .append(text("Download the new version at: ")
--                    .append(text(DOWNLOAD_PAGE, NamedTextColor.GOLD)
-+                    .append(text(downloadPage, NamedTextColor.GOLD)
-                         .hoverEvent(text("Click to open", NamedTextColor.WHITE))
--                        .clickEvent(ClickEvent.openUrl(DOWNLOAD_PAGE))));
-+                        .clickEvent(ClickEvent.openUrl(downloadPage))));
-         };
-+        // Plazma start - Version Fetcher Jenkins Integration
-+        if (currentBuildNumber >= 0 && latestBuildNumber >= 0) {
-+            base = Component.textOfChildren(
-+                base,
-+                Component.newline(),
-+                text("#" + currentBuildNumber + " #" + latestBuildNumber, NamedTextColor.GRAY)
-+            );
-+        }
-+        return base;
-+        // Plazma end - Version Fetcher Jenkins Integration
-     }
- 
-+    
-+
-     private static int fetchDistanceFromSiteApi(final ServerBuildInfo build, final int jenkinsBuild) {
-+        // Plazma start - Version Fetcher Jenkins Integration
-+        // Jenkins-only: fetch latestSuccessfulBuild from Jenkins; no fallback
-+        final String jobUrl = jenkinsJobUrlForVersion(build.minecraftVersionId());
-+        final String api = jobUrl + "api/json?tree=lastSuccessfulBuild[number,url]";
-         try {
--            try (final BufferedReader reader = Resources.asCharSource(
--                URI.create("https://api.purpurmc.org/v2/purpur/" + build.minecraftVersionId()).toURL(), // Purpur - Rebrand
--                StandardCharsets.UTF_8
--            ).openBufferedStream()) {
--                final JsonObject json = new Gson().fromJson(reader, JsonObject.class);
--                //final JsonArray builds = json.getAsJsonArray("builds"); // Purpur - Rebrand
--                final int latest = json.getAsJsonObject("builds").getAsJsonPrimitive("latest").getAsInt(); // Purpur - Rebrand
-+            final HttpURLConnection connection = (HttpURLConnection) URI.create(api).toURL().openConnection();
-+            connection.connect();
-+            if (connection.getResponseCode() != HttpURLConnection.HTTP_OK) {
-+                return DISTANCE_ERROR;
-+            }
-+            try (final BufferedReader reader = new BufferedReader(new InputStreamReader(connection.getInputStream(), StandardCharsets.UTF_8))) {
-+                final JsonObject obj = new Gson().fromJson(reader, JsonObject.class);
-+                if (!obj.has("lastSuccessfulBuild") || obj.get("lastSuccessfulBuild").isJsonNull()) {
-+                    return DISTANCE_ERROR;
-+                }
-+                final JsonObject last = obj.getAsJsonObject("lastSuccessfulBuild");
-+                if (!last.has("number")) {
-+                    return DISTANCE_ERROR;
-+                }
-+                final int latest = last.get("number").getAsInt();
-+                latestBuildNumber = latest;
-                 return latest - jenkinsBuild;
--            } catch (final JsonSyntaxException ex) {
--                LOGGER.error("Error parsing json from Purpur's downloads API", ex); // Purpur - Rebrand
-+            } catch (final JsonSyntaxException | NumberFormatException e) {
-+                LOGGER.error("Error parsing json from Jenkins API", e);
-                 return DISTANCE_ERROR;
-             }
-         } catch (final IOException e) {
--            LOGGER.error("Error while parsing version", e);
-+            LOGGER.error("Error while accessing Jenkins API", e);
-             return DISTANCE_ERROR;
-         }
-+        // Plazma end - Version Fetcher Jenkins Integration
-     }
- 
-     // Contributed by Techcable <Techcable@outlook.com> in GH-65
 diff --git a/src/main/java/com/destroystokyo/paper/console/PaperConsole.java b/src/main/java/com/destroystokyo/paper/console/PaperConsole.java
 index bc7e4e5560708fea89c584b1d8b471f4966f311a..8f0773004ce8adb854b5d5e2235488a7a6bce22b 100644
 --- a/src/main/java/com/destroystokyo/paper/console/PaperConsole.java

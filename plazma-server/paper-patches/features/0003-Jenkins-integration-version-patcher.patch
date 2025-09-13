@@ -1,0 +1,29 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: IPECTER <ipectert@gmail.com>
+Date: Sat, 13 Sep 2025 18:59:16 +0900
+Subject: [PATCH] Jenkins integration version patcher
+
+
+diff --git a/src/main/java/com/destroystokyo/paper/PaperVersionFetcher.java b/src/main/java/com/destroystokyo/paper/PaperVersionFetcher.java
+index 67d15fdcb546447b3f722b1029f1b7d6bef5d114..e5def7c5eb136a98e917e5de4c675c4ca8da8f96 100644
+--- a/src/main/java/com/destroystokyo/paper/PaperVersionFetcher.java
++++ b/src/main/java/com/destroystokyo/paper/PaperVersionFetcher.java
+@@ -89,15 +89,15 @@ public class PaperVersionFetcher implements VersionFetcher {
+     private static int fetchDistanceFromSiteApi(final ServerBuildInfo build, final int jenkinsBuild) {
+         try {
+             try (final BufferedReader reader = Resources.asCharSource(
+-                URI.create("https://api.purpurmc.org/v2/purpur/" + build.minecraftVersionId()).toURL(), // Purpur - Rebrand
++                    URI.create("https://ci.codemc.io/job/PlazmaMC/job/Plazma/job/" + build.gitBranch().orElseThrow().replace("/", "%2F") + "/api/json").toURL(), // Purpur - Rebrand // Plazma - Jenkins integration version patcher
+                 StandardCharsets.UTF_8
+             ).openBufferedStream()) {
+                 final JsonObject json = new Gson().fromJson(reader, JsonObject.class);
+                 //final JsonArray builds = json.getAsJsonArray("builds"); // Purpur - Rebrand
+-                final int latest = json.getAsJsonObject("builds").getAsJsonPrimitive("latest").getAsInt(); // Purpur - Rebrand
++                final int latest = json.getAsJsonObject("lastSuccessfulBuild").getAsJsonPrimitive("number").getAsInt(); // Purpur - Rebrand // Plazma - Jenkins integration version patcher
+                 return latest - jenkinsBuild;
+             } catch (final JsonSyntaxException ex) {
+-                LOGGER.error("Error parsing json from Purpur's downloads API", ex); // Purpur - Rebrand
++                LOGGER.error("Error parsing json from Jenkins CI", ex); // Purpur - Rebrand // Plazma - Jenkins integration version patcher
+                 return DISTANCE_ERROR;
+             }
+         } catch (final IOException e) {

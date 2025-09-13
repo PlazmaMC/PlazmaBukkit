@@ -1,7 +1,8 @@
 #!/bin/sh
 
 COMMAND=$1
-COMMIT_MSG=$2
+shift
+COMMIT_MSG="$*"
 
 if [ -z "$COMMAND" ]; then
   echo "Usage: $0 <command> [\"Commit message\"]"
@@ -30,12 +31,11 @@ merge_single() {
   cd "$ROOT_DIR/$DIR" || exit
   LAST_MSG=$(git log -n 1 --pretty=format:"%s")
   git reset --soft HEAD~1      # 이전 커밋으로 이동
-  git add .                     # 모든 변경 사항을 스테이징
-  git commit -m "$LAST_MSG"     # 이전 커밋 메시지로 commit
+  git add .                    # 모든 변경 사항을 스테이징
+  git commit -m "$LAST_MSG"    # 이전 커밋 메시지로 commit
   cd "$ROOT_DIR" || exit
   ./gradlew "$BUILD_CMD"
 }
-
 
 # Build Minecraft server patches (java + resources)
 build_minecraft_server() {
