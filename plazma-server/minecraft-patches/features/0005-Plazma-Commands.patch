@@ -1,12 +1,36 @@
 From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
 From: IPECTER <ipectert@gmail.com>
-Date: Mon, 15 Sep 2025 00:57:29 +0900
+Date: Mon, 15 Sep 2025 01:05:08 +0900
 Subject: [PATCH] Plazma Commands
 
 
+diff --git a/net/minecraft/server/ReloadableServerResources.java b/net/minecraft/server/ReloadableServerResources.java
+index c891715968193f2ab4579b4a2b4aeeae6a210070..d1257be5fb82fffe6ec5fb9642670d6b9aca2175 100644
+--- a/net/minecraft/server/ReloadableServerResources.java
++++ b/net/minecraft/server/ReloadableServerResources.java
+@@ -41,6 +41,7 @@ public class ReloadableServerResources {
+         this.commands = new Commands(commandSelection, CommandBuildContext.simple(registries, enabledFeatures), true); // Paper - Brigadier Command API - use modern alias registration
+         io.papermc.paper.command.brigadier.PaperCommands.INSTANCE.setDispatcher(this.commands, CommandBuildContext.simple(registries, enabledFeatures)); // Paper - Brigadier Command API
+         io.papermc.paper.command.PaperCommands.registerCommands(); // Paper
++        org.plazmamc.plazma.command.PlazmaCommands.registerCommands(); // Plazma
+         this.advancements = new ServerAdvancementManager(registries);
+         this.functionLibrary = new ServerFunctionLibrary(functionCompilationLevel, this.commands.getDispatcher());
+     }
+diff --git a/net/minecraft/server/dedicated/DedicatedServer.java b/net/minecraft/server/dedicated/DedicatedServer.java
+index 8068512cb2baa8b5ef11b21eca008ecaa519ce9b..9ea4012e7e13c0c4a4496787b9b8755eb93bca37 100644
+--- a/net/minecraft/server/dedicated/DedicatedServer.java
++++ b/net/minecraft/server/dedicated/DedicatedServer.java
+@@ -186,6 +186,7 @@ public class DedicatedServer extends MinecraftServer implements ServerInterface
+         org.spigotmc.WatchdogThread.doStart(org.spigotmc.SpigotConfig.timeoutTime, org.spigotmc.SpigotConfig.restartOnCrash); // Paper - start watchdog thread
+         thread.start(); // Paper - Enhance console tab completions for brigadier commands; start console thread after MinecraftServer.console & PaperConfig are initialized
+         io.papermc.paper.command.PaperCommands.registerCommands(this); // Paper - setup /paper command
++        org.plazmamc.plazma.command.PlazmaCommands.registerCommands(this); // Plazma - setup /plazma command
+         this.server.spark.registerCommandBeforePlugins(this.server); // Paper - spark
+         com.destroystokyo.paper.Metrics.PaperMetrics.startMetrics(); // Paper - start metrics
+         // Purpur start - Purpur config files
 diff --git a/org/plazmamc/plazma/command/PlazmaCommand.java b/org/plazmamc/plazma/command/PlazmaCommand.java
 new file mode 100644
-index 0000000000000000000000000000000000000000..e95a9525080b2e7e4d692e9693471c093c75b968
+index 0000000000000000000000000000000000000000..4781c887603efccf0eb58cdc1d713ab0c635156e
 --- /dev/null
 +++ b/org/plazmamc/plazma/command/PlazmaCommand.java
 @@ -0,0 +1,137 @@
@@ -36,7 +60,7 @@ index 0000000000000000000000000000000000000000..e95a9525080b2e7e4d692e9693471c09
 +
 +@DefaultQualifier(NonNull.class)
 +public final class PlazmaCommand extends Command {
-+    static final String BASE_PERM = "bukkit.command.paper.";
++    static final String BASE_PERM = "bukkit.command.plazma.";
 +    // subcommand label -> subcommand
 +    private static final Map<String, PlazmaSubcommand> SUBCOMMANDS = Util.make(() -> {
 +        final Map<Set<String>, PlazmaSubcommand> commands = new HashMap<>();
