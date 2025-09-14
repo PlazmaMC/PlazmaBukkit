@@ -1,0 +1,48 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: IPECTER <ipectert@gmail.com>
+Date: Mon, 15 Sep 2025 02:12:17 +0900
+Subject: [PATCH] Optimize default configurations
+
+
+diff --git a/net/minecraft/server/Main.java b/net/minecraft/server/Main.java
+index 2a1720cf10006893ca7d8b672422460292743b81..668ba7350297b63c7516cc1e30da2e3d401f29ea 100644
+--- a/net/minecraft/server/Main.java
++++ b/net/minecraft/server/Main.java
+@@ -140,7 +140,7 @@ public class Main {
+                 File configFile = (File) optionSet.valueOf("bukkit-settings");
+                 org.bukkit.configuration.file.YamlConfiguration configuration = org.bukkit.configuration.file.YamlConfiguration.loadConfiguration(configFile);
+                 configuration.options().copyDefaults(true);
+-                configuration.setDefaults(org.bukkit.configuration.file.YamlConfiguration.loadConfiguration(new java.io.InputStreamReader(Main.class.getClassLoader().getResourceAsStream("configurations/bukkit.yml"), java.nio.charset.StandardCharsets.UTF_8)));
++                configuration.setDefaults(org.bukkit.configuration.file.YamlConfiguration.loadConfiguration(new java.io.InputStreamReader(Main.class.getClassLoader().getResourceAsStream(org.plazmamc.plazma.Options.OPTIMIZE ? "configurations/bukkit_optimized.yml" : "configurations/bukkit.yml"), java.nio.charset.StandardCharsets.UTF_8))); // Plazma - Optimize default configuration
+                 configuration.save(configFile);
+ 
+                 File commandFile = (File) optionSet.valueOf("commands-settings");
+diff --git a/net/minecraft/server/dedicated/DedicatedServerProperties.java b/net/minecraft/server/dedicated/DedicatedServerProperties.java
+index 22547894240501dab0bc478be957df7f926dbfd5..c0ff4810baaf87388430b38999bba6598239bf35 100644
+--- a/net/minecraft/server/dedicated/DedicatedServerProperties.java
++++ b/net/minecraft/server/dedicated/DedicatedServerProperties.java
+@@ -76,20 +76,20 @@ public class DedicatedServerProperties extends Settings<DedicatedServerPropertie
+     public final boolean spawnMonsters = this.get("spawn-monsters", true);
+     public final boolean useNativeTransport = this.get("use-native-transport", true);
+     public final boolean enableCommandBlock = this.get("enable-command-block", false);
+-    public final int spawnProtection = this.get("spawn-protection", 16);
++    public final int spawnProtection = this.get("spawn-protection", org.plazmamc.plazma.Options.OPTIMIZE ? 0 : 16); // Plazma - Optimize default configuration
+     public final int opPermissionLevel = this.get("op-permission-level", 4);
+     public final int functionPermissionLevel = this.get("function-permission-level", 2);
+     public final long maxTickTime = this.get("max-tick-time", TimeUnit.MINUTES.toMillis(1L));
+     public final int maxChainedNeighborUpdates = this.get("max-chained-neighbor-updates", 1000000);
+     public final int rateLimitPacketsPerSecond = this.get("rate-limit", 0);
+-    public final int viewDistance = this.get("view-distance", 10);
+-    public final int simulationDistance = this.get("simulation-distance", 10);
++    public final int viewDistance = this.get("view-distance", org.plazmamc.plazma.Options.OPTIMIZE ? 7 : 10); // Plazma - Optimize default configuration
++    public final int simulationDistance = this.get("simulation-distance", org.plazmamc.plazma.Options.OPTIMIZE ? 4 : 10); // Plazma - Optimize default configuration
+     public final int maxPlayers = this.get("max-players", 20);
+     public final int networkCompressionThreshold = this.get("network-compression-threshold", 256);
+     public final boolean broadcastRconToOps = this.get("broadcast-rcon-to-ops", true);
+     public final boolean broadcastConsoleToOps = this.get("broadcast-console-to-ops", true);
+     public final int maxWorldSize = this.get("max-world-size", property -> Mth.clamp(property, 1, 29999984), 29999984);
+-    public final boolean syncChunkWrites = this.get("sync-chunk-writes", true) && Boolean.getBoolean("Paper.enable-sync-chunk-writes"); // Paper - Hide sync chunk writes behind flag
++    public final boolean syncChunkWrites = this.get("sync-chunk-writes", !org.plazmamc.plazma.Options.OPTIMIZE) && Boolean.getBoolean("Paper.enable-sync-chunk-writes"); // Paper - Hide sync chunk writes behind flag // Plazma - Optimize default configuration
+     public final String regionFileComression = this.get("region-file-compression", "deflate");
+     public final boolean enableJmxMonitoring = this.get("enable-jmx-monitoring", false);
+     public final boolean enableStatus = this.get("enable-status", true);
