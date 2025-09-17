@@ -20,7 +20,7 @@
 <details><summary><b>한국어 버전</b></summary>
 
 ## 💬 플라즈마란?
-* **Plazma**는 개발자 **Alpha93**와 **IPECTER 이팩터**가 개발한 [Purpur](https://github.com/PurpurMC/Purpur) 기반의 서버 플랫폼입니다.
+* **Plazma**는 개발자 **Alpha93**와 **IPECTER 이팩터**가 개발한 [Paper](https://github.com/PaperMC/Paper) 및 [Purpur](https://github.com/PurpurMC/Purpur) 기반의 서버 플랫폼입니다.
 * 향상된 안정성과 강력한 성능, 방대한 기능을 제공하기 위하여 노력하고 있습니다.
 * 안정적인 운영을 위한 반복 테스트와 실전 테스트를 진행합니다.
 
@@ -53,7 +53,7 @@
 ## ⚙️ Features
 
  - **Powerful Plugin Ecosystem**\
-   Based on [Paper](https://github.com/PaperMC/Paper), most of the latest plugins available on the internet work seamlessly.
+   Based on [Paper](https://github.com/PaperMC/Paper) and [Purpur](https://github.com/PurpurMC/Purpur), most of the latest plugins available on the internet work seamlessly.
  - **Optimization without the need for settings**\
    Includes all patches from [Pufferfish](https://github.com/pufferfish-gg/Pufferfish), with some internal optimizations and modes for optimal performance.
  - **Customizable gameplay**\
