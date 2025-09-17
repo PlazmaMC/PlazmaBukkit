@@ -24,7 +24,7 @@ but is so much cheaper than the suffocation check that it's worth
 keeping it.
 
 diff --git a/net/minecraft/world/entity/LivingEntity.java b/net/minecraft/world/entity/LivingEntity.java
-index a3b985cc454b2c62e7642f7eb05de590ecde9272..948c5a5b204285f393f77019ecff000b565b0938 100644
+index a3b985cc454b2c62e7642f7eb05de590ecde9272..99285f446df8eeb45c6c5e5339de1f30d1a7f051 100644
 --- a/net/minecraft/world/entity/LivingEntity.java
 +++ b/net/minecraft/world/entity/LivingEntity.java
 @@ -442,7 +442,7 @@ public abstract class LivingEntity extends Entity implements Attackable, Waypoin
@@ -32,7 +32,7 @@ index a3b985cc454b2c62e7642f7eb05de590ecde9272..948c5a5b204285f393f77019ecff000b
          if (this.isAlive() && this.level() instanceof ServerLevel serverLevel1) {
              boolean flag = this instanceof Player;
 -            if (this.isInWall()) {
-+            if (shouldCheckForSuffocation() && this.isInWall()) { // Plazma - Pufferfish - Optimize suffocation
++            if (shouldCheckForSuffocation() && this.isInWall()) { // Plazma - Optimize suffocation
                  this.hurtServer(serverLevel1, this.damageSources().inWall(), 1.0F);
              } else if (flag && !serverLevel1.getWorldBorder().isWithinBounds(this.getBoundingBox())) {
                  double d = serverLevel1.getWorldBorder().getDistanceToBorder(this) + serverLevel1.getWorldBorder().getDamageSafeZone();
@@ -40,7 +40,7 @@ index a3b985cc454b2c62e7642f7eb05de590ecde9272..948c5a5b204285f393f77019ecff000b
          profilerFiller.pop();
      }
  
-+    // Plazma start - Pufferfish - Optimize suffocation
++    // Plazma start - Optimize suffocation
 +    public boolean couldPossiblyBeHurt(float amount) {
 +        return !((float) this.invulnerableTime > (float) this.invulnerableDuration / 2.0F) || !(amount <= this.lastHurt);
 +    }
@@ -48,25 +48,8 @@ index a3b985cc454b2c62e7642f7eb05de590ecde9272..948c5a5b204285f393f77019ecff000b
 +    public boolean shouldCheckForSuffocation() {
 +        return !level().plazmaConfig().entity.optimizeSuffocationCheck || (tickCount % 10 == 0 && couldPossiblyBeHurt(1.0F));
 +    }
-+    // Plazma end - Pufferfish - Optimize suffocation
++    // Plazma end - Optimize suffocation
 +
      @Override
      protected float getBlockSpeedFactor() {
          return Mth.lerp((float)this.getAttributeValue(Attributes.MOVEMENT_EFFICIENCY), super.getBlockSpeedFactor(), 1.0F);
-diff --git a/org/plazmamc/plazma/configuration/WorldConfiguration.java b/org/plazmamc/plazma/configuration/WorldConfiguration.java
-index 3a655647a2d18dae6aa2aeccbd852e2494bcff8b..98e85422b1f6ef9ad20a91f4fe206c6c18677d6c 100644
---- a/org/plazmamc/plazma/configuration/WorldConfiguration.java
-+++ b/org/plazmamc/plazma/configuration/WorldConfiguration.java
-@@ -25,4 +25,11 @@ public class WorldConfiguration extends ConfigurationPart {
- 
-     @Setting(Configuration.VERSION_FIELD)
-     public int version = CURRENT_VERSION;
-+
-+    public Entity entity;
-+    public class Entity extends ConfigurationPart {
-+
-+        public boolean optimizeSuffocationCheck = true;
-+
-+    }
- }
-\ No newline at end of file

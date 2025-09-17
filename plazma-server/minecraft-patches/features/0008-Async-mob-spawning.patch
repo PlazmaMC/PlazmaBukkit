@@ -1,0 +1,175 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: IPECTER <ipectert@gmail.com>
+Date: Thu, 18 Sep 2025 00:35:36 +0900
+Subject: [PATCH] Async mob spawning
+
+Project: Pufferfish (https://github.com/pufferfish-gg/Pufferfish)
+Author: Kevin Raneri <kevin.raneri@gmail.com>
+License: GPL-3.0 (https://www.gnu.org/licenses/gpl-3.0.html)
+
+Description:
+* This patch is based on Pufferfish's "Optimize mob spawning" patch.
+
+This patch aims to reduce the main-thread impact of mob spawning by
+offloading as much work as possible to other threads. It is possible for
+inconsistencies to come up, but when they happen they never interfere
+with the server's operation (they don't produce errors), and side
+effects are limited to more or less mobs being spawned in any particular
+tick.
+
+It is possible to disable this optimization if it is not required or if
+it interferes with any plugins. On servers with thousands of entities,
+this can result in performance gains of up to 15%, which is significant
+and, in my opinion, worth the low risk of minor mob-spawning-related
+inconsistencies.
+
+diff --git a/net/minecraft/server/MinecraftServer.java b/net/minecraft/server/MinecraftServer.java
+index f96b5462b5d3b9757acaadce81ff79c88df125bf..faf4c5b1087d4b1298f0cfb937c9200bc636b514 100644
+--- a/net/minecraft/server/MinecraftServer.java
++++ b/net/minecraft/server/MinecraftServer.java
+@@ -307,6 +307,7 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
+     public static final long SERVER_INIT = System.nanoTime(); // Paper - Lag compensation
+     public boolean lagging = false; // Purpur - Lagging threshold
+     protected boolean upnp = false; // Purpur - UPnP Port Forwarding
++    public org.plazmamc.plazma.util.AsyncExecutor mobSpawnExecutor = new org.plazmamc.plazma.util.AsyncExecutor("MobSpawning"); // Plazma - Async mob spawning
+ 
+     public static <S extends MinecraftServer> S spin(Function<Thread, S> threadFunction) {
+         ca.spottedleaf.dataconverter.minecraft.datatypes.MCTypeRegistry.init(); // Paper - rewrite data converter system
+diff --git a/net/minecraft/server/dedicated/DedicatedServer.java b/net/minecraft/server/dedicated/DedicatedServer.java
+index 9ea4012e7e13c0c4a4496787b9b8755eb93bca37..36ef01826f4d4736e686d70389577305710d710b 100644
+--- a/net/minecraft/server/dedicated/DedicatedServer.java
++++ b/net/minecraft/server/dedicated/DedicatedServer.java
+@@ -349,6 +349,7 @@ public class DedicatedServer extends MinecraftServer implements ServerInterface
+ 
+             org.purpurmc.purpur.task.BossBarTask.startAll(); // Purpur - Implement TPSBar
+             if (org.purpurmc.purpur.PurpurConfig.beeCountPayload) org.purpurmc.purpur.task.BeehiveTask.instance().register(); // Purpur - Give bee counts in beehives to Purpur clients
++            if (org.plazmamc.plazma.configuration.GlobalConfiguration.get().async.mobSpawning) mobSpawnExecutor.start(); // Plazma - Async mob spawning
+             return true;
+         }
+     }
+diff --git a/net/minecraft/server/level/ServerChunkCache.java b/net/minecraft/server/level/ServerChunkCache.java
+index 2882cd829d4d8e1f8615f085f6908efcdf68ac62..5e353e5ce16a00ac4cefe956c44dbff7beccdadb 100644
+--- a/net/minecraft/server/level/ServerChunkCache.java
++++ b/net/minecraft/server/level/ServerChunkCache.java
+@@ -183,7 +183,8 @@ public class ServerChunkCache extends ChunkSource implements ca.spottedleaf.moon
+         }
+     }
+     // Paper end - chunk tick iteration optimisations
+-
++    public boolean firstRunSpawnCounts = true; // Plazma - Async mob spawning
++    public final java.util.concurrent.atomic.AtomicBoolean spawnCountsReady = new java.util.concurrent.atomic.AtomicBoolean(false); // Plazma - Async mob spawning
+ 
+     public ServerChunkCache(
+         ServerLevel level,
+@@ -522,6 +523,43 @@ public class ServerChunkCache extends ChunkSource implements ca.spottedleaf.moon
+             this.broadcastChangedChunks(profilerFiller);
+             profilerFiller.pop();
+         }
++
++        // Plazma start - Async mob spawning
++        if (this.level.plazmaConfig().async.mobSpawning()) {
++            for (ServerPlayer player : this.level.players) {
++                // Paper start - per player mob spawning backoff
++                for (int ii = 0; ii < ServerPlayer.MOBCATEGORY_TOTAL_ENUMS; ii++) {
++                    player.mobCounts[ii] = 0;
++
++                    int newBackoff = player.mobBackoffCounts[ii] - 1; // TODO make configurable bleed // TODO use nonlinear algorithm?
++                    if (newBackoff < 0) {
++                        newBackoff = 0;
++                    }
++                    player.mobBackoffCounts[ii] = newBackoff;
++                }
++                // Paper end - per player mob spawning backoff
++            }
++            if (this.firstRunSpawnCounts) {
++                this.firstRunSpawnCounts = false;
++                this.spawnCountsReady.set(true);
++            }
++            if (this.spawnCountsReady.getAndSet(false)) {
++                net.minecraft.server.MinecraftServer.getServer().mobSpawnExecutor.submit(() -> {
++                    int mapped = this.distanceManager.getNaturalSpawnChunkCount();
++                    ca.spottedleaf.moonrise.common.list.IteratorSafeOrderedReferenceSet.Iterator<Entity> objectiterator =
++                            this.level.entityTickList.entities.iterator(ca.spottedleaf.moonrise.common.list.IteratorSafeOrderedReferenceSet.ITERATOR_FLAG_SEE_ADDITIONS);
++                    try {
++                        org.plazmamc.plazma.util.IterableWrapper<Entity> wrappedIterator =
++                                new org.plazmamc.plazma.util.IterableWrapper<>(objectiterator);
++                        this.lastSpawnState = NaturalSpawner.createState(mapped, wrappedIterator, this::getFullChunk, null, true);
++                    } finally {
++                        objectiterator.finishedIterating();
++                    }
++                    this.spawnCountsReady.set(true);
++                });
++            }
++        }
++        // Plazma end - Async mob spawning
+     }
+ 
+     private void broadcastChangedChunks(ProfilerFiller profiler) {
+@@ -543,7 +581,7 @@ public class ServerChunkCache extends ChunkSource implements ca.spottedleaf.moon
+         int naturalSpawnChunkCount = this.distanceManager.getNaturalSpawnChunkCount();
+         // Paper start - Optional per player mob spawns
+         NaturalSpawner.SpawnState spawnState;
+-        if ((this.spawnFriendlies || this.spawnEnemies) && this.level.paperConfig().entities.spawning.perPlayerMobSpawns) { // don't count mobs when animals and monsters are disabled
++        if ((this.spawnFriendlies || this.spawnEnemies) && !this.level.paperConfig().entities.spawning.perPlayerMobSpawns && this.level.plazmaConfig().async.mobSpawning()) { // don't count mobs when animals and monsters are disabled // Plazma - Async mob spawning
+             // re-set mob counts
+             for (ServerPlayer player : this.level.players) {
+                 // Paper start - per player mob spawning backoff
+@@ -558,12 +596,15 @@ public class ServerChunkCache extends ChunkSource implements ca.spottedleaf.moon
+                 }
+                 // Paper end - per player mob spawning backoff
+             }
+-            spawnState = NaturalSpawner.createState(naturalSpawnChunkCount, this.level.getAllEntities(), this::getFullChunk, null, true);
++            this.lastSpawnState = NaturalSpawner.createState(naturalSpawnChunkCount, this.level.getAllEntities(), this::getFullChunk, null, true); // Plazma - Async mob spawning
+         } else {
+-            spawnState = NaturalSpawner.createState(naturalSpawnChunkCount, this.level.getAllEntities(), this::getFullChunk, !this.level.paperConfig().entities.spawning.perPlayerMobSpawns ? new LocalMobCapCalculator(this.chunkMap) : null, false);
++            // Plazma start - Async mob spawning
++            this.lastSpawnState = NaturalSpawner.createState(naturalSpawnChunkCount, this.level.getAllEntities(), this::getFullChunk, !this.level.paperConfig().entities.spawning.perPlayerMobSpawns ? new LocalMobCapCalculator(this.chunkMap) : null, false);
++            this.spawnCountsReady.set(true);
++            // Plazma end - Async mob spawning
+         }
+         // Paper end - Optional per player mob spawns
+-        this.lastSpawnState = spawnState;
++        //this.lastSpawnState = spawnState; // Plazma - Async mob spawning
+         profiler.popPush("spawnAndTick");
+         boolean _boolean = this.level.getGameRules().getBoolean(GameRules.RULE_DOMOBSPAWNING) && !this.level.players().isEmpty(); // CraftBukkit
+         int _int = this.level.getGameRules().getInt(GameRules.RULE_RANDOMTICKING);
+@@ -578,7 +619,7 @@ public class ServerChunkCache extends ChunkSource implements ca.spottedleaf.moon
+             }
+             // Paper end - PlayerNaturallySpawnCreaturesEvent
+             boolean flag = this.level.ticksPerSpawnCategory.getLong(org.bukkit.entity.SpawnCategory.ANIMAL) != 0L && this.level.getLevelData().getGameTime() % this.level.ticksPerSpawnCategory.getLong(org.bukkit.entity.SpawnCategory.ANIMAL) == 0L; // CraftBukkit
+-            filteredSpawningCategories = NaturalSpawner.getFilteredSpawningCategories(spawnState, this.spawnFriendlies, this.spawnEnemies, flag, this.level); // CraftBukkit
++            filteredSpawningCategories = NaturalSpawner.getFilteredSpawningCategories(this.lastSpawnState, this.spawnFriendlies, this.spawnEnemies, flag, this.level); // CraftBukkit // Plazma - Async mob spawning
+         } else {
+             filteredSpawningCategories = List.of();
+         }
+@@ -596,7 +637,7 @@ public class ServerChunkCache extends ChunkSource implements ca.spottedleaf.moon
+             profiler.popPush("tickSpawningChunks");
+ 
+             for (LevelChunk levelChunk : list) {
+-                this.tickSpawningChunk(levelChunk, timeInhabited, filteredSpawningCategories, spawnState);
++                this.tickSpawningChunk(levelChunk, timeInhabited, filteredSpawningCategories, this.lastSpawnState); // Plazma - Async mob spawning
+             }
+         } finally {
+             list.clear();
+@@ -620,7 +661,7 @@ public class ServerChunkCache extends ChunkSource implements ca.spottedleaf.moon
+ 
+         if (!spawnCategories.isEmpty()) {
+             if (this.level.getWorldBorder().isWithinBounds(pos)) { // Paper - rewrite chunk system
+-                NaturalSpawner.spawnForChunk(this.level, chunk, spawnState, spawnCategories);
++                NaturalSpawner.spawnForChunk(this.level, chunk, this.lastSpawnState, spawnCategories); // Plazma - Async mob spawning
+             }
+         }
+     }
+diff --git a/net/minecraft/world/level/entity/EntityTickList.java b/net/minecraft/world/level/entity/EntityTickList.java
+index 423779a2b690f387a4f0bd07b97b50e0baefda76..9ed14fcb8316c4d07086bb8e5fdcb3fe54a71ef0 100644
+--- a/net/minecraft/world/level/entity/EntityTickList.java
++++ b/net/minecraft/world/level/entity/EntityTickList.java
+@@ -9,7 +9,7 @@ import javax.annotation.Nullable;
+ import net.minecraft.world.entity.Entity;
+ 
+ public class EntityTickList {
+-    private final ca.spottedleaf.moonrise.common.list.IteratorSafeOrderedReferenceSet<net.minecraft.world.entity.Entity> entities = new ca.spottedleaf.moonrise.common.list.IteratorSafeOrderedReferenceSet<>(); // Paper - rewrite chunk system
++    public final ca.spottedleaf.moonrise.common.list.IteratorSafeOrderedReferenceSet<net.minecraft.world.entity.Entity> entities = new ca.spottedleaf.moonrise.common.list.IteratorSafeOrderedReferenceSet<>(); // Paper - rewrite chunk system // Plazma = private -> public
+ 
+     private void ensureActiveIsNotIterated() {
+         // Paper - rewrite chunk system
