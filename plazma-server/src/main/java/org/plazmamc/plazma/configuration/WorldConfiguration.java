@@ -26,6 +26,8 @@ public class WorldConfiguration extends ConfigurationPart {
     @Setting(Configuration.VERSION_FIELD)
     public int version = CURRENT_VERSION;
 
+    public boolean optimizeVanillaShapelessRecipes = true;
+
     public Async async;
 
     public class Async extends ConfigurationPart {

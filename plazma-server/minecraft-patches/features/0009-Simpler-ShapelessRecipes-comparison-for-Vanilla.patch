@@ -1,0 +1,92 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: IPECTER <ipectert@gmail.com>
+Date: Thu, 18 Sep 2025 01:28:01 +0900
+Subject: [PATCH] Simpler ShapelessRecipes comparison for Vanilla
+
+Project: Airplane (https://github.com/TECHNOVE/Airplane)
+Author: Paul Sauve <paul@technove.co>
+License: GPL-3.0 (https://www.gnu.org/licenses/gpl-3.0.html)
+
+Description:
+* This patch is based on Airplane's "Simpler ShapelessRecipes comparison for Vanilla" patch.
+
+Paper added a fancy sorting comparison due to Bukkit recipes breaking
+the vanilla one, however this is far more advanced than what you need
+for all the vanilla recipes.
+
+Airplane
+Copyright (C) 2020 Technove LLC
+
+This program is free software: you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation, either version 3 of the License, or
+(at your option) any later version.
+
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+diff --git a/net/minecraft/world/item/crafting/ShapelessRecipe.java b/net/minecraft/world/item/crafting/ShapelessRecipe.java
+index d601b54b1de2f2ae44fe2b20c8116c71a6340e45..ab0fd62e623dbd5d985715e379c4d2642c263394 100644
+--- a/net/minecraft/world/item/crafting/ShapelessRecipe.java
++++ b/net/minecraft/world/item/crafting/ShapelessRecipe.java
+@@ -23,13 +23,21 @@ public class ShapelessRecipe implements CraftingRecipe {
+     final List<Ingredient> ingredients;
+     @Nullable
+     private PlacementInfo placementInfo;
++    private final boolean isBukkit; // Plazma - Simpler ShapelessRecipes comparison for Vanilla
+ 
++    // Plazma start - Simpler ShapelessRecipes comparison for Vanilla
+     public ShapelessRecipe(String group, CraftingBookCategory category, ItemStack result, List<Ingredient> ingredients) {
++        this(group, category, result, ingredients, false);
++    }
++
++    public ShapelessRecipe(String group, CraftingBookCategory category, ItemStack result, List<Ingredient> ingredients, boolean isBukkit) {
+         this.group = group;
+         this.category = category;
+         this.result = result;
+         this.ingredients = ingredients;
++        this.isBukkit = isBukkit;
+     }
++    // Plazma end - Simpler ShapelessRecipes comparison for Vanilla
+ 
+     // CraftBukkit start
+     @Override
+@@ -72,6 +80,33 @@ public class ShapelessRecipe implements CraftingRecipe {
+ 
+     @Override
+     public boolean matches(CraftingInput input, Level level) {
++        // Plazma start - Simpler ShapelessRecipes comparison for Vanilla
++        if (level.plazmaConfig().optimizeVanillaShapelessRecipes && !this.isBukkit) {
++            Ingredient[] ingredients = this.ingredients.toArray(new Ingredient[0]);
++            boolean[] used = new boolean[ingredients.length];
++
++            inventory: for (int index = 0; index < input.size(); index++) {
++                ItemStack itemStack = input.getItem(index);
++                if (!itemStack.isEmpty()) {
++                    for (int i = 0; i < ingredients.length; i++) {
++                        if (!used[i] && ingredients[i].test(itemStack)) {
++                            used[i] = true;
++                            continue inventory;
++                        }
++                    }
++                    return false;
++                }
++            }
++
++            for (boolean flag : used) {
++                if (!flag) {
++                    return false;
++                }
++            }
++            return true;
++
++        }
++        // Plazma end - Simpler ShapelessRecipes comparison for Vanilla
+         // Paper start - Improve exact choice recipe ingredients & unwrap ternary
+         if (input.ingredientCount() != this.ingredients.size()) {
+             return false;
