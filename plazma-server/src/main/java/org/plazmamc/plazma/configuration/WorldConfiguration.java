@@ -4,6 +4,7 @@ import com.mojang.logging.LogUtils;
 import io.papermc.paper.configuration.Configuration;
 import io.papermc.paper.configuration.ConfigurationPart;
 import net.minecraft.resources.ResourceLocation;
+import org.plazmamc.plazma.Options;
 import org.slf4j.Logger;
 import org.spongepowered.configurate.objectmapping.meta.Setting;
 
@@ -42,5 +43,12 @@ public class WorldConfiguration extends ConfigurationPart {
 
     public class Entity extends ConfigurationPart {
         public boolean optimizeSuffocationCheck = true;
+
+        public Projectile projectile;
+
+        public class Projectile extends ConfigurationPart {
+            public int maxLoadsPerTick = 10;
+            public int maxLoadsPerProjectile = Options.OPTIMIZE ? 8 : 10;
+        }
     }
 }
