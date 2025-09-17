@@ -39,9 +39,9 @@ public class WorldConfiguration extends ConfigurationPart {
         }
     }
 
-    public Entity entity;
+    public Entities entities;
 
-    public class Entity extends ConfigurationPart {
+    public class Entities extends ConfigurationPart {
         public boolean optimizeSuffocationCheck = true;
 
         public Projectile projectile;
