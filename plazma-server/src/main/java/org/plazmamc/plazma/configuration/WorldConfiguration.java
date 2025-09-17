@@ -42,7 +42,7 @@ public class WorldConfiguration extends ConfigurationPart {
     public Entities entities;
 
     public class Entities extends ConfigurationPart {
-        public boolean optimizeSuffocationCheck = true;
+        public boolean optimizeSuffocation = true;
 
         public Projectile projectile;
 
@@ -50,5 +50,12 @@ public class WorldConfiguration extends ConfigurationPart {
             public int maxLoadsPerTick = 10;
             public int maxLoadsPerProjectile = Options.OPTIMIZE ? 8 : 10;
         }
+    }
+
+    public Environment environment;
+
+    public class Environment extends ConfigurationPart {
+        public boolean optimizeLightning = true;
+        public boolean optimizeIceAndSnow = true;
     }
 }

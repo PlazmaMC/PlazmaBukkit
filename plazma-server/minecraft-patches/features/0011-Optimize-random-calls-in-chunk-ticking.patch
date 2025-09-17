@@ -1,0 +1,147 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: IPECTER <ipectert@gmail.com>
+Date: Thu, 18 Sep 2025 03:55:05 +0900
+Subject: [PATCH] Optimize random calls in chunk ticking
+
+Project: Airplane (https://github.com/TECHNOVE/Airplane)
+Author: Paul Sauve <paul@technove.co>
+License: GPL-3.0 (https://www.gnu.org/licenses/gpl-3.0.html)
+
+Project: Pufferfish (https://github.com/pufferfish-gg/Pufferfish)
+Author: Kevin Raneri <kevin.raneri@gmail.com>
+License: GPL-3.0 (https://www.gnu.org/licenses/gpl-3.0.html)
+
+Project: Gale (https://github.com/GaleMC/Gale)
+Author: Martijn Muijsers <martijnmuijsers@live.nl>
+License: GPL-3.0 (https://www.gnu.org/licenses/gpl-3.0.html)
+
+Description:
+* This patch is based on Gale's "Optimize random calls in chunk ticking" patch.
+
+Especially at over 30,000 chunks these random calls are fairly heavy. We
+use a different method here for checking lightning, and for checking
+ice.
+
+Lightning: Each chunk now keeps an int of how many ticks until the
+lightning should strike. This int is a random number from 0 to 100000 * 2,
+the multiplication is required to keep the probability the same.
+
+Ice and snow: We just generate a single random number 0-16 and increment
+it, while checking if it's 0 for the current chunk.
+
+Depending on configuration for things that tick in a chunk, this is a
+5-10% improvement.
+
+Airplane
+Copyright (C) 2020 Technove LLC
+
+This program is free software: you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation, either version 3 of the License, or
+(at your option) any later version.
+
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+diff --git a/net/minecraft/server/level/ServerChunkCache.java b/net/minecraft/server/level/ServerChunkCache.java
+index 5e353e5ce16a00ac4cefe956c44dbff7beccdadb..95ca6dffbc6f13ab1b1b7145ad240e0539227591 100644
+--- a/net/minecraft/server/level/ServerChunkCache.java
++++ b/net/minecraft/server/level/ServerChunkCache.java
+@@ -514,6 +514,7 @@ public class ServerChunkCache extends ChunkSource implements ca.spottedleaf.moon
+         if (!this.level.isDebug()) {
+             ProfilerFiller profilerFiller = Profiler.get();
+             profilerFiller.push("pollingChunks");
++            if (this.level.plazmaConfig().environment.optimizeIceAndSnow) this.level.resetIceAndSnowTick(); // Plazma - Optimize random calls in chunk ticking - reset ice & snow tick random
+             if (this.level.tickRateManager().runsNormally()) {
+                 profilerFiller.push("tickingChunks");
+                 this.tickChunks(profilerFiller, l);
+diff --git a/net/minecraft/server/level/ServerLevel.java b/net/minecraft/server/level/ServerLevel.java
+index 618650efac78dafe0eb7dfcbf75dddb6bc42fca1..df033fee1aeb9d5bb669d94eb134278205e2f341 100644
+--- a/net/minecraft/server/level/ServerLevel.java
++++ b/net/minecraft/server/level/ServerLevel.java
+@@ -954,6 +954,14 @@ public class ServerLevel extends Level implements ServerEntityGetter, WorldGenLe
+     }
+     // Paper end - optimise random ticking
+
++    // Plazma start - Optimize random calls in chunk ticking
++    private int currentIceAndSnowTick = 0;
++
++    protected void resetIceAndSnowTick() {
++        this.currentIceAndSnowTick = this.simpleRandom.nextInt(16);
++    }
++    // Plazma end - Optimize random calls in chunk ticking
++
+     public void tickChunk(LevelChunk chunk, int randomTickSpeed) {
+         final ca.spottedleaf.moonrise.common.util.SimpleThreadUnsafeRandom simpleRandom = this.simpleRandom; // Paper - optimise random ticking
+         ChunkPos pos = chunk.getPos();
+@@ -962,7 +970,7 @@ public class ServerLevel extends Level implements ServerEntityGetter, WorldGenLe
+         ProfilerFiller profilerFiller = Profiler.get();
+         profilerFiller.push("iceandsnow");
+
+-        if (!this.paperConfig().environment.disableIceAndSnow) { // Paper - Option to disable ice and snow
++        if (!this.paperConfig().environment.disableIceAndSnow && (!this.plazmaConfig().environment.optimizeIceAndSnow || (this.currentIceAndSnowTick++ & 15) == 0)) { // Paper - Option to disable ice and snow // Plazma - Optimize random calls in chunk ticking - optimize further random ticking
+         for (int i = 0; i < randomTickSpeed; i++) {
+             if (simpleRandom.nextInt(48) == 0) {  // Paper - optimise random ticking
+                 this.tickPrecipitation(this.getBlockRandomPos(minBlockX, 0, minBlockZ, 15));
+@@ -985,7 +993,7 @@ public class ServerLevel extends Level implements ServerEntityGetter, WorldGenLe
+         int minBlockZ = pos.getMinBlockZ();
+         ProfilerFiller profilerFiller = Profiler.get();
+         profilerFiller.push("thunder");
+-        if (!this.paperConfig().environment.disableThunder && isRaining && this.isThundering() && this.spigotConfig.thunderChance > 0 && this.random.nextInt(this.spigotConfig.thunderChance) == 0) { // Spigot // Paper - Option to disable thunder
++        if (!this.paperConfig().environment.disableThunder && isRaining && this.isThundering() && this.spigotConfig.thunderChance > 0 && chunk.shouldDoLightning(simpleRandom)) { // Spigot // Paper - Option to disable thunder // Plazma - Optimize random calls in chunk ticking - replace random with shouldDoLightning
+             BlockPos blockPos = this.findLightningTargetAround(this.getBlockRandomPos(minBlockX, 0, minBlockZ, 15));
+             if (this.isRainingAt(blockPos)) {
+                 DifficultyInstance currentDifficultyAt = this.getCurrentDifficultyAt(blockPos);
+diff --git a/net/minecraft/world/entity/LivingEntity.java b/net/minecraft/world/entity/LivingEntity.java
+index 0f7566a88afa3e1a48cb0e17209ebd9336a5ce51..7b0fe19985e739cb517bb8acdbb98566a7a08e24 100644
+--- a/net/minecraft/world/entity/LivingEntity.java
++++ b/net/minecraft/world/entity/LivingEntity.java
+@@ -535,7 +535,7 @@ public abstract class LivingEntity extends Entity implements Attackable, Waypoin
+     }
+
+     public boolean shouldCheckForSuffocation() {
+-        return !level().plazmaConfig().entities.optimizeSuffocationCheck || (tickCount % 10 == 0 && couldPossiblyBeHurt(1.0F));
++        return !level().plazmaConfig().entities.optimizeSuffocation || (tickCount % 10 == 0 && couldPossiblyBeHurt(1.0F));
+     }
+     // Plazma end - Optimize suffocation
+
+diff --git a/net/minecraft/world/level/chunk/LevelChunk.java b/net/minecraft/world/level/chunk/LevelChunk.java
+index 75578e6ed7233a03d9b6cd3c6d3997f1c6148392..25be2caff25c2f3c57a52143ad6b300026e65263 100644
+--- a/net/minecraft/world/level/chunk/LevelChunk.java
++++ b/net/minecraft/world/level/chunk/LevelChunk.java
+@@ -124,6 +124,22 @@ public class LevelChunk extends ChunkAccess implements ca.spottedleaf.moonrise.p
+     private final boolean debug;
+     private final BlockState defaultBlockState;
+
++    // Plazma start - Optimize random calls in chunk ticking - instead of using a random every time the chunk is ticked, define when lightning strikes preemptively
++    private int lightningTick;
++    // shouldDoLightning compiles down to 29 bytes, which with the default of 35 byte inlining should guarantee an inline
++    public final boolean shouldDoLightning(net.minecraft.util.RandomSource random) {
++        if (this.level.plazmaConfig().environment.optimizeLightning) {
++            if (this.lightningTick-- <= 0) {
++                this.lightningTick = random.nextInt(this.level.spigotConfig.thunderChance) << 1;
++                return true;
++            }
++            return false;
++        } else {
++            return random.nextInt(this.level.spigotConfig.thunderChance) == 0;
++        }
++    }
++    // Plazma end - Optimize random calls in chunk ticking
++
+     @Override
+     public final BlockState moonrise$getBlock(final int x, final int y, final int z) {
+         return this.getBlockStateFinal(x, y, z);
+@@ -166,6 +182,7 @@ public class LevelChunk extends ChunkAccess implements ca.spottedleaf.moonrise.p
+         this.debug = !empty && this.level.isDebug();
+         this.defaultBlockState = empty ? VOID_AIR_BLOCKSTATE : AIR_BLOCKSTATE;
+         // Paper end - get block chunk optimisation
++        this.lightningTick = new java.util.Random().nextInt(100000) << 1; // Plazma - Optimize random calls in chunk ticking - initialize lightning tick
+     }
+ 
+     public LevelChunk(ServerLevel level, ProtoChunk chunk, @Nullable LevelChunk.PostLoadProcessor postLoad) {
