@@ -3,9 +3,16 @@ package org.plazmamc.plazma.configuration;
 import com.mojang.logging.LogUtils;
 import io.papermc.paper.configuration.Configuration;
 import io.papermc.paper.configuration.ConfigurationPart;
+import it.unimi.dsi.fastutil.objects.Reference2BooleanMap;
+import it.unimi.dsi.fastutil.objects.Reference2BooleanOpenHashMap;
+import net.minecraft.Util;
+import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.resources.ResourceLocation;
+import net.minecraft.world.entity.Entity;
+import net.minecraft.world.entity.EntityType;
 import org.plazmamc.plazma.Options;
 import org.slf4j.Logger;
+import org.spongepowered.configurate.objectmapping.meta.PostProcess;
 import org.spongepowered.configurate.objectmapping.meta.Setting;
 
 @SuppressWarnings({"FieldCanBeLocal", "FieldMayBeFinal", "NotNullFieldNotInitialized", "InnerClassMayBeStatic"})
@@ -57,5 +64,25 @@ public class WorldConfiguration extends ConfigurationPart {
     public class Environment extends ConfigurationPart {
         public boolean optimizeLightning = true;
         public boolean optimizeIceAndSnow = true;
+    }
+
+    public DynamicActivationOfBrain dab;
+
+    public class DynamicActivationOfBrain extends ConfigurationPart {
+        public boolean enabled = true;
+
+        public int maxTickFrequency = 20;
+
+        public Reference2BooleanMap<EntityType<?>> entities = Util.make(new Reference2BooleanOpenHashMap<>(BuiltInRegistries.ENTITY_TYPE.size()), map -> {
+            map.defaultReturnValue(true);
+            map.put(EntityType.ARMOR_STAND, false);
+        });
+
+        @PostProcess
+        private void postProcess() {
+            for (EntityType<? extends Entity> entityType : BuiltInRegistries.ENTITY_TYPE) {
+                //entityType.dabEnabled = entities.getBoolean(entityType);
+            }
+        }
     }
 }

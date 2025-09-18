@@ -1,0 +1,53 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: IPECTER <ipectert@gmail.com>
+Date: Thu, 18 Sep 2025 18:00:07 +0900
+Subject: [PATCH] Cache climbing check for activation
+
+Project: Airplane (https://github.com/TECHNOVE/Airplane)
+Author: Paul Sauve <paul@technove.co>
+License: GPL-3.0 (https://www.gnu.org/licenses/gpl-3.0.html)
+
+Project: Pufferfish (https://github.com/pufferfish-gg/Pufferfish)
+Author: Kevin Raneri <kevin.raneri@gmail.com>
+License: GPL-3.0 (https://www.gnu.org/licenses/gpl-3.0.html)
+
+Description:
+* This patch is based on Pufferfish's "Cache climbing check for activation" patch.
+
+diff --git a/io/papermc/paper/entity/activation/ActivationRange.java b/io/papermc/paper/entity/activation/ActivationRange.java
+index ca21597263cb430e2a5ae07e8cecfb0d53a270d2..d3fdd109fc219981ba14447b45d3781c070cd789 100644
+--- a/io/papermc/paper/entity/activation/ActivationRange.java
++++ b/io/papermc/paper/entity/activation/ActivationRange.java
+@@ -223,7 +223,7 @@ public final class ActivationRange {
+         }
+         // special cases.
+         if (entity instanceof final LivingEntity living) {
+-            if (living.onClimbable() || living.jumping || living.hurtTime > 0 || !living.activeEffects.isEmpty() || living.isFreezing()) {
++            if (living.onClimbableCached() || living.jumping || living.hurtTime > 0 || !living.activeEffects.isEmpty() || living.isFreezing()) { // Plazma - Cache climbing check for activation - Use Cached
+                 return 1;
+             }
+             if (entity instanceof final Mob mob && mob.getTarget() != null) {
+diff --git a/net/minecraft/world/entity/LivingEntity.java b/net/minecraft/world/entity/LivingEntity.java
+index 7b0fe19985e739cb517bb8acdbb98566a7a08e24..1ef7b33b3e148b02f0c827221b6aaeef256cf5c7 100644
+--- a/net/minecraft/world/entity/LivingEntity.java
++++ b/net/minecraft/world/entity/LivingEntity.java
+@@ -2194,6 +2194,19 @@ public abstract class LivingEntity extends Entity implements Attackable, Waypoin
+         return this.lastClimbablePos;
+     }
+ 
++    // Plazma start - Cache climbing check for activation
++    private boolean cachedOnClimbable = false;
++
++    public boolean onClimbableCached() {
++        Optional<BlockPos> blockPos = Optional.of(this.blockPosition());
++        if (!lastClimbablePos.equals(blockPos)) {
++            this.cachedOnClimbable = this.onClimbable();
++            this.lastClimbablePos = blockPos;
++        }
++        return this.cachedOnClimbable;
++    }
++    // Plazma end - Cache climbing check for activation
++
+     public boolean onClimbable() {
+         if (this.isSpectator()) {
+             return false;

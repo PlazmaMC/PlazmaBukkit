@@ -1,9 +1,16 @@
 package org.plazmamc.plazma.configuration;
 
 import com.mojang.logging.LogUtils;
+import io.papermc.paper.FeatureHooks;
 import io.papermc.paper.configuration.Configuration;
 import io.papermc.paper.configuration.ConfigurationPart;
+import it.unimi.dsi.fastutil.objects.*;
+import net.minecraft.Util;
+import net.minecraft.core.registries.BuiltInRegistries;
+import net.minecraft.world.entity.Entity;
+import net.minecraft.world.entity.EntityType;
 import org.slf4j.Logger;
+import org.spongepowered.configurate.objectmapping.meta.PostProcess;
 import org.spongepowered.configurate.objectmapping.meta.Setting;
 
 @SuppressWarnings({"CanBeFinal", "FieldCanBeLocal", "FieldMayBeFinal", "NotNullFieldNotInitialized", "InnerClassMayBeStatic"})
@@ -30,4 +37,5 @@ public class GlobalConfiguration extends ConfigurationPart {
         public boolean mobSpawning = true;
     }
 
+    public boolean disableMethodProfiler = true;
 }
