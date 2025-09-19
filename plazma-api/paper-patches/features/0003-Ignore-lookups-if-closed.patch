@@ -11,14 +11,14 @@ Description:
 * This patch is based on Pufferfish's "Ignore lookups if closed" patch.
 
 diff --git a/src/main/java/org/bukkit/plugin/java/PluginClassLoader.java b/src/main/java/org/bukkit/plugin/java/PluginClassLoader.java
-index 8c5a5043ad8b69d55fa1fc99864767238d435991..196a9ba7358461ef6c4359010a64d2f5903ac11e 100644
+index 8c5a5043ad8b69d55fa1fc99864767238d435991..92b02f31303ba0728d0dbc07510ac893a9504190 100644
 --- a/src/main/java/org/bukkit/plugin/java/PluginClassLoader.java
 +++ b/src/main/java/org/bukkit/plugin/java/PluginClassLoader.java
 @@ -50,6 +50,7 @@ public final class PluginClassLoader extends URLClassLoader implements io.paperm
      private java.util.logging.Logger logger; // Paper - add field
      private io.papermc.paper.plugin.provider.classloader.PluginClassLoaderGroup classLoaderGroup; // Paper
      public io.papermc.paper.plugin.provider.entrypoint.DependencyContext dependencyContext; // Paper
-+    private boolean closed = false; // Plazma - Pufferfish - Ignore lookups if closed
++    private boolean closed = false; // Plazma - Ignore lookups if closed
  
      static {
          ClassLoader.registerAsParallelCapable();
@@ -27,7 +27,7 @@ index 8c5a5043ad8b69d55fa1fc99864767238d435991..196a9ba7358461ef6c4359010a64d2f5
          Class<?> result = classes.get(name);
  
 -        if (result == null) {
-+        if (result == null && !this.closed) { // Plazma - Pufferfish - Ignore lookups if closed
++        if (result == null && !this.closed) { // Plazma - Ignore lookups if closed
              String path = name.replace('.', '/').concat(".class");
              // Add details to zip file errors - help debug classloading
              JarEntry entry;
@@ -35,7 +35,7 @@ index 8c5a5043ad8b69d55fa1fc99864767238d435991..196a9ba7358461ef6c4359010a64d2f5
              this.setClass(name, result); // Paper
          }
  
-+        if (result == null) throw new ClassNotFoundException(name); // Plazma - Pufferfish - Ignore lookups if closed
++        if (result == null) throw new ClassNotFoundException(name); // Plazma - Ignore lookups if closed
          return result;
      }
  
@@ -43,7 +43,7 @@ index 8c5a5043ad8b69d55fa1fc99864767238d435991..196a9ba7358461ef6c4359010a64d2f5
              super.close();
          } finally {
              jar.close();
-+            this.closed = true; // Plazma - Pufferfish - Ignore lookups if closed
++            this.closed = true; // Plazma - Ignore lookups if closed
          }
      }
  
