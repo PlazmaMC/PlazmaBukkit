@@ -1,14 +1,31 @@
 package org.plazmamc.plazma.configuration;
 
+import com.google.common.collect.Table;
+import io.leangen.geantyref.TypeToken;
 import io.papermc.paper.configuration.Configurations;
 import io.papermc.paper.configuration.Metadata;
 import io.papermc.paper.configuration.serializer.ComponentSerializer;
 import io.papermc.paper.configuration.serializer.EnumValueSerializer;
 import io.papermc.paper.configuration.serializer.ResourceLocationSerializer;
+import io.papermc.paper.configuration.serializer.StringRepresentableSerializer;
+import io.papermc.paper.configuration.serializer.collection.TableSerializer;
+import io.papermc.paper.configuration.serializer.collection.map.FastutilMapSerializer;
 import io.papermc.paper.configuration.serializer.collection.map.MapSerializer;
+import io.papermc.paper.configuration.serializer.registry.RegistryHolderSerializer;
+import io.papermc.paper.configuration.serializer.registry.RegistryValueSerializer;
+import io.papermc.paper.configuration.type.DespawnRange;
+import io.papermc.paper.configuration.type.EngineMode;
+import io.papermc.paper.configuration.type.fallback.FallbackValueSerializer;
+import it.unimi.dsi.fastutil.objects.*;
 import net.minecraft.core.RegistryAccess;
+import net.minecraft.core.registries.Registries;
 import net.minecraft.resources.ResourceLocation;
+import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerLevel;
+import net.minecraft.world.entity.EntityType;
+import net.minecraft.world.item.Item;
+import net.minecraft.world.level.block.Block;
+import net.minecraft.world.level.levelgen.feature.ConfiguredFeature;
 import org.checkerframework.framework.qual.DefaultQualifier;
 import org.jspecify.annotations.NonNull;
 import org.spongepowered.configurate.ConfigurationOptions;
@@ -125,7 +142,23 @@ public final class PlazmaConfigurations extends Configurations<GlobalConfigurati
 
     @Override
     protected ConfigurationOptions defaultWorldOptions(final ConfigurationOptions options, final ContextMap contextMap) {
-        return options;
+        final RegistryAccess access = contextMap.require(REGISTRY_ACCESS);
+        return options.serializers(serializers -> serializers
+                .register(new TypeToken<Reference2IntMap<?>>() {
+                }, new FastutilMapSerializer.SomethingToPrimitive<Reference2IntMap<?>>(Reference2IntOpenHashMap::new, Integer.TYPE))
+                .register(new TypeToken<Reference2LongMap<?>>() {
+                }, new FastutilMapSerializer.SomethingToPrimitive<Reference2LongMap<?>>(Reference2LongOpenHashMap::new, Long.TYPE))
+                .register(new TypeToken<Reference2BooleanMap<?>>() {
+                }, new FastutilMapSerializer.SomethingToPrimitive<Reference2BooleanMap<?>>(Reference2BooleanOpenHashMap::new, Boolean.TYPE))
+                .register(new TypeToken<Reference2ObjectMap<?, ?>>() {
+                }, new FastutilMapSerializer.SomethingToSomething<Reference2ObjectMap<?, ?>>(Reference2ObjectOpenHashMap::new))
+                .register(new TypeToken<Table<?, ?, ?>>() {
+                }, new TableSerializer())
+                .register(new RegistryValueSerializer<>(new TypeToken<EntityType<?>>() {
+                }, access, Registries.ENTITY_TYPE, true))
+                .register(new RegistryValueSerializer<>(Item.class, access, Registries.ITEM, true))
+                .register(new RegistryValueSerializer<>(Block.class, access, Registries.BLOCK, true))
+        );
     }
 
     @Override

@@ -79,3 +79,14 @@
              "Build-Number" to (build ?: ""),
              "Build-Time" to buildTime.toString(),
              "Git-Branch" to gitBranch,
+@@ -258,6 +_,10 @@
+ // Bump compile tasks to 1GB memory to avoid OOMs
+ tasks.withType<JavaCompile>().configureEach {
+     options.forkOptions.memoryMaximumSize = "1G"
++    // Plazma Start - SIMD support
++    val compilerArgs = options.compilerArgs
++    compilerArgs.add("--add-modules=jdk.incubator.vector")
++    // Plazma end - SIMD support
+ }
+ 
+ val scanJarForBadCalls by tasks.registering(io.papermc.paperweight.tasks.ScanJarForBadCalls::class) {

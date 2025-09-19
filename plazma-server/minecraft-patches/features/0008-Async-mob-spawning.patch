@@ -24,14 +24,14 @@ and, in my opinion, worth the low risk of minor mob-spawning-related
 inconsistencies.
 
 diff --git a/net/minecraft/server/MinecraftServer.java b/net/minecraft/server/MinecraftServer.java
-index f96b5462b5d3b9757acaadce81ff79c88df125bf..faf4c5b1087d4b1298f0cfb937c9200bc636b514 100644
+index f96b5462b5d3b9757acaadce81ff79c88df125bf..3015b582af59d8eb9a4adb0371512de33f7b7888 100644
 --- a/net/minecraft/server/MinecraftServer.java
 +++ b/net/minecraft/server/MinecraftServer.java
 @@ -307,6 +307,7 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
      public static final long SERVER_INIT = System.nanoTime(); // Paper - Lag compensation
      public boolean lagging = false; // Purpur - Lagging threshold
      protected boolean upnp = false; // Purpur - UPnP Port Forwarding
-+    public org.plazmamc.plazma.util.AsyncExecutor mobSpawnExecutor = new org.plazmamc.plazma.util.AsyncExecutor("MobSpawning"); // Plazma - Async mob spawning
++    public org.plazmamc.plazma.util.AsyncExecutor mobSpawnExecutor = new org.plazmamc.plazma.util.AsyncExecutor("Plazma Async Mob Spawn Thread"); // Plazma - Async mob spawning
  
      public static <S extends MinecraftServer> S spin(Function<Thread, S> threadFunction) {
          ca.spottedleaf.dataconverter.minecraft.datatypes.MCTypeRegistry.init(); // Paper - rewrite data converter system
@@ -161,7 +161,7 @@ index 2882cd829d4d8e1f8615f085f6908efcdf68ac62..5e353e5ce16a00ac4cefe956c44dbff7
          }
      }
 diff --git a/net/minecraft/world/level/entity/EntityTickList.java b/net/minecraft/world/level/entity/EntityTickList.java
-index 423779a2b690f387a4f0bd07b97b50e0baefda76..9ed14fcb8316c4d07086bb8e5fdcb3fe54a71ef0 100644
+index 423779a2b690f387a4f0bd07b97b50e0baefda76..2cd9879c84ccf2b5d929421c34a2e43c5eca7920 100644
 --- a/net/minecraft/world/level/entity/EntityTickList.java
 +++ b/net/minecraft/world/level/entity/EntityTickList.java
 @@ -9,7 +9,7 @@ import javax.annotation.Nullable;
@@ -169,7 +169,7 @@ index 423779a2b690f387a4f0bd07b97b50e0baefda76..9ed14fcb8316c4d07086bb8e5fdcb3fe
  
  public class EntityTickList {
 -    private final ca.spottedleaf.moonrise.common.list.IteratorSafeOrderedReferenceSet<net.minecraft.world.entity.Entity> entities = new ca.spottedleaf.moonrise.common.list.IteratorSafeOrderedReferenceSet<>(); // Paper - rewrite chunk system
-+    public final ca.spottedleaf.moonrise.common.list.IteratorSafeOrderedReferenceSet<net.minecraft.world.entity.Entity> entities = new ca.spottedleaf.moonrise.common.list.IteratorSafeOrderedReferenceSet<>(); // Paper - rewrite chunk system // Plazma = private -> public
++    public final ca.spottedleaf.moonrise.common.list.IteratorSafeOrderedReferenceSet<net.minecraft.world.entity.Entity> entities = new ca.spottedleaf.moonrise.common.list.IteratorSafeOrderedReferenceSet<>(); // Paper - rewrite chunk system // Plazma - private -> public
  
      private void ensureActiveIsNotIterated() {
          // Paper - rewrite chunk system

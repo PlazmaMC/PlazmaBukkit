@@ -1,0 +1,35 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: IPECTER <ipectert@gmail.com>
+Date: Fri, 19 Sep 2025 16:55:25 +0900
+Subject: [PATCH] Throttle goal selector during inactive ticking
+
+Project: Airplane (https://github.com/TECHNOVE/Airplane)
+Author: Paul Sauve <paul@technove.co>
+License: GPL-3.0 (https://www.gnu.org/licenses/gpl-3.0.html)
+
+Project: Pufferfish (https://github.com/pufferfish-gg/Pufferfish)
+Author: Kevin Raneri <kevin.raneri@gmail.com>
+License: GPL-3.0 (https://www.gnu.org/licenses/gpl-3.0.html)
+
+Description:
+* This patch is based on Pufferfish's "Throttle goal selector during inactive ticking" patch.
+
+diff --git a/net/minecraft/world/entity/Mob.java b/net/minecraft/world/entity/Mob.java
+index 739b98b9e98b9ae24a3c1fc303a960e9dd725d0e..9df719bd513786d98a8146308dab15b19ed99c72 100644
+--- a/net/minecraft/world/entity/Mob.java
++++ b/net/minecraft/world/entity/Mob.java
+@@ -208,11 +208,13 @@ public abstract class Mob extends LivingEntity implements EquipmentUser, Leashab
+         return this.lookControl;
+     }
+ 
++    private int inactiveTickDisableCounter = 0; // Plazma - Throttle goal selector during inactive ticking
+     // Paper start
+     @Override
+     public void inactiveTick() {
+         super.inactiveTick();
+-        if (this.goalSelector.inactiveTick(this.level(), this.activatedPriority, true)) { // Plazma - Dynamic Activation of Brain
++        boolean isThrottled = inactiveTickDisableCounter++ % this.level().plazmaConfig().tickRates.inactiveGoalSelector != 0; // Plazma - Throttle goal selector during inactive ticking
++        if (!isThrottled && this.goalSelector.inactiveTick(this.level(), this.activatedPriority, true)) { // Plazma - Dynamic Activation of Brain // Plazma - Throttle goal selector during inactive ticking - pass activated priority
+             this.goalSelector.tick();
+         }
+         if (this.targetSelector.inactiveTick(this.level(), this.activatedPriority, true)) { // Plazma - Dynamic Activation of Brain

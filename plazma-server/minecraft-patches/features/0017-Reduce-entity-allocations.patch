@@ -1,0 +1,57 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: IPECTER <ipectert@gmail.com>
+Date: Fri, 19 Sep 2025 16:45:18 +0900
+Subject: [PATCH] Reduce entity allocations
+
+Project: Airplane (https://github.com/TECHNOVE/Airplane)
+Author: Paul Sauve <paul@technove.co>
+License: GPL-3.0 (https://www.gnu.org/licenses/gpl-3.0.html)
+
+Project: Pufferfish (https://github.com/pufferfish-gg/Pufferfish)
+Author: Kevin Raneri <kevin.raneri@gmail.com>
+License: GPL-3.0 (https://www.gnu.org/licenses/gpl-3.0.html)
+
+Description:
+* This patch is based on Pufferfish's "Reduce entity allocations" patch.
+
+diff --git a/net/minecraft/world/entity/Entity.java b/net/minecraft/world/entity/Entity.java
+index 78ba0017b2ebdd37e7c33a543bfc0e5c41511ef3..8b92a7111fee5b03b66629f4fc62d158a6f54040 100644
+--- a/net/minecraft/world/entity/Entity.java
++++ b/net/minecraft/world/entity/Entity.java
+@@ -368,6 +368,7 @@ public abstract class Entity implements SyncedDataHolder, Nameable, EntityAccess
+     private final int despawnTime; // Paper - entity despawn time limit
+     public boolean activatedPriorityReset = false; // Plazma - Dynamic Activation of Brain
+     public int activatedPriority; // Plazma - Dynamic Activation of Brain - (golf score)
++    public final BlockPos.MutableBlockPos cachedBlockPos = new BlockPos.MutableBlockPos(); // Plazma - Reduce entity allocations
+     public int totalEntityAge; // Paper - age-like counter for all entities
+     public final io.papermc.paper.entity.activation.ActivationType activationType = io.papermc.paper.entity.activation.ActivationType.activationTypeFor(this); // Paper - EAR 2/tracking ranges
+     // Paper start - EAR 2
+diff --git a/net/minecraft/world/entity/ai/attributes/AttributeMap.java b/net/minecraft/world/entity/ai/attributes/AttributeMap.java
+index 7dd8c1c8e27410854ce1ee90defc607c2710b5a2..b60a8438c3e753a22780e4921b5710b2f9dd89cf 100644
+--- a/net/minecraft/world/entity/ai/attributes/AttributeMap.java
++++ b/net/minecraft/world/entity/ai/attributes/AttributeMap.java
+@@ -19,6 +19,7 @@ public class AttributeMap {
+     private final Set<AttributeInstance> attributesToUpdate = new ObjectOpenHashSet<>();
+     private final AttributeSupplier supplier;
+     private final net.minecraft.world.entity.LivingEntity entity; // Purpur - Ridables
++    private final java.util.function.Function<Holder<Attribute>, AttributeInstance> createInstance; // Plazma - Reduce entity allocations
+ 
+     public AttributeMap(AttributeSupplier supplier) {
+         // Purpur start - Ridables
+@@ -28,6 +29,7 @@ public class AttributeMap {
+         this.entity = entity;
+         // Purpur end - Ridables
+         this.supplier = defaultAttributes;
++        this.createInstance = holder -> this.supplier.createInstance(this::onAttributeModified, holder); // Plazma - Reduce entity allocations
+     }
+ 
+     private void onAttributeModified(AttributeInstance instance) {
+@@ -51,7 +53,7 @@ public class AttributeMap {
+ 
+     @Nullable
+     public AttributeInstance getInstance(Holder<Attribute> attribute) {
+-        return this.attributes.computeIfAbsent(attribute, holder -> this.supplier.createInstance(this::onAttributeModified, (Holder<Attribute>)holder));
++        return this.attributes.computeIfAbsent(attribute, createInstance); // Plazma - Reduce entity allocations
+     }
+ 
+     public boolean hasAttribute(Holder<Attribute> attribute) {

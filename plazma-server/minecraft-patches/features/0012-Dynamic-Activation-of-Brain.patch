@@ -1,0 +1,377 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: IPECTER <ipectert@gmail.com>
+Date: Fri, 19 Sep 2025 15:49:51 +0900
+Subject: [PATCH] Dynamic Activation of Brain
+
+Project: Airplane (https://github.com/TECHNOVE/Airplane)
+Author: Paul Sauve <paul@technove.co>
+License: GPL-3.0 (https://www.gnu.org/licenses/gpl-3.0.html)
+
+Project: Pufferfish (https://github.com/pufferfish-gg/Pufferfish)
+Author: Kevin Raneri <kevin.raneri@gmail.com>
+License: GPL-3.0 (https://www.gnu.org/licenses/gpl-3.0.html)
+
+Project: Leaf (https://github.com/Winds-Studio/Leaf)
+Author: Dreeam <61569423+Dreeam-qwq@users.noreply.github.com>
+License: MIT (https://opensource.org/license/MIT)
+
+Description:
+* This patch is based on Leaf's "Pufferfish: Dynamic Activation of Brain" patch.
+
+This replaces the current method of ticking an inactive entity's
+pathfinder 1/4 times with a new method that's dynamic based off how far
+away it is from a player. If an entity is within 32 blocks, it gets
+ticked every tick. If it's within 45 blocks, it gets ticked every other
+tick. If it's within 55 blocks, it gets ticked once every three ticks.
+(these numbers have since been changed, but the idea is the same.)
+
+Airplane
+Copyright (C) 2020 Technove LLC
+
+This program is free software: you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation, either version 3 of the License, or
+(at your option) any later version.
+
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with this program.  If not, see <https://www.gnu.org/licenses/>.
+
+diff --git a/io/papermc/paper/entity/activation/ActivationRange.java b/io/papermc/paper/entity/activation/ActivationRange.java
+index ca21597263cb430e2a5ae07e8cecfb0d53a270d2..863fc5291d0291cca31d6d42538260471c2c0f97 100644
+--- a/io/papermc/paper/entity/activation/ActivationRange.java
++++ b/io/papermc/paper/entity/activation/ActivationRange.java
+@@ -167,6 +167,22 @@ public final class ActivationRange {
+                 }
+ 
+                 ActivationRange.activateEntity(entity);
++
++                // Plazma start - Dynamic Activation of Brain
++                boolean dabEnabled = player.level().plazmaConfig().dab.enabled && entity.getType().dabEnabled;
++                if (dabEnabled && (!player.level().plazmaConfig().dab.disableInWater || !entity.getType().is(net.minecraft.tags.EntityTypeTags.CAN_BREATHE_UNDER_WATER) || !entity.isInWater())) {
++                    if (!entity.activatedPriorityReset) {
++                        entity.activatedPriorityReset = true;
++                        entity.activatedPriority = player.level().plazmaConfig().dab.maxTickFrequency;
++                    }
++                    int squaredDistance = (int) player.distanceToSqr(entity);
++                    entity.activatedPriority = squaredDistance > player.level().plazmaConfig().dab.startDistanceSquared() ?
++                            Math.max(1, Math.min(squaredDistance >> player.level().plazmaConfig().dab.activationDistanceMod, entity.activatedPriority)) :
++                            1;
++                } else {
++                    entity.activatedPriority = 1;
++                }
++                // Plazma end - Dynamic Activation of Brain
+             }
+         }
+     }
+diff --git a/net/minecraft/server/level/ServerLevel.java b/net/minecraft/server/level/ServerLevel.java
+index df033fee1aeb9d5bb669d94eb134278205e2f341..d6c5d6c55f69869eb3d4bbe8b9e046e01bd04044 100644
+--- a/net/minecraft/server/level/ServerLevel.java
++++ b/net/minecraft/server/level/ServerLevel.java
+@@ -813,6 +813,7 @@ public class ServerLevel extends Level implements ServerEntityGetter, WorldGenLe
+             this.entityTickList
+                 .forEach(
+                     entity -> {
++                        entity.activatedPriorityReset = false; // Plazma - Dynamic Activation of Brain
+                         if (!entity.isRemoved()) {
+                             if (!tickRateManager.isEntityFrozen(entity)) {
+                                 profilerFiller.push("checkDespawn");
+diff --git a/net/minecraft/world/entity/Entity.java b/net/minecraft/world/entity/Entity.java
+index 3bf9c9af6974189f5a192fade10baa96111f03e5..78ba0017b2ebdd37e7c33a543bfc0e5c41511ef3 100644
+--- a/net/minecraft/world/entity/Entity.java
++++ b/net/minecraft/world/entity/Entity.java
+@@ -366,6 +366,8 @@ public abstract class Entity implements SyncedDataHolder, Nameable, EntityAccess
+     public boolean freezeLocked = false; // Paper - Freeze Tick Lock API
+     public boolean fixedPose = false; // Paper - Expand Pose API
+     private final int despawnTime; // Paper - entity despawn time limit
++    public boolean activatedPriorityReset = false; // Plazma - Dynamic Activation of Brain
++    public int activatedPriority; // Plazma - Dynamic Activation of Brain - (golf score)
+     public int totalEntityAge; // Paper - age-like counter for all entities
+     public final io.papermc.paper.entity.activation.ActivationType activationType = io.papermc.paper.entity.activation.ActivationType.activationTypeFor(this); // Paper - EAR 2/tracking ranges
+     // Paper start - EAR 2
+@@ -572,6 +574,7 @@ public abstract class Entity implements SyncedDataHolder, Nameable, EntityAccess
+         this.position = Vec3.ZERO;
+         this.blockPosition = BlockPos.ZERO;
+         this.chunkPosition = ChunkPos.ZERO;
++        this.activatedPriority = level == null ? 20 : level.plazmaConfig().dab.maxTickFrequency; // Plazma - Dynamic Activation of Brain
+         // Paper start - EAR 2
+         if (level != null) {
+             this.defaultActivationState = io.papermc.paper.entity.activation.ActivationRange.initializeEntityActivationState(this, level.spigotConfig);
+diff --git a/net/minecraft/world/entity/EntityType.java b/net/minecraft/world/entity/EntityType.java
+index 9950fccc0a708e701b81fcabc9e8f370e6d3a19d..24ce846a511e54e96a21428c2533ad070cfddec5 100644
+--- a/net/minecraft/world/entity/EntityType.java
++++ b/net/minecraft/world/entity/EntityType.java
+@@ -1086,6 +1086,7 @@ public class EntityType<T extends Entity> implements FeatureElement, EntityTypeT
+     private final int clientTrackingRange;
+     private final int updateInterval;
+     private final String descriptionId;
++    public boolean dabEnabled = false; // Plazma - Dynamic Activation of Brain
+     @Nullable
+     private Component description;
+     private final Optional<ResourceKey<LootTable>> lootTable;
+diff --git a/net/minecraft/world/entity/Mob.java b/net/minecraft/world/entity/Mob.java
+index 035eb50335daa88679672cba550ed87ac3fa5873..739b98b9e98b9ae24a3c1fc303a960e9dd725d0e 100644
+--- a/net/minecraft/world/entity/Mob.java
++++ b/net/minecraft/world/entity/Mob.java
+@@ -212,10 +212,10 @@ public abstract class Mob extends LivingEntity implements EquipmentUser, Leashab
+     @Override
+     public void inactiveTick() {
+         super.inactiveTick();
+-        if (this.goalSelector.inactiveTick()) {
++        if (this.goalSelector.inactiveTick(this.level(), this.activatedPriority, true)) { // Plazma - Dynamic Activation of Brain
+             this.goalSelector.tick();
+         }
+-        if (this.targetSelector.inactiveTick()) {
++        if (this.targetSelector.inactiveTick(this.level(), this.activatedPriority, true)) { // Plazma - Dynamic Activation of Brain
+             this.targetSelector.tick();
+         }
+     }
+@@ -785,16 +785,20 @@ public abstract class Mob extends LivingEntity implements EquipmentUser, Leashab
+         int i = this.tickCount + this.getId();
+         if (i % 2 != 0 && this.tickCount > 1) {
+             profilerFiller.push("targetSelector");
++            if (this.targetSelector.inactiveTick(this.level(), this.activatedPriority, false)) // Plazma - Dynamic Activation of Brain - use this to alternate ticking
+             this.targetSelector.tickRunningGoals(false);
+             profilerFiller.pop();
+             profilerFiller.push("goalSelector");
++            if (this.goalSelector.inactiveTick(this.level(), this.activatedPriority, false)) // Plazma - Dynamic Activation of Brain - use this to alternate ticking
+             this.goalSelector.tickRunningGoals(false);
+             profilerFiller.pop();
+         } else {
+             profilerFiller.push("targetSelector");
++            if (this.targetSelector.inactiveTick(this.level(), this.activatedPriority, false)) // Plazma - Dynamic Activation of Brain - use this to alternate ticking
+             this.targetSelector.tick();
+             profilerFiller.pop();
+             profilerFiller.push("goalSelector");
++            if (this.goalSelector.inactiveTick(this.level(), this.activatedPriority, false)) // Plazma - Dynamic Activation of Brain - use this to alternate ticking
+             this.goalSelector.tick();
+             profilerFiller.pop();
+         }
+@@ -821,6 +825,8 @@ public abstract class Mob extends LivingEntity implements EquipmentUser, Leashab
+         DebugPackets.sendGoalSelector(this.level(), this, this.goalSelector);
+     }
+ 
++    protected int behaviorTick = 0; // Plazma - Dynamic Activation of Brain
++
+     protected void customServerAiStep(ServerLevel level) {
+     }
+ 
+diff --git a/net/minecraft/world/entity/ai/behavior/VillagerPanicTrigger.java b/net/minecraft/world/entity/ai/behavior/VillagerPanicTrigger.java
+index f6c673b1abe53afcb14fd68d590431027ed29f67..6dd025d1a516e4b7d945a0dfbd00c70c0c6d61cd 100644
+--- a/net/minecraft/world/entity/ai/behavior/VillagerPanicTrigger.java
++++ b/net/minecraft/world/entity/ai/behavior/VillagerPanicTrigger.java
+@@ -36,7 +36,11 @@ public class VillagerPanicTrigger extends Behavior<Villager> {
+ 
+     @Override
+     protected void tick(ServerLevel level, Villager owner, long gameTime) {
+-        if (gameTime % 100L == 0L) {
++        // Plazma start - Dynamic Activation of Brain
++        if (owner.nextGolemPanic < 0) owner.nextGolemPanic = gameTime + 100;
++        if (--owner.nextGolemPanic < gameTime) {
++            owner.nextGolemPanic = -1;
++            // Plazma end - Dynamic Activation of Brain
+             owner.spawnGolemIfNeeded(level, gameTime, 3);
+         }
+     }
+diff --git a/net/minecraft/world/entity/ai/goal/GoalSelector.java b/net/minecraft/world/entity/ai/goal/GoalSelector.java
+index 859b859d29b637200cf7c9a0bd52d9f712413e3d..bdde975fed16a786705cc4ebb97584906a112b3e 100644
+--- a/net/minecraft/world/entity/ai/goal/GoalSelector.java
++++ b/net/minecraft/world/entity/ai/goal/GoalSelector.java
+@@ -36,10 +36,14 @@ public class GoalSelector {
+     }
+ 
+     // Paper start - EAR 2
+-    public boolean inactiveTick() {
++    // Plazma start - Dynamic Activation of Brain
++    public boolean inactiveTick(net.minecraft.world.level.Level level, int tickRate, boolean inactive) {
++        if (inactive && !level.plazmaConfig().dab.enabled) tickRate = 3; // reset to Paper's
++        else tickRate = Math.min(tickRate, 3);
+         this.curRate++;
+-        return this.curRate % 3 == 0; // TODO newGoalRate was already unused in 1.20.4, check if this is correct
++        return this.curRate % tickRate == 0; // TODO newGoalRate was already unused in 1.20.4, check if this is correct
+     }
++    // Plazma end - Dynamic Activation of Brain
+ 
+     public boolean hasTasks() {
+         for (WrappedGoal task : this.availableGoals) {
+diff --git a/net/minecraft/world/entity/animal/allay/Allay.java b/net/minecraft/world/entity/animal/allay/Allay.java
+index f372d8b21282e8fdd00dd19eb14ce6ee45b358b0..f64160cf77a902fd77f1c8e99869390ac3fac0f4 100644
+--- a/net/minecraft/world/entity/animal/allay/Allay.java
++++ b/net/minecraft/world/entity/animal/allay/Allay.java
+@@ -271,7 +271,7 @@ public class Allay extends PathfinderMob implements InventoryCarrier, VibrationS
+     protected void customServerAiStep(ServerLevel level) {
+         ProfilerFiller profilerFiller = Profiler.get();
+         profilerFiller.push("allayBrain");
+-        if ((getRider() == null || !this.isControllable())) // Purpur - only use brain if no rider
++        if ((getRider() == null || !this.isControllable()) && this.behaviorTick++ % this.activatedPriority == 0) // Purpur - only use brain if no rider // Plazma - Dynamic Activation of Brain
+         this.getBrain().tick(level, this);
+         profilerFiller.pop();
+         profilerFiller.push("allayActivityUpdate");
+diff --git a/net/minecraft/world/entity/animal/axolotl/Axolotl.java b/net/minecraft/world/entity/animal/axolotl/Axolotl.java
+index 40e4cc14f10bd465ee7bee124e7e194c74c070b4..b241aa8e21bc1d1857395db2838d40467124e449 100644
+--- a/net/minecraft/world/entity/animal/axolotl/Axolotl.java
++++ b/net/minecraft/world/entity/animal/axolotl/Axolotl.java
+@@ -377,7 +377,7 @@ public class Axolotl extends Animal implements Bucketable {
+     protected void customServerAiStep(ServerLevel level) {
+         ProfilerFiller profilerFiller = Profiler.get();
+         profilerFiller.push("axolotlBrain");
+-        if ((getRider() == null || !this.isControllable())) // Purpur - only use brain if no rider
++        if ((getRider() == null || !this.isControllable()) && this.behaviorTick++ % this.activatedPriority == 0) // Purpur - only use brain if no rider // Plazma - Dynamic Activation of Brain
+         this.getBrain().tick(level, this);
+         profilerFiller.pop();
+         profilerFiller.push("axolotlActivityUpdate");
+diff --git a/net/minecraft/world/entity/animal/frog/Frog.java b/net/minecraft/world/entity/animal/frog/Frog.java
+index 8d6da6ce15c266c7b4b9763a37516d2b160f1b85..d0f8e9f034857f07763231a297f1ed09e8868390 100644
+--- a/net/minecraft/world/entity/animal/frog/Frog.java
++++ b/net/minecraft/world/entity/animal/frog/Frog.java
+@@ -263,7 +263,7 @@ public class Frog extends Animal {
+     protected void customServerAiStep(ServerLevel level) {
+         ProfilerFiller profilerFiller = Profiler.get();
+         profilerFiller.push("frogBrain");
+-        if ((getRider() == null || !this.isControllable())) // Purpur - only use brain if no rider
++        if ((getRider() == null || !this.isControllable()) && this.behaviorTick++ % this.activatedPriority == 0) // Purpur - only use brain if no rider // Plazma - Dynamic Activation of Brain
+         this.getBrain().tick(level, this);
+         profilerFiller.pop();
+         profilerFiller.push("frogActivityUpdate");
+diff --git a/net/minecraft/world/entity/animal/frog/Tadpole.java b/net/minecraft/world/entity/animal/frog/Tadpole.java
+index 40b57095812fc1dd2ed14da4933fc949afd855b2..a9e8a1e68c00b32dc62f0a9ac08d75cb61e962a0 100644
+--- a/net/minecraft/world/entity/animal/frog/Tadpole.java
++++ b/net/minecraft/world/entity/animal/frog/Tadpole.java
+@@ -139,7 +139,7 @@ public class Tadpole extends AbstractFish {
+     protected void customServerAiStep(ServerLevel level) {
+         ProfilerFiller profilerFiller = Profiler.get();
+         profilerFiller.push("tadpoleBrain");
+-        if ((getRider() == null || !this.isControllable())) // Purpur - only use brain if no rider
++        if ((getRider() == null || !this.isControllable()) && this.behaviorTick++ % this.activatedPriority == 0) // Purpur - only use brain if no rider // Plazma - Dynamic Activation of Brain
+         this.getBrain().tick(level, this);
+         profilerFiller.pop();
+         profilerFiller.push("tadpoleActivityUpdate");
+diff --git a/net/minecraft/world/entity/animal/goat/Goat.java b/net/minecraft/world/entity/animal/goat/Goat.java
+index 979befb6a51c855e439d7576db57abf1143731be..44d74d2c123ae55819560857f2d716a3bfefa505 100644
+--- a/net/minecraft/world/entity/animal/goat/Goat.java
++++ b/net/minecraft/world/entity/animal/goat/Goat.java
+@@ -230,7 +230,7 @@ public class Goat extends Animal {
+     protected void customServerAiStep(ServerLevel level) {
+         ProfilerFiller profilerFiller = Profiler.get();
+         profilerFiller.push("goatBrain");
+-        if ((getRider() == null || !this.isControllable())) // Purpur - only use brain if no rider
++        if ((getRider() == null || !this.isControllable()) && this.behaviorTick++ % this.activatedPriority == 0) // Purpur - only use brain if no rider // Plazma - Dynamic Activation of Brain
+         this.getBrain().tick(level, this);
+         profilerFiller.pop();
+         profilerFiller.push("goatActivityUpdate");
+diff --git a/net/minecraft/world/entity/animal/sniffer/Sniffer.java b/net/minecraft/world/entity/animal/sniffer/Sniffer.java
+index 745c821facbbf0e9641e371bb26a8d6abde7a813..8d15188e9f1a0616bd44e4bdf1ab45951d0bb89d 100644
+--- a/net/minecraft/world/entity/animal/sniffer/Sniffer.java
++++ b/net/minecraft/world/entity/animal/sniffer/Sniffer.java
+@@ -499,7 +499,7 @@ public class Sniffer extends Animal {
+     protected void customServerAiStep(ServerLevel level) {
+         ProfilerFiller profilerFiller = Profiler.get();
+         profilerFiller.push("snifferBrain");
+-        if ((getRider() == null || !this.isControllable())) // Purpur - only use brain if no rider
++        if ((getRider() == null || !this.isControllable()) && this.behaviorTick++ % this.activatedPriority == 0) // Purpur - only use brain if no rider // Plazma - Dynamic Activation of Brain
+         this.getBrain().tick(level, this);
+         profilerFiller.popPush("snifferActivityUpdate");
+         SnifferAi.updateActivity(this);
+diff --git a/net/minecraft/world/entity/monster/Zoglin.java b/net/minecraft/world/entity/monster/Zoglin.java
+index e37c6dcbe62cba2cb7f33ac1792d539f9b07aa24..e94619ba6aada28cc78406944bc625ec5793f5e3 100644
+--- a/net/minecraft/world/entity/monster/Zoglin.java
++++ b/net/minecraft/world/entity/monster/Zoglin.java
+@@ -291,7 +291,7 @@ public class Zoglin extends Monster implements HoglinBase {
+     protected void customServerAiStep(ServerLevel level) {
+         ProfilerFiller profilerFiller = Profiler.get();
+         profilerFiller.push("zoglinBrain");
+-        if (getRider() == null || !this.isControllable()) // Purpur - only use brain if no rider
++        if ((getRider() == null || !this.isControllable()) && this.behaviorTick++ % this.activatedPriority == 0) // Purpur - only use brain if no rider // Plazma - Dynamic Activation of Brain
+         this.getBrain().tick(level, this);
+         profilerFiller.pop();
+         this.updateActivity();
+diff --git a/net/minecraft/world/entity/monster/breeze/Breeze.java b/net/minecraft/world/entity/monster/breeze/Breeze.java
+index 4e47a1e6d1dcf15a316ff6bed6c03e9c42777853..19cfe0a2439227ba9a832cd6f652a8e56fb5c614 100644
+--- a/net/minecraft/world/entity/monster/breeze/Breeze.java
++++ b/net/minecraft/world/entity/monster/breeze/Breeze.java
+@@ -234,7 +234,7 @@ public class Breeze extends Monster {
+     protected void customServerAiStep(ServerLevel level) {
+         ProfilerFiller profilerFiller = Profiler.get();
+         profilerFiller.push("breezeBrain");
+-        if ((getRider() == null || !this.isControllable())) // Purpur - only use brain if no rider
++        if ((getRider() == null || !this.isControllable()) && this.behaviorTick++ % this.activatedPriority == 0) // Purpur - only use brain if no rider // Plazma - Dynamic Activation of Brain
+         this.getBrain().tick(level, this);
+         profilerFiller.popPush("breezeActivityUpdate");
+         BreezeAi.updateActivity(this);
+diff --git a/net/minecraft/world/entity/monster/hoglin/Hoglin.java b/net/minecraft/world/entity/monster/hoglin/Hoglin.java
+index 6062167a25d9d66c0264624f0761bcb9d47f0c77..5c45756f0593fc34eda250082e6e2b25937b74b2 100644
+--- a/net/minecraft/world/entity/monster/hoglin/Hoglin.java
++++ b/net/minecraft/world/entity/monster/hoglin/Hoglin.java
+@@ -210,7 +210,7 @@ public class Hoglin extends Animal implements Enemy, HoglinBase {
+     protected void customServerAiStep(ServerLevel level) {
+         ProfilerFiller profilerFiller = Profiler.get();
+         profilerFiller.push("hoglinBrain");
+-        if ((getRider() == null || !this.isControllable())) // Purpur - only use brain if no rider
++        if ((getRider() == null || !this.isControllable()) && this.behaviorTick++ % this.activatedPriority == 0) // Purpur - only use brain if no rider // Plazma - Dynamic Activation of Brain
+         this.getBrain().tick(level, this);
+         profilerFiller.pop();
+         HoglinAi.updateActivity(this);
+diff --git a/net/minecraft/world/entity/monster/piglin/Piglin.java b/net/minecraft/world/entity/monster/piglin/Piglin.java
+index b5ab1ea7ebf1e1a67f51f53f92fbc2a84506174a..b28e7bc399e11e035a88f624fbbd8016f00473c2 100644
+--- a/net/minecraft/world/entity/monster/piglin/Piglin.java
++++ b/net/minecraft/world/entity/monster/piglin/Piglin.java
+@@ -361,7 +361,7 @@ public class Piglin extends AbstractPiglin implements CrossbowAttackMob, Invento
+     protected void customServerAiStep(ServerLevel level) {
+         ProfilerFiller profilerFiller = Profiler.get();
+         profilerFiller.push("piglinBrain");
+-        if ((getRider() == null || !this.isControllable())) // Purpur - only use brain if no rider
++        if ((getRider() == null || !this.isControllable()) && this.behaviorTick++ % this.activatedPriority == 0) // Purpur - only use brain if no rider // Plazma - Dynamic Activation of Brain
+         this.getBrain().tick(level, this);
+         profilerFiller.pop();
+         PiglinAi.updateActivity(this);
+diff --git a/net/minecraft/world/entity/monster/piglin/PiglinBrute.java b/net/minecraft/world/entity/monster/piglin/PiglinBrute.java
+index 70ee15527fa6f30783d6a58bb767b18124f25c53..49b347ac9cfc3c487076a00da21e3d0ca70934bb 100644
+--- a/net/minecraft/world/entity/monster/piglin/PiglinBrute.java
++++ b/net/minecraft/world/entity/monster/piglin/PiglinBrute.java
+@@ -156,7 +156,7 @@ public class PiglinBrute extends AbstractPiglin {
+     protected void customServerAiStep(ServerLevel level) {
+         ProfilerFiller profilerFiller = Profiler.get();
+         profilerFiller.push("piglinBruteBrain");
+-        if (getRider() == null || this.isControllable()) // Purpur - only use brain if no rider
++        if ((getRider() == null || this.isControllable()) && this.behaviorTick++ % this.activatedPriority == 0) // Purpur - only use brain if no rider // Plazma - Dynamic Activation of Brain
+         this.getBrain().tick(level, this);
+         profilerFiller.pop();
+         PiglinBruteAi.updateActivity(this);
+diff --git a/net/minecraft/world/entity/monster/warden/Warden.java b/net/minecraft/world/entity/monster/warden/Warden.java
+index bc691e17a974a3b4175ceb34f7e40291f1f1f83c..307b486d83b1dbae61aa9e72fcb560971a6c1c28 100644
+--- a/net/minecraft/world/entity/monster/warden/Warden.java
++++ b/net/minecraft/world/entity/monster/warden/Warden.java
+@@ -305,7 +305,7 @@ public class Warden extends Monster implements VibrationSystem {
+     protected void customServerAiStep(ServerLevel level) {
+         ProfilerFiller profilerFiller = Profiler.get();
+         profilerFiller.push("wardenBrain");
+-        if ((getRider() == null || !this.isControllable())) // Purpur - only use brain if no rider
++        if ((getRider() == null || !this.isControllable()) && this.behaviorTick++ % this.activatedPriority == 0) // Purpur - only use brain if no rider // Plazma - Dynamic Activation of Brain
+         this.getBrain().tick(level, this);
+         profilerFiller.pop();
+         super.customServerAiStep(level);
+diff --git a/net/minecraft/world/entity/npc/Villager.java b/net/minecraft/world/entity/npc/Villager.java
+index cab85afb6a460297511b0d391364670124d5a3f3..e158d6708f0035c80f6535fa9a4f53b89dea5c15 100644
+--- a/net/minecraft/world/entity/npc/Villager.java
++++ b/net/minecraft/world/entity/npc/Villager.java
+@@ -386,6 +386,7 @@ public class Villager extends AbstractVillager implements ReputationEventHandler
+     }
+     // Paper end - EAR 2
+ 
++    public long nextGolemPanic = -1; // Plazma - Dynamic Activation of Brain
+     @Override
+     protected void customServerAiStep(ServerLevel level) {
+         // Paper start - EAR 2
+@@ -403,7 +404,7 @@ public class Villager extends AbstractVillager implements ReputationEventHandler
+             this.isLobotomized = false;
+         }
+         // Purpur end - Lobotomize stuck villagers
+-        if (!inactive && (getRider() == null || !this.isControllable())) { // Purpur - Ridables
++        if (!inactive && (getRider() == null || !this.isControllable()) && this.behaviorTick++ % this.activatedPriority == 0) { // Purpur - Ridables // Plazma - Dynamic Activation of Brain
+             this.getBrain().tick(level, this); // Paper - EAR 2
+         }
+         else if (this.isLobotomized && shouldRestock()) restock(); // Purpur - Lobotomize stuck villagers

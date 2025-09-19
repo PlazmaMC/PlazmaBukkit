@@ -1,0 +1,45 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: IPECTER <ipectert@gmail.com>
+Date: Fri, 19 Sep 2025 18:03:29 +0900
+Subject: [PATCH] Vectorized map color conversion
+
+Project: Pufferfish (https://github.com/pufferfish-gg/Pufferfish)
+Author: Kevin Raneri <kevin.raneri@gmail.com>
+License: GPL-3.0 (https://www.gnu.org/licenses/gpl-3.0.html)
+
+Project: Gale (https://github.com/GaleMC/Gale)
+Author: Martijn Muijsers <martijnmuijsers@live.nl>
+License: GPL-3.0 (https://www.gnu.org/licenses/gpl-3.0.html)
+
+Description:
+* This patch is based on Gale's "Vectorized map color conversion" patch.
+
+diff --git a/src/main/java/org/bukkit/map/MapPalette.java b/src/main/java/org/bukkit/map/MapPalette.java
+index 204860b32b4958a2804b2e5bc82f5be099e461f3..51474fd4dc6c605b43653d86ad36c9fb0e4c1304 100644
+--- a/src/main/java/org/bukkit/map/MapPalette.java
++++ b/src/main/java/org/bukkit/map/MapPalette.java
+@@ -35,7 +35,7 @@ public final class MapPalette {
+     }
+ 
+     @NotNull
+-    static final Color[] colors = {
++    public static final Color[] colors = { // Plazma - default -> public
+         // Start generate - MapPalette#colors
+         // @GeneratedFrom 1.21.8
+         new Color(0x00000000, true),
+@@ -395,9 +395,15 @@ public final class MapPalette {
+         temp.getRGB(0, 0, temp.getWidth(), temp.getHeight(), pixels, 0, temp.getWidth());
+ 
+         byte[] result = new byte[temp.getWidth() * temp.getHeight()];
++        if ((mapColorCache != null && mapColorCache.isCached()) || !org.plazmamc.plazma.simd.SIMDDetection.isEnabled()) { // Plazma - Vectorized map color conversion
+         for (int i = 0; i < pixels.length; i++) {
+             result[i] = matchColor(new Color(pixels[i], true));
+         }
++        // Plazma start - Vectorized map color conversion
++        } else {
++            org.plazmamc.plazma.simd.VectorMapPalette.matchColorVectorized(pixels, result);
++        }
++        // Plazma end - Vectorized map color conversion
+         return result;
+     }
+ 

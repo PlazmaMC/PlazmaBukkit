@@ -1,5 +1,7 @@
 package org.plazmamc.plazma.configuration;
 
+import com.google.common.collect.HashBasedTable;
+import com.google.common.collect.Table;
 import com.mojang.logging.LogUtils;
 import io.papermc.paper.configuration.Configuration;
 import io.papermc.paper.configuration.ConfigurationPart;
@@ -70,19 +72,30 @@ public class WorldConfiguration extends ConfigurationPart {
 
     public class DynamicActivationOfBrain extends ConfigurationPart {
         public boolean enabled = true;
-
         public int maxTickFrequency = 20;
-
+        public int startDistance = 12;
+        public int activationDistanceMod = Options.OPTIMIZE ? 7 : 8;
+        public boolean disableInWater = true;
         public Reference2BooleanMap<EntityType<?>> entities = Util.make(new Reference2BooleanOpenHashMap<>(BuiltInRegistries.ENTITY_TYPE.size()), map -> {
             map.defaultReturnValue(true);
             map.put(EntityType.ARMOR_STAND, false);
         });
 
+        public int startDistanceSquared() {
+            return this.startDistance * this.startDistance;
+        }
+
         @PostProcess
         private void postProcess() {
             for (EntityType<? extends Entity> entityType : BuiltInRegistries.ENTITY_TYPE) {
-                //entityType.dabEnabled = entities.getBoolean(entityType);
+                entityType.dabEnabled = entities.getBoolean(entityType);
             }
         }
+    }
+
+    public TickRates tickRates;
+
+    public class TickRates extends ConfigurationPart {
+        public int inactiveGoalSelector = Options.OPTIMIZE ? 20 : 1;
     }
 }
