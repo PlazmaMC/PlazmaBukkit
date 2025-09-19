@@ -22,17 +22,25 @@
          }
      }
  }
-@@ -158,6 +_,13 @@
-         pomProps.get().asFile.writeText("version=$projectVersion")
+@@ -159,6 +_,13 @@
      }
  }
-+
+ 
 +// Plazma Start - SIMD support
 +tasks.withType<JavaCompile>().configureEach {
 +    val compilerArgs = options.compilerArgs
 +    compilerArgs.add("--add-modules=jdk.incubator.vector")
 +}
 +// Plazma End - SIMD support
- 
++
  tasks.jar {
      from(generateApiVersioningFile.map { it.outputs.files.singleFile }) {
+         into("META-INF/maven/${project.group}/${project.name}")
+@@ -179,6 +_,7 @@
+ tasks.withType<Javadoc>().configureEach {
+     //(options as StandardJavadocDocletOptions).addStringOption("-add-modules", "jdk.incubator.vector") // Purpur - our javadocs need this for pufferfish's SIMD patch
+     (options as StandardJavadocDocletOptions).addStringOption("Xdoclint:none", "-quiet") // Purpur - silence Paper's bajillion javadoc warnings
++    (options as StandardJavadocDocletOptions).addStringOption("-add-modules", "jdk.incubator.vector")// Plazma - SIMD support
+     val options = options as StandardJavadocDocletOptions
+     options.overview = "../paper-api/src/main/javadoc/overview.html"
+     options.use()
