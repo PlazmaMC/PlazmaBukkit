@@ -1,0 +1,61 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: IPECTER <ipectert@gmail.com>
+Date: Sun, 9 Nov 2025 15:39:16 +0900
+Subject: [PATCH] Track how much MSPT each world used
+
+Project: SparklyPaper (https://github.com/SparklyPower/SparklyPaper)
+Author: MrPowerGamerBR <git@mrpowergamerbr.com>
+License: GPL-3.0 (https://www.gnu.org/licenses/gpl-3.0.html)
+
+Description:
+* This patch is based on SparklyPaper's "Track how much MSPT each world used" patch.
+
+diff --git a/src/main/java/io/papermc/paper/command/MSPTCommand.java b/src/main/java/io/papermc/paper/command/MSPTCommand.java
+index 8b5293b0c696ef21d0101493ffa41b60bf0bc86b..1c05b7aebcbf67a4036c13df08d536e65ba83c79 100644
+--- a/src/main/java/io/papermc/paper/command/MSPTCommand.java
++++ b/src/main/java/io/papermc/paper/command/MSPTCommand.java
+@@ -78,6 +78,44 @@ public final class MSPTCommand extends Command {
+                 )
+             )
+         );
++        // Plazma start - Track how much MSPT each world used
++        sender.sendMessage(text().content("World tick times ").color(GOLD)
++                .append(text().color(YELLOW)
++                        .append(
++                                text("("),
++                                text("avg", GRAY),
++                                text("/"),
++                                text("min", GRAY),
++                                text("/"),
++                                text("max", GRAY),
++                                text(")")
++                        )
++                ).append(
++                        text(" from last 5s"),
++                        text(",", GRAY),
++                        text(" 10s"),
++                        text(",", GRAY),
++                        text(" 1m"),
++                        text(":", YELLOW)
++                )
++        );
++        for (net.minecraft.server.level.ServerLevel serverLevel : server.getAllLevels()) {
++            List<Component> worldTimes = new ArrayList<>();
++            worldTimes.addAll(eval(serverLevel.tickTimes5s.getTimes()));
++            worldTimes.addAll(eval(serverLevel.tickTimes10s.getTimes()));
++            worldTimes.addAll(eval(serverLevel.tickTimes60s.getTimes()));
++
++            sender.sendMessage(text().content("◴ " + serverLevel.getWorld().getName() + ": ").color(GOLD)
++                    .append(text().color(GRAY)
++                            .append(
++                                    worldTimes.get(0), SLASH, worldTimes.get(1), SLASH, worldTimes.get(2), text(", ", YELLOW),
++                                    worldTimes.get(3), SLASH, worldTimes.get(4), SLASH, worldTimes.get(5), text(", ", YELLOW),
++                                    worldTimes.get(6), SLASH, worldTimes.get(7), SLASH, worldTimes.get(8)
++                            )
++                    )
++            );
++        }
++        // Plazma end - Track how much MSPT each world used
+         return true;
+     }
+ 

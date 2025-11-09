@@ -1,0 +1,29 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: IPECTER <ipectert@gmail.com>
+Date: Fri, 7 Nov 2025 03:40:53 +0900
+Subject: [PATCH] Skip MapItem update if renderer is not present
+
+Project: SparklyPaper (https://github.com/SparklyPower/SparklyPaper)
+Author: MrPowerGamerBR <git@mrpowergamerbr.com>
+License: GPL-3.0 (https://www.gnu.org/licenses/gpl-3.0.html)
+
+Description:
+* This patch is based on SparklyPaper's "Skip "MapItem#update()" if the map does not have the CraftMapRenderer present" if the delta movement hasn't changed" patch.
+
+Optimizes "image in map" maps, without requiring the map to be locked, which some old map plugins may not do
+
+This has the disadvantage that the vanilla map data will never be updated while the CraftMapRenderer is not present, but that's not a huuuge problem for us
+
+diff --git a/net/minecraft/world/item/MapItem.java b/net/minecraft/world/item/MapItem.java
+index 780793750c99185e8139a1cd0ad52bc7b80899a9..bd85f646be7c66d7672381e7abbfbc751232967a 100644
+--- a/net/minecraft/world/item/MapItem.java
++++ b/net/minecraft/world/item/MapItem.java
+@@ -275,7 +275,7 @@ public class MapItem extends Item {
+                 savedData.tickCarriedBy(player, stack);
+             }
+ 
+-            if (!savedData.locked && slot != null && slot.getType() == EquipmentSlot.Type.HAND) {
++            if (!savedData.locked && (!level.plazmaConfig().items.map.skipUpdateIfNoRenderer || savedData.mapView.getRenderers().stream().anyMatch(mapRenderer -> mapRenderer.getClass() == org.bukkit.craftbukkit.map.CraftMapRenderer.class)) && slot != null && slot.getType() == EquipmentSlot.Type.HAND) { // Plazma - Skip MapItem update if CraftMapRenderer is not present
+                 this.update(level, entity, savedData);
+             }
+         }

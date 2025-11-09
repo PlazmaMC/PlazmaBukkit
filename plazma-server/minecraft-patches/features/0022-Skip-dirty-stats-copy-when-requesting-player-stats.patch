@@ -1,0 +1,46 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: IPECTER <ipectert@gmail.com>
+Date: Fri, 7 Nov 2025 19:49:59 +0900
+Subject: [PATCH] Skip dirty stats copy when requesting player stats
+
+Project: SparklyPaper (https://github.com/SparklyPower/SparklyPaper)
+Author: MrPowerGamerBR <git@mrpowergamerbr.com>
+License: GPL-3.0 (https://www.gnu.org/licenses/gpl-3.0.html)
+
+Description:
+* This patch is based on SparklyPaper's "Skip dirty stats copy when requesting player stats" if the delta movement hasn't changed" patch.
+
+Removes getDirty(), which exists to snapshot and clear the dirty set
+
+Slightly reduces allocation overhead during stat updates
+
+diff --git a/net/minecraft/stats/ServerStatsCounter.java b/net/minecraft/stats/ServerStatsCounter.java
+index 16e06085ed3c0f6a0b35c730b63b75824f44a905..00bad6ceec205eb0d9c81a5d889b999310d853f3 100644
+--- a/net/minecraft/stats/ServerStatsCounter.java
++++ b/net/minecraft/stats/ServerStatsCounter.java
+@@ -98,11 +98,13 @@ public class ServerStatsCounter extends StatsCounter {
+         this.dirty.add(stat);
+     }
+ 
++    /* // Plazma start - Skip dirty stats copy when requesting player stats
+     private Set<Stat<?>> getDirty() {
+         Set<Stat<?>> set = Sets.newHashSet(this.dirty);
+         this.dirty.clear();
+         return set;
+     }
++    */ // Plazma end - Skip dirty stats copy when requesting player stats
+ 
+     public void parseLocal(DataFixer fixerUpper, String json) {
+         try {
+@@ -139,9 +141,10 @@ public class ServerStatsCounter extends StatsCounter {
+     public void sendStats(ServerPlayer player) {
+         Object2IntMap<Stat<?>> map = new Object2IntOpenHashMap<>();
+ 
+-        for (Stat<?> stat : this.getDirty()) {
++        for (Stat<?> stat : this.dirty) { // Plazma - Skip dirty stats copy when requesting player stats
+             map.put(stat, this.getValue(stat));
+         }
++        this.dirty.clear(); // Plazma - Skip dirty stats copy when requesting player stats
+ 
+         player.connection.send(new ClientboundAwardStatsPacket(map));
+     }

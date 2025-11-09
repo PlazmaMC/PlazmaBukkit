@@ -1,0 +1,50 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: IPECTER <ipectert@gmail.com>
+Date: Sun, 9 Nov 2025 15:39:23 +0900
+Subject: [PATCH] Track how much MSPT each world used
+
+Project: SparklyPaper (https://github.com/SparklyPower/SparklyPaper)
+Author: MrPowerGamerBR <git@mrpowergamerbr.com>
+License: GPL-3.0 (https://www.gnu.org/licenses/gpl-3.0.html)
+
+Description:
+* This patch is based on SparklyPaper's "Track how much MSPT each world used" patch.
+
+diff --git a/net/minecraft/server/MinecraftServer.java b/net/minecraft/server/MinecraftServer.java
+index 37d3c9f453ceed624e4775992ba64927c89c4005..c98e4f8c8c9738109cbe4f9cb1019780c70ddba2 100644
+--- a/net/minecraft/server/MinecraftServer.java
++++ b/net/minecraft/server/MinecraftServer.java
+@@ -1762,7 +1762,16 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
+             profilerFiller.push("tick");
+ 
+             try {
++                long i = Util.getNanos(); // Plazma - Track how much MSPT each world used
+                 serverLevel.tick(hasTimeLeft);
++                // Plazma start - Track how much MSPT each world used
++                long j = Util.getNanos() - i;
++
++                // These are from the "tickServer" function
++                serverLevel.tickTimes5s.add(this.tickCount, j);
++                serverLevel.tickTimes10s.add(this.tickCount, j);
++                serverLevel.tickTimes60s.add(this.tickCount, j);
++                // Plazma end - Track how much MSPT each world used
+             } catch (Throwable var7) {
+                 CrashReport crashReport = CrashReport.forThrowable(var7, "Exception ticking world");
+                 serverLevel.fillReportDetails(crashReport);
+diff --git a/net/minecraft/server/level/ServerLevel.java b/net/minecraft/server/level/ServerLevel.java
+index d6c5d6c55f69869eb3d4bbe8b9e046e01bd04044..cae3cf149283b30771d8e7477a8358d8ceb7e38a 100644
+--- a/net/minecraft/server/level/ServerLevel.java
++++ b/net/minecraft/server/level/ServerLevel.java
+@@ -568,6 +568,12 @@ public class ServerLevel extends Level implements ServerEntityGetter, WorldGenLe
+     }
+     // Paper end - chunk tick iteration
+ 
++    // Plazma start - Track how much MSPT each world used
++    public final MinecraftServer.TickTimes tickTimes5s = new MinecraftServer.TickTimes(100);
++    public final MinecraftServer.TickTimes tickTimes10s = new MinecraftServer.TickTimes(200);
++    public final MinecraftServer.TickTimes tickTimes60s = new MinecraftServer.TickTimes(1200);
++    // Plazma end - Track how much MSPT each world used
++
+     public ServerLevel(
+         MinecraftServer server,
+         Executor dispatcher,

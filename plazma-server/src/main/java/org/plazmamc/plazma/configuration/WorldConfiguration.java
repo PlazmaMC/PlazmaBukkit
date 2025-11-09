@@ -1,7 +1,5 @@
 package org.plazmamc.plazma.configuration;
 
-import com.google.common.collect.HashBasedTable;
-import com.google.common.collect.Table;
 import com.mojang.logging.LogUtils;
 import io.papermc.paper.configuration.Configuration;
 import io.papermc.paper.configuration.ConfigurationPart;
@@ -97,5 +95,30 @@ public class WorldConfiguration extends ConfigurationPart {
 
     public class TickRates extends ConfigurationPart {
         public int inactiveGoalSelector = Options.OPTIMIZE ? 20 : 1;
+    }
+
+    public Items items;
+
+    public class Items extends ConfigurationPart {
+        public Map map;
+
+        public class Map extends ConfigurationPart {
+            public boolean skipUpdateIfNoRenderer = true;
+        }
+    }
+
+    public BlazinglySimpleFarmChecks blazinglySimpleFarmChecks;
+
+    public class BlazinglySimpleFarmChecks extends ConfigurationPart {
+        public boolean enabled = Options.OPTIMIZE;
+        public float defaultGrowthSpeed = 1.0f;
+        public float moistGrowthSpeed = 5.0f;
+        public boolean skipMiddleAgingStages = false;
+    }
+
+    public Hopper hopper;
+
+    public class Hopper extends ConfigurationPart {
+        public int cooldownWhenFull = 0;
     }
 }

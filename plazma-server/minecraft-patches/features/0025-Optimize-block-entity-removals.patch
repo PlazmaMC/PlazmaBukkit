@@ -1,0 +1,46 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: IPECTER <ipectert@gmail.com>
+Date: Sun, 9 Nov 2025 15:20:42 +0900
+Subject: [PATCH] Optimize block entity removals
+
+Project: SparklyPaper (https://github.com/SparklyPower/SparklyPaper)
+Author: MrPowerGamerBR <git@mrpowergamerbr.com>
+License: GPL-3.0 (https://www.gnu.org/licenses/gpl-3.0.html)
+
+Description:
+* This patch is based on SparklyPaper's "Fix MC-117075: TE Unload Lag Spike" patch.
+
+We replaced the `blockEntityTickers` list with a custom list based on fastutil's `ObjectArrayList` with a small yet huge change for us: A method that allows us to remove a list of indexes from the list.
+
+This is WAY FASTER than using `removeAll` with a list of entries to be removed, because we don't need to calculate the identity of each block entity to be removed, and we can jump directly to where the search should begin, giving a performance boost for small removals (because we don't need to loop thru the entire list to find what element should be removed) and a performance boost for big removals (no need to calculate the identity of each block entity).
+
+diff --git a/net/minecraft/world/level/Level.java b/net/minecraft/world/level/Level.java
+index 84e300330709ac61d43e378e07780ab36518bb58..b466c1d7dedc53611f8656414b0c271525244c31 100644
+--- a/net/minecraft/world/level/Level.java
++++ b/net/minecraft/world/level/Level.java
+@@ -106,7 +106,7 @@ public abstract class Level implements LevelAccessor, UUIDLookup<Entity>, AutoCl
+     public static final int TICKS_PER_DAY = 24000;
+     public static final int MAX_ENTITY_SPAWN_Y = 20000000;
+     public static final int MIN_ENTITY_SPAWN_Y = -20000000;
+-    public final List<TickingBlockEntity> blockEntityTickers = Lists.newArrayList();
++    public final org.plazmamc.plazma.util.BlockEntityTickersList blockEntityTickers = new org.plazmamc.plazma.util.BlockEntityTickersList(); // Plazma - Optimize block entity removals
+     protected final NeighborUpdater neighborUpdater;
+     private final List<TickingBlockEntity> pendingBlockEntityTickers = Lists.newArrayList();
+     private boolean tickingBlockEntities;
+@@ -1516,7 +1516,7 @@ public abstract class Level implements LevelAccessor, UUIDLookup<Entity>, AutoCl
+             TickingBlockEntity tickingBlockEntity = this.blockEntityTickers.get(this.tileTickPosition);
+             // Spigot end
+             if (tickingBlockEntity.isRemoved()) {
+-                toRemove.add(tickingBlockEntity); // Paper - Fix MC-117075; use removeAll
++                this.blockEntityTickers.markAsRemoved(this.tileTickPosition); // Paper - Fix MC-117075; use removeAll // Plazma - Optimize block entity removals
+             } else if (runsNormally && this.shouldTickBlocksAt(tickingBlockEntity.getPos())) {
+                 tickingBlockEntity.tick();
+                 // Paper start - rewrite chunk system
+@@ -1528,6 +1528,7 @@ public abstract class Level implements LevelAccessor, UUIDLookup<Entity>, AutoCl
+         }
+         this.blockEntityTickers.removeAll(toRemove); // Paper - Fix MC-117075
+ 
++        this.blockEntityTickers.removeMarkedEntries(); // Plazma - Optimize block entity removals
+         this.tickingBlockEntities = false;
+         profilerFiller.pop();
+         this.spigotConfig.currentPrimedTnt = 0; // Spigot

@@ -1,0 +1,28 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: IPECTER <ipectert@gmail.com>
+Date: Sun, 9 Nov 2025 16:00:19 +0900
+Subject: [PATCH] Throttle hopper checks when full
+
+Project: SparklyPaper (https://github.com/SparklyPower/SparklyPaper)
+Author: MrPowerGamerBR <git@mrpowergamerbr.com>
+License: GPL-3.0 (https://www.gnu.org/licenses/gpl-3.0.html)
+
+Description:
+* This patch is based on SparklyPaper's "Allow throttling hopper checks if the target container is full" patch.
+
+If a hopper has items in it, it will try to eject the items to a container (chest, another hopper, etc).
+
+However, if the target container is full, the hopper won't be on the default transfer cooldown (vanilla 8 ticks), this can cause TPS drops due to the ejectItems, especially due to the hopper checking if the target container isFullContainer.
+
+diff --git a/net/minecraft/world/level/block/entity/HopperBlockEntity.java b/net/minecraft/world/level/block/entity/HopperBlockEntity.java
+index 01ed25d1f895d94485b5fecd98476534cbb26930..e13bdbcbfd488e3fa8da7439a406877ed11a8d58 100644
+--- a/net/minecraft/world/level/block/entity/HopperBlockEntity.java
++++ b/net/minecraft/world/level/block/entity/HopperBlockEntity.java
+@@ -423,6 +423,7 @@ public class HopperBlockEntity extends RandomizableContainerBlockEntity implemen
+         } else {
+             Direction opposite = blockEntity.facing.getOpposite();
+             if (isFullContainer(attachedContainer, opposite)) {
++                if (level.plazmaConfig().hopper.cooldownWhenFull != 0) blockEntity.setCooldown(level.plazmaConfig().hopper.cooldownWhenFull); // Plazma - Throttle hopper checks when full
+                 return false;
+             } else {
+                 // Paper start - Perf: Optimize Hoppers
