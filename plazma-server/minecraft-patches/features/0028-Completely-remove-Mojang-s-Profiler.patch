@@ -1,0 +1,1023 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: IPECTER <ipectert@gmail.com>
+Date: Mon, 16 Feb 2026 00:50:43 +0900
+Subject: [PATCH] Completely remove Mojang's Profiler
+
+
+diff --git a/net/minecraft/util/profiling/ActiveProfiler.java b/net/minecraft/util/profiling/ActiveProfiler.java
+index 365995455c5e076f145063ab9415b89139f76393..899bc1a6fe995e8383cce42c658c40b39c0e0fa0 100644
+--- a/net/minecraft/util/profiling/ActiveProfiler.java
++++ b/net/minecraft/util/profiling/ActiveProfiler.java
+@@ -1,207 +1,56 @@
+ package net.minecraft.util.profiling;
+ 
+-import com.google.common.collect.Lists;
+-import com.google.common.collect.Maps;
+-import com.mojang.logging.LogUtils;
+-import it.unimi.dsi.fastutil.longs.LongArrayList;
+-import it.unimi.dsi.fastutil.longs.LongList;
+ import it.unimi.dsi.fastutil.objects.Object2LongMap;
+ import it.unimi.dsi.fastutil.objects.Object2LongMaps;
+-import it.unimi.dsi.fastutil.objects.Object2LongOpenHashMap;
+-import it.unimi.dsi.fastutil.objects.ObjectArraySet;
+-import java.time.Duration;
+-import java.util.List;
+-import java.util.Map;
++import java.util.Collections;
+ import java.util.Set;
+ import java.util.function.BooleanSupplier;
+ import java.util.function.IntSupplier;
+ import java.util.function.LongSupplier;
+-import java.util.function.Supplier;
+ import javax.annotation.Nullable;
+-import net.minecraft.Util;
+ import net.minecraft.util.profiling.metrics.MetricCategory;
+ import org.apache.commons.lang3.tuple.Pair;
+-import org.slf4j.Logger;
+ 
++// Plazma - Completely remove Mojang's Profiler - no-op implementation
+ public class ActiveProfiler implements ProfileCollector {
+-    private static final long WARNING_TIME_NANOS = Duration.ofMillis(100L).toNanos();
+-    private static final Logger LOGGER = LogUtils.getLogger();
+-    private final List<String> paths = Lists.newArrayList();
+-    private final LongList startTimes = new LongArrayList();
+-    private final Map<String, ActiveProfiler.PathEntry> entries = Maps.newHashMap();
+-    private final IntSupplier getTickTime;
+-    private final LongSupplier getRealTime;
+-    private final long startTimeNano;
+-    private final int startTimeTicks;
+-    private String path = "";
+-    private boolean started;
+-    @Nullable
+-    private ActiveProfiler.PathEntry currentEntry;
+-    private final BooleanSupplier suppressWarnings;
+-    private final Set<Pair<String, MetricCategory>> chartedPaths = new ObjectArraySet<>();
+-
+     public ActiveProfiler(LongSupplier getRealTime, IntSupplier getTickTime, BooleanSupplier supressWarnings) {
+-        this.startTimeNano = getRealTime.getAsLong();
+-        this.getRealTime = getRealTime;
+-        this.startTimeTicks = getTickTime.getAsInt();
+-        this.getTickTime = getTickTime;
+-        this.suppressWarnings = supressWarnings;
+-    }
+-
+-    @Override
+-    public void startTick() {
+-        if (this.started) {
+-            LOGGER.error("Profiler tick already started - missing endTick()?");
+-        } else {
+-            this.started = true;
+-            this.path = "";
+-            this.paths.clear();
+-            this.push("root");
+-        }
+-    }
+-
+-    @Override
+-    public void endTick() {
+-        if (!this.started) {
+-            LOGGER.error("Profiler tick already ended - missing startTick()?");
+-        } else {
+-            this.pop();
+-            this.started = false;
+-            if (!this.path.isEmpty()) {
+-                LOGGER.error(
+-                    "Profiler tick ended before path was fully popped (remainder: '{}'). Mismatched push/pop?",
+-                    LogUtils.defer(() -> ProfileResults.demanglePath(this.path))
+-                );
+-            }
+-        }
+-    }
+-
+-    @Override
+-    public void push(String name) {
+-        if (!this.started) {
+-            LOGGER.error("Cannot push '{}' to profiler if profiler tick hasn't started - missing startTick()?", name);
+-        } else {
+-            if (!this.path.isEmpty()) {
+-                this.path = this.path + "\u001e";
+-            }
+-
+-            this.path = this.path + name;
+-            this.paths.add(this.path);
+-            this.startTimes.add(Util.getNanos());
+-            this.currentEntry = null;
+-        }
+-    }
+-
+-    @Override
+-    public void push(Supplier<String> nameSupplier) {
+-        this.push(nameSupplier.get());
+-    }
+-
+-    @Override
+-    public void markForCharting(MetricCategory category) {
+-        this.chartedPaths.add(Pair.of(this.path, category));
+-    }
+-
+-    @Override
+-    public void pop() {
+-        if (!this.started) {
+-            LOGGER.error("Cannot pop from profiler if profiler tick hasn't started - missing startTick()?");
+-        } else if (this.startTimes.isEmpty()) {
+-            LOGGER.error("Tried to pop one too many times! Mismatched push() and pop()?");
+-        } else {
+-            long nanos = Util.getNanos();
+-            long l = this.startTimes.removeLong(this.startTimes.size() - 1);
+-            this.paths.remove(this.paths.size() - 1);
+-            long l1 = nanos - l;
+-            ActiveProfiler.PathEntry currentEntry = this.getCurrentEntry();
+-            currentEntry.accumulatedDuration += l1;
+-            currentEntry.count++;
+-            currentEntry.maxDuration = Math.max(currentEntry.maxDuration, l1);
+-            currentEntry.minDuration = Math.min(currentEntry.minDuration, l1);
+-            if (l1 > WARNING_TIME_NANOS && !this.suppressWarnings.getAsBoolean()) {
+-                LOGGER.warn(
+-                    "Something's taking too long! '{}' took aprox {} ms",
+-                    LogUtils.defer(() -> ProfileResults.demanglePath(this.path)),
+-                    LogUtils.defer(() -> l1 / 1000000.0)
+-                );
+-            }
+-
+-            this.path = this.paths.isEmpty() ? "" : this.paths.get(this.paths.size() - 1);
+-            this.currentEntry = null;
+-        }
+-    }
+-
+-    @Override
+-    public void popPush(String name) {
+-        this.pop();
+-        this.push(name);
+-    }
+-
+-    @Override
+-    public void popPush(Supplier<String> nameSupplier) {
+-        this.pop();
+-        this.push(nameSupplier);
+-    }
+-
+-    private ActiveProfiler.PathEntry getCurrentEntry() {
+-        if (this.currentEntry == null) {
+-            this.currentEntry = this.entries.computeIfAbsent(this.path, string -> new ActiveProfiler.PathEntry());
+-        }
+-
+-        return this.currentEntry;
+-    }
+-
+-    @Override
+-    public void incrementCounter(String counterName, int increment) {
+-        this.getCurrentEntry().counters.addTo(counterName, increment);
+-    }
+-
+-    @Override
+-    public void incrementCounter(Supplier<String> counterNameSupplier, int increment) {
+-        this.getCurrentEntry().counters.addTo(counterNameSupplier.get(), increment);
+     }
+ 
+     @Override
+     public ProfileResults getResults() {
+-        return new FilledProfileResults(this.entries, this.startTimeNano, this.startTimeTicks, this.getRealTime.getAsLong(), this.getTickTime.getAsInt());
++        return EmptyProfileResults.EMPTY;
+     }
+ 
+     @Nullable
+     @Override
+     public ActiveProfiler.PathEntry getEntry(String entryId) {
+-        return this.entries.get(entryId);
++        return null;
+     }
+ 
+     @Override
+     public Set<Pair<String, MetricCategory>> getChartedPaths() {
+-        return this.chartedPaths;
++        return Collections.emptySet();
+     }
+ 
+     public static class PathEntry implements ProfilerPathEntry {
+-        long maxDuration = Long.MIN_VALUE;
+-        long minDuration = Long.MAX_VALUE;
+-        long accumulatedDuration;
+-        long count;
+-        final Object2LongOpenHashMap<String> counters = new Object2LongOpenHashMap<>();
+-
+         @Override
+         public long getDuration() {
+-            return this.accumulatedDuration;
++            return 0L;
+         }
+ 
+         @Override
+         public long getMaxDuration() {
+-            return this.maxDuration;
++            return 0L;
+         }
+ 
+         @Override
+         public long getCount() {
+-            return this.count;
++            return 0L;
+         }
+ 
+         @Override
+         public Object2LongMap<String> getCounters() {
+-            return Object2LongMaps.unmodifiable(this.counters);
++            return Object2LongMaps.emptyMap();
+         }
+     }
+ }
+diff --git a/net/minecraft/util/profiling/ContinuousProfiler.java b/net/minecraft/util/profiling/ContinuousProfiler.java
+index 553638f3140f2e0f2892adbf082b3af415424550..dd9932f5705f19695d6f5a59e1b0d3679d2b0ad2 100644
+--- a/net/minecraft/util/profiling/ContinuousProfiler.java
++++ b/net/minecraft/util/profiling/ContinuousProfiler.java
+@@ -4,35 +4,26 @@ import java.util.function.BooleanSupplier;
+ import java.util.function.IntSupplier;
+ import java.util.function.LongSupplier;
+ 
++// Plazma - Completely remove Mojang's Profiler - no-op implementation
+ public class ContinuousProfiler {
+-    private final LongSupplier realTime;
+-    private final IntSupplier tickCount;
+-    private final BooleanSupplier suppressWarnings;
+-    private ProfileCollector profiler = InactiveProfiler.INSTANCE;
+-
+     public ContinuousProfiler(LongSupplier realTime, IntSupplier tickTime, BooleanSupplier supressWarnings) {
+-        this.realTime = realTime;
+-        this.tickCount = tickTime;
+-        this.suppressWarnings = supressWarnings;
+     }
+ 
+     public boolean isEnabled() {
+-        return this.profiler != InactiveProfiler.INSTANCE;
++        return false;
+     }
+ 
+     public void disable() {
+-        this.profiler = InactiveProfiler.INSTANCE;
+     }
+ 
+     public void enable() {
+-        this.profiler = new ActiveProfiler(this.realTime, this.tickCount, this.suppressWarnings);
+     }
+ 
+     public ProfilerFiller getFiller() {
+-        return this.profiler;
++        return InactiveProfiler.INSTANCE;
+     }
+ 
+     public ProfileResults getResults() {
+-        return this.profiler.getResults();
++        return EmptyProfileResults.EMPTY;
+     }
+ }
+diff --git a/net/minecraft/util/profiling/FilledProfileResults.java b/net/minecraft/util/profiling/FilledProfileResults.java
+index 2787f4e5e50939d44253f1b8301fb24a2974ae11..4db69275cb8758869289b8166b77cf05292cac0c 100644
+--- a/net/minecraft/util/profiling/FilledProfileResults.java
++++ b/net/minecraft/util/profiling/FilledProfileResults.java
+@@ -1,313 +1,53 @@
+ package net.minecraft.util.profiling;
+ 
+-import com.google.common.base.Splitter;
+-import com.google.common.collect.Lists;
+-import com.google.common.collect.Maps;
+-import com.mojang.logging.LogUtils;
+-import it.unimi.dsi.fastutil.objects.Object2LongMap;
+-import it.unimi.dsi.fastutil.objects.Object2LongMaps;
+-import java.io.Writer;
+-import java.nio.charset.StandardCharsets;
+-import java.nio.file.Files;
+ import java.nio.file.Path;
+ import java.util.Collections;
+-import java.util.Comparator;
+ import java.util.Iterator;
+ import java.util.List;
+-import java.util.Locale;
+ import java.util.Map;
+-import java.util.Map.Entry;
+-import net.minecraft.ReportType;
+-import net.minecraft.SharedConstants;
+-import org.apache.commons.io.IOUtils;
+-import org.apache.commons.lang3.ObjectUtils;
+-import org.slf4j.Logger;
+ 
++// Plazma - Completely remove Mojang's Profiler - no-op implementation
+ public class FilledProfileResults implements ProfileResults {
+-    private static final Logger LOGGER = LogUtils.getLogger();
+-    private static final ProfilerPathEntry EMPTY = new ProfilerPathEntry() {
+-        @Override
+-        public long getDuration() {
+-            return 0L;
+-        }
+-
+-        @Override
+-        public long getMaxDuration() {
+-            return 0L;
+-        }
+-
+-        @Override
+-        public long getCount() {
+-            return 0L;
+-        }
+-
+-        @Override
+-        public Object2LongMap<String> getCounters() {
+-            return Object2LongMaps.emptyMap();
+-        }
+-    };
+-    private static final Splitter SPLITTER = Splitter.on('\u001e');
+-    private static final Comparator<Entry<String, FilledProfileResults.CounterCollector>> COUNTER_ENTRY_COMPARATOR = Entry.<String, FilledProfileResults.CounterCollector>comparingByValue(
+-            Comparator.comparingLong(counterCollector -> counterCollector.totalValue)
+-        )
+-        .reversed();
+-    private final Map<String, ? extends ProfilerPathEntry> entries;
+-    private final long startTimeNano;
+-    private final int startTimeTicks;
+-    private final long endTimeNano;
+-    private final int endTimeTicks;
+-    private final int tickDuration;
+-
+     public FilledProfileResults(Map<String, ? extends ProfilerPathEntry> entries, long startTimeNano, int startTimeTicks, long endTimeNano, int endTimeTicks) {
+-        this.entries = entries;
+-        this.startTimeNano = startTimeNano;
+-        this.startTimeTicks = startTimeTicks;
+-        this.endTimeNano = endTimeNano;
+-        this.endTimeTicks = endTimeTicks;
+-        this.tickDuration = endTimeTicks - startTimeTicks;
+-    }
+-
+-    private ProfilerPathEntry getEntry(String key) {
+-        ProfilerPathEntry profilerPathEntry = this.entries.get(key);
+-        return profilerPathEntry != null ? profilerPathEntry : EMPTY;
+     }
+ 
+     @Override
+     public List<ResultField> getTimes(String sectionPath) {
+-        String string = sectionPath;
+-        ProfilerPathEntry entry = this.getEntry("root");
+-        long duration = entry.getDuration();
+-        ProfilerPathEntry entry1 = this.getEntry(sectionPath);
+-        long duration1 = entry1.getDuration();
+-        long count = entry1.getCount();
+-        List<ResultField> list = Lists.newArrayList();
+-        if (!sectionPath.isEmpty()) {
+-            sectionPath = sectionPath + "\u001e";
+-        }
+-
+-        long l = 0L;
+-
+-        for (String string1 : this.entries.keySet()) {
+-            if (isDirectChild(sectionPath, string1)) {
+-                l += this.getEntry(string1).getDuration();
+-            }
+-        }
+-
+-        float f = (float)l;
+-        if (l < duration1) {
+-            l = duration1;
+-        }
+-
+-        if (duration < l) {
+-            duration = l;
+-        }
+-
+-        for (String string2 : this.entries.keySet()) {
+-            if (isDirectChild(sectionPath, string2)) {
+-                ProfilerPathEntry entry2 = this.getEntry(string2);
+-                long duration2 = entry2.getDuration();
+-                double d = duration2 * 100.0 / l;
+-                double d1 = duration2 * 100.0 / duration;
+-                String sub = string2.substring(sectionPath.length());
+-                list.add(new ResultField(sub, d, d1, entry2.getCount()));
+-            }
+-        }
+-
+-        if ((float)l > f) {
+-            list.add(new ResultField("unspecified", ((float)l - f) * 100.0 / l, ((float)l - f) * 100.0 / duration, count));
+-        }
+-
+-        Collections.sort(list);
+-        list.add(0, new ResultField(string, 100.0, l * 100.0 / duration, count));
+-        return list;
+-    }
+-
+-    private static boolean isDirectChild(String sectionPath, String entry) {
+-        return entry.length() > sectionPath.length() && entry.startsWith(sectionPath) && entry.indexOf(30, sectionPath.length() + 1) < 0;
++        return Collections.emptyList();
+     }
+ 
+-    private Map<String, FilledProfileResults.CounterCollector> getCounterValues() {
+-        Map<String, FilledProfileResults.CounterCollector> map = Maps.newTreeMap();
+-        this.entries
+-            .forEach(
+-                (string, profilerPathEntry) -> {
+-                    Object2LongMap<String> counters = profilerPathEntry.getCounters();
+-                    if (!counters.isEmpty()) {
+-                        List<String> parts = SPLITTER.splitToList(string);
+-                        counters.forEach(
+-                            (string1, _long) -> map.computeIfAbsent(string1, string2 -> new FilledProfileResults.CounterCollector())
+-                                .addValue(parts.iterator(), _long)
+-                        );
+-                    }
+-                }
+-            );
+-        return map;
++    @Override
++    public boolean saveResults(Path path) {
++        return false;
+     }
+ 
+     @Override
+     public long getStartTimeNano() {
+-        return this.startTimeNano;
++        return 0L;
+     }
+ 
+     @Override
+     public int getStartTimeTicks() {
+-        return this.startTimeTicks;
++        return 0;
+     }
+ 
+     @Override
+     public long getEndTimeNano() {
+-        return this.endTimeNano;
++        return 0L;
+     }
+ 
+     @Override
+     public int getEndTimeTicks() {
+-        return this.endTimeTicks;
+-    }
+-
+-    @Override
+-    public boolean saveResults(Path path) {
+-        Writer writer = null;
+-
+-        boolean var4;
+-        try {
+-            Files.createDirectories(path.getParent());
+-            writer = Files.newBufferedWriter(path, StandardCharsets.UTF_8);
+-            writer.write(this.getProfilerResults(this.getNanoDuration(), this.getTickDuration()));
+-            return true;
+-        } catch (Throwable var8) {
+-            LOGGER.error("Could not save profiler results to {}", path, var8);
+-            var4 = false;
+-        } finally {
+-            IOUtils.closeQuietly(writer);
+-        }
+-
+-        return var4;
+-    }
+-
+-    protected String getProfilerResults(long timeSpan, int tickSpan) {
+-        StringBuilder stringBuilder = new StringBuilder();
+-        ReportType.PROFILE.appendHeader(stringBuilder, List.of());
+-        stringBuilder.append("Version: ").append(SharedConstants.getCurrentVersion().id()).append('\n');
+-        stringBuilder.append("Time span: ").append(timeSpan / 1000000L).append(" ms\n");
+-        stringBuilder.append("Tick span: ").append(tickSpan).append(" ticks\n");
+-        stringBuilder.append("// This is approximately ")
+-            .append(String.format(Locale.ROOT, "%.2f", tickSpan / ((float)timeSpan / 1.0E9F)))
+-            .append(" ticks per second. It should be ")
+-            .append(20)
+-            .append(" ticks per second\n\n");
+-        stringBuilder.append("--- BEGIN PROFILE DUMP ---\n\n");
+-        this.appendProfilerResults(0, "root", stringBuilder);
+-        stringBuilder.append("--- END PROFILE DUMP ---\n\n");
+-        Map<String, FilledProfileResults.CounterCollector> counterValues = this.getCounterValues();
+-        if (!counterValues.isEmpty()) {
+-            stringBuilder.append("--- BEGIN COUNTER DUMP ---\n\n");
+-            this.appendCounters(counterValues, stringBuilder, tickSpan);
+-            stringBuilder.append("--- END COUNTER DUMP ---\n\n");
+-        }
+-
+-        return stringBuilder.toString();
++        return 0;
+     }
+ 
+     @Override
+     public String getProfilerResults() {
+-        StringBuilder stringBuilder = new StringBuilder();
+-        this.appendProfilerResults(0, "root", stringBuilder);
+-        return stringBuilder.toString();
+-    }
+-
+-    private static StringBuilder indentLine(StringBuilder builder, int indents) {
+-        builder.append(String.format(Locale.ROOT, "[%02d] ", indents));
+-
+-        for (int i = 0; i < indents; i++) {
+-            builder.append("|   ");
+-        }
+-
+-        return builder;
+-    }
+-
+-    private void appendProfilerResults(int depth, String sectionPath, StringBuilder builder) {
+-        List<ResultField> times = this.getTimes(sectionPath);
+-        Object2LongMap<String> counters = ObjectUtils.firstNonNull(this.entries.get(sectionPath), EMPTY).getCounters();
+-        counters.forEach(
+-            (string, _long) -> indentLine(builder, depth)
+-                .append('#')
+-                .append(string)
+-                .append(' ')
+-                .append(_long)
+-                .append('/')
+-                .append(_long / this.tickDuration)
+-                .append('\n')
+-        );
+-        if (times.size() >= 3) {
+-            for (int i = 1; i < times.size(); i++) {
+-                ResultField resultField = times.get(i);
+-                indentLine(builder, depth)
+-                    .append(resultField.name)
+-                    .append('(')
+-                    .append(resultField.count)
+-                    .append('/')
+-                    .append(String.format(Locale.ROOT, "%.0f", (float)resultField.count / this.tickDuration))
+-                    .append(')')
+-                    .append(" - ")
+-                    .append(String.format(Locale.ROOT, "%.2f", resultField.percentage))
+-                    .append("%/")
+-                    .append(String.format(Locale.ROOT, "%.2f", resultField.globalPercentage))
+-                    .append("%\n");
+-                if (!"unspecified".equals(resultField.name)) {
+-                    try {
+-                        this.appendProfilerResults(depth + 1, sectionPath + "\u001e" + resultField.name, builder);
+-                    } catch (Exception var9) {
+-                        builder.append("[[ EXCEPTION ").append(var9).append(" ]]");
+-                    }
+-                }
+-            }
+-        }
+-    }
+-
+-    private void appendCounterResults(int indents, String name, FilledProfileResults.CounterCollector collector, int tickSpan, StringBuilder builder) {
+-        indentLine(builder, indents)
+-            .append(name)
+-            .append(" total:")
+-            .append(collector.selfValue)
+-            .append('/')
+-            .append(collector.totalValue)
+-            .append(" average: ")
+-            .append(collector.selfValue / tickSpan)
+-            .append('/')
+-            .append(collector.totalValue / tickSpan)
+-            .append('\n');
+-        collector.children
+-            .entrySet()
+-            .stream()
+-            .sorted(COUNTER_ENTRY_COMPARATOR)
+-            .forEach(entry -> this.appendCounterResults(indents + 1, entry.getKey(), entry.getValue(), tickSpan, builder));
+-    }
+-
+-    private void appendCounters(Map<String, FilledProfileResults.CounterCollector> counters, StringBuilder builder, int tickSpan) {
+-        counters.forEach((string, counterCollector) -> {
+-            builder.append("-- Counter: ").append(string).append(" --\n");
+-            this.appendCounterResults(0, "root", counterCollector.children.get("root"), tickSpan, builder);
+-            builder.append("\n\n");
+-        });
++        return "";
+     }
+ 
+     @Override
+     public int getTickDuration() {
+-        return this.tickDuration;
+-    }
+-
+-    static class CounterCollector {
+-        long selfValue;
+-        long totalValue;
+-        final Map<String, FilledProfileResults.CounterCollector> children = Maps.newHashMap();
+-
+-        public void addValue(Iterator<String> counters, long value) {
+-            this.totalValue += value;
+-            if (!counters.hasNext()) {
+-                this.selfValue += value;
+-            } else {
+-                this.children.computeIfAbsent(counters.next(), string -> new FilledProfileResults.CounterCollector()).addValue(counters, value);
+-            }
+-        }
++        return 0;
+     }
+ }
+diff --git a/net/minecraft/util/profiling/InactiveProfiler.java b/net/minecraft/util/profiling/InactiveProfiler.java
+index dbeb1117938b0f118250bc66d41676bc35a6aa1e..ca79139b1ccf2bc37f4ba65f500fb81e961fcbb0 100644
+--- a/net/minecraft/util/profiling/InactiveProfiler.java
++++ b/net/minecraft/util/profiling/InactiveProfiler.java
+@@ -1,68 +1,18 @@
+ package net.minecraft.util.profiling;
+ 
+-import com.google.common.collect.ImmutableSet;
++import java.util.Collections;
+ import java.util.Set;
+-import java.util.function.Supplier;
+ import javax.annotation.Nullable;
+ import net.minecraft.util.profiling.metrics.MetricCategory;
+ import org.apache.commons.lang3.tuple.Pair;
+ 
++// Plazma - Completely remove Mojang's Profiler - no-op implementation
+ public class InactiveProfiler implements ProfileCollector {
+     public static final InactiveProfiler INSTANCE = new InactiveProfiler();
+ 
+     private InactiveProfiler() {
+     }
+ 
+-    @Override
+-    public void startTick() {
+-    }
+-
+-    @Override
+-    public void endTick() {
+-    }
+-
+-    @Override
+-    public void push(String name) {
+-    }
+-
+-    @Override
+-    public void push(Supplier<String> nameSupplier) {
+-    }
+-
+-    @Override
+-    public void markForCharting(MetricCategory category) {
+-    }
+-
+-    @Override
+-    public void pop() {
+-    }
+-
+-    @Override
+-    public void popPush(String name) {
+-    }
+-
+-    @Override
+-    public void popPush(Supplier<String> nameSupplier) {
+-    }
+-
+-    @Override
+-    public Zone zone(String name) {
+-        return Zone.INACTIVE;
+-    }
+-
+-    @Override
+-    public Zone zone(Supplier<String> name) {
+-        return Zone.INACTIVE;
+-    }
+-
+-    @Override
+-    public void incrementCounter(String counterName, int increment) {
+-    }
+-
+-    @Override
+-    public void incrementCounter(Supplier<String> counterNameSupplier, int increment) {
+-    }
+-
+     @Override
+     public ProfileResults getResults() {
+         return EmptyProfileResults.EMPTY;
+@@ -76,6 +26,6 @@ public class InactiveProfiler implements ProfileCollector {
+ 
+     @Override
+     public Set<Pair<String, MetricCategory>> getChartedPaths() {
+-        return ImmutableSet.of();
++        return Collections.emptySet();
+     }
+ }
+diff --git a/net/minecraft/util/profiling/ProfileCollector.java b/net/minecraft/util/profiling/ProfileCollector.java
+index 7ea05ee86d9afe648a5301bdd9fcff9b91e1ba36..ffda4a8d73d737e6515f97ebc35328b924d1f364 100644
+--- a/net/minecraft/util/profiling/ProfileCollector.java
++++ b/net/minecraft/util/profiling/ProfileCollector.java
+@@ -1,15 +1,23 @@
+ package net.minecraft.util.profiling;
+ 
++import java.util.Collections;
+ import java.util.Set;
+ import javax.annotation.Nullable;
+ import net.minecraft.util.profiling.metrics.MetricCategory;
+ import org.apache.commons.lang3.tuple.Pair;
+ 
++// Plazma - Completely remove Mojang's Profiler - no-op implementation
+ public interface ProfileCollector extends ProfilerFiller {
+-    ProfileResults getResults();
++    default ProfileResults getResults() {
++        return EmptyProfileResults.EMPTY;
++    }
+ 
+     @Nullable
+-    ActiveProfiler.PathEntry getEntry(String entryId);
++    default ActiveProfiler.PathEntry getEntry(String entryId) {
++        return null;
++    }
+ 
+-    Set<Pair<String, MetricCategory>> getChartedPaths();
++    default Set<Pair<String, MetricCategory>> getChartedPaths() {
++        return Collections.emptySet();
++    }
+ }
+diff --git a/net/minecraft/util/profiling/ProfileResults.java b/net/minecraft/util/profiling/ProfileResults.java
+index 47d68f2b8d0dbe2f0e268c3d00eec434d8964f7a..b32cc06dc8fff6f8bd217f1b1f72c14dc71b7cc0 100644
+--- a/net/minecraft/util/profiling/ProfileResults.java
++++ b/net/minecraft/util/profiling/ProfileResults.java
+@@ -1,32 +1,48 @@
+ package net.minecraft.util.profiling;
+ 
+ import java.nio.file.Path;
++import java.util.Collections;
+ import java.util.List;
+ 
++// Plazma - Completely remove Mojang's Profiler - no-op implementation
+ public interface ProfileResults {
+     char PATH_SEPARATOR = '\u001e';
+ 
+-    List<ResultField> getTimes(String sectionPath);
++    default List<ResultField> getTimes(String sectionPath) {
++        return Collections.emptyList();
++    }
+ 
+-    boolean saveResults(Path path);
++    default boolean saveResults(Path path) {
++        return false;
++    }
+ 
+-    long getStartTimeNano();
++    default long getStartTimeNano() {
++        return 0L;
++    }
+ 
+-    int getStartTimeTicks();
++    default int getStartTimeTicks() {
++        return 0;
++    }
+ 
+-    long getEndTimeNano();
++    default long getEndTimeNano() {
++        return 0L;
++    }
+ 
+-    int getEndTimeTicks();
++    default int getEndTimeTicks() {
++        return 0;
++    }
+ 
+     default long getNanoDuration() {
+-        return this.getEndTimeNano() - this.getStartTimeNano();
++        return 0L;
+     }
+ 
+     default int getTickDuration() {
+-        return this.getEndTimeTicks() - this.getStartTimeTicks();
++        return 0;
+     }
+ 
+-    String getProfilerResults();
++    default String getProfilerResults() {
++        return "";
++    }
+ 
+     static String demanglePath(String path) {
+         return path.replace('\u001e', '.');
+diff --git a/net/minecraft/util/profiling/Profiler.java b/net/minecraft/util/profiling/Profiler.java
+index cbd57d68e169ed044f325a776075da78b473b6f3..c89582c1e6c4afae9accaa15299801097e6765be 100644
+--- a/net/minecraft/util/profiling/Profiler.java
++++ b/net/minecraft/util/profiling/Profiler.java
+@@ -1,54 +1,16 @@
+ package net.minecraft.util.profiling;
+ 
+-import com.mojang.jtracy.TracyClient;
+-import java.util.Objects;
+-import java.util.concurrent.atomic.AtomicInteger;
+-
++// Plazma - Completely remove Mojang's Profiler - no-op implementation
+ public final class Profiler {
+-    private static final ThreadLocal<TracyZoneFiller> TRACY_FILLER = ThreadLocal.withInitial(TracyZoneFiller::new);
+-    private static final ThreadLocal<ProfilerFiller> ACTIVE = new ThreadLocal<>();
+-    private static final AtomicInteger ACTIVE_COUNT = new AtomicInteger();
+-
+     private Profiler() {
+     }
+ 
+     public static Profiler.Scope use(ProfilerFiller profiler) {
+-        startUsing(profiler);
+-        return Profiler::stopUsing;
+-    }
+-
+-    private static void startUsing(ProfilerFiller profiler) {
+-        if (ACTIVE.get() != null) {
+-            throw new IllegalStateException("Profiler is already active");
+-        } else {
+-            ProfilerFiller profilerFiller = decorateFiller(profiler);
+-            ACTIVE.set(profilerFiller);
+-            ACTIVE_COUNT.incrementAndGet();
+-            profilerFiller.startTick();
+-        }
+-    }
+-
+-    private static void stopUsing() {
+-        ProfilerFiller profilerFiller = ACTIVE.get();
+-        if (profilerFiller == null) {
+-            throw new IllegalStateException("Profiler was not active");
+-        } else {
+-            ACTIVE.remove();
+-            ACTIVE_COUNT.decrementAndGet();
+-            profilerFiller.endTick();
+-        }
+-    }
+-
+-    private static ProfilerFiller decorateFiller(ProfilerFiller filler) {
+-        return ProfilerFiller.combine(getDefaultFiller(), filler);
++        return () -> {};
+     }
+ 
+     public static ProfilerFiller get() {
+-        return ACTIVE_COUNT.get() == 0 ? getDefaultFiller() : Objects.requireNonNullElseGet(ACTIVE.get(), Profiler::getDefaultFiller);
+-    }
+-
+-    private static ProfilerFiller getDefaultFiller() {
+-        return (ProfilerFiller)(TracyClient.isAvailable() ? TRACY_FILLER.get() : InactiveProfiler.INSTANCE);
++        return InactiveProfiler.INSTANCE;
+     }
+ 
+     public interface Scope extends AutoCloseable {
+diff --git a/net/minecraft/util/profiling/ProfilerFiller.java b/net/minecraft/util/profiling/ProfilerFiller.java
+index aed01a8c918361d2302ba5219117e32aac98e19d..d8749d86fbc22a56ceee20ec7f16567e4ad877a5 100644
+--- a/net/minecraft/util/profiling/ProfilerFiller.java
++++ b/net/minecraft/util/profiling/ProfilerFiller.java
+@@ -3,149 +3,49 @@ package net.minecraft.util.profiling;
+ import java.util.function.Supplier;
+ import net.minecraft.util.profiling.metrics.MetricCategory;
+ 
++// Plazma - Completely remove Mojang's Profiler - no-op implementation
+ public interface ProfilerFiller {
+     String ROOT = "root";
+ 
+-    void startTick();
++    default void startTick() {}
+ 
+-    void endTick();
++    default void endTick() {}
+ 
+-    void push(String name);
++    default void push(String name) {}
+ 
+-    void push(Supplier<String> nameSupplier);
++    default void push(Supplier<String> nameSupplier) {}
+ 
+-    void pop();
++    default void pop() {}
+ 
+-    void popPush(String name);
++    default void popPush(String name) {}
+ 
+-    void popPush(Supplier<String> nameSupplier);
++    default void popPush(Supplier<String> nameSupplier) {}
+ 
+-    default void addZoneText(String text) {
+-    }
++    default void addZoneText(String text) {}
+ 
+-    default void addZoneValue(long value) {
+-    }
++    default void addZoneValue(long value) {}
+ 
+-    default void setZoneColor(int color) {
+-    }
++    default void setZoneColor(int color) {}
+ 
+     default Zone zone(String name) {
+-        this.push(name);
+-        return new Zone(this);
++        return Zone.INACTIVE;
+     }
+ 
+     default Zone zone(Supplier<String> name) {
+-        this.push(name);
+-        return new Zone(this);
++        return Zone.INACTIVE;
+     }
+ 
+-    void markForCharting(MetricCategory category);
++    default void markForCharting(MetricCategory category) {}
+ 
+-    default void incrementCounter(String entryId) {
+-        this.incrementCounter(entryId, 1);
+-    }
++    default void incrementCounter(String entryId) {}
+ 
+-    void incrementCounter(String counterName, int increment);
++    default void incrementCounter(String counterName, int increment) {}
+ 
+-    default void incrementCounter(Supplier<String> entryIdSupplier) {
+-        this.incrementCounter(entryIdSupplier, 1);
+-    }
++    default void incrementCounter(Supplier<String> entryIdSupplier) {}
+ 
+-    void incrementCounter(Supplier<String> counterNameSupplier, int increment);
++    default void incrementCounter(Supplier<String> counterNameSupplier, int increment) {}
+ 
+     static ProfilerFiller combine(ProfilerFiller first, ProfilerFiller second) {
+-        if (first == InactiveProfiler.INSTANCE) {
+-            return second;
+-        } else {
+-            return (ProfilerFiller)(second == InactiveProfiler.INSTANCE ? first : new ProfilerFiller.CombinedProfileFiller(first, second));
+-        }
+-    }
+-
+-    public static class CombinedProfileFiller implements ProfilerFiller {
+-        private final ProfilerFiller first;
+-        private final ProfilerFiller second;
+-
+-        public CombinedProfileFiller(ProfilerFiller first, ProfilerFiller second) {
+-            this.first = first;
+-            this.second = second;
+-        }
+-
+-        @Override
+-        public void startTick() {
+-            this.first.startTick();
+-            this.second.startTick();
+-        }
+-
+-        @Override
+-        public void endTick() {
+-            this.first.endTick();
+-            this.second.endTick();
+-        }
+-
+-        @Override
+-        public void push(String name) {
+-            this.first.push(name);
+-            this.second.push(name);
+-        }
+-
+-        @Override
+-        public void push(Supplier<String> nameSupplier) {
+-            this.first.push(nameSupplier);
+-            this.second.push(nameSupplier);
+-        }
+-
+-        @Override
+-        public void markForCharting(MetricCategory category) {
+-            this.first.markForCharting(category);
+-            this.second.markForCharting(category);
+-        }
+-
+-        @Override
+-        public void pop() {
+-            this.first.pop();
+-            this.second.pop();
+-        }
+-
+-        @Override
+-        public void popPush(String name) {
+-            this.first.popPush(name);
+-            this.second.popPush(name);
+-        }
+-
+-        @Override
+-        public void popPush(Supplier<String> nameSupplier) {
+-            this.first.popPush(nameSupplier);
+-            this.second.popPush(nameSupplier);
+-        }
+-
+-        @Override
+-        public void incrementCounter(String counterName, int increment) {
+-            this.first.incrementCounter(counterName, increment);
+-            this.second.incrementCounter(counterName, increment);
+-        }
+-
+-        @Override
+-        public void incrementCounter(Supplier<String> counterNameSupplier, int increment) {
+-            this.first.incrementCounter(counterNameSupplier, increment);
+-            this.second.incrementCounter(counterNameSupplier, increment);
+-        }
+-
+-        @Override
+-        public void addZoneText(String text) {
+-            this.first.addZoneText(text);
+-            this.second.addZoneText(text);
+-        }
+-
+-        @Override
+-        public void addZoneValue(long value) {
+-            this.first.addZoneValue(value);
+-            this.second.addZoneValue(value);
+-        }
+-
+-        @Override
+-        public void setZoneColor(int color) {
+-            this.first.setZoneColor(color);
+-            this.second.setZoneColor(color);
+-        }
++        return InactiveProfiler.INSTANCE;
+     }
+ }
+diff --git a/net/minecraft/util/profiling/TracyZoneFiller.java b/net/minecraft/util/profiling/TracyZoneFiller.java
+index 4f855149f2a06379ecdc7d9218e40ef4887e1d6f..7f4997fdb5d4c6bdaa4aaadb88c9fb05c1aca4c9 100644
+--- a/net/minecraft/util/profiling/TracyZoneFiller.java
++++ b/net/minecraft/util/profiling/TracyZoneFiller.java
+@@ -43,7 +43,6 @@ public class TracyZoneFiller implements ProfilerFiller {
+             Optional<StackFrame> optional = STACK_WALKER.walk(
+                 stream -> stream.filter(
+                         stackFrame1 -> stackFrame1.getDeclaringClass() != TracyZoneFiller.class
+-                            && stackFrame1.getDeclaringClass() != ProfilerFiller.CombinedProfileFiller.class
+                     )
+                     .findFirst()
+             );
