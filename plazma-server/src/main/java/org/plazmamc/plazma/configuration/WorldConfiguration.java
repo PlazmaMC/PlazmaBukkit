@@ -57,6 +57,17 @@ public class WorldConfiguration extends ConfigurationPart {
             public int maxLoadsPerTick = 10;
             public int maxLoadsPerProjectile = Options.OPTIMIZE ? 8 : 10;
         }
+
+        public Spawner spawner;
+
+        public class Spawner extends ConfigurationPart {
+            public DeadlockTimer deadlockTimer;
+
+            public class DeadlockTimer extends ConfigurationPart {
+                public boolean enabled = Options.OPTIMIZE;
+                public int timeout = 24000;
+            }
+        }
     }
 
     public Environment environment;

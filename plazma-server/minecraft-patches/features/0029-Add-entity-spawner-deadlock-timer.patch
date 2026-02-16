@@ -1,0 +1,61 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: IPECTER <ipectert@gmail.com>
+Date: Mon, 16 Feb 2026 18:09:09 +0900
+Subject: [PATCH] Add entity spawner deadlock timer
+
+
+diff --git a/net/minecraft/world/level/BaseSpawner.java b/net/minecraft/world/level/BaseSpawner.java
+index 41ba9f234e840fadee3c8a52ba9655b97a8b7381..5a36144426a43bc64ea91e5129fddb73dd7c6b74 100644
+--- a/net/minecraft/world/level/BaseSpawner.java
++++ b/net/minecraft/world/level/BaseSpawner.java
+@@ -54,6 +54,10 @@ public abstract class BaseSpawner {
+     public int requiredPlayerRange = 16;
+     public int spawnRange = 4;
+     private int tickDelay = 0; // Paper - Configurable mob spawner tick rate
++    // Plazma start - Add entity spawner deadlock timer
++    private int blockExistsTick = 0;
++    private boolean blockLockedByTime = false;
++    // Plazma end - Add entity spawner deadlock timer
+ 
+     public void setEntityId(EntityType<?> type, @Nullable Level level, RandomSource random, BlockPos pos) {
+         this.getOrCreateNextSpawnData(level, random, pos).getEntityToSpawn().putString("id", BuiltInRegistries.ENTITY_TYPE.getKey(type).toString());
+@@ -85,6 +89,17 @@ public abstract class BaseSpawner {
+     }
+ 
+     public void serverTick(ServerLevel serverLevel, BlockPos pos) {
++        // Plazma start - Add entity spawner deadlock timer
++        if (serverLevel.plazmaConfig().entities.spawner.deadlockTimer.enabled) {
++            if (!blockLockedByTime) {
++                if (blockExistsTick > serverLevel.plazmaConfig().entities.spawner.deadlockTimer.timeout)
++                    blockLockedByTime = true;
++                else blockExistsTick++;
++            }
++
++            if (blockLockedByTime && serverLevel.getBestNeighborSignal(pos) > 0) return;
++        }
++        // Plazma end - Add entity spawner deadlock timer
+         if (spawnCount <= 0 || maxNearbyEntities <= 0) return; // Paper - Ignore impossible spawn tick
+         // Paper start - Configurable mob spawner tick rate
+         if (spawnDelay > 0 && --tickDelay > 0) return;
+@@ -253,6 +268,10 @@ public abstract class BaseSpawner {
+         this.requiredPlayerRange = input.getIntOr("RequiredPlayerRange", 16);
+         this.spawnRange = input.getIntOr("SpawnRange", 4);
+         this.displayEntity = null;
++        // Plazma start - Add entity spawner deadlock timer
++        this.blockExistsTick = input.getIntOr("Plazma.SpawnerTicks", 0);
++        this.blockLockedByTime = input.getBooleanOr("Plazma.SpawnerLocked", false);
++        // Plazma end - Add entity spawner deadlock timer
+     }
+ 
+     public void save(ValueOutput output) {
+@@ -275,6 +294,10 @@ public abstract class BaseSpawner {
+         output.putShort("SpawnRange", (short)this.spawnRange);
+         output.storeNullable("SpawnData", SpawnData.CODEC, this.nextSpawnData);
+         output.store("SpawnPotentials", SpawnData.LIST_CODEC, this.spawnPotentials);
++        // Plazma start - Add entity spawner deadlock timer
++        output.putInt("Plazma.SpawnerTicks", blockExistsTick);
++        output.putBoolean("Plazma.SpawnerLocked", blockLockedByTime);
++        // Plazma end - Add entity spawner deadlock timer
+     }
+ 
+     @Nullable
