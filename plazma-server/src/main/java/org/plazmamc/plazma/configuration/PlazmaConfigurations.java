@@ -127,7 +127,9 @@ public final class PlazmaConfigurations extends Configurations<GlobalConfigurati
 
     @Override
     protected ConfigurationOptions defaultGlobalOptions(final ConfigurationOptions options, final RegistryAccess registryAccess) {
-        return options;
+        return options.serializers(builder -> builder
+                .register(new RegistryValueSerializer<>(Block.class, registryAccess, Registries.BLOCK, true))
+        );
     }
 
     @Override
