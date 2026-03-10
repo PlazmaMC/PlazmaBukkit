@@ -189,6 +189,18 @@ index bd1f0ba488ff9f12de4b85c97617638592bab09c..6a116aba3e8e77a6d7b4d22822cf368b
          public AlternateCurrentUpdateOrder alternateCurrentUpdateOrder = AlternateCurrentUpdateOrder.HORIZONTAL_FIRST_OUTWARD;
          public boolean disableEndCredits = false;
          public DoubleOr.Default maxLeashDistance = DoubleOr.Default.USE_DEFAULT;
+diff --git a/src/main/java/io/papermc/paper/configuration/type/fallback/ArrowDespawnRate.java b/src/main/java/io/papermc/paper/configuration/type/fallback/ArrowDespawnRate.java
+index 24763d3d270c29c95e0b3e85111145234f660a62..ec0425c2e75dd29632389c30b37d759f2118d3ab 100644
+--- a/src/main/java/io/papermc/paper/configuration/type/fallback/ArrowDespawnRate.java
++++ b/src/main/java/io/papermc/paper/configuration/type/fallback/ArrowDespawnRate.java
+@@ -29,6 +29,7 @@ public class ArrowDespawnRate extends FallbackValue.Int {
+ 
+     @Override
+     protected int fallback() {
++        if (org.plazmamc.plazma.Options.OPTIMIZE) return 20; // Plazma - Optimize default configuration
+         return this.get(FallbackValue.SPIGOT_WORLD_CONFIG).arrowDespawnRate;
+     }
+ 
 diff --git a/src/main/java/org/bukkit/craftbukkit/CraftServer.java b/src/main/java/org/bukkit/craftbukkit/CraftServer.java
 index dcd52c55cec5123f5f8883996bb050de5ab342f3..3e4bac4ca20abeb6e7fe4d4a177526a7c7780323 100644
 --- a/src/main/java/org/bukkit/craftbukkit/CraftServer.java
@@ -203,7 +215,7 @@ index dcd52c55cec5123f5f8883996bb050de5ab342f3..3e4bac4ca20abeb6e7fe4d4a177526a7
          this.configuration.options().setHeader(configurationDefaults.options().getHeader());
          ConfigurationSection legacyAlias = null;
 diff --git a/src/main/java/org/spigotmc/SpigotWorldConfig.java b/src/main/java/org/spigotmc/SpigotWorldConfig.java
-index 43c6240ec2855c0f668ce04de29d22a223d2612f..5eddad06d886c4a35391ae12db1cd388b9f0c00b 100644
+index 43c6240ec2855c0f668ce04de29d22a223d2612f..8e357bafc7828fd491b13a1689b298bf85ae147f 100644
 --- a/src/main/java/org/spigotmc/SpigotWorldConfig.java
 +++ b/src/main/java/org/spigotmc/SpigotWorldConfig.java
 @@ -174,7 +174,7 @@ public class SpigotWorldConfig {
@@ -285,15 +297,17 @@ index 43c6240ec2855c0f668ce04de29d22a223d2612f..5eddad06d886c4a35391ae12db1cd388
          this.hopperAmount = this.getInt("hopper-amount", 1);
          this.hopperCanLoadChunks = this.getBoolean("hopper-can-load-chunks", false);
          this.log("Hopper Transfer: " + this.hopperTransfer + " Hopper Check: " + this.hopperCheck + " Hopper Amount: " + this.hopperAmount + " Hopper Can Load Chunks: " + this.hopperCanLoadChunks);
-@@ -278,7 +278,7 @@ public class SpigotWorldConfig {
+@@ -278,8 +278,8 @@ public class SpigotWorldConfig {
      public int arrowDespawnRate;
      public int tridentDespawnRate;
      private void arrowDespawnRate() {
 -        this.arrowDespawnRate = this.getInt("arrow-despawn-rate", 1200);
-+        this.arrowDespawnRate = this.getInt("arrow-despawn-rate", org.plazmamc.plazma.Options.OPTIMIZE ? 20 : 1200); // Plazma - Optimize default configuration
-         this.tridentDespawnRate = this.getInt("trident-despawn-rate", this.arrowDespawnRate);
+-        this.tridentDespawnRate = this.getInt("trident-despawn-rate", this.arrowDespawnRate);
++        this.arrowDespawnRate = this.getInt("arrow-despawn-rate", org.plazmamc.plazma.Options.OPTIMIZE ? 300 : 1200); // Plazma - Optimize default configuration
++        this.tridentDespawnRate = this.getInt("trident-despawn-rate", 1200); // Plazma - Optimize default configuration
          this.log("Arrow Despawn Rate: " + this.arrowDespawnRate + " Trident Respawn Rate:" + this.tridentDespawnRate);
      }
+ 
 @@ -291,7 +291,7 @@ public class SpigotWorldConfig {
  
      public boolean nerfSpawnerMobs;
