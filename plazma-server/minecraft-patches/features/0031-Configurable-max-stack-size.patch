@@ -1,0 +1,58 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: IPECTER <ipectert@gmail.com>
+Date: Tue, 10 Mar 2026 23:06:01 +0900
+Subject: [PATCH] Configurable max stack size
+
+
+diff --git a/net/minecraft/core/component/DataComponents.java b/net/minecraft/core/component/DataComponents.java
+index 3c97531a7bbcd84b80d4704aaa27b913652f4019..6ea4724f6726c001461b67fc6c8e4446546a3bf0 100644
+--- a/net/minecraft/core/component/DataComponents.java
++++ b/net/minecraft/core/component/DataComponents.java
+@@ -93,7 +93,7 @@ public class DataComponents {
+     static final EncoderCache ENCODER_CACHE = new EncoderCache(512);
+     public static final DataComponentType<CustomData> CUSTOM_DATA = register("custom_data", builder -> builder.persistent(CustomData.CODEC));
+     public static final DataComponentType<Integer> MAX_STACK_SIZE = register(
+-        "max_stack_size", builder -> builder.persistent(ExtraCodecs.intRange(1, 99)).networkSynchronized(ByteBufCodecs.VAR_INT)
++        "max_stack_size", builder -> builder.persistent(ExtraCodecs.intRange(1, org.plazmamc.plazma.Options.MAX_STACK_SIZE)).networkSynchronized(ByteBufCodecs.VAR_INT) // Plazma - Configurable max stack size
+     );
+     public static final DataComponentType<Integer> MAX_DAMAGE = register(
+         "max_damage", builder -> builder.persistent(ExtraCodecs.POSITIVE_INT).networkSynchronized(ByteBufCodecs.VAR_INT)
+diff --git a/net/minecraft/world/item/Item.java b/net/minecraft/world/item/Item.java
+index aa165b517326688be0027e0ad5d62d1606a64825..c24b75b006097388b5a0f6e1132f82eb0ec0b8d8 100644
+--- a/net/minecraft/world/item/Item.java
++++ b/net/minecraft/world/item/Item.java
+@@ -95,7 +95,7 @@ public class Item implements FeatureElement, ItemLike {
+     public static final ResourceLocation BASE_ATTACK_DAMAGE_ID = ResourceLocation.withDefaultNamespace("base_attack_damage");
+     public static final ResourceLocation BASE_ATTACK_SPEED_ID = ResourceLocation.withDefaultNamespace("base_attack_speed");
+     public static final int DEFAULT_MAX_STACK_SIZE = 64;
+-    public static final int ABSOLUTE_MAX_STACK_SIZE = 99;
++    public static final int ABSOLUTE_MAX_STACK_SIZE = org.plazmamc.plazma.Options.MAX_STACK_SIZE; // Plazma - Configurable max stack size
+     public static final int MAX_BAR_WIDTH = 13;
+     protected static final int APPROXIMATELY_INFINITE_USE_DURATION = 72000;
+     private final Holder.Reference<Item> builtInRegistryHolder = BuiltInRegistries.ITEM.createIntrusiveHolder(this);
+diff --git a/net/minecraft/world/item/ItemStack.java b/net/minecraft/world/item/ItemStack.java
+index d3892cc9ef3ab66a45fe3ab72e8a5ef8b904b7c0..2565dcfee2bb80aafc8802de281b1b811eb0756c 100644
+--- a/net/minecraft/world/item/ItemStack.java
++++ b/net/minecraft/world/item/ItemStack.java
+@@ -106,7 +106,7 @@ public final class ItemStack implements DataComponentHolder {
+         codec -> RecordCodecBuilder.mapCodec(
+             instance -> instance.group(
+                     Item.CODEC.fieldOf("id").forGetter(ItemStack::getItemHolder),
+-                    ExtraCodecs.intRange(1, 99).fieldOf("count").orElse(1).forGetter(ItemStack::getCount),
++                    ExtraCodecs.intRange(1, org.plazmamc.plazma.Options.MAX_STACK_SIZE).fieldOf("count").orElse(1).forGetter(ItemStack::getCount), // Plazma - Configurable max stack size
+                     DataComponentPatch.CODEC.optionalFieldOf("components", DataComponentPatch.EMPTY).forGetter(stack -> stack.components.asPatch())
+                 )
+                 .apply(instance, ItemStack::new)
+diff --git a/net/minecraft/world/item/crafting/TransmuteResult.java b/net/minecraft/world/item/crafting/TransmuteResult.java
+index 7e9e052d0afc4a8fe7709a6cee4d54151bd40385..3edbfee77b0976f9bb24629516750cf5b524663f 100644
+--- a/net/minecraft/world/item/crafting/TransmuteResult.java
++++ b/net/minecraft/world/item/crafting/TransmuteResult.java
+@@ -17,7 +17,7 @@ public record TransmuteResult(Holder<Item> item, int count, DataComponentPatch c
+     private static final Codec<TransmuteResult> FULL_CODEC = RecordCodecBuilder.create(
+         instance -> instance.group(
+                 Item.CODEC.fieldOf("id").forGetter(TransmuteResult::item),
+-                ExtraCodecs.intRange(1, 99).optionalFieldOf("count", 1).forGetter(TransmuteResult::count),
++                ExtraCodecs.intRange(1, org.plazmamc.plazma.Options.MAX_STACK_SIZE).optionalFieldOf("count", 1).forGetter(TransmuteResult::count), // Plazma - Configurable max stack size
+                 DataComponentPatch.CODEC.optionalFieldOf("components", DataComponentPatch.EMPTY).forGetter(TransmuteResult::components)
+             )
+             .apply(instance, TransmuteResult::new)
