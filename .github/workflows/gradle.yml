@@ -4,7 +4,6 @@ on:
   push:
     branches: [ "ver/*", "dev/*", "feat/**/*" ]
     paths:
-      - "*.kt"
       - "*.kts"
       - "*.toml"
       - "gradle-wrapper.*"
@@ -13,31 +12,26 @@ on:
 jobs:
   check:
     name: Test Gradle build script
-    strategy:
-      matrix:
-        jdk: [21]
-        java: ['zulu']
-        os: [ubuntu-22.04]
-
-    if: "!contains(github.event.commits[0].message, '[CheckSkip]')"
-    runs-on: ${{ matrix.os }}
+    if: "!contains(github.event.commits[0].message, 'nocheck')"
+    runs-on: ubuntu-latest
     steps:
       - name: Checkout action
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
 
       - name: Validate Gradle Wrapper
-        uses: gradle/actions/wrapper-validation@v4
+        uses: gradle/actions/wrapper-validation@v5
 
-      - name: Set up JDK ${{ matrix.java }} ${{ matrix.jdk }}
-        uses: actions/setup-java@v4
+      - name: Set up JDK
+        uses: actions/setup-java@v5
         with:
-          distribution: ${{ matrix.java }}
-          java-version: ${{ matrix.jdk }}
+          distribution: jetbrains
+          java-version: 21
           cache: 'gradle'
 
       - name: Configure Git
         run: |
-          git config --global user.email "41898282+github-actions[bot]@users.noreply.github.com" && git config --global user.name "github-actions[bot]"
+          git config --global user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git config --global user.name "github-actions[bot]"
 
       - name: Run Gradle
-        run: ./gradlew --stacktrace
+        run: ./gradlew --info --stacktrace
