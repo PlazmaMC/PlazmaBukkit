@@ -94,7 +94,7 @@ subprojects {
                             ?: System.getenv("MAVEN_PASSWORD")
                 }
             }
-            maven("https://repo.codemc.io/repository/maven-snapshots/") {
+            maven("https://repo.codemc.io/repository/plazmamc/") {
                 name = "codemc"
                 credentials {
                     username = mavenUsername ?: System.getenv("GRADLE_PROPERTY_MAVEN_USERNAME")
