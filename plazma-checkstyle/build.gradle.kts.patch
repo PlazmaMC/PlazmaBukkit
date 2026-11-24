@@ -1,30 +1,11 @@
 --- a/paper-checkstyle/build.gradle.kts
 +++ b/paper-checkstyle/build.gradle.kts
-@@ -5,6 +_,28 @@
+@@ -5,6 +_,9 @@
  
  val testData = sourceSets.create("testData")
  
-+// Plazma start - Rebrand
-+val paperCheckstyle = rootProject.layout.projectDirectory.dir("paper-checkstyle")
-+
-+testData.java.srcDir(paperCheckstyle.file("src/testData/java"))
-+testData.resources.srcDir(paperCheckstyle.file("src/testData/resources"))
-+
-+tasks.named<io.papermc.paperweight.checkstyle.tasks.MergeCheckstyleConfigs>("mergeCheckstyleConfigs") {
-+    overrideConfigFile.set(paperCheckstyle.file(".checkstyle/checkstyle.xml"))
-+}
-+
-+sourceSets {
-+    main {
-+        java.srcDir(paperCheckstyle.file("src/main/java"))
-+        resources.srcDir(paperCheckstyle.file("src/main/resources"))
-+    }
-+    test {
-+        java.srcDir(paperCheckstyle.file("src/test/java"))
-+        resources.srcDir(paperCheckstyle.file("src/test/resources"))
-+    }
-+}
-+// Plazma end - Rebrand
++val paperCheckstyle = setup(rootProject.layout.projectDirectory.dir("paper-checkstyle")) // Plazma - Rebrand
++testData.registerUpstreamSources(paperCheckstyle) // Plazma - Rebrand
 +
  dependencies {
      implementation("com.puppycrawl.tools:checkstyle:14.3.0")

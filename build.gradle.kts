@@ -1,5 +1,12 @@
 plugins {
-    alias(libs.plugins.paperweight.patcher)
+    id("io.papermc.paperweight.patcher")
+}
+
+subprojects {
+    repositories {
+        mavenCentral()
+        maven("https://repo.papermc.io/repository/maven-public/")
+    }
 }
 
 paperweight {
@@ -45,12 +52,5 @@ paperweight {
             outputDir = file(".checkstyle")
             patchesDir = file("plazma-checkstyle/paper-config-patches")
         }
-    }
-}
-
-subprojects {
-    repositories {
-        mavenCentral()
-        maven("https://repo.papermc.io/repository/maven-public/")
     }
 }

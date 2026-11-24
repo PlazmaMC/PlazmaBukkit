@@ -1,13 +1,23 @@
 --- a/paper-api/build.gradle.kts
 +++ b/paper-api/build.gradle.kts
-@@ -1,6 +_,3 @@
+@@ -1,12 +_,9 @@
 -import io.papermc.paperweight.checkstyle.JavadocTag
 -import paper.libs.com.google.gson.Gson
 -
  plugins {
-     `java-library`
-     `maven-publish`
-@@ -14,13 +_,21 @@
+-    `java-library`
+-    `maven-publish`
+-    idea
+-    id("io.papermc.paperweight.paper-checkstyle")
++    id("build-logic.basic")
+ }
++
++val paperApi = setup(rootProject.layout.projectDirectory.dir("paper-api")) // Plazma - Rebrand
++configurePaperweight(paperApi) // Plazma - Rebrand
+ 
+ java {
+     withSourcesJar()
+@@ -14,12 +_,11 @@
  }
  
  val projectCustomJavadocTags = setOf(
@@ -15,60 +25,55 @@
 +    io.papermc.paperweight.checkstyle.JavadocTag("apiNote", "a", "API Note:"), // Plazma
  )
  
-+val paperApi = rootProject.layout.projectDirectory.dir("paper-api") // Plazma - Rebrand
-+
  paperCheckstyle {
      customJavadocTags = projectCustomJavadocTags
 -    directoriesToSkipFile = layout.projectDirectory.file(".checkstyle/ignored_directories.txt")
--}
-+    directoriesToSkipFile = paperApi.file(".checkstyle/ignored_directories.txt") // Plazma - Rebrand
-+}
-+
-+// Plazma start - Rebrand
-+tasks.named<io.papermc.paperweight.checkstyle.tasks.MergeCheckstyleConfigs>("mergeCheckstyleConfigs") {
-+    overrideConfigFile.set(paperApi.file(".checkstyle/checkstyle.xml"))
-+}
-+// Plazma end - Rebrand
+ }
  
  val annotationsVersion = "26.1.0"
- val adventureVersion = "5.2.0"
-@@ -103,21 +_,35 @@
+@@ -41,17 +_,6 @@
+     }
+ }
+ 
+-// Configure mockito agent that is needed in newer Java versions
+-val mockitoAgent = configurations.register("mockitoAgent")
+-abstract class MockitoAgentProvider : CommandLineArgumentProvider {
+-    @get:CompileClasspath
+-    abstract val fileCollection: ConfigurableFileCollection
+-
+-    override fun asArguments(): Iterable<String> {
+-        return listOf("-javaagent:" + fileCollection.files.single().absolutePath)
+-    }
+-}
+-
+ dependencies {
+     // api dependencies are listed transitively to API consumers
+     api("com.google.guava:guava:33.6.0-jre")
+@@ -99,25 +_,11 @@
+     testImplementation("org.hamcrest:hamcrest:2.2")
+     testImplementation("org.mockito:mockito-core:5.22.0")
+     testImplementation("org.ow2.asm:asm-tree:9.9.1")
+-    mockitoAgent("org.mockito:mockito-core:5.22.0") { isTransitive = false } // configure mockito agent that is needed in newer java versions
++    "mockitoAgent"("org.mockito:mockito-core:5.22.0") { isTransitive = false } // configure mockito agent that is needed in newer java versions
      testRuntimeOnly("org.junit.platform:junit-platform-launcher:6.0.3")
  
      // checkstyle
 -    checkstyle(project(":paper-checkstyle"))
-+    checkstyle(project(":plazma-checkstyle")) // Plazma - Rebrand
- }
- 
+-}
+-
 -val generatedDir: java.nio.file.Path = layout.projectDirectory.dir("src/generated/java").asFile.toPath()
-+val generatedDir: java.nio.file.Path = paperApi.dir("src/generated/java").asFile.toPath() // Plazma - Rebrand
- idea {
-     module {
-         generatedSourceDirs.add(generatedDir.toFile())
-     }
- }
- sourceSets {
-+    // Plazma start
-     main {
-         java {
-             srcDir(generatedDir)
+-idea {
+-    module {
+-        generatedSourceDirs.add(generatedDir.toFile())
+-    }
+-}
+-sourceSets {
+-    main {
+-        java {
+-            srcDir(generatedDir)
 -        }
 -    }
-+            srcDir(paperApi.file("src/main/java"))
-+        }
-+        resources {
-+            srcDir(paperApi.file("src/main/resources"))
-+        }
-+    }
-+    test {
-+        java {
-+            srcDir(paperApi.file("src/test/java"))
-+        }
-+        resources {
-+            srcDir(paperApi.file("src/test/resources"))
-+        }
-+    }
-+    // Plazma end
++    checkstyle(project(":plazma-checkstyle")) // Plazma - Rebrand
  }
  
  val outgoingVariants = arrayOf("runtimeElements", "apiElements", "sourcesElements", "javadocElements")
@@ -81,6 +86,20 @@
      }
  }
  
+@@ -185,6 +_,13 @@
+     from(generateApiVersioningFile.flatMap { it.outputFile })
+ }
+ 
++// Plazma start - moved up
++tasks.test {
++    useJUnitPlatform()
++    attachMockitoAgent()
++}
++// Plazma end
++
+ abstract class Services {
+     @get:Inject
+     abstract val fileSystemOperations: FileSystemOperations
 @@ -193,7 +_,8 @@
  
  tasks.withType<Javadoc>().configureEach {
@@ -91,7 +110,7 @@
      options.use()
      options.isDocFilesSubDirs = true
      options.links(
-@@ -220,11 +_,11 @@
+@@ -220,37 +_,14 @@
      }
  
      // workaround for https://github.com/gradle/gradle/issues/4046
@@ -105,3 +124,29 @@
                  include("**/doc-files/**")
              }
              into("build/docs/javadoc")
+         }
+     }
+-}
+-
+-tasks.test {
+-    useJUnitPlatform()
+-
+-    // configure mockito agent that is needed in newer java versions
+-    val provider = objects.newInstance<MockitoAgentProvider>()
+-    provider.fileCollection.from(mockitoAgent)
+-    jvmArgumentProviders.add(provider)
+-}
+-
+-// Compile tests with -parameters for better junit parameterized test names
+-tasks.compileTestJava {
+-    options.compilerArgs.add("-parameters")
+-}
+-
+-val scanJarForBadCalls = tasks.register<io.papermc.paperweight.tasks.ScanJarForBadCalls>("scanJarForBadCalls") {
+-    badAnnotations.add("Lio/papermc/paper/annotation/DoNotUse;")
+-    jarToScan.set(tasks.jar.flatMap { it.archiveFile })
+-    classpath.from(configurations.compileClasspath)
+-}
+-tasks.check {
+-    dependsOn(scanJarForBadCalls)
+ }
