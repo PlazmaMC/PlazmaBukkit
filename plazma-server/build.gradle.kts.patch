@@ -1,6 +1,6 @@
 --- a/paper-server/build.gradle.kts
 +++ b/paper-server/build.gradle.kts
-@@ -1,18 +_,14 @@
+@@ -1,41 +_,44 @@
 -import io.papermc.fill.model.BuildChannel
  import io.papermc.paperweight.attribute.DevBundleOutput
  import io.papermc.paperweight.util.*
@@ -21,8 +21,15 @@
 +configurePaperweight(paperServer) // Plazma - Rebrand
  
  dependencies {
-     mache("io.papermc:mache:26.3+build.2")
-@@ -23,19 +_,24 @@
+-    mache("io.papermc:mache:26.3+build.2")
+-    paperclip("io.papermc:paperclip:3.0.4")
++    // Plazma start - use version catalog
++    mache(libs.mache)
++    paperclip(libs.paperclip)
++    // Plazma end - use version catalog
+ }
+ 
+ paperweight {
      minecraftVersion = providers.gradleProperty("mcVersion")
      gitFilePatches = false
  
@@ -61,7 +68,7 @@
  configurations.named(log4jPlugins.compileClasspathConfigurationName) {
      extendsFrom(configurations.compileClasspath.get())
  }
-@@ -102,19 +_,8 @@
+@@ -102,27 +_,14 @@
      extendsFrom(configurations.getByName(sourceSets.main.get().runtimeElementsConfigurationName))
  }
  
@@ -78,22 +85,84 @@
 -
  dependencies {
 -    implementation(project(":paper-api"))
+-    implementation(platform("ca.spottedleaf.leafpile:bom:1.3.2"))
+-    implementation("ca.spottedleaf.leafpile:common")
+-    implementation("ca.spottedleaf.leafpile:concurrentutil")
+-    implementation("ca.spottedleaf.leafpile:converter")
+-    implementation("ca.spottedleaf.leafpile:ioutil")
+-    implementation("org.jline:jline-terminal-ffm:4.4.6")
+-    implementation("net.minecrell:terminalconsoleappender:1.3.0")
+-    implementation("net.kyori:adventure-text-serializer-ansi")
 +    implementation(project(":plazma-api")) // Plazma - Rebrand
-     implementation(platform("ca.spottedleaf.leafpile:bom:1.3.2"))
-     implementation("ca.spottedleaf.leafpile:common")
-     implementation("ca.spottedleaf.leafpile:concurrentutil")
-@@ -158,35 +_,37 @@
-     testImplementation("org.junit.platform:junit-platform-suite-engine:6.0.3")
-     testImplementation("org.hamcrest:hamcrest:2.2")
-     testImplementation("org.mockito:mockito-core:5.22.0")
++    // Plazma start - use version catalog
++    implementation(platform(libs.leafpile))
++    implementation(libs.bundles.leafpile)
++    implementation(libs.jline)
++    implementation(libs.tca)
++    implementation(libs.adventure.text.serializer.ansi)
+ 
+     /*
+       Required to add the missing Log4j2Plugins.dat file from log4j-core
+@@ -130,63 +_,61 @@
+       all its classes to check if they are plugins.
+       Scanning takes about 1-2 seconds so adding this speeds up the server start.
+      */
+-    implementation("org.apache.logging.log4j:log4j-core:2.26.0")
+-    log4jPlugins.annotationProcessorConfigurationName("org.apache.logging.log4j:log4j-core:2.26.0") // Needed to generate meta for our Log4j plugins
++    implementation(libs.log4j.core)
++    log4jPlugins.annotationProcessorConfigurationName(libs.log4j.core) // Needed to generate meta for our Log4j plugins
+     runtimeOnly(log4jPlugins.output)
+     alsoShade(log4jPlugins.output)
+ 
+-    implementation("com.velocitypowered:velocity-native:4.1.0") {
+-        isTransitive = false
+-    }
+-    implementation("io.netty:netty-codec-haproxy:4.2.16.Final") // Add support for proxy protocol
+-    implementation("org.apache.logging.log4j:log4j-iostreams:2.26.0")
+-    implementation("org.ow2.asm:asm-commons:9.9.1")
+-    implementation("org.spongepowered:configurate-yaml:4.2.0")
++    implementation(libs.velocity) { isTransitive = false }
++    implementation(libs.netty.codec.haproxy) // Add support for proxy protocol
++    implementation(libs.log4j.iostreams)
++    implementation(libs.asm.commons)
++    implementation(libs.configurate.yaml)
+ 
+     // Deps that were previously in the API but have now been moved here for backwards compat, eventually to be removed
+-    runtimeOnly("commons-lang:commons-lang:2.6")
+-    runtimeOnly("org.xerial:sqlite-jdbc:3.49.1.0")
+-    runtimeOnly("com.mysql:mysql-connector-j:9.2.0")
+-    runtimeOnly("com.lmax:disruptor:3.4.4")
+-    implementation("com.googlecode.json-simple:json-simple:1.1.1") { // change to runtimeOnly once Timings is removed
++    runtimeOnly(libs.commons.lang2)
++    runtimeOnly(libs.jdbc.sqlite)
++    runtimeOnly(libs.jdbc.mysql)
++    runtimeOnly(libs.disruptor)
++    implementation(libs.serialization.jsonSimple) { // change to runtimeOnly once Timings is removed
+         isTransitive = false // includes junit
+     }
+ 
+-    testImplementation("io.github.classgraph:classgraph:4.8.184") // For mob goal test
+-    testRuntimeOnly("org.junit.platform:junit-platform-launcher:6.0.3")
+-    testImplementation("org.junit.jupiter:junit-jupiter:6.0.3")
+-    testImplementation("org.junit.platform:junit-platform-suite-engine:6.0.3")
+-    testImplementation("org.hamcrest:hamcrest:2.2")
+-    testImplementation("org.mockito:mockito-core:5.22.0")
 -    mockitoAgent("org.mockito:mockito-core:5.22.0") { isTransitive = false } // Configure mockito agent that is needed in newer java versions
-+    "mockitoAgent"("org.mockito:mockito-core:5.22.0") { isTransitive = false } // Configure mockito agent that is needed in newer java versions
-     testImplementation("org.ow2.asm:asm-tree:9.9.1")
-     testImplementation("org.junit-pioneer:junit-pioneer:2.3.0") // CartesianTest
+-    testImplementation("org.ow2.asm:asm-tree:9.9.1")
+-    testImplementation("org.junit-pioneer:junit-pioneer:2.3.0") // CartesianTest
++    testImplementation(libs.test.classgraph) // For mob goal test
++    testImplementation(libs.test.junit.platform.engine)
++    testImplementation(libs.test.junitPioneer) // CartesianTest
++    testImplementation(libs.bundles.test)
++    "mockitoAgent"(libs.test.mockito) { isTransitive = false } // Configure mockito agent that is needed in newer java versions
++    testRuntimeOnly(libs.test.junit.platform.launcher)
  
      // Spark
-     implementation("me.lucko:spark-api:0.1-20240720.200737-2")
-     implementation("me.lucko:spark-paper:1.10.191")
+-    implementation("me.lucko:spark-api:0.1-20240720.200737-2")
+-    implementation("me.lucko:spark-paper:1.10.191")
++    implementation(libs.spark.api)
++    implementation(libs.spark)
++    // Plazma end - use version catalog
 +
 +    checkstyle(project(":plazma-checkstyle")) // Plazma - Rebrand
  }
