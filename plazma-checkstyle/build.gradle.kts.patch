@@ -1,42 +1,45 @@
 --- a/paper-checkstyle/build.gradle.kts
 +++ b/paper-checkstyle/build.gradle.kts
-@@ -4,6 +_,25 @@
- }
+@@ -5,6 +_,28 @@
  
  val testData = sourceSets.create("testData")
-+// Plazma start
-+testData.java.srcDir(rootProject.file("paper-checkstyle/src/testData/java"))
-+testData.resources.srcDir(rootProject.file("paper-checkstyle/src/testData/resources"))
+ 
++// Plazma start - Rebrand
++val paperCheckstyle = rootProject.layout.projectDirectory.dir("paper-checkstyle")
++
++testData.java.srcDir(paperCheckstyle.file("src/testData/java"))
++testData.resources.srcDir(paperCheckstyle.file("src/testData/resources"))
 +
 +tasks.named<io.papermc.paperweight.checkstyle.tasks.MergeCheckstyleConfigs>("mergeCheckstyleConfigs") {
-+    overrideConfigFile.set(rootProject.layout.projectDirectory.file("paper-checkstyle/.checkstyle/checkstyle.xml"))
++    overrideConfigFile.set(paperCheckstyle.file(".checkstyle/checkstyle.xml"))
 +}
 +
 +sourceSets {
 +    main {
-+        java.srcDir(rootProject.file("paper-checkstyle/src/main/java"))
-+        resources.srcDir(rootProject.file("paper-checkstyle/src/main/resources"))
++        java.srcDir(paperCheckstyle.file("src/main/java"))
++        resources.srcDir(paperCheckstyle.file("src/main/resources"))
 +    }
 +    test {
-+        java.srcDir(rootProject.file("paper-checkstyle/src/test/java"))
-+        resources.srcDir(rootProject.file("paper-checkstyle/src/test/resources"))
++        java.srcDir(paperCheckstyle.file("src/test/java"))
++        resources.srcDir(paperCheckstyle.file("src/test/resources"))
 +    }
 +}
-+// Plazma end
- 
++// Plazma end - Rebrand
++
  dependencies {
      implementation("com.puppycrawl.tools:checkstyle:14.3.0")
+     implementation("org.jspecify:jspecify:1.0.0")
 @@ -16,11 +_,12 @@
      testRuntimeOnly("org.junit.platform:junit-platform-launcher")
      testData.implementationConfigurationName("org.jspecify:jspecify:1.0.0")
  
 -    checkstyle(project(":paper-checkstyle"))
-+    checkstyle(project(":plazma-checkstyle")) // Plazma
++    checkstyle(project(":plazma-checkstyle")) // Plazma - Rebrand
  }
  
  tasks {
      test {
-+        workingDir = rootProject.file("paper-checkstyle")
++        workingDir = paperCheckstyle.asFile // Plazma - Rebrand
          useJUnitPlatform()
      }
  }
