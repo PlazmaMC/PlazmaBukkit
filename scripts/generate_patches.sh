@@ -69,7 +69,7 @@ function generate_api_patches() {
     git commit -m "$source changes"
 
     write_patch_header "$name API Changes" > "$output"
-    (git diff --diff-algorithm=myers --full-index --binary 'file^..HEAD') >> "$output"
+    (git diff --diff-algorithm=myers --full-index 'file^..HEAD') >> "$output"
     local exit=$?
 
     popd
@@ -90,7 +90,7 @@ function generate_impl_patches() {
     unset src
 
     write_patch_header "$name Server Changes" > "$output"
-    (git diff --diff-algorithm=myers --full-index --binary 'file^..HEAD') >> "$output"
+    (git diff --diff-algorithm=myers --full-index 'file^..HEAD' -- ':!src/main/resources/logo.png') >> "$output"
     local exit=$?
 
     popd
@@ -106,7 +106,7 @@ function generate_minecraft_patches() {
     write_patch_header "$name Minecraft Changes" > "$output"
     for src in $(/bin/ls "$minecraft"); do
         pushd "$minecraft/$src"
-        (git diff --diff-algorithm=myers --full-index --binary 'file^..HEAD') >> "$output"
+        (git diff --diff-algorithm=myers --full-index 'file^..HEAD') >> "$output"
         popd
     done
     popd
@@ -122,7 +122,7 @@ function combine_patches_mono() {
 
     generate_api_patches "$source_dir" "$upstream-api" "$name-api" "$work_dir/../plazma-api/paper-patches/features/0001-Purpur-API-Changes.patch" "Purpur"
     generate_impl_patches "$source_dir" "$upstream-server" "$name-server" "$work_dir/../plazma-server/paper-patches/features/0001-Purpur-Server-Changes.patch" "Purpur"
-    generate_minecraft_patches "$source_dir" "$name-server" "$work_dir/../plazma-server/minecraft-patches/features/0001-Purpur-Minecraft-Changes" "Purpur"
+    generate_minecraft_patches "$source_dir" "$name-server" "$work_dir/../plazma-server/minecraft-patches/features/0001-Purpur-Minecraft-Changes.patch" "Purpur"
 
     "$source_dir/gradlew" --stop
     rm -rf "$source_dir"
