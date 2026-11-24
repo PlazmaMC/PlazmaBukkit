@@ -1,92 +1,78 @@
---- a/purpur-server/build.gradle.kts
-+++ b/purpur-server/build.gradle.kts
-@@ -36,9 +_,33 @@
-             outputDir = rootDirectory.dir("paper-server")
-         }
-     }
--    activeFork = purpur
-+    //activeFork = purpur // Plazma
-     // Purpur end - Rebrand
+--- a/paper-server/build.gradle.kts
++++ b/paper-server/build.gradle.kts
+@@ -23,14 +_,29 @@
+     minecraftVersion = providers.gradleProperty("mcVersion")
+     gitFilePatches = false
  
+-    updatingMinecraft {
+-        //oldPaperCommit = "e5fe71723e2ffde7cc9fafc085ac3bb73e63175e"
 +    // Plazma start - Rebrand
 +    val plazma = forks.register("plazma") {
-+        forks = purpur
-+        upstream.patchRepo("paperServer") {
-+            upstreamRepo = purpur.patchedRepo("paperServer")
-+            patchesDir = rootDirectory.dir("plazma-server/paper-patches")
++        upstream.patchDir("paperServer") {
++            upstreamPath = "paper-server"
 +            outputDir = rootDirectory.dir("paper-server")
++            patchesDir = rootDirectory.dir("${rootProject.name}-server/paper-patches")
++            excludes = setOf("src/minecraft", "patches", "build.gradle.kts")
 +        }
-+        upstream.patchDir("purpurServer") {
-+            upstreamPath = "purpur-server"
-+            excludes = setOf(
-+                "src/minecraft",
-+                "paper-patches",
-+                "minecraft-patches",
-+                "build.gradle.kts",
-+                "build.gradle.kts.patch"
-+            )
-+            patchesDir = rootDirectory.dir("plazma-server/purpur-patches")
-+            outputDir = rootDirectory.dir("purpur-server")
-+        }
-+    }
+     }
++
 +    activeFork = plazma
 +    // Plazma end - Rebrand
+ }
+ 
+ paperCheckstyle {
+-    directoriesToSkipFile = layout.projectDirectory.file(".checkstyle/ignored_directories.txt")
+-}
++    directoriesToSkipFile = rootProject.layout.projectDirectory.file("paper-server/.checkstyle/ignored_directories.txt") // Plazma
++}
 +
-     spigot {
-         enabled = true
-         buildDataRef = "436eac9815c211be1a2a6ca0702615f995e81c44"
-@@ -125,10 +_,14 @@
-     main {
-         java { srcDir("../paper-server/src/main/java") }
-         resources { srcDir("../paper-server/src/main/resources") }
-+        java { srcDir("../purpur-server/src/main/java") }
-+        resources { srcDir("../purpur-server/src/main/resources") }
-     }
-     test {
-         java { srcDir("../paper-server/src/test/java") }
-         resources { srcDir("../paper-server/src/test/resources") }
-+        java { srcDir("../purpur-server/src/test/java") }
-+        resources { srcDir("../purpur-server/src/test/resources") }
++// Plazma start
++tasks.named<io.papermc.paperweight.checkstyle.tasks.MergeCheckstyleConfigs>("mergeCheckstyleConfigs") {
++    overrideConfigFile.set(rootProject.layout.projectDirectory.file("paper-server/.checkstyle/checkstyle.xml"))
++}
++// Plazma end
+ 
+ tasks.generateDevelopmentBundle {
+     libraryRepositories.addAll(
+@@ -91,7 +_,22 @@
      }
  }
- val log4jPlugins = sourceSets.create("log4jPlugins") {
-@@ -156,7 +_,7 @@
+ 
+-val log4jPlugins = sourceSets.create("log4jPlugins")
++// Plazma start
++sourceSets {
++    main {
++        java.srcDir(rootProject.file("paper-server/src/main/java"))
++        resources.srcDir(rootProject.file("paper-server/src/main/resources"))
++    }
++    test {
++        java.srcDir(rootProject.file("paper-server/src/test/java"))
++        resources.srcDir(rootProject.file("paper-server/src/test/resources"))
++    }
++}
++
++val log4jPlugins = sourceSets.create("log4jPlugins") {
++    java.srcDir(rootProject.file("paper-server/src/log4jPlugins/java"))
++}
++// Plazma end
+ configurations.named(log4jPlugins.compileClasspathConfigurationName) {
+     extendsFrom(configurations.compileClasspath.get())
+ }
+@@ -114,7 +_,7 @@
  }
  
  dependencies {
--    implementation(project(":purpur-api")) // Purpur
-+    implementation(project(":plazma-api")) // Purpur // Plazma
-     implementation("ca.spottedleaf:concurrentutil:0.0.3")
-     implementation("org.jline:jline-terminal-ffm:3.27.1") // use ffm on java 22+
-     implementation("org.jline:jline-terminal-jni:3.27.1") // fall back to jni on java 21
-@@ -231,14 +_,14 @@
-         val gitBranch = git.exec(providers, "rev-parse", "--abbrev-ref", "HEAD").get().trim()
-         attributes(
-             "Main-Class" to "org.bukkit.craftbukkit.Main",
--            "Implementation-Title" to "Purpur", // Purpur
-+            "Implementation-Title" to rootProject.providers.gradleProperty("brandName").get(), // Purpur // Plazma
-             "Implementation-Version" to implementationVersion,
-             "Implementation-Vendor" to date,
--            "Specification-Title" to "Purpur", // Purpur
-+            "Specification-Title" to rootProject.providers.gradleProperty("brandName").get(), // Purpur // Plazma
-             "Specification-Version" to project.version,
--            "Specification-Vendor" to "Purpur Team", // Purpur
--            "Brand-Id" to "purpurmc:purpur", // Purpur
--            "Brand-Name" to "Purpur", // Purpur
-+            "Specification-Vendor" to rootProject.providers.gradleProperty("providerName").get(), // Purpur // Plazma
-+            "Brand-Id" to rootProject.providers.gradleProperty("brandKey").get(), // Purpur // Plazma
-+            "Brand-Name" to rootProject.providers.gradleProperty("brandName").get(), // Purpur // Plazma
-             "Build-Number" to (build ?: ""),
-             "Build-Time" to buildTime.toString(),
-             "Git-Branch" to gitBranch,
-@@ -258,6 +_,10 @@
- // Bump compile tasks to 1GB memory to avoid OOMs
- tasks.withType<JavaCompile>().configureEach {
-     options.forkOptions.memoryMaximumSize = "1G"
-+    // Plazma Start - SIMD support
-+    val compilerArgs = options.compilerArgs
-+    compilerArgs.add("--add-modules=jdk.incubator.vector")
-+    // Plazma end - SIMD support
+-    implementation(project(":paper-api"))
++    implementation(project(":plazma-api")) // Plazma
+     implementation(platform("ca.spottedleaf.leafpile:bom:1.3.2"))
+     implementation("ca.spottedleaf.leafpile:common")
+     implementation("ca.spottedleaf.leafpile:concurrentutil")
+@@ -165,6 +_,8 @@
+     // Spark
+     implementation("me.lucko:spark-api:0.1-20240720.200737-2")
+     implementation("me.lucko:spark-paper:1.10.191")
++
++    checkstyle(project(":plazma-checkstyle")) // Plazma
  }
  
- val scanJarForBadCalls by tasks.registering(io.papermc.paperweight.tasks.ScanJarForBadCalls::class) {
+ tasks.jar {

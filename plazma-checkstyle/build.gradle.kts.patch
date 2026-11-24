@@ -1,0 +1,42 @@
+--- a/paper-checkstyle/build.gradle.kts
++++ b/paper-checkstyle/build.gradle.kts
+@@ -4,6 +_,25 @@
+ }
+ 
+ val testData = sourceSets.create("testData")
++// Plazma start
++testData.java.srcDir(rootProject.file("paper-checkstyle/src/testData/java"))
++testData.resources.srcDir(rootProject.file("paper-checkstyle/src/testData/resources"))
++
++tasks.named<io.papermc.paperweight.checkstyle.tasks.MergeCheckstyleConfigs>("mergeCheckstyleConfigs") {
++    overrideConfigFile.set(rootProject.layout.projectDirectory.file("paper-checkstyle/.checkstyle/checkstyle.xml"))
++}
++
++sourceSets {
++    main {
++        java.srcDir(rootProject.file("paper-checkstyle/src/main/java"))
++        resources.srcDir(rootProject.file("paper-checkstyle/src/main/resources"))
++    }
++    test {
++        java.srcDir(rootProject.file("paper-checkstyle/src/test/java"))
++        resources.srcDir(rootProject.file("paper-checkstyle/src/test/resources"))
++    }
++}
++// Plazma end
+ 
+ dependencies {
+     implementation("com.puppycrawl.tools:checkstyle:14.3.0")
+@@ -16,11 +_,12 @@
+     testRuntimeOnly("org.junit.platform:junit-platform-launcher")
+     testData.implementationConfigurationName("org.jspecify:jspecify:1.0.0")
+ 
+-    checkstyle(project(":paper-checkstyle"))
++    checkstyle(project(":plazma-checkstyle")) // Plazma
+ }
+ 
+ tasks {
+     test {
++        workingDir = rootProject.file("paper-checkstyle")
+         useJUnitPlatform()
+     }
+ }
