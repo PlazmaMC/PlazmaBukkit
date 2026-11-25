@@ -1,0 +1,182 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Alpha <dev@alpha93.kr>
+Date: Wed, 25 Nov 2026 13:24:19 +0900
+Subject: [PATCH] Plazma Configurations
+
+Signed-off-by: Alpha <dev@alpha93.kr>
+
+diff --git a/net/minecraft/server/MinecraftServer.java b/net/minecraft/server/MinecraftServer.java
+index 95e3b0bd4764b3df59e8589913684feb3538f1d6..d87aa81dd72575e2ff44433f4ef7ebefaf272fba 100644
+--- a/net/minecraft/server/MinecraftServer.java
++++ b/net/minecraft/server/MinecraftServer.java
+@@ -35,7 +35,6 @@ import java.util.UUID;
+ import java.util.Map.Entry;
+ import java.util.concurrent.CompletableFuture;
+ import java.util.concurrent.Executor;
+-import java.util.concurrent.RejectedExecutionException;
+ import java.util.concurrent.atomic.AtomicReference;
+ import java.util.concurrent.locks.LockSupport;
+ import java.util.function.BooleanSupplier;
+@@ -161,7 +160,6 @@ import net.minecraft.world.level.chunk.storage.ChunkIOErrorReporter;
+ import net.minecraft.world.level.chunk.storage.RegionStorageInfo;
+ import net.minecraft.world.level.dimension.LevelStem;
+ import net.minecraft.world.level.gamerules.GameRule;
+-import net.minecraft.world.level.gamerules.GameRuleMap;
+ import net.minecraft.world.level.gamerules.GameRuleTypeVisitor;
+ import net.minecraft.world.level.gamerules.GameRules;
+ import net.minecraft.world.level.levelgen.Heightmap;
+@@ -172,7 +170,6 @@ import net.minecraft.world.level.levelgen.WorldOptions;
+ import net.minecraft.world.level.levelgen.structure.templatesystem.StructureTemplateManager;
+ import net.minecraft.world.level.saveddata.WeatherData;
+ import net.minecraft.world.level.storage.CommandStorage;
+-import net.minecraft.world.level.storage.DerivedLevelData;
+ import net.minecraft.world.level.storage.LevelData;
+ import net.minecraft.world.level.storage.LevelResource;
+ import net.minecraft.world.level.storage.LevelStorageSource;
+@@ -329,6 +326,7 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
+     public volatile boolean abnormalExit; // Paper - Improved watchdog support
+     public volatile Thread shutdownThread; // Paper - Improved watchdog support
+     public final io.papermc.paper.configuration.PaperConfigurations paperConfigurations; // Paper - add paper configuration files
++    public final org.plazmamc.plazma.configuration.PlazmaConfigurations plazmaConfigurations; // Plazma - Plazma Configurations
+     public boolean isIteratingOverLevels = false; // Paper - Throw exception on world create while being ticked
+     private final Set<String> pluginsBlockingSleep = new java.util.HashSet<>(); // Paper - API to allow/disallow tick sleeping
+     public static final long SERVER_INIT = System.nanoTime(); // Paper - Lag compensation
+@@ -574,6 +572,7 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
+         Runtime.getRuntime().addShutdownHook(new org.bukkit.craftbukkit.util.ServerShutdownThread(this));
+         // CraftBukkit end
+         this.paperConfigurations = services.paper().configurations(); // Paper - add paper configuration files
++        this.plazmaConfigurations = services.plazmaConfigurations(); // Plazma - Plazma Configurations
+     }
+ 
+     protected abstract boolean initServer() throws IOException;
+diff --git a/net/minecraft/server/Services.java b/net/minecraft/server/Services.java
+index 077b2a6442f12d92d56f4356a263abee4831c37d..0ac630605e84ba4daca85358ec6156ce5f7d9314 100644
+--- a/net/minecraft/server/Services.java
++++ b/net/minecraft/server/Services.java
+@@ -19,6 +19,7 @@ public record Services(
+     UserNameToIdResolver nameToIdCache,
+     ProfileResolver profileResolver
+     , @Nullable PaperServices paper // Paper
++    , org.plazmamc.plazma.configuration.@Nullable PlazmaConfigurations plazmaConfigurations // Plazma - Plazma Configurations
+ ) {
+     public static final String USERID_CACHE_FILE = "usercache.json";
+ 
+@@ -29,7 +30,7 @@ public record Services(
+     ) {}
+ 
+     public Services(SessionService sessionService, ServicesKeySet servicesKeySet, GameProfileRepository profileRepository, UserNameToIdResolver nameToIdCache, ProfileResolver profileResolver) {
+-        this(sessionService, servicesKeySet, profileRepository, nameToIdCache, profileResolver, null);
++        this(sessionService, servicesKeySet, profileRepository, nameToIdCache, profileResolver, null, null); // Plazma - Plazma Configuration
+     }
+ 
+     @Override
+@@ -38,6 +39,13 @@ public record Services(
+     }
+     // Paper end - add paper configuration files
+ 
++    // Plazma start - Plazma Configurations
++    @Override
++    public org.plazmamc.plazma.configuration.PlazmaConfigurations plazmaConfigurations() {
++        //noinspection DataFlowIssue
++        return this.plazmaConfigurations;
++    }
++    // Plazma end - Plazma Configurations
+ 
+     public static Services create(final MinecraftServicesDiscoveryService serviceAccess, final File nameCacheDir, final File userCacheFile, final joptsimple.OptionSet options) throws Exception { // Paper - add options to load paper config files; add userCacheFile parameter
+         SessionService sessionService = serviceAccess.createMinecraftSessionService();
+@@ -51,8 +59,13 @@ public record Services(
+             paperConfigurations,
+             new io.papermc.paper.profile.PaperFilledProfileCache()
+         );
++        // Plazma start - Plazma Configuration
++        final java.nio.file.Path plazmaConfigDirPath = ((File) options.valueOf("plazma-settings-directory")).toPath();
++        final org.plazmamc.plazma.configuration.PlazmaConfigurations plazmaConfiguration =
++            org.plazmamc.plazma.configuration.PlazmaConfigurations.setup(plazmaConfigDirPath);
++        // Plazma end - Plazma Configuration
+         ProfileResolver profileResolver = new ProfileResolver.Cached(sessionService, profileCache, paperServices.filledProfileCache());
+-        return new Services(sessionService, serviceAccess.getServicesKeySet(), profileRepository, profileCache, profileResolver, paperServices);
++        return new Services(sessionService, serviceAccess.getServicesKeySet(), profileRepository, profileCache, profileResolver, paperServices, plazmaConfiguration); // Plazma
+         // Paper end - load paper config files from cli options
+     }
+ 
+diff --git a/net/minecraft/server/dedicated/DedicatedServer.java b/net/minecraft/server/dedicated/DedicatedServer.java
+index 5cf1a8a771fbc98a3a5f68786460aeadfe1bca1f..72fe5e4616a4384753d756b0acec2906d12ffe77 100644
+--- a/net/minecraft/server/dedicated/DedicatedServer.java
++++ b/net/minecraft/server/dedicated/DedicatedServer.java
+@@ -239,6 +239,10 @@ public class DedicatedServer extends MinecraftServer implements ServerInterface
+         this.paperConfigurations.initializeGlobalConfiguration(this.registryAccess());
+         this.paperConfigurations.initializeWorldDefaultsConfiguration(this.registryAccess());
+         // Paper end - initialize global and world-defaults configuration
++        // Plazma start - Plazma Configurations
++        this.plazmaConfigurations.initializeGlobalConfiguration(this.registryAccess());
++        this.plazmaConfigurations.initializeWorldDefaultsConfiguration(this.registryAccess());
++        // Plazma end - Plazma Configurations
+         this.server.spark.enableEarlyIfRequested(); // Paper - spark
+         // Paper start - fix converting txt to json file; convert old users earlier after PlayerList creation but before file load/save
+         if (this.convertOldUsers()) {
+diff --git a/net/minecraft/server/level/ServerLevel.java b/net/minecraft/server/level/ServerLevel.java
+index bc7385f2f267b740c60e04d74642ce8be11e9378..da1c32faa6b76ec6c5aa631c9c9ce158c4b04956 100644
+--- a/net/minecraft/server/level/ServerLevel.java
++++ b/net/minecraft/server/level/ServerLevel.java
+@@ -637,7 +637,25 @@ public class ServerLevel extends Level implements WorldGenLevel, ServerEntityGet
+         savedDataStorage.set(io.papermc.paper.world.saveddata.PaperWorldPDC.TYPE, loadedWorldData.pdc() == null ? io.papermc.paper.world.saveddata.PaperWorldPDC.TYPE.constructor().get() : loadedWorldData.pdc());
+         final GameRules gameRules = new GameRules(server.getWorldData().enabledFeatures(), savedDataStorage.computeIfAbsent(net.minecraft.world.level.gamerules.GameRuleMap.TYPE));
+         this.gameRules = gameRules;
+-        super(levelData, dimension, server.registryAccess(), levelStem.type(), false, isDebug, biomeZoomSeed, server.getMaxChainedNeighborUpdates(), loadedWorldData.bukkitName(), gen, biomeProvider, env, spigotConfig -> server.paperConfigurations.createWorldConfig(io.papermc.paper.configuration.PaperConfigurations.createWorldContextMap(server.storageSource.getDimensionPath(dimension), dimension.identifier(), spigotConfig, server.registryAccess(), gameRules)), executor); // Paper - create paper world configs // Paper - Anti-Xray - Pass executor
++        // Plazma start - Plazma Configuration
++        super(
++            levelData,
++            dimension,
++            server.registryAccess(),
++            levelStem.type(),
++            false,
++            isDebug,
++            biomeZoomSeed,
++            server.getMaxChainedNeighborUpdates(),
++            loadedWorldData.bukkitName(),
++            gen,
++            biomeProvider,
++            env,
++            spigotConfig -> server.paperConfigurations.createWorldConfig(io.papermc.paper.configuration.PaperConfigurations.createWorldContextMap(server.storageSource.getDimensionPath(dimension), dimension.identifier(), spigotConfig, server.registryAccess(), gameRules)),
++            () -> server.plazmaConfigurations.createWorldConfig(org.plazmamc.plazma.configuration.PlazmaConfigurations.createWorldContextMap(server.storageSource.getDimensionPath(dimension), dimension.identifier(), server.registryAccess(), gameRules)),
++            executor
++        ); // Paper - create paper world configs // Paper - Anti-Xray - Pass executor
++        // Plazma end - Plazma Configuration
+         this.weatherData = savedDataStorage.computeIfAbsent(WeatherData.TYPE);
+         this.weatherData.setLevel(this);
+         this.typeKey = typeKey;
+diff --git a/net/minecraft/world/level/Level.java b/net/minecraft/world/level/Level.java
+index 5c36d18761371581f79deccb860179307b522e98..c923fcc71431f9a4b73443c69b469f1de988bf59 100644
+--- a/net/minecraft/world/level/Level.java
++++ b/net/minecraft/world/level/Level.java
+@@ -171,6 +171,14 @@ public abstract class Level implements LevelAccessor, AutoCloseable, ca.spottedl
+     // Paper end - add paper world config
+ 
+     public final org.purpurmc.purpur.PurpurWorldConfig purpurConfig; // Purpur - Purpur config files
++
++    // Plazma start - Plazma Configurations
++    private final org.plazmamc.plazma.configuration.WorldConfiguration plazmaConfig;
++    public org.plazmamc.plazma.configuration.WorldConfiguration plazmaConfig() {
++        return this.plazmaConfig;
++    }
++    // Plazma end - Plazma Configurations
++
+     public static @Nullable BlockPos lastPhysicsProblem; // Spigot
+     public final Map<ServerExplosion.CacheKey, Float> explosionDensityCache = new java.util.HashMap<>(); // Paper - Optimize explosions
+     public java.util.ArrayDeque<net.minecraft.world.level.block.RedstoneTorchBlock.Toggle> redstoneUpdateInfos; // Paper - Faster redstone torch rapid clock removal; Move from Map in BlockRedstoneTorch to here
+@@ -881,6 +889,7 @@ public abstract class Level implements LevelAccessor, AutoCloseable, ca.spottedl
+         org.bukkit.World.Environment environment, // Paper
+         java.util.function.Function<org.spigotmc.SpigotWorldConfig, // Spigot - create per world config
+         io.papermc.paper.configuration.WorldConfiguration> paperWorldConfigCreator, // Paper - create paper world config
++        java.util.function.Supplier<org.plazmamc.plazma.configuration.WorldConfiguration> plazmaWorldConfigCreator, // Plazma - Plazma Configuration
+         java.util.concurrent.Executor executor // Paper - Anti-Xray
+     ) {
+         // Paper start - getblock optimisations - cache world height/sections
+@@ -896,6 +905,7 @@ public abstract class Level implements LevelAccessor, AutoCloseable, ca.spottedl
+         this.spigotConfig = new org.spigotmc.SpigotWorldConfig(bukkitName, worldKey); // Spigot
+         this.paperConfig = paperWorldConfigCreator.apply(this.spigotConfig); // Paper - create paper world config
+         this.purpurConfig = new org.purpurmc.purpur.PurpurWorldConfig(bukkitName, environment, worldKey); // Purpur - Purpur config files
++        this.plazmaConfig = plazmaWorldConfigCreator.get();
+         this.playerBreedingCooldowns = this.getNewBreedingCooldownCache(); // Purpur - Add adjustable breeding cooldown to config
+         this.generator = generator;
+         this.world = new CraftWorld((ServerLevel) this, worldKey, biomeProvider, environment);

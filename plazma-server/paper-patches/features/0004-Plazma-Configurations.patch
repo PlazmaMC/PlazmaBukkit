@@ -1,0 +1,75 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Alpha <dev@alpha93.kr>
+Date: Wed, 25 Nov 2026 13:24:05 +0900
+Subject: [PATCH] Plazma Configurations
+
+Signed-off-by: Alpha <dev@alpha93.kr>
+
+diff --git a/src/main/java/io/papermc/paper/configuration/Configurations.java b/src/main/java/io/papermc/paper/configuration/Configurations.java
+index 395a93970469977c36d17681dce6f8f3d70e4d94..61f0dc4979e140c8116f2713722452fd20ce5108 100644
+--- a/src/main/java/io/papermc/paper/configuration/Configurations.java
++++ b/src/main/java/io/papermc/paper/configuration/Configurations.java
+@@ -94,7 +94,12 @@ public abstract class Configurations<G, W> {
+         };
+     }
+ 
+-    static <T> CheckedFunction<ConfigurationNode, T, SerializationException> reloader(Class<T> type, T instance) {
++    // Plazma start - Plazma Configurations
++    protected static <T> CheckedFunction<ConfigurationNode, T, SerializationException> reloader(
++        final Class<T> type,
++        final T instance
++    ) {
++    // Plazma end - Plazma Configurations
+         return node -> {
+             ObjectMapper.Factory factory = (ObjectMapper.Factory) Objects.requireNonNull(node.options().serializers().get(type));
+             ObjectMapper.Mutable<T> mutable = (ObjectMapper.Mutable<T>) factory.get(type);
+diff --git a/src/main/java/io/papermc/paper/configuration/mapping/InnerClassFieldDiscoverer.java b/src/main/java/io/papermc/paper/configuration/mapping/InnerClassFieldDiscoverer.java
+index a8a82aca70a97e30ca680c86421c6a04ed8172f8..3b203c7a53cd517d27cbb2e0ec08899fad2f358d 100644
+--- a/src/main/java/io/papermc/paper/configuration/mapping/InnerClassFieldDiscoverer.java
++++ b/src/main/java/io/papermc/paper/configuration/mapping/InnerClassFieldDiscoverer.java
+@@ -81,7 +81,13 @@ public final class InnerClassFieldDiscoverer implements FieldDiscoverer<Map<Fiel
+     }
+ 
+     @SuppressWarnings("unchecked")
+-    private static InnerClassFieldDiscoverer create(final Map<Class<?>, Object> overrides, final List<Definition<?, ?, ? extends FieldProcessor.Factory<?, ?>>> fieldProcessors) {
++    // Plazma start - Plazma Configuration
++    @org.jetbrains.annotations.Contract("_, _ -> new")
++    public static InnerClassFieldDiscoverer create(
++        final Map<Class<?>, Object> overrides,
++        final List<Definition<?, ?, ? extends FieldProcessor.Factory<?, ?>>> fieldProcessors
++    ) {
++    // Plazma end - Plazma Configuration
+         final Map<Class<? extends Annotation>, List<Definition<?, ?, ? extends FieldProcessor.Factory<?, ?>>>> processors = new LinkedHashMap<>();
+         for (final Definition<?, ?, ? extends FieldProcessor.Factory<?, ?>> definition : fieldProcessors) {
+             processors.computeIfAbsent(definition.annotation(), k -> new ArrayList<>()).add(definition);
+diff --git a/src/main/java/org/bukkit/craftbukkit/CraftServer.java b/src/main/java/org/bukkit/craftbukkit/CraftServer.java
+index c1e1f5ec4ebab85d01b34a0e7a4934477e36a739..f8e712eb5bed0478f527a385c607270d04d848df 100644
+--- a/src/main/java/org/bukkit/craftbukkit/CraftServer.java
++++ b/src/main/java/org/bukkit/craftbukkit/CraftServer.java
+@@ -982,6 +982,7 @@ public final class CraftServer implements Server {
+ 
+         org.spigotmc.SpigotConfig.init((File) this.console.options.valueOf("spigot-settings")); // Spigot
+         this.console.paperConfigurations.reloadConfigs(this.console);
++        this.console.plazmaConfigurations.reloadConfigs(this.console);
+         org.purpurmc.purpur.PurpurConfig.init((File) console.options.valueOf("purpur-settings")); // Purpur - Purpur config files
+         for (ServerLevel world : this.console.getAllLevels()) {
+             // world.serverLevelData.setDifficulty(config.difficulty); // Paper - per level difficulty
+diff --git a/src/main/java/org/bukkit/craftbukkit/Main.java b/src/main/java/org/bukkit/craftbukkit/Main.java
+index d50989b36faccfbfcda8584d6300f65ea655e292..77cf60ce21e1eaad03748e950068c5748fc3f5df 100644
+--- a/src/main/java/org/bukkit/craftbukkit/Main.java
++++ b/src/main/java/org/bukkit/craftbukkit/Main.java
+@@ -152,6 +152,14 @@ public class Main {
+                     .describedAs("Yml file");
+                 // Purpur end - Purpur config files
+ 
++                // Plazma start - Plazma Configurations
++                this.acceptsAll(asList("plazma", "plazma-settings-directory"), "Directory for Plazma settings")
++                    .withRequiredArg()
++                    .ofType(File.class)
++                    .defaultsTo(new File(io.papermc.paper.configuration.PaperConfigurations.CONFIG_DIR))
++                    .describedAs("Config directory");
++                // Plazma end - Plazma Configurations
++
+                 this.accepts("server-name", "Name of the server")
+                         .withRequiredArg()
+                         .ofType(String.class)

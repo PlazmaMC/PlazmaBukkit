@@ -3,9 +3,42 @@ plugins {
 }
 
 subprojects {
+    apply {
+        plugin("java")
+        plugin("io.papermc.paperweight.paper-checkstyle")
+    }
+
     repositories {
         mavenCentral()
         maven("https://repo.papermc.io/repository/maven-public/")
+    }
+
+    dependencies {
+        "checkstyle"(project(":plazma-checkstyle"))
+    }
+
+    extensions.configure<JavaPluginExtension> {
+        toolchain.languageVersion = JavaLanguageVersion.of(25)
+    }
+
+    tasks.withType<JavaCompile> {
+        options.encoding = Charsets.UTF_8.name()
+        options.release = 25
+        options.isFork = true
+        options.compilerArgs.addAll(listOf("-Xlint:-deprecation", "-Xlint:-removal"))
+    }
+    tasks.withType<Javadoc> {
+        options.encoding = Charsets.UTF_8.name()
+    }
+    tasks.withType<ProcessResources> {
+        filteringCharset = Charsets.UTF_8.name()
+    }
+    tasks.withType<Test> {
+        testLogging {
+            showStackTraces = true
+            exceptionFormat = org.gradle.api.tasks.testing.logging.TestExceptionFormat.FULL
+            events(org.gradle.api.tasks.testing.logging.TestLogEvent.STANDARD_OUT)
+        }
     }
 }
 
