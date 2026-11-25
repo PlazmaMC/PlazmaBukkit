@@ -39,9 +39,9 @@ import static io.leangen.geantyref.GenericTypeReflector.erase;
 
 @NullMarked
 public class PlazmaConfigurations extends Configurations<GlobalConfiguration, WorldConfiguration> {
-    static final String GLOBAL_CONFIG_FILE_NAME = "plazmaConfigurations-global.yaml";
-    static final String WORLD_CONFIG_FILE_NAME = "plazmaConfigurations-world.yaml";
-    static final String WORLD_DEFAULTS_CONFIG_FILE_NAME = "plazmaConfigurations-world-defaults.yaml";
+    static final String GLOBAL_CONFIG_FILE_NAME = "plazma-global.yml";
+    static final String WORLD_CONFIG_FILE_NAME = "plazma-world.yml";
+    static final String WORLD_DEFAULTS_CONFIG_FILE_NAME = "plazma-world-defaults.yml";
 
     private static final String GLOBAL_HEADER = String.format("""
             This is the global configuration file for Plazma.
@@ -239,7 +239,7 @@ public class PlazmaConfigurations extends Configurations<GlobalConfiguration, Wo
                 this.createWorldConfig(createWorldContextMap(level), reloader(this.worldConfigClass, level.plazmaConfig()));
             }
         } catch (final Exception e) {
-            throw new RuntimeException("Could not reload plazmaConfigurations configuration files", e);
+            throw new RuntimeException("Could not reload plazma configuration files", e);
         }
     }
 
