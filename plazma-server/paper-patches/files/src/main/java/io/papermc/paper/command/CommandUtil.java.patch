@@ -1,0 +1,67 @@
+--- a/src/main/java/io/papermc/paper/command/CommandUtil.java
++++ b/src/main/java/io/papermc/paper/command/CommandUtil.java
+@@ -45,39 +_,42 @@
+         return s1.regionMatches(true, 0, s, 0, s.length());
+     }
+ 
++    // Plazma start - Optimize bukkit commands
+     public static List<String> getListMatchingLast(
+         final CommandSender sender,
+         final String[] strings,
+         final Collection<?> collection
+     ) {
++        return getListMatchingLast(sender, strings, collection, PaperCommand.BASE_PERM);
++    }
++
++    public static List<String> getListMatchingLast(
++        final CommandSender sender,
++        final String[] strings,
++        final Collection<?> collection,
++        final String basePermission
++    ) {
+         String last = strings[strings.length - 1];
+         ArrayList<String> results = Lists.newArrayList();
+ 
+-        if (!collection.isEmpty()) {
+-            Iterator iterator = Iterables.transform(collection, Functions.toStringFunction()).iterator();
+-
+-            while (iterator.hasNext()) {
+-                String s1 = (String) iterator.next();
+-
+-                if (matches(last, s1) && (sender.hasPermission(PaperCommand.BASE_PERM + s1) || sender.hasPermission("bukkit.command.paper"))) {
+-                    results.add(s1);
+-                }
+-            }
+-
+-            if (results.isEmpty()) {
+-                iterator = collection.iterator();
+-
+-                while (iterator.hasNext()) {
+-                    Object object = iterator.next();
+-
+-                    if (object instanceof Identifier && matches(last, ((Identifier) object).getPath())) {
+-                        results.add(String.valueOf(object));
+-                    }
+-                }
+-            }
++        if (collection.isEmpty()) return results;
++        for (final String s1 : Iterables.transform(collection, Functions.toStringFunction())) {
++            if (
++                matches(last, s1)
++                && (sender.hasPermission(basePermission) || sender.hasPermission(basePermission + "." + s1))
++            ) {
++                results.add(s1);
++            }
++        }
++
++        if (results.isEmpty()) {
++            collection.stream()
++                .filter(object -> object instanceof Identifier && matches(last, ((Identifier) object).getPath()))
++                .forEach(object -> results.add(String.valueOf(object)));
+         }
+ 
+         return results;
+     }
++    // Plazma end - Optimize bukkit commands
+     // end copy stuff
+ }

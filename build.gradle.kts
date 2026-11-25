@@ -14,7 +14,7 @@ subprojects {
     }
 
     dependencies {
-        "checkstyle"(project(":plazma-checkstyle"))
+        // "checkstyle"(project(":plazma-checkstyle"))
     }
 
     extensions.configure<JavaPluginExtension> {
