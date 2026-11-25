@@ -1,0 +1,73 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Alpha <dev@alpha93.kr>
+Date: Wed, 25 Nov 2026 16:32:18 +0900
+Subject: [PATCH] Pufferfish Minecraft Changes
+
+Signed-off-by: Alpha <dev@alpha93.kr>
+
+diff --git a/net/minecraft/server/network/ServerGamePacketListenerImpl.java b/net/minecraft/server/network/ServerGamePacketListenerImpl.java
+index 5a7b2c7176dac55e1115ba3260504b95ce24bc61..69d30c2b20990dfec564135033b48670aa11a0cb 100644
+--- a/net/minecraft/server/network/ServerGamePacketListenerImpl.java
++++ b/net/minecraft/server/network/ServerGamePacketListenerImpl.java
+@@ -1367,6 +1367,7 @@ public class ServerGamePacketListenerImpl
+ 
+     @Override
+     public void handleEditBook(final ServerboundEditBookPacket packet) {
++        if (org.plazmamc.plazma.Options.global().books.permissionToEdit && this.player.getBukkitEntity().hasPermission(org.plazmamc.plazma.Options.global().books.permission) != org.plazmamc.plazma.Options.global().books.invertPermissionCheck) return; // Plazma - Pufferfish Minecraft Changes
+         // Paper start - Book size limits
+         final io.papermc.paper.configuration.type.number.IntOr.Disabled pageMax = io.papermc.paper.configuration.GlobalConfiguration.get().itemValidation.bookSize.pageMax;
+         if (!this.cserver.isPrimaryThread() && pageMax.enabled()) {
+diff --git a/net/minecraft/world/entity/LivingEntity.java b/net/minecraft/world/entity/LivingEntity.java
+index b9296f2de35fa46b07e637b8f0aed8319313deeb..cc8e98807a3fd4b22534d2d1f5c978e0c61a19cb 100644
+--- a/net/minecraft/world/entity/LivingEntity.java
++++ b/net/minecraft/world/entity/LivingEntity.java
+@@ -441,6 +441,18 @@ public abstract class LivingEntity extends Entity implements Attackable, Waypoin
+         return this.getDeltaMovement().y() < 1.0E-5F && this.isInLiquid();
+     }
+ 
++    // Plazma start - Pufferfish Minecraft Changes
++    public boolean couldPossiblyBeHurt(final float amount) {
++        return amount > this.lastHurt || this.invulnerableDuration <= this.invulnerableDuration / 2f;
++    }
++
++    private static final float SUFFOCATION_DAMAGE_AMOUNT = 1f;
++    public static boolean enableSuffocationOptimization = false;
++    public boolean shouldCheckForSuffocation() {
++        return !enableSuffocationOptimization || (this.tickCount % 10 == 0 && couldPossiblyBeHurt(SUFFOCATION_DAMAGE_AMOUNT));
++    }
++    // Plazma end - Pufferfish Minecraft Changes
++
+     @Override
+     public void baseTick() {
+         this.swingState.tick();
+@@ -461,8 +473,8 @@ public abstract class LivingEntity extends Entity implements Attackable, Waypoin
+         profiler.push("livingEntityBaseTick");
+         if (this.isAlive() && this.level() instanceof ServerLevel level) {
+             boolean isPlayer = this instanceof Player;
+-            if (this.isInWall()) {
+-                this.hurtServer(level, this.damageSources().inWall(), 1.0F);
++            if (shouldCheckForSuffocation() && this.isInWall()) { // Plazma - Pufferfish Minecraft Changes
++                this.hurtServer(level, this.damageSources().inWall(), SUFFOCATION_DAMAGE_AMOUNT); // Plazma - Pufferfish Minecraft Changes
+             } else if (isPlayer && !level.getWorldBorder().isWithinBounds(this.getBoundingBox())) {
+                 double dist = level.getWorldBorder().getDistanceToBorder(this) + level.getWorldBorder().getSafeZone();
+                 if (dist < 0.0) {
+diff --git a/net/minecraft/world/entity/boss/wither/WitherBoss.java b/net/minecraft/world/entity/boss/wither/WitherBoss.java
+index 24d7b1ba448ba26f9631643014f3ed45098366c6..a14c2ec75db8b80ee857c9aeed57354e0fac3aec 100644
+--- a/net/minecraft/world/entity/boss/wither/WitherBoss.java
++++ b/net/minecraft/world/entity/boss/wither/WitherBoss.java
+@@ -235,6 +235,15 @@ public class WitherBoss extends Monster implements RangedAttackMob {
+     }
+     // Purpur end - Mobs always drop experience
+ 
++    // Plazma start - Pufferfish Minecraft Changes
++    public static boolean enableSuffocationOptimization = false;
++
++    @Override
++    public boolean shouldCheckForSuffocation() {
++        return !enableSuffocationOptimization || super.shouldCheckForSuffocation();
++    }
++    // Plazma end - Pufferfish Minecraft Changes
++
+     @Override
+     protected PathNavigation createNavigation(final Level level) {
+         FlyingPathNavigation flyingPathNavigation = new FlyingPathNavigation(this, level);

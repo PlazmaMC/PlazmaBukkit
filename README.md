@@ -12,10 +12,17 @@
 </div>
 <br>
 
+> [!TIP]
+> **Plazma 26.3/4 Development Status**
+> - [x] Implement configuration and commands
+> - [ ] (In Progress) Port Pufferfish patches
+> - [ ] Completely remove Timings & Profilers
+> - [ ] Implement the remaining patches from 1.21.4/1.21.8
+
 > [!WARNING]
-<u>Unexpected behavior</u> may occur. Please thoroughly test and back up before using on public servers.  
-<u>예상치 못한 동작</u>이 발생할 수 있으므로, 공용 서버에서 사용하기 전에 충분히 테스트하고 백업하시기 바랍니다.
-<br>
+> <u>Unexpected behavior</u> may occur. Please thoroughly test and back up before using on public servers.
+> <u>예상치 못한 동작</u>이 발생할 수 있으므로, 공용 서버에서 사용하기 전에 충분히 테스트하고 백업하시기 바랍니다.
+> <br>
 
 <details><summary><b>한국어 버전</b></summary>
 
