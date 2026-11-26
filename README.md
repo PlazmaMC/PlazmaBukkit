@@ -15,7 +15,8 @@
 > [!TIP]
 > **Plazma 26.3/4 Development Status**
 > - [x] Implement configuration and commands
-> - [ ] (In Progress) Port Pufferfish patches
+> - [ ] (In Progress) Port Pufferfish patches (9/17)
+>   - [ ] Implement DAB (Dynamic Activation of Brain)
 > - [ ] Completely remove Timings & Profilers
 > - [ ] Implement the remaining patches from 1.21.4/1.21.8
 

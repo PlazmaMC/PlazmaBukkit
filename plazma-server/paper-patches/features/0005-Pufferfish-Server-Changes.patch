@@ -1,0 +1,84 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Alpha <dev@alpha93.kr>
+Date: Thu, 26 Nov 2026 09:45:38 +0900
+Subject: [PATCH] Pufferfish Server Changes
+
+Pufferfish
+Copyright (C) 2026 Pufferfish
+
+This program is free software: you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation, either version 3 of the License, or
+(at your option) any later version.
+
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with this program.  If not, see <https://www.gnu.org/licenses/>.
+
+Signed-off-by: Alpha <dev@alpha93.kr>
+
+diff --git a/src/main/java/ca/spottedleaf/moonrise/common/list/IteratorSafeOrderedReferenceSet.java b/src/main/java/ca/spottedleaf/moonrise/common/list/IteratorSafeOrderedReferenceSet.java
+index ece6db7b9a0dfd535141c0c756947c4898140503..04a0077c3607d975e180bc42acae46ca6e380f8c 100644
+--- a/src/main/java/ca/spottedleaf/moonrise/common/list/IteratorSafeOrderedReferenceSet.java
++++ b/src/main/java/ca/spottedleaf/moonrise/common/list/IteratorSafeOrderedReferenceSet.java
+@@ -19,7 +19,7 @@ public final class IteratorSafeOrderedReferenceSet<E> {
+ 
+     private final double maxFragFactor;
+ 
+-    private int iteratorCount;
++    private final java.util.concurrent.atomic.AtomicInteger atomicIteratorCount = new java.util.concurrent.atomic.AtomicInteger(); // Plazma - Pufferfish Server Changes
+ 
+     public IteratorSafeOrderedReferenceSet() {
+         this(Object.class);
+@@ -99,7 +99,7 @@ public final class IteratorSafeOrderedReferenceSet<E> {
+     }
+ 
+     public int createRawIterator() {
+-        ++this.iteratorCount;
++        this.atomicIteratorCount.incrementAndGet(); // Plazma - Pufferfish Server Changes
+         if (this.indexMap.isEmpty()) {
+             return Integer.MAX_VALUE;
+         } else {
+@@ -120,7 +120,7 @@ public final class IteratorSafeOrderedReferenceSet<E> {
+     }
+ 
+     public void finishRawIterator() {
+-        if (--this.iteratorCount == 0) {
++        if (this.atomicIteratorCount.decrementAndGet() == 0) { // Plazma - Pufferfish Server Changes
+             if (this.getFragFactor() >= this.maxFragFactor) {
+                 this.defrag();
+             }
+@@ -137,7 +137,7 @@ public final class IteratorSafeOrderedReferenceSet<E> {
+                 throw new IllegalStateException();
+             }
+             this.listElements[index] = null;
+-            if (this.iteratorCount == 0 && this.getFragFactor() >= this.maxFragFactor) {
++            if (this.atomicIteratorCount.get() == 0 && this.getFragFactor() >= this.maxFragFactor) { // Plazma - Pufferfish Server Changes
+                 this.defrag();
+             }
+             //this.check();
+@@ -235,7 +235,7 @@ public final class IteratorSafeOrderedReferenceSet<E> {
+     }
+ 
+     public IteratorSafeOrderedReferenceSet.Iterator<E> iterator(final int flags) {
+-        ++this.iteratorCount;
++        this.atomicIteratorCount.incrementAndGet(); // Plazma - Pufferfish Server Changes
+         return new BaseIterator<>(this, true, (flags & ITERATOR_FLAG_SEE_ADDITIONS) != 0 ? Integer.MAX_VALUE : this.listSize);
+     }
+ 
+diff --git a/src/main/java/org/bukkit/craftbukkit/inventory/CraftShapelessRecipe.java b/src/main/java/org/bukkit/craftbukkit/inventory/CraftShapelessRecipe.java
+index a70ef66804a6d7b07de6f181f379106a9db7df1a..5d219ab08ca8c9bc91dbc8a73f1c5eb4ec26a28f 100644
+--- a/src/main/java/org/bukkit/craftbukkit/inventory/CraftShapelessRecipe.java
++++ b/src/main/java/org/bukkit/craftbukkit/inventory/CraftShapelessRecipe.java
+@@ -51,6 +51,7 @@ public class CraftShapelessRecipe extends ShapelessRecipe implements CraftRecipe
+             new net.minecraft.world.item.crafting.CraftingRecipe.CraftingBookInfo(CraftRecipe.getCategory(this.getCategory()), this.getGroup()),
+             CraftItemStack.asTemplate(this.getResult()),
+             ingredients
++            , true // Plazma - Pufferfish Server Changes
+         ));
+     }
+ }

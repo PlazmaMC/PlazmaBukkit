@@ -3,8 +3,190 @@ From: Alpha <dev@alpha93.kr>
 Date: Wed, 25 Nov 2026 16:32:18 +0900
 Subject: [PATCH] Pufferfish Minecraft Changes
 
+Pufferfish
+Copyright (C) 2026 Pufferfish
+
+This program is free software: you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation, either version 3 of the License, or
+(at your option) any later version.
+
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with this program.  If not, see <https://www.gnu.org/licenses/>.
+
 Signed-off-by: Alpha <dev@alpha93.kr>
 
+diff --git a/net/minecraft/server/MinecraftServer.java b/net/minecraft/server/MinecraftServer.java
+index d87aa81dd72575e2ff44433f4ef7ebefaf272fba..dfdd300e6716b6d4a8cf925754aa437f34454eaf 100644
+--- a/net/minecraft/server/MinecraftServer.java
++++ b/net/minecraft/server/MinecraftServer.java
+@@ -287,6 +287,7 @@ public abstract class MinecraftServer extends ReentrantBlockableEventLoop<TickTa
+     private final SuppressedExceptionCollector suppressedExceptions = new SuppressedExceptionCollector();
+     private final DiscontinuousFrame tickFrame;
+     private final PacketProcessor packetProcessor;
++    public final org.plazmamc.plazma.util.AsyncExecutor mobSpawnExecutor = new org.plazmamc.plazma.util.AsyncExecutor("Mob Spawn Executor"); // Plazma - Pufferfish Minecraft Changes
+     // Paper - per-level scheduledEvents
+     private final ServerClockManager clockManager;
+ 
+diff --git a/net/minecraft/server/dedicated/DedicatedServer.java b/net/minecraft/server/dedicated/DedicatedServer.java
+index 16f98377e1f4708c1e20b049718ebde619bc7a0c..02d2e387bcccdc304dead9a4da525b04f2c0dd9b 100644
+--- a/net/minecraft/server/dedicated/DedicatedServer.java
++++ b/net/minecraft/server/dedicated/DedicatedServer.java
+@@ -409,6 +409,8 @@ public class DedicatedServer extends MinecraftServer implements ServerInterface
+         org.purpurmc.purpur.task.BossBarTask.startAll(); // Purpur - Implement TPSBar
+         if (org.purpurmc.purpur.PurpurConfig.beeCountPayload) org.purpurmc.purpur.task.BeehiveTask.instance().register(); // Purpur - Give bee counts in beehives to Purpur clients
+ 
++        if (org.plazmamc.plazma.Options.global().server.async.mobSpawning) this.mobSpawnExecutor.start(); // Plazma - Pufferfish Minecraft Changes
++
+         this.saveEverything(false, true, true);
+         this.notificationManager().serverStarted();
+         return true;
+diff --git a/net/minecraft/server/level/ServerChunkCache.java b/net/minecraft/server/level/ServerChunkCache.java
+index ef53d4d17222a882dd3d33575096c864a0a00a06..f892bd266ef70f1ac0bc6ace74758ac5e951c1aa 100644
+--- a/net/minecraft/server/level/ServerChunkCache.java
++++ b/net/minecraft/server/level/ServerChunkCache.java
+@@ -515,6 +515,48 @@ public class ServerChunkCache extends ChunkSource implements ca.spottedleaf.moon
+         this.clearCache();
+     }
+ 
++    // Plazma start - Pufferfish Minecraft Changes
++    private boolean firstRunSpawnCounts = true;
++    private final java.util.concurrent.atomic.AtomicBoolean spawnCountsReady = new java.util.concurrent.atomic.AtomicBoolean(false);
++
++    private void handleMobSpawningAsync() {
++        for (ServerPlayer player : this.level.players()) {
++            // Paper start - per player mob spawning backoff
++            for (int j = 0; j < ServerPlayer.MOBCATEGORY_TOTAL_ENUMS; j++) {
++                player.mobCounts[j] = 0;
++
++                int newBackoff = player.mobBackoffCounts[j] - 1; // TODO make configurable bleed // TODO use nonlinear algorithm?
++                if (newBackoff < 0) {
++                    newBackoff = 0;
++                }
++                player.mobBackoffCounts[j] = newBackoff;
++            }
++            // Paper end - per player mob spawning backoff
++        }
++        if (firstRunSpawnCounts) {
++            firstRunSpawnCounts = false;
++            spawnCountsReady.set(true);
++        }
++
++        if (!spawnCountsReady.getAndSet(false)) return;
++        net.minecraft.server.MinecraftServer.getServer().mobSpawnExecutor.submit(() -> {
++            final int mapped = distanceManager.getNaturalSpawnChunkCount();
++            final ca.spottedleaf.moonrise.common.list.IteratorSafeOrderedReferenceSet.Iterator<Entity> entityIterator =
++                level.entityTickList.entities.iterator(ca.spottedleaf.moonrise.common.list.IteratorSafeOrderedReferenceSet.ITERATOR_FLAG_SEE_ADDITIONS);
++
++            try {
++                final org.plazmamc.plazma.util.IteratorIterable<Entity> entityIterable =
++                    new org.plazmamc.plazma.util.IteratorIterable<>(entityIterator);
++                lastSpawnState = NaturalSpawner.createState(mapped, this.level, entityIterable, this::getFullChunk, null, true);
++            } finally {
++                entityIterator.finishedIterating();
++            }
++            spawnCountsReady.set(true);
++        });
++    }
++    // Plazma end - Pufferfish Minecraft Changes
++
++    public static boolean asyncMobSpawning = false; // Plazma - Pufferfish Minecraft Changes
+     private void tickChunks() {
+         if (!this.level.isDebug()) {
+             ProfilerFiller profiler = Profiler.get();
+@@ -528,6 +570,8 @@ public class ServerChunkCache extends ChunkSource implements ca.spottedleaf.moon
+             this.broadcastChangedChunks(profiler);
+             profiler.pop();
+         }
++
++        if (asyncMobSpawning) this.handleMobSpawningAsync(); // Plazma - Pufferfish Minecraft Changes
+     }
+ 
+     private void broadcastChangedChunks(final ProfilerFiller profiler) {
+@@ -548,8 +592,8 @@ public class ServerChunkCache extends ChunkSource implements ca.spottedleaf.moon
+         profiler.push("naturalSpawnCount");
+         int chunkCount = this.distanceManager.getNaturalSpawnChunkCount();
+         // Paper start - Optional per player mob spawns
+-        NaturalSpawner.SpawnState spawnCookie;
+-        if ((this.spawnFriendlies || this.spawnEnemies) && this.level.paperConfig().entities.spawning.perPlayerMobSpawns) { // don't count mobs when animals and monsters are disabled
++        //NaturalSpawner.SpawnState spawnCookie; // Plazma - Pufferfish Minecraft Changes
++        if (!asyncMobSpawning && (this.spawnFriendlies || this.spawnEnemies) && this.level.paperConfig().entities.spawning.perPlayerMobSpawns) { // don't count mobs when animals and monsters are disabled // Plazma - Pufferfish Minecraft Changes
+             // re-set mob counts
+             for (ServerPlayer player : this.level.players()) {
+                 // Paper start - per player mob spawning backoff
+@@ -564,14 +608,17 @@ public class ServerChunkCache extends ChunkSource implements ca.spottedleaf.moon
+                 }
+                 // Paper end - per player mob spawning backoff
+             }
+-            spawnCookie = NaturalSpawner.createState(chunkCount, this.level, this::getFullChunk, null, true);
++        // Plazma start - Pufferfish Minecraft Changes
++            this.lastSpawnState = NaturalSpawner.createState(chunkCount, this.level, this::getFullChunk, null, true);
+         } else {
+-            spawnCookie = NaturalSpawner.createState(chunkCount, this.level, this::getFullChunk, !this.level.paperConfig().entities.spawning.perPlayerMobSpawns ? new LocalMobCapCalculator(this.chunkMap) : null, false);
++            this.lastSpawnState = NaturalSpawner.createState(chunkCount, this.level, this::getFullChunk, !this.level.paperConfig().entities.spawning.perPlayerMobSpawns ? new LocalMobCapCalculator(this.chunkMap) : null, false);
++            spawnCountsReady.set(true);
+         }
+         // Paper end - Optional per player mob spawns
+-        this.lastSpawnState = spawnCookie;
++        //this.lastSpawnState = spawnCookie;
++        // Plazma end - Pufferfish Minecraft Changes
+         boolean doMobSpawning = this.level.getGameRules().get(GameRules.SPAWN_MOBS) && !this.level.players().isEmpty(); // CraftBukkit
+-        int tickSpeed = this.level.getGameRules().get(GameRules.RANDOM_TICK_SPEED);
++        //int tickSpeed = this.level.getGameRules().get(GameRules.RANDOM_TICK_SPEED); // Plazma - unused
+         List<MobCategory> spawningCategories;
+         if (doMobSpawning && (this.spawnEnemies || this.spawnFriendlies)) { // Paper
+             // Paper start - PlayerNaturallySpawnCreaturesEvent
+@@ -583,7 +630,7 @@ public class ServerChunkCache extends ChunkSource implements ca.spottedleaf.moon
+             }
+             // Paper end - PlayerNaturallySpawnCreaturesEvent
+             boolean spawnPersistent = this.level.ticksPerSpawnCategory.getLong(org.bukkit.entity.SpawnCategory.ANIMAL) != 0L && this.level.getGameTime() % this.level.ticksPerSpawnCategory.getLong(org.bukkit.entity.SpawnCategory.ANIMAL) == 0L; // CraftBukkit
+-            spawningCategories = NaturalSpawner.getFilteredSpawningCategories(spawnCookie, this.spawnFriendlies, this.spawnEnemies, spawnPersistent, this.level); // CraftBukkit
++            spawningCategories = NaturalSpawner.getFilteredSpawningCategories(this.lastSpawnState, this.spawnFriendlies, this.spawnEnemies, spawnPersistent, this.level); // CraftBukkit
+         } else {
+             spawningCategories = List.of();
+         }
+@@ -601,7 +648,7 @@ public class ServerChunkCache extends ChunkSource implements ca.spottedleaf.moon
+             profiler.popPush("tickSpawningChunks");
+ 
+             for (LevelChunk chunk : spawningChunks) {
+-                this.tickSpawningChunk(chunk, spawningCategories, spawnCookie);
++                this.tickSpawningChunk(chunk, spawningCategories, this.lastSpawnState);
+             }
+         } finally {
+             spawningChunks.clear();
+diff --git a/net/minecraft/server/level/ServerLevel.java b/net/minecraft/server/level/ServerLevel.java
+index 68a2e2abc25d900f28c485fa616007b763bca9f4..97f6daeabed4326a8bc0fa572ec108b221d251e2 100644
+--- a/net/minecraft/server/level/ServerLevel.java
++++ b/net/minecraft/server/level/ServerLevel.java
+@@ -1006,7 +1006,7 @@ public class ServerLevel extends Level implements WorldGenLevel, ServerEntityGet
+     }
+ 
+     // Paper start - optimise random ticking
+-    private final ca.spottedleaf.moonrise.common.util.SimpleThreadUnsafeRandom simpleRandom = new ca.spottedleaf.moonrise.common.util.SimpleThreadUnsafeRandom(net.minecraft.world.level.levelgen.RandomSupport.generateUniqueSeed());
++    public final ca.spottedleaf.moonrise.common.util.SimpleThreadUnsafeRandom simpleRandom = new ca.spottedleaf.moonrise.common.util.SimpleThreadUnsafeRandom(net.minecraft.world.level.levelgen.RandomSupport.generateUniqueSeed()); // Plazma - Pufferfish Minecraft Changes
+ 
+     private void optimiseRandomTick(final LevelChunk chunk, final int tickSpeed) {
+         final LevelChunkSection[] sections = chunk.getSections();
+@@ -1083,12 +1083,12 @@ public class ServerLevel extends Level implements WorldGenLevel, ServerEntityGet
+ 
+     public void tickThunder(final LevelChunk chunk) {
+         ChunkPos chunkPos = chunk.getPos();
+-        boolean raining = this.isRaining();
++        //boolean raining = this.isRaining(); // Plazma - Pufferfish Minecraft Changes
+         int minX = chunkPos.getMinBlockX();
+         int minZ = chunkPos.getMinBlockZ();
+         ProfilerFiller profiler = Profiler.get();
+         profiler.push("thunder");
+-        if (!this.paperConfig().environment.disableThunder && raining && this.isThundering() && this.spigotConfig.thunderChance > 0 && this.random.nextInt(this.spigotConfig.thunderChance) == 0) { // Spigot // Paper - Option to disable thunder
++        if (!this.paperConfig().environment.disableThunder && this.spigotConfig.thunderChance > 0 && this.isRaining() && this.isThundering() && chunk.shouldDoLightning(this.simpleRandom)) { // Spigot // Paper - Option to disable thunder // Plazma - Pufferfish Minecraft Changes
+             BlockPos pos = this.findLightningTargetAround(this.getBlockRandomPos(minX, 0, minZ, 15));
+             if (this.isRainingAt(pos)) {
+                 DifficultyInstance difficulty = this.getCurrentDifficultyAt(pos);
 diff --git a/net/minecraft/server/network/ServerGamePacketListenerImpl.java b/net/minecraft/server/network/ServerGamePacketListenerImpl.java
 index 5a7b2c7176dac55e1115ba3260504b95ce24bc61..69d30c2b20990dfec564135033b48670aa11a0cb 100644
 --- a/net/minecraft/server/network/ServerGamePacketListenerImpl.java
@@ -18,10 +200,10 @@ index 5a7b2c7176dac55e1115ba3260504b95ce24bc61..69d30c2b20990dfec564135033b48670
          final io.papermc.paper.configuration.type.number.IntOr.Disabled pageMax = io.papermc.paper.configuration.GlobalConfiguration.get().itemValidation.bookSize.pageMax;
          if (!this.cserver.isPrimaryThread() && pageMax.enabled()) {
 diff --git a/net/minecraft/world/entity/LivingEntity.java b/net/minecraft/world/entity/LivingEntity.java
-index b9296f2de35fa46b07e637b8f0aed8319313deeb..cc8e98807a3fd4b22534d2d1f5c978e0c61a19cb 100644
+index b9296f2de35fa46b07e637b8f0aed8319313deeb..3f309c87c72cd14d1dc790aecd9302b76d01ee5c 100644
 --- a/net/minecraft/world/entity/LivingEntity.java
 +++ b/net/minecraft/world/entity/LivingEntity.java
-@@ -441,6 +441,18 @@ public abstract class LivingEntity extends Entity implements Attackable, Waypoin
+@@ -441,6 +441,17 @@ public abstract class LivingEntity extends Entity implements Attackable, Waypoin
          return this.getDeltaMovement().y() < 1.0E-5F && this.isInLiquid();
      }
  
@@ -31,16 +213,15 @@ index b9296f2de35fa46b07e637b8f0aed8319313deeb..cc8e98807a3fd4b22534d2d1f5c978e0
 +    }
 +
 +    private static final float SUFFOCATION_DAMAGE_AMOUNT = 1f;
-+    public static boolean enableSuffocationOptimization = false;
 +    public boolean shouldCheckForSuffocation() {
-+        return !enableSuffocationOptimization || (this.tickCount % 10 == 0 && couldPossiblyBeHurt(SUFFOCATION_DAMAGE_AMOUNT));
++        return !this.level().plazmaConfig().entities.optimizeSuffocation.enabled || (this.tickCount % 10 == 0 && couldPossiblyBeHurt(SUFFOCATION_DAMAGE_AMOUNT));
 +    }
 +    // Plazma end - Pufferfish Minecraft Changes
 +
      @Override
      public void baseTick() {
          this.swingState.tick();
-@@ -461,8 +473,8 @@ public abstract class LivingEntity extends Entity implements Attackable, Waypoin
+@@ -461,8 +472,8 @@ public abstract class LivingEntity extends Entity implements Attackable, Waypoin
          profiler.push("livingEntityBaseTick");
          if (this.isAlive() && this.level() instanceof ServerLevel level) {
              boolean isPlayer = this instanceof Player;
@@ -51,23 +232,238 @@ index b9296f2de35fa46b07e637b8f0aed8319313deeb..cc8e98807a3fd4b22534d2d1f5c978e0
              } else if (isPlayer && !level.getWorldBorder().isWithinBounds(this.getBoundingBox())) {
                  double dist = level.getWorldBorder().getDistanceToBorder(this) + level.getWorldBorder().getSafeZone();
                  if (dist < 0.0) {
+@@ -4660,10 +4671,13 @@ public abstract class LivingEntity extends Entity implements Attackable, Waypoin
+         WorldBorder worldBorder = level.getWorldBorder();
+         Vec3 clamped = worldBorder.clampVec3ToBound(xx, y, zz);
+         BlockPos.MutableBlockPos pos = BlockPos.containing(clamped).mutable();
+-        if (level.hasChunkAt(pos)) {
++        // Plazma start - Pufferfish Minecraft Changes
++        final net.minecraft.world.level.chunk.LevelChunk chunk = level.getChunkIfLoaded(pos);
++        if (chunk != null) {
++        // Plazma end - Pufferfish Minecraft Changes
+             while (pos.getY() > level.getMinY()) {
+                 pos.move(Direction.DOWN);
+-                BlockState state = level.getBlockState(pos);
++                final BlockState state = chunk.getBlockState(pos); // Plazma - Pufferfish Minecraft Changes
+                 if (state.is(BlockTags.ENTITIES_CAN_TELEPORT_TO)) {
+                     return this.checkPositionAndTeleport(clamped.x, y, clamped.z, showParticles, isInvalidPosition, state, level, cause); // Paper - teleport cause API
+                 }
 diff --git a/net/minecraft/world/entity/boss/wither/WitherBoss.java b/net/minecraft/world/entity/boss/wither/WitherBoss.java
-index 24d7b1ba448ba26f9631643014f3ed45098366c6..a14c2ec75db8b80ee857c9aeed57354e0fac3aec 100644
+index 24d7b1ba448ba26f9631643014f3ed45098366c6..a34131a015fe24c78e36b74d2b258c2b71311590 100644
 --- a/net/minecraft/world/entity/boss/wither/WitherBoss.java
 +++ b/net/minecraft/world/entity/boss/wither/WitherBoss.java
-@@ -235,6 +235,15 @@ public class WitherBoss extends Monster implements RangedAttackMob {
+@@ -235,6 +235,13 @@ public class WitherBoss extends Monster implements RangedAttackMob {
      }
      // Purpur end - Mobs always drop experience
  
 +    // Plazma start - Pufferfish Minecraft Changes
-+    public static boolean enableSuffocationOptimization = false;
-+
 +    @Override
 +    public boolean shouldCheckForSuffocation() {
-+        return !enableSuffocationOptimization || super.shouldCheckForSuffocation();
++        return !this.level().plazmaConfig().entities.optimizeSuffocation.evenForWither || super.shouldCheckForSuffocation();
 +    }
 +    // Plazma end - Pufferfish Minecraft Changes
 +
      @Override
      protected PathNavigation createNavigation(final Level level) {
          FlyingPathNavigation flyingPathNavigation = new FlyingPathNavigation(this, level);
+diff --git a/net/minecraft/world/entity/projectile/Projectile.java b/net/minecraft/world/entity/projectile/Projectile.java
+index 2733e28bb5a2dedf82362e78227fa262db84d83e..8a3e801b1fe8a4294182c3cb2cdb7d4d4545990b 100644
+--- a/net/minecraft/world/entity/projectile/Projectile.java
++++ b/net/minecraft/world/entity/projectile/Projectile.java
+@@ -61,6 +61,42 @@ public abstract class Projectile extends Entity implements TraceableEntity {
+         super(type, level);
+     }
+ 
++    // Plazma start - Pufferfish Minecraft Changes
++    private static int loadedThisTick = 0;
++    private static int loadedTick;
++
++    private int loadedLifetime = 0;
++
++    @Override
++    public void setPos(final double x, final double y, final double z) {
++        if (org.plazmamc.plazma.Options.global().entities.projectile.limitChunkLoading.enabled) {
++            int currentTick = net.minecraft.server.MinecraftServer.currentTick;
++            if (loadedTick != currentTick) {
++                loadedTick = currentTick;
++                loadedThisTick = 0;
++            }
++
++            int previousX = Mth.floor(this.getX()) >> 4,
++                previousZ = Mth.floor(this.getZ()) >> 4,
++                newX = Mth.floor(x) >> 4,
++                newZ = Mth.floor(z) >> 4;
++            if (
++                (previousX != newX || previousZ != newZ)
++                && ((net.minecraft.server.level.ServerChunkCache) this.level().getChunkSource()).getChunkAtIfCachedImmediately(newX, newZ) == null
++            ) {
++                if (loadedThisTick > org.plazmamc.plazma.Options.global().entities.projectile.limitChunkLoading.maxChunkLoadsPerTick) {
++                    if (++this.loadedLifetime > org.plazmamc.plazma.Options.global().entities.projectile.limitChunkLoading.maxChunkLoadsPerProjectile) {
++                        this.discard();
++                    }
++                    return;
++                }
++                loadedThisTick++;
++            }
++        }
++        super.setPos(x, y, z);
++    }
++    // Plazma end - Pufferfish Minecraft Changes
++
+     @Override
+     protected void applyImplicitComponents(final DataComponentGetter components) {
+         this.applyImplicitComponentIfPresent(components, DataComponents.CAN_BREAK);
+diff --git a/net/minecraft/world/item/crafting/ShapelessRecipe.java b/net/minecraft/world/item/crafting/ShapelessRecipe.java
+index 45b8bc986a05a661ab6d1a8a7ac94efb42074374..2037d9d77268d09e41835f5fa3d41d9c19f0866b 100644
+--- a/net/minecraft/world/item/crafting/ShapelessRecipe.java
++++ b/net/minecraft/world/item/crafting/ShapelessRecipe.java
+@@ -38,10 +38,20 @@ public class ShapelessRecipe extends NormalCraftingRecipe {
+     public static final RecipeSerializer<ShapelessRecipe> SERIALIZER = new RecipeSerializer<>(MAP_CODEC, STREAM_CODEC);
+     private final ItemStackTemplate result;
+     private final List<Ingredient> ingredients;
++    private final boolean isBukkit; // Plazma - Pufferfish Minecraft Changes
+ 
+     public ShapelessRecipe(
+         final Recipe.CommonInfo commonInfo, final CraftingRecipe.CraftingBookInfo bookInfo, final ItemStackTemplate result, final List<Ingredient> ingredients
+     ) {
++        // Plazma start - Pufferfish Minecraft Changes
++        this(commonInfo, bookInfo, result, ingredients, false);
++    }
++
++    public ShapelessRecipe(
++        final Recipe.CommonInfo commonInfo, final CraftingRecipe.CraftingBookInfo bookInfo, final ItemStackTemplate result, final List<Ingredient> ingredients, boolean isBukkit
++    ) {
++        this.isBukkit = isBukkit;
++        // Plazma end - Pufferfish Minecraft Changes
+         super(commonInfo, bookInfo);
+         this.result = result;
+         this.ingredients = ingredients;
+@@ -74,6 +84,28 @@ public class ShapelessRecipe extends NormalCraftingRecipe {
+ 
+     @Override
+     public boolean matches(final CraftingInput input, final Level level) {
++        // Plazma start - Pufferfish Minecraft Changes
++        if (this.isBukkit && level.plazmaConfig().misc.optimizeShapelessBukkitRecipes) {
++            final java.util.List<Ingredient> ingredients = new java.util.ArrayList<>(this.ingredients);
++
++            input: for (int i = 0; i < input.size(); i++) {
++                final ItemStack itemStack = input.getItem(i);
++                if (itemStack.isEmpty()) {
++                    continue;
++                }
++
++                for (int j = 0; j < ingredients.size(); j++) {
++                    if (ingredients.get(j).test(itemStack)) {
++                        ingredients.remove(j);
++                        continue input;
++                    }
++                }
++            }
++
++            return ingredients.isEmpty();
++        }
++        // Plazma end - Pufferfish Minecraft Changes
++
+         // Paper start - Improve exact choice recipe ingredients & unwrap ternary
+         if (input.ingredientCount() != this.ingredients.size()) {
+             return false;
+diff --git a/net/minecraft/world/level/NaturalSpawner.java b/net/minecraft/world/level/NaturalSpawner.java
+index 3da6333683790ce17d9de34955dbf3f9e23a18ad..a7b69f4478be15738a0a73697c0665a679e2b75a 100644
+--- a/net/minecraft/world/level/NaturalSpawner.java
++++ b/net/minecraft/world/level/NaturalSpawner.java
+@@ -79,8 +79,20 @@ public final class NaturalSpawner {
+         final LocalMobCapCalculator localMobCapCalculator,
+         final boolean countMobs
+     ) {
++        // Plazma start - Pufferfish Minecraft Changes
++        return createState(spawnableChunkCount, level, level.getEntities().getAll(), chunkGetter, localMobCapCalculator, countMobs);
++    }
++
++    public static NaturalSpawner.SpawnState createState(
++        final int spawnableChunkCount,
++        final ServerLevel serverLevel,
++        final Iterable<Entity> entities,
++        final NaturalSpawner.ChunkGetter chunkGetter,
++        final LocalMobCapCalculator localMobCapCalculator,
++        final boolean countMobs
++    ) {
++        // Plazma end - Pufferfish Minecraft Changes
+         // Paper end - Optional per player mob spawns
+-        Iterable<Entity> entities = level.getAllEntities();
+         PotentialCalculator spawnPotential = new PotentialCalculator();
+         Object2IntOpenHashMap<MobCategory> mobCounts = new Object2IntOpenHashMap<>();
+ 
+@@ -89,7 +101,7 @@ public final class NaturalSpawner {
+                 MobCategory category = entity.getType().getCategory();
+                 if (category != MobCategory.MISC) {
+                     // Paper start - Only count natural spawns
+-                    if (!entity.level().paperConfig().entities.spawning.countAllMobsForSpawning &&
++                    if (!serverLevel.paperConfig().entities.spawning.countAllMobsForSpawning && // Plazma - Pufferfish Minecraft Changes
+                         !(entity.spawnReason == org.bukkit.event.entity.CreatureSpawnEvent.SpawnReason.NATURAL ||
+                             entity.spawnReason == org.bukkit.event.entity.CreatureSpawnEvent.SpawnReason.CHUNK_GEN)) {
+                         continue;
+@@ -97,7 +109,7 @@ public final class NaturalSpawner {
+                     // Paper end - Only count natural spawns
+                     BlockPos pos = entity.blockPosition();
+                     chunkGetter.query(ChunkPos.pack(pos), chunk -> {
+-                        MobSpawnSettings naturalMobSpawns = level.environmentAttributes().getValue(EnvironmentAttributes.NATURAL_MOB_SPAWNS, pos);
++                        MobSpawnSettings naturalMobSpawns = serverLevel.environmentAttributes().getValue(EnvironmentAttributes.NATURAL_MOB_SPAWNS, pos); // Plazma - Pufferfish Minecraft Changes
+                         MobSpawnSettings.MobSpawnCost mobSpawnCost = naturalMobSpawns.getMobSpawnCost(entity.getType());
+                         if (mobSpawnCost != null) {
+                             spawnPotential.addCharge(entity.blockPosition(), mobSpawnCost.charge());
+@@ -110,7 +122,7 @@ public final class NaturalSpawner {
+                         mobCounts.addTo(category, 1);
+                         // Paper start - Optional per player mob spawns
+                         if (countMobs) {
+-                            ((ServerLevel) chunk.getLevel()).getChunkSource().chunkMap.updatePlayerMobTypeMap(entity);
++                            serverLevel.getChunkSource().chunkMap.updatePlayerMobTypeMap(entity); // Plazma - Pufferfish Minecraft Changes
+                         }
+                         // Paper end - Optional per player mob spawns
+                     });
+diff --git a/net/minecraft/world/level/chunk/LevelChunk.java b/net/minecraft/world/level/chunk/LevelChunk.java
+index 76dae652c910e36c860791a8285bd9fee466d5b9..0af53b12b9d71900157a3712c948c531c9762de5 100644
+--- a/net/minecraft/world/level/chunk/LevelChunk.java
++++ b/net/minecraft/world/level/chunk/LevelChunk.java
+@@ -140,6 +140,20 @@ public class LevelChunk extends ChunkAccess implements DebugValueSource, ca.spot
+     }
+     // Paper end - get block chunk optimisation
+ 
++    // Plazma start - Pufferfish Minecraft Changes
++    private int lightningTick;
++    public final boolean shouldDoLightning(final net.minecraft.util.RandomSource random) {
++        if (!this.level.plazmaConfig().misc.optimizeLightningCheck)
++            return random.nextInt(this.level.spigotConfig.thunderChance) == 0;
++
++        if (this.lightningTick-- <= 0) {
++            this.lightningTick = random.nextInt(this.level.spigotConfig.thunderChance) << 1;
++            return true;
++        }
++        return false;
++    }
++    // Plazma end - Pufferfish Minecraft Changes
++
+     public LevelChunk(final Level level, final ChunkPos pos) {
+         this(level, pos, UpgradeData.EMPTY, new LevelChunkTicks<>(), new LevelChunkTicks<>(), 0L, null, null, null);
+     }
+@@ -176,6 +190,8 @@ public class LevelChunk extends ChunkAccess implements DebugValueSource, ca.spot
+         this.debug = !empty && this.level.isDebug();
+         this.defaultBlockState = empty ? VOID_AIR_BLOCKSTATE : AIR_BLOCKSTATE;
+         // Paper end - get block chunk optimisation
++
++        this.lightningTick = ((ServerLevel) level).simpleRandom.nextInt(level.spigotConfig.thunderChance) << 1; // Plazma - Pufferfish Minecraft Changes
+     }
+ 
+     public LevelChunk(final ServerLevel level, final ProtoChunk protoChunk, final LevelChunk.@Nullable PostLoadProcessor postLoad) {
+diff --git a/net/minecraft/world/level/entity/EntityTickList.java b/net/minecraft/world/level/entity/EntityTickList.java
+index a30409eddfaded878a3ac54bb526fd2e4b887c57..d031e34d623e806c7e58e4d237da053b29aa5a6f 100644
+--- a/net/minecraft/world/level/entity/EntityTickList.java
++++ b/net/minecraft/world/level/entity/EntityTickList.java
+@@ -9,7 +9,7 @@ import net.minecraft.world.entity.Entity;
+ import org.jspecify.annotations.Nullable;
+ 
+ public class EntityTickList {
+-    private final ca.spottedleaf.moonrise.common.list.IteratorSafeOrderedReferenceSet<net.minecraft.world.entity.Entity> entities = new ca.spottedleaf.moonrise.common.list.IteratorSafeOrderedReferenceSet<>(); // Paper - rewrite chunk system
++    public final ca.spottedleaf.moonrise.common.list.IteratorSafeOrderedReferenceSet<net.minecraft.world.entity.Entity> entities = new ca.spottedleaf.moonrise.common.list.IteratorSafeOrderedReferenceSet<>(); // Paper - rewrite chunk system // Plazma - Pufferfish Minecraft Changes
+ 
+     private void ensureActiveIsNotIterated() {
+         // Paper - rewrite chunk system

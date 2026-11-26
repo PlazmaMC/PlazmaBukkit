@@ -1,0 +1,88 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Alpha <dev@alpha93.kr>
+Date: Thu, 26 Nov 2026 10:11:04 +0900
+Subject: [PATCH] Optimize SpecialDates check
+
+Based on Airplane's patch: "Only check for spooky season once an hour"
+
+Airplane
+Copyright (C) 2020 Technove LLC
+
+This program is free software: you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation, either version 3 of the License, or
+(at your option) any later version.
+
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+Signed-off-by: Alpha <dev@alpha93.kr>
+
+diff --git a/net/minecraft/util/SpecialDates.java b/net/minecraft/util/SpecialDates.java
+index a6018d9fba0957fc721cebc9f366767fa04d4950..9f35d916b4c3d3287f9a2751c6de0ee2c7385f63 100644
+--- a/net/minecraft/util/SpecialDates.java
++++ b/net/minecraft/util/SpecialDates.java
+@@ -2,7 +2,6 @@ package net.minecraft.util;
+ 
+ import java.time.Month;
+ import java.time.MonthDay;
+-import java.time.ZonedDateTime;
+ import java.util.List;
+ 
+ public class SpecialDates {
+@@ -13,15 +12,46 @@ public class SpecialDates {
+     public static final MonthDay CHRISTMAS = MonthDay.of(Month.DECEMBER, 24);
+     public static final MonthDay NEW_YEAR = MonthDay.of(Month.JANUARY, 1);
+ 
+-    public static MonthDay dayNow() {
+-        return MonthDay.from(ZonedDateTime.now());
++    // Plazma start - Pufferfish Minecraft Changes
++    private static final byte FLAG_HALLOWEEN = 1;
++    private static final byte FLAG_CHRISTMAS = 1 << 1;
++    private static byte flags = 0;
++
++    private static int refreshRate = 0;
++    private static int lastRefreshTick = 0;
++    public static void plazma$refreshConfiguration(final int refreshRate) {
++        SpecialDates.refreshRate = refreshRate;
++        SpecialDates.lastRefreshTick = -refreshRate; // force refresh on first tick
++    }
++
++    private static void refresh() {
++        if (net.minecraft.server.MinecraftServer.currentTick - lastRefreshTick <= refreshRate)
++            return;
++
++        final MonthDay now = MonthDay.now();
++        flags = 0;
++        if (HALLOWEEN.equals(now)) flags |= FLAG_HALLOWEEN;
++        if (CHRISTMAS_RANGE.contains(now)) flags |= FLAG_CHRISTMAS;
++
++        lastRefreshTick = net.minecraft.server.MinecraftServer.currentTick;
+     }
+ 
+     public static boolean isHalloween() {
+-        return HALLOWEEN.equals(dayNow());
++        if (refreshRate <= 1) { // caching disabled
++            return HALLOWEEN.equals(MonthDay.now());
++        }
++
++        refresh();
++        return (flags & FLAG_HALLOWEEN) != 0;
+     }
+ 
+     public static boolean isExtendedChristmas() {
+-        return CHRISTMAS_RANGE.contains(dayNow());
++        if (refreshRate <= 1) { // caching disabled
++            return CHRISTMAS_RANGE.contains(MonthDay.now());
++        }
++
++        refresh();
++        return (flags & FLAG_CHRISTMAS) != 0;
+     }
++    // Plazma end - Pufferfish Minecraft Changes
+ }
