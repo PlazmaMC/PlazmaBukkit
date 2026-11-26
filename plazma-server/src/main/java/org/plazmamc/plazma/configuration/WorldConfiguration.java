@@ -31,8 +31,18 @@ public class WorldConfiguration extends ConfigurationPart {
         public boolean optimizeLightningCheck = true;
     }
 
+    public Item item;
+    public class Item extends ConfigurationPart {
+        public EndCrystal endCrystal;
+        public class EndCrystal extends ConfigurationPart {
+            public boolean allowEnderDragonRespawn = true;
+        }
+    }
+
     public Entities entities;
     public class Entities extends ConfigurationPart {
+        public boolean skipPathfindingForUnloadedChunks = true;
+
         @ApiStatus.AvailableSince("2")
         public OptimizeSuffocation optimizeSuffocation;
         public class OptimizeSuffocation extends ConfigurationPart {

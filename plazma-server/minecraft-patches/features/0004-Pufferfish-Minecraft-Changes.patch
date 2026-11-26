@@ -200,7 +200,7 @@ index 5a7b2c7176dac55e1115ba3260504b95ce24bc61..69d30c2b20990dfec564135033b48670
          final io.papermc.paper.configuration.type.number.IntOr.Disabled pageMax = io.papermc.paper.configuration.GlobalConfiguration.get().itemValidation.bookSize.pageMax;
          if (!this.cserver.isPrimaryThread() && pageMax.enabled()) {
 diff --git a/net/minecraft/world/entity/LivingEntity.java b/net/minecraft/world/entity/LivingEntity.java
-index b9296f2de35fa46b07e637b8f0aed8319313deeb..3f309c87c72cd14d1dc790aecd9302b76d01ee5c 100644
+index b9296f2de35fa46b07e637b8f0aed8319313deeb..1622e7384cb0042efa394c96df44358e83078705 100644
 --- a/net/minecraft/world/entity/LivingEntity.java
 +++ b/net/minecraft/world/entity/LivingEntity.java
 @@ -441,6 +441,17 @@ public abstract class LivingEntity extends Entity implements Attackable, Waypoin
@@ -232,7 +232,46 @@ index b9296f2de35fa46b07e637b8f0aed8319313deeb..3f309c87c72cd14d1dc790aecd9302b7
              } else if (isPlayer && !level.getWorldBorder().isWithinBounds(this.getBoundingBox())) {
                  double dist = level.getWorldBorder().getDistanceToBorder(this) + level.getWorldBorder().getSafeZone();
                  if (dist < 0.0) {
-@@ -4660,10 +4671,13 @@ public abstract class LivingEntity extends Entity implements Attackable, Waypoin
+@@ -2227,25 +2238,30 @@ public abstract class LivingEntity extends Entity implements Attackable, Waypoin
+         return this.lastClimbablePos;
+     }
+ 
++    // Plazma start - Pufferfish Minecraft Changes
++    private boolean onClimbable = false;
++    private BlockPos onClimbablePos = null;
++
+     public boolean onClimbable() {
+-        if (this.isSpectator()) {
+-            return false;
+-        } else {
+-            BlockPos ladderCheckPos = this.blockPosition();
++        final BlockPos ladderCheckPos = this.blockPosition();
++        if (!ladderCheckPos.equals(this.onClimbablePos)) {
+             BlockState state = this.getInBlockState();
+             if (this.isFallFlying() && state.is(BlockTags.CAN_GLIDE_THROUGH)) {
+-                return false;
++                this.onClimbable = false;
+             } else if (state.is(BlockTags.CLIMBABLE)) {
+                 this.lastClimbablePos = Optional.of(ladderCheckPos);
+-                return true;
++                this.onClimbable = true;
+             } else if (state.getBlock() instanceof TrapDoorBlock && this.trapdoorUsableAsLadder(ladderCheckPos, state)) {
+                 this.lastClimbablePos = Optional.of(ladderCheckPos);
+-                return true;
++                this.onClimbable = true;
+             } else {
+-                return false;
++                this.onClimbable = false;
+             }
++            this.onClimbablePos = ladderCheckPos;
+         }
++        return this.onClimbable;
+     }
++    // Plazma end - Pufferfish Minecraft Changes
+ 
+     private boolean trapdoorUsableAsLadder(final BlockPos pos, final BlockState state) {
+         if (!state.getValue(TrapDoorBlock.OPEN)) {
+@@ -4660,10 +4676,13 @@ public abstract class LivingEntity extends Entity implements Attackable, Waypoin
          WorldBorder worldBorder = level.getWorldBorder();
          Vec3 clamped = worldBorder.clampVec3ToBound(xx, y, zz);
          BlockPos.MutableBlockPos pos = BlockPos.containing(clamped).mutable();
@@ -248,6 +287,25 @@ index b9296f2de35fa46b07e637b8f0aed8319313deeb..3f309c87c72cd14d1dc790aecd9302b7
                  if (state.is(BlockTags.ENTITIES_CAN_TELEPORT_TO)) {
                      return this.checkPositionAndTeleport(clamped.x, y, clamped.z, showParticles, isInvalidPosition, state, level, cause); // Paper - teleport cause API
                  }
+diff --git a/net/minecraft/world/entity/ai/goal/MoveToBlockGoal.java b/net/minecraft/world/entity/ai/goal/MoveToBlockGoal.java
+index c6e9b155c2341c13d569f28f54f0c1d2d7313676..96e4d0759396d7ef675ce44022b9e69bd029b966 100644
+--- a/net/minecraft/world/entity/ai/goal/MoveToBlockGoal.java
++++ b/net/minecraft/world/entity/ai/goal/MoveToBlockGoal.java
+@@ -113,12 +113,14 @@ public abstract class MoveToBlockGoal extends Goal {
+         int verticalSearch = this.verticalSearchRange;
+         BlockPos mobPos = this.mob.blockPosition();
+         BlockPos.MutableBlockPos pos = new BlockPos.MutableBlockPos();
++        final boolean skipPathfindingForUnloadedChunks = this.mob.level().plazmaConfig().entities.skipPathfindingForUnloadedChunks; // Plazma - Pufferfish Minecraft Changes
+ 
+         for (int y = this.verticalSearchStart; y <= verticalSearch; y = y > 0 ? -y : 1 - y) {
+             for (int r = 0; r < horizontalSearch; r++) {
+                 for (int x = 0; x <= r; x = x > 0 ? -x : 1 - x) {
+                     for (int z = x < r && x > -r ? r : 0; z <= r; z = z > 0 ? -z : 1 - z) {
+                         pos.setWithOffset(mobPos, x, y - 1, z);
++                        if (skipPathfindingForUnloadedChunks && !this.mob.level().hasChunkAt(pos)) continue; // Plazma - Pufferfish Minecraft Changes
+                         if (this.mob.isWithinHome(pos) && this.isValidTarget(this.mob.level(), pos)) {
+                             this.blockPos = pos;
+                             this.mob.movingTarget = pos == BlockPos.ZERO ? null : pos.immutable(); // Paper
 diff --git a/net/minecraft/world/entity/boss/wither/WitherBoss.java b/net/minecraft/world/entity/boss/wither/WitherBoss.java
 index 24d7b1ba448ba26f9631643014f3ed45098366c6..a34131a015fe24c78e36b74d2b258c2b71311590 100644
 --- a/net/minecraft/world/entity/boss/wither/WitherBoss.java
@@ -266,6 +324,19 @@ index 24d7b1ba448ba26f9631643014f3ed45098366c6..a34131a015fe24c78e36b74d2b258c2b
      @Override
      protected PathNavigation createNavigation(final Level level) {
          FlyingPathNavigation flyingPathNavigation = new FlyingPathNavigation(this, level);
+diff --git a/net/minecraft/world/entity/player/Player.java b/net/minecraft/world/entity/player/Player.java
+index 18847eb37d53ce01397b03cbcf8a22d2cd7df771..81b103130a4c441aa38feb7f70e183acbed764f4 100644
+--- a/net/minecraft/world/entity/player/Player.java
++++ b/net/minecraft/world/entity/player/Player.java
+@@ -2263,7 +2263,7 @@ public abstract class Player extends Avatar implements ContainerUser {
+ 
+     @Override
+     public boolean onClimbable() {
+-        return !this.abilities.flying && super.onClimbable();
++        return !this.abilities.flying && !this.isSpectator() && super.onClimbable(); // Plazma - Pufferfish Minecraft Changes
+     }
+ 
+     public String debugInfo() {
 diff --git a/net/minecraft/world/entity/projectile/Projectile.java b/net/minecraft/world/entity/projectile/Projectile.java
 index 2733e28bb5a2dedf82362e78227fa262db84d83e..8a3e801b1fe8a4294182c3cb2cdb7d4d4545990b 100644
 --- a/net/minecraft/world/entity/projectile/Projectile.java
@@ -313,6 +384,19 @@ index 2733e28bb5a2dedf82362e78227fa262db84d83e..8a3e801b1fe8a4294182c3cb2cdb7d4d
      @Override
      protected void applyImplicitComponents(final DataComponentGetter components) {
          this.applyImplicitComponentIfPresent(components, DataComponents.CAN_BREAK);
+diff --git a/net/minecraft/world/item/EndCrystalItem.java b/net/minecraft/world/item/EndCrystalItem.java
+index fdce2bdc2ea73718bd016c2f2dbcb9d24f9d8cad..3e0b21ff369199a08efa2019aa4a8f3be447f550 100644
+--- a/net/minecraft/world/item/EndCrystalItem.java
++++ b/net/minecraft/world/item/EndCrystalItem.java
+@@ -53,7 +53,7 @@ public class EndCrystalItem extends Item {
+             level.addFreshEntity(crystal);
+             level.gameEvent(context.getPlayer(), GameEvent.ENTITY_PLACE, above);
+             EnderDragonFight fight = serverLevel.getDragonFight();
+-            if (fight != null) {
++            if (fight != null /* implies level.dimensionType().hasEnderDragonFight() */ && level.plazmaConfig().item.endCrystal.allowEnderDragonRespawn) { // Plazma - Pufferfish Minecraft Changes
+                 fight.tryRespawn(above); // Paper - Perf: Do crystal-portal proximity check before entity lookup
+             }
+         }
 diff --git a/net/minecraft/world/item/crafting/ShapelessRecipe.java b/net/minecraft/world/item/crafting/ShapelessRecipe.java
 index 45b8bc986a05a661ab6d1a8a7ac94efb42074374..2037d9d77268d09e41835f5fa3d41d9c19f0866b 100644
 --- a/net/minecraft/world/item/crafting/ShapelessRecipe.java
