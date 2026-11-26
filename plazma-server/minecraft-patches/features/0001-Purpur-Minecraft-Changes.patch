@@ -2419,7 +2419,7 @@ index 3a594416e711fc6fdbf0ac7c3484a9830324d4d8..16f93e7a1a89a1581dbbe1235ced1863
              ItemStack itemStack = selected.get().itemStack();
              int toRepairFromXpAmount = EnchantmentHelper.modifyDurabilityToRepairFromXp(player.level(), itemStack, amount);
 diff --git a/net/minecraft/world/entity/LivingEntity.java b/net/minecraft/world/entity/LivingEntity.java
-index 5c74fbc84fdc6287b579eca5a77b69f454c396eb..b9296f2de35fa46b07e637b8f0aed8319313deeb 100644
+index 220322827d95e5ac77cf94047d3a22ac9d9d315f..2bbe397ef4b56bb75248d606ae5f8c1094c0d05d 100644
 --- a/net/minecraft/world/entity/LivingEntity.java
 +++ b/net/minecraft/world/entity/LivingEntity.java
 @@ -259,9 +259,9 @@ public abstract class LivingEntity extends Entity implements Attackable, Waypoin
@@ -2565,7 +2565,7 @@ index 5c74fbc84fdc6287b579eca5a77b69f454c396eb..b9296f2de35fa46b07e637b8f0aed831
          if (damage < 0.0F) {
              damage = 0.0F;
          }
-@@ -1720,10 +1761,10 @@ public abstract class LivingEntity extends Entity implements Attackable, Waypoin
+@@ -1721,10 +1762,10 @@ public abstract class LivingEntity extends Entity implements Attackable, Waypoin
      protected @Nullable Player resolvePlayerResponsibleForDamage(final DamageSource source) {
          Entity sourceEntity = source.getEntity();
          if (sourceEntity instanceof Player playerSource) {
@@ -2578,7 +2578,7 @@ index 5c74fbc84fdc6287b579eca5a77b69f454c396eb..b9296f2de35fa46b07e637b8f0aed831
              } else {
                  this.lastHurtByPlayer = null;
                  this.lastHurtByPlayerMemoryTime = 0;
-@@ -1779,6 +1820,18 @@ public abstract class LivingEntity extends Entity implements Attackable, Waypoin
+@@ -1780,6 +1821,18 @@ public abstract class LivingEntity extends Entity implements Attackable, Waypoin
              }
          }
  
@@ -2597,7 +2597,7 @@ index 5c74fbc84fdc6287b579eca5a77b69f454c396eb..b9296f2de35fa46b07e637b8f0aed831
          final org.bukkit.inventory.EquipmentSlot handSlot = (usedHand != null) ? org.bukkit.craftbukkit.CraftEquipmentSlot.getHand(usedHand) : null;
          final EntityResurrectEvent event = new EntityResurrectEvent(this.getBukkitEntity(), handSlot);
          event.setCancelled(protectionItem == null);
-@@ -1906,7 +1959,7 @@ public abstract class LivingEntity extends Entity implements Attackable, Waypoin
+@@ -1907,7 +1960,7 @@ public abstract class LivingEntity extends Entity implements Attackable, Waypoin
          if (this.level() instanceof ServerLevel serverLevel) {
              boolean var6 = false;
              if (killer instanceof WitherBoss) {
@@ -2606,7 +2606,7 @@ index 5c74fbc84fdc6287b579eca5a77b69f454c396eb..b9296f2de35fa46b07e637b8f0aed831
                      BlockPos pos = this.blockPosition();
                      BlockState state = Blocks.WITHER_ROSE.defaultBlockState();
                      if (this.level().getBlockState(pos).isAir() && state.canSurvive(this.level(), pos)) {
-@@ -1931,8 +1984,10 @@ public abstract class LivingEntity extends Entity implements Attackable, Waypoin
+@@ -1932,8 +1985,10 @@ public abstract class LivingEntity extends Entity implements Attackable, Waypoin
      protected void dropAllDeathLoot(final ServerLevel level, final DamageSource source) {
          boolean playerKilled = this.lastHurtByPlayerMemoryTime > 0;
          if (this.shouldDropLoot(level)) {
@@ -2617,7 +2617,7 @@ index 5c74fbc84fdc6287b579eca5a77b69f454c396eb..b9296f2de35fa46b07e637b8f0aed831
          }
  
          this.dropEquipment(level);
-@@ -3088,6 +3143,20 @@ public abstract class LivingEntity extends Entity implements Attackable, Waypoin
+@@ -3089,6 +3144,20 @@ public abstract class LivingEntity extends Entity implements Attackable, Waypoin
              this.move(MoverType.SELF, this.getDeltaMovement());
              this.setDeltaMovement(this.getDeltaMovement().scale(0.5));
          } else {
@@ -2638,7 +2638,7 @@ index 5c74fbc84fdc6287b579eca5a77b69f454c396eb..b9296f2de35fa46b07e637b8f0aed831
              this.moveRelative(airSpeed, input);
              this.move(MoverType.SELF, this.getDeltaMovement());
              this.setDeltaMovement(this.getDeltaMovement().scale(0.91F));
-@@ -3267,6 +3336,7 @@ public abstract class LivingEntity extends Entity implements Attackable, Waypoin
+@@ -3268,6 +3337,7 @@ public abstract class LivingEntity extends Entity implements Attackable, Waypoin
              float dmg = (float)(diff * 10.0 - 3.0);
              if (dmg > 0.0F) {
                  this.playSound(this.getFallDamageSound((int)dmg), 1.0F, 1.0F);
@@ -2646,7 +2646,7 @@ index 5c74fbc84fdc6287b579eca5a77b69f454c396eb..b9296f2de35fa46b07e637b8f0aed831
                  this.hurt(this.damageSources().flyIntoWall(), dmg);
              }
          }
-@@ -3821,8 +3891,10 @@ public abstract class LivingEntity extends Entity implements Attackable, Waypoin
+@@ -3822,8 +3892,10 @@ public abstract class LivingEntity extends Entity implements Attackable, Waypoin
          this.pushEntities();
          profiler.pop();
          // Paper start - Add EntityMoveEvent
@@ -2659,7 +2659,7 @@ index 5c74fbc84fdc6287b579eca5a77b69f454c396eb..b9296f2de35fa46b07e637b8f0aed831
                  Location from = new Location(this.level().getWorld(), this.xo, this.yo, this.zo, this.yRotO, this.xRotO);
                  Location to = new Location(this.level().getWorld(), this.getX(), this.getY(), this.getZ(), this.getYRot(), this.getXRot());
                  io.papermc.paper.event.entity.EntityMoveEvent event = new io.papermc.paper.event.entity.EntityMoveEvent(this.getBukkitEntity(), from, to.clone());
-@@ -3832,11 +3904,47 @@ public abstract class LivingEntity extends Entity implements Attackable, Waypoin
+@@ -3833,11 +3905,47 @@ public abstract class LivingEntity extends Entity implements Attackable, Waypoin
                      this.absSnapTo(event.getTo().getX(), event.getTo().getY(), event.getTo().getZ(), event.getTo().getYaw(), event.getTo().getPitch());
                  }
              }
@@ -2707,7 +2707,7 @@ index 5c74fbc84fdc6287b579eca5a77b69f454c396eb..b9296f2de35fa46b07e637b8f0aed831
      }
  
      protected void applyInput() {
-@@ -3867,7 +3975,16 @@ public abstract class LivingEntity extends Entity implements Attackable, Waypoin
+@@ -3868,7 +3976,16 @@ public abstract class LivingEntity extends Entity implements Attackable, Waypoin
                  if (freeFallInterval % 2 == 0) {
                      List<EquipmentSlot> slotsWithGliders = EquipmentSlot.VALUES.stream().filter(slot -> canGlideUsing(this.getItemBySlot(slot), slot)).toList();
                      EquipmentSlot slotToDamage = Util.getRandom(slotsWithGliders, this.random);
@@ -2725,7 +2725,7 @@ index 5c74fbc84fdc6287b579eca5a77b69f454c396eb..b9296f2de35fa46b07e637b8f0aed831
                  }
  
                  this.gameEvent(GameEvent.ELYTRA_GLIDE);
-@@ -4827,6 +4944,12 @@ public abstract class LivingEntity extends Entity implements Attackable, Waypoin
+@@ -4828,6 +4945,12 @@ public abstract class LivingEntity extends Entity implements Attackable, Waypoin
              : slot == equippable.slot() && this.canUseSlot(equippable.slot()) && equippable.canBeEquippedBy(this.typeHolder());
      }
  
