@@ -20,6 +20,7 @@
 > - [ ] Implement Pufferfish API patches (0/2)
 >   - [ ] Implement SIMD
 > - [ ] Completely remove Timings & Profilers
+> - [ ] Port SparklyPaper patches
 > - [ ] Implement the remaining patches from 1.21.4/1.21.8
 
 > [!WARNING]
