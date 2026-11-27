@@ -1,5 +1,6 @@
 package org.plazmamc.plazma.configuration;
 
+import com.mojang.logging.LogUtils;
 import io.leangen.geantyref.TypeToken;
 import io.papermc.paper.configuration.ConfigurationPart;
 import io.papermc.paper.configuration.Configurations;
@@ -23,6 +24,7 @@ import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.gamerules.GameRules;
 import org.jetbrains.annotations.Contract;
 import org.jspecify.annotations.NullMarked;
+import org.slf4j.Logger;
 import org.spongepowered.configurate.ConfigurateException;
 import org.spongepowered.configurate.ConfigurationOptions;
 import org.spongepowered.configurate.objectmapping.ObjectMapper;
@@ -42,6 +44,8 @@ public class PlazmaConfigurations extends Configurations<GlobalConfiguration, Wo
     static final String GLOBAL_CONFIG_FILE_NAME = "plazma-global.yml";
     static final String WORLD_CONFIG_FILE_NAME = "plazma-world.yml";
     static final String WORLD_DEFAULTS_CONFIG_FILE_NAME = "plazma-world-defaults.yml";
+
+    static final Logger LOGGER = LogUtils.getLogger();
 
     private static final String GLOBAL_HEADER = String.format("""
             This is the global configuration file for Plazma.

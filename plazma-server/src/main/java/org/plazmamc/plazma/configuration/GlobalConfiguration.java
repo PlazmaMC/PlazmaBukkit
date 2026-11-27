@@ -3,6 +3,7 @@ package org.plazmamc.plazma.configuration;
 import io.papermc.paper.configuration.Configuration;
 import io.papermc.paper.configuration.ConfigurationPart;
 import io.papermc.paper.configuration.constraint.Constraints;
+import io.papermc.paper.configuration.type.time.Duration;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.Contract;
 import org.jspecify.annotations.NullMarked;
@@ -32,12 +33,11 @@ public class GlobalConfiguration extends ConfigurationPart {
     public int version = CURRENT_VERSION;
 
     public class Misc extends ConfigurationPart {
-        @Constraints.Min(0)
-        public int specialDatesRefreshRate = 60 * 60 * 24; // 1 day
+        public Duration specialDatesRefreshRate = Duration.of("1d"); // 1 day
 
         @PostProcess
         private void postProcess() {
-            net.minecraft.util.SpecialDates.plazma$refreshConfiguration(this.specialDatesRefreshRate * 20);
+            net.minecraft.util.SpecialDates.plazma$refreshConfiguration((int) this.specialDatesRefreshRate.ticks());
         }
     }
 
@@ -56,9 +56,9 @@ public class GlobalConfiguration extends ConfigurationPart {
             public class LimitChunkLoading extends ConfigurationPart {
                 public boolean enabled = true;
                 @Constraints.Min(0)
-                public int maxChunkLoadsPerTick = 10;
+                public byte maxChunkLoadsPerTick = 10;
                 @Constraints.Min(0)
-                public int maxChunkLoadsPerProjectile = 10;
+                public byte maxChunkLoadsPerProjectile = 10;
             }
         }
     }
