@@ -78,9 +78,7 @@ public class GlobalConfiguration extends ConfigurationPart {
 
         @PostProcess
         private void postProcess() {
-            if (initialized) {
-                throw new IllegalStateException("Server configuration has already been initialized");
-            }
+            if (initialized) return;
             this.async.postProcess();
             initialized = true;
         }

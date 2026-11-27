@@ -1,0 +1,79 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Alpha <dev@alpha93.kr>
+Date: Fri, 27 Nov 2026 12:15:26 +0900
+Subject: [PATCH] Pufferfish API Changes
+
+Pufferfish
+Copyright (C) 2026 Pufferfish
+
+This program is free software: you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation, either version 3 of the License, or
+(at your option) any later version.
+
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with this program.  If not, see <https://www.gnu.org/licenses/>.
+
+Signed-off-by: Alpha <dev@alpha93.kr>
+
+diff --git a/src/main/java/org/bukkit/map/MapPalette.java b/src/main/java/org/bukkit/map/MapPalette.java
+index 76ae2750ff7b04a281d4b794dc1f48dd832db2b6..eb1fd959442187a052f9604ce06211d1b4b4e9e8 100644
+--- a/src/main/java/org/bukkit/map/MapPalette.java
++++ b/src/main/java/org/bukkit/map/MapPalette.java
+@@ -35,7 +35,7 @@ public final class MapPalette {
+     }
+ 
+     @NotNull
+-    static final Color[] colors = {
++    public static final Color[] colors = { // Plazma - Pufferfish API changes
+         // Start generate - MapPalette#colors
+         new Color(0x00000000, true),
+         new Color(0x00000000, true),
+@@ -394,6 +394,12 @@ public final class MapPalette {
+         temp.getRGB(0, 0, temp.getWidth(), temp.getHeight(), pixels, 0, temp.getWidth());
+ 
+         byte[] result = new byte[temp.getWidth() * temp.getHeight()];
++        // Plazma start - Pufferfish API changes
++        if (org.plazmamc.plazma.simd.SIMD.isEnabled()) {
++            org.plazmamc.plazma.simd.VectorMapPalette.matchColorVectorized(pixels, result);
++            return result;
++        }
++        // Plazma end - Pufferfish API changes
+         for (int i = 0; i < pixels.length; i++) {
+             result[i] = matchColor(new Color(pixels[i], true));
+         }
+diff --git a/src/main/java/org/bukkit/plugin/java/PluginClassLoader.java b/src/main/java/org/bukkit/plugin/java/PluginClassLoader.java
+index c53cac5cbaa65a1c984043f69d159118c80fa6dd..4ef0eebefc4f368c76a2f7e0652813fa119d6675 100644
+--- a/src/main/java/org/bukkit/plugin/java/PluginClassLoader.java
++++ b/src/main/java/org/bukkit/plugin/java/PluginClassLoader.java
+@@ -51,6 +51,8 @@ public final class PluginClassLoader extends URLClassLoader implements io.paperm
+     private io.papermc.paper.plugin.provider.classloader.PluginClassLoaderGroup classLoaderGroup; // Paper
+     public io.papermc.paper.plugin.provider.entrypoint.DependencyContext dependencyContext; // Paper
+ 
++    private boolean closed = false;
++
+     static {
+         ClassLoader.registerAsParallelCapable();
+     }
+@@ -210,7 +212,7 @@ public final class PluginClassLoader extends URLClassLoader implements io.paperm
+ 
+     @Override
+     protected Class<?> findClass(String name) throws ClassNotFoundException {
+-        if (name.startsWith("org.bukkit.") || name.startsWith("net.minecraft.")) {
++        if (closed || name.startsWith("org.bukkit.") || name.startsWith("net.minecraft.")) {
+             throw new ClassNotFoundException(name);
+         }
+         Class<?> result = classes.get(name);
+@@ -285,6 +287,7 @@ public final class PluginClassLoader extends URLClassLoader implements io.paperm
+             // Paper end
+             super.close();
+         } finally {
++            closed = true;
+             jar.close();
+         }
+     }

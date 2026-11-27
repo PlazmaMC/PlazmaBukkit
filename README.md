@@ -17,8 +17,8 @@
 > - [x] Implement configuration and commands
 > - [ ] (In Progress) Port Pufferfish patches (16/17)
 >   - [ ] Implement DAB (Dynamic Activation of Brain)
-> - [ ] Implement Pufferfish API patches (0/2)
->   - [ ] Implement SIMD
+> - [x] Implement Pufferfish API patches
+>   - [x] Implement SIMD
 > - [ ] Completely remove Timings & Profilers
 > - [ ] Port SparklyPaper patches
 > - [ ] Implement the remaining patches from 1.21.4/1.21.8

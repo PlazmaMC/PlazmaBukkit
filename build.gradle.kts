@@ -25,7 +25,11 @@ subprojects {
         options.encoding = Charsets.UTF_8.name()
         options.release = 25
         options.isFork = true
-        options.compilerArgs.addAll(listOf("-Xlint:-deprecation", "-Xlint:-removal"))
+        options.compilerArgs.addAll(listOf(
+            "-Xlint:-deprecation",
+            "-Xlint:-removal",
+            "--add-modules=jdk.incubator.vector"
+        ))
     }
     tasks.withType<Javadoc> {
         options.encoding = Charsets.UTF_8.name()
